@@ -1,0 +1,43 @@
+{
+  "business_id": 7,
+  "company_id": "prescottair-prescott",
+  "business_name": "Prescott Air Conditioning & Heating Repair LLC",
+  "mid": "11cmk1jdyc",
+  "place_id": "ChIJudEAbu9JLYcRx7BHuRAJyB0",
+  "brand_search": "Prescott Air Conditioning & Heating Repair LLC",
+  "destination_address": "1377 Kwana Ct, Prescott, AZ 86301",
+  "destination_zip": "86301",
+  "destination_coords": { "lat": 34.592369, "lng": -112.440155 },
+  "business_hours": {
+    "mon": ["09:00-17:00"],
+    "tue": ["09:00-17:00"],
+    "wed": ["09:00-17:00"],
+    "thu": ["09:00-17:00"],
+    "fri": ["09:00-17:00"],
+    "sat": ["09:00-17:00"],
+    "sun": ["09:00-17:00"]
+  },
+  "timezone": "America/Phoenix",
+  "origin_zones": [
+    {
+      "name": "Prescott",
+      "canonical": "Prescott, AZ, USA",
+      "zip": "86301",
+      "lat": 34.592369,
+      "lng": -112.440155,
+      "radius": 3,
+      "weight": 1,
+      "keywords": [
+        { "term": "hvac in prescott", "weight": 0.33 },
+        { "term": "air conditioner repair prescott az", "weight": 0.33 },
+        { "term": "heating and cooling prescott az", "weight": 0.33 }
+      ]
+    }
+  ],
+  "drives_per_day": 10,
+  "soax": {
+    "username": "package-300495-country-us-region-arizona-city-phoenix-sessionid-__SESSION_ID__-sessionlength-300-opt-wb",
+    "password": "1uah0tSq5HB26dFM",
+    "endpoint": "proxy.soax.com:5000"
+  }
+}

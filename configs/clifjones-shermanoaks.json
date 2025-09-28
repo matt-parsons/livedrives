@@ -1,0 +1,75 @@
+{
+  "business_id": 6,
+  "company_id": "clifjones-shermanoaks",
+  "business_name": "Clif Jones Painting Company",
+  "mid": "119vv2dr6",
+  "place_id": "ChIJQ3fjdyKWwoARsxs3riNcKhc",
+  "brand_search": "Clif Jones Painting Company",
+  "destination_address": "4617 Morse Ave, Sherman Oaks, CA 91423",
+  "destination_zip": "91423",
+  "destination_coords": { "lat": 34.15455675678572, "lng": -118.4163943730133 },
+  "business_hours": {
+      "mon": ["08:00-17:00"],
+      "tue": ["08:00-17:00"],
+      "wed": ["08:00-17:00"],
+      "thu": ["08:00-17:00"],
+      "fri": ["08:00-17:00"],
+      "sat": ["08:00-17:00"],
+      "sun": []
+  },
+  "timezone": "America/Los_Angeles",
+  "origin_zones": [
+    {
+      "name": "Studio City",
+      "canonical": "Studio City, Los Angeles, CA, USA",
+      "zip": "91604",
+      "lat": 34.140376305889156,
+      "lng": -118.3974298897032,
+      "radius": 2,
+      "weight": 0.5,
+      "keywords": [
+        { "term": "house painters in studio city", "weight": 0.25 },
+        { "term": "clif jones painting studio city", "weight": 0.25 },
+        { "term": "clif jones commercial painting studio city", "weight": 0.25 },
+        { "term": "interior painting studio city", "weight": 0.25 }
+
+      ]
+    },
+    {
+      "name": "Sherman Oaks",
+      "canonical": "Sherman Oaks, Los Angeles, CA, USA",
+      "zip": "91423",
+      "lat": 34.15455675678572,
+      "lng": -118.4163943730133,
+      "radius": 1,
+      "weight": 0.5,
+      "keywords": [
+        { "term": "house painters in sherman oaks", "weight": 0.25 },
+        { "term": "sherman oaks painters", "weight": 0.25},
+        { "term": "clif jones painting sherman oaks", "weight": 0.25 },
+        { "term": "painters in sherman oaks", "weight": 0.25 }
+      ]
+    },
+    {
+      "name": "Beverly Hills",
+      "canonical": "Beverly Hills, CA, USA",
+      "zip": "90210",
+      "lat": 34.11390442043081,
+      "lng": -118.41882826383119,
+      "radius": 1,
+      "weight": 0.5,
+      "keywords": [
+        { "term": "painters beverly hills", "weight": 0.25 },
+        { "term": "interior painting beverly hills", "weight": 0.25 },
+        { "term": "exterior painting beverly hills", "weight": 0.25 },
+        { "term": "clif jones painting beverly hills", "weight": 0.25 }
+      ]
+    }
+  ],
+  "drives_per_day": 20,
+  "soax": {
+    "username": "package-300495-country-us-region-california-city-los+angeles-sessionid-__SESSION_ID__-sessionlength-300-opt-wb",
+    "password": "1uah0tSq5HB26dFM",
+    "endpoint": "proxy.soax.com:5000"
+  }
+}

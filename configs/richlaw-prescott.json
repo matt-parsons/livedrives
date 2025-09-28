@@ -1,0 +1,42 @@
+{
+  "business_id": 5,
+  "company_id": "richlaw-prescott",
+  "business_name": "RICH LAW GROUP LLC",
+  "mid": "1tgxv05_",
+  "place_id": "ChIJX9myUNcoLYcRY3taQc0rUQQ",
+  "brand_search": "RICH LAW GROUP LLC",
+  "destination_address": "122 N Cortez St #202, Prescott, AZ 86301",
+  "destination_zip": "86301",
+  "destination_coords": { "lat": 34.54270485376425, "lng": -112.4690083216342 },
+  "business_hours": {
+    "mon": ["09:00-17:00"],
+    "tue": ["09:00-17:00"],
+    "wed": ["09:00-17:00"],
+    "thu": ["09:00-17:00"],
+    "fri": ["09:00-17:00"],
+    "sat": [],
+    "sun": []
+  },
+  "timezone": "America/Phoenix",
+  "origin_zones": [
+    {
+      "name": "Prescott",
+      "canonical": "Prescott, AZ, USA",
+      "zip": "96301",
+      "lat": 34.55451,
+      "lng": -112.46799,
+      "radius": 4,
+      "weight": 1,
+      "keywords": [
+        { "term": "rich law group prescott", "weight": 0.25 },
+        { "term": "bankruptcy attorney", "weight": 0.25 }
+      ]
+    }
+  ],
+  "drives_per_day": 15,
+  "soax": {
+    "username": "package-300495-country-us-region-arizona-city-phoenix-sessionid-__SESSION_ID__-sessionlength-300-opt-wb",
+    "password": "1uah0tSq5HB26dFM",
+    "endpoint": "proxy.soax.com:5000"
+  }
+}

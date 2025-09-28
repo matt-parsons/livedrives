@@ -1,0 +1,43 @@
+{
+  "business_id": 8,
+  "company_id": "willbuilt-prescott",
+  "business_name": "Willbuilt Seamless Gutters by Willbuilt Construction",
+  "mid": "12635_16n",
+  "place_id": "ChIJL6rieLM6LYcR3IcC3Q2OtJQ",
+  "brand_search": "Willbuilt Seamless Gutters",
+  "destination_address": "2170 E Lillian Ln, Prescott, AZ 86301",
+  "destination_zip": "86301",
+  "destination_coords": { "lat": 34.598846502888264, "lng": -112.42585482658319 },
+  "business_hours": {
+    "mon": ["09:00-17:00"],
+    "tue": ["09:00-17:00"],
+    "wed": ["09:00-17:00"],
+    "thu": ["09:00-17:00"],
+    "fri": ["09:00-17:00"],
+    "sat": ["09:00-17:00"],
+    "sun": ["09:00-17:00"]
+  },
+  "timezone": "America/Phoenix",
+  "origin_zones": [
+    {
+      "name": "Prescott",
+      "canonical": "Prescott, AZ, USA",
+      "zip": "86301",
+      "lat": 34.56093092250793,
+      "lng": -112.39760969728799,
+      "radius": 4,
+      "weight": 1,
+      "keywords": [
+        { "term": "seamless gutters prescott", "weight": 0.33 },
+        { "term": "gutter installer prescott", "weight": 0.33 },
+        { "term": "willbuilt seamless gutters", "weight": 0.33 }
+      ]
+    }
+  ],
+  "drives_per_day": 5,
+  "soax": {
+    "username": "package-300495-country-us-region-arizona-city-phoenix-sessionid-__SESSION_ID__-sessionlength-300-opt-wb",
+    "password": "1uah0tSq5HB26dFM",
+    "endpoint": "proxy.soax.com:5000"
+  }
+}

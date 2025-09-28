@@ -1,0 +1,79 @@
+{
+  "business_id": 1,
+  "company_id": "eastasiamassage-prescottvalley",
+  "business_name": "East Asia massage",
+  "mid": "11c1ww_f2q",
+  "place_id": "ChIJCy3i9fwjLYcR3V9Uis9jMS0",
+  "brand_search": "East Asia massage Prescott Valley",
+  "destination_address": "8060 E State Rte 69, Prescott Valley, AZ 86314",
+  "destination_zip": "86314",
+  "destination_coords": { "lat": 34.586800, "lng": -112.324861 },
+  "business_hours": {
+      "mon": ["09:00-21:00"],
+      "tue": ["09:00-21:00"],
+      "wed": ["09:00-21:00"],
+      "thu": ["09:00-21:00"],
+      "fri": ["09:00-21:00"],
+      "sat": ["09:00-21:00"],
+      "sun": ["09:00-21:00"]
+  },
+  "timezone": "America/Phoenix",
+  "origin_zones": [
+    {
+      "name": "North PV",
+      "canonical": "Prescott Valley, AZ, USA",
+      "zip": "86314",
+      "lat": 34.620304,
+      "lng": -112.315389,
+      "radius": 1,
+      "weight": 0.5,
+      "keywords": [
+        { "term": "massage near me", "weight": 0.1 }
+      ]
+    },
+    {
+      "name": "Mid PV",
+      "canonical": "Prescott Valley, AZ, USA",
+      "zip": "86314",
+      "lat": 34.600047,
+      "lng": -112.315961,
+      "radius": 1,
+      "weight": 0.3,
+      "keywords": [
+        { "term": "east asia massage", "weight": 0.1 },
+        { "term": "massage near me", "weight": 0.1 }
+      ]
+    },
+    {
+      "name": "West PV",
+      "canonical": "Prescott Valley, AZ, USA",
+      "zip": "86314",
+      "lat": 34.596238,
+      "lng": -112.342965,
+      "radius": 1.5,
+      "weight": 0.15,
+      "keywords": [
+        { "term": "east asia massage", "weight": 0.1 },
+        { "term": "massage near me", "weight": 0.1 }
+      ]
+    },
+    {
+      "name": "Next Door",
+      "canonical": "Prescott Valley, AZ, USA",
+      "zip": "86314",
+      "lat": 34.586800,
+      "lng": -112.32486,
+      "radius": 1,
+      "weight": 0.05,
+      "keywords": [
+        { "term": "east asia massage", "weight": 0.1 }
+      ]
+    }
+  ],
+  "drives_per_day": 10,
+  "soax": {
+    "username": "package-300495-country-us-region-arizona-city-phoenix-sessionid-__SESSION_ID__-sessionlength-300-opt-wb",
+    "password": "1uah0tSq5HB26dFM",
+    "endpoint": "proxy.soax.com:5000"
+  }
+}

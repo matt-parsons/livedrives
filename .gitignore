@@ -1,0 +1,7 @@
+failedQueue.json
+.cache/*
+.vscode/*
+.env
+node_modules
+logs/*
+tmp-profile/*

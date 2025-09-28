@@ -1,0 +1,56 @@
+{
+  "business_id": 2,
+  "company_id": "starpainters-watertown",
+  "business_name": "Star Painters LLC",
+  "mid": "1ptykd05c",
+  "place_id": "ChIJB-rTFJvq54kRg2iundYAfnU",
+  "brand_search": "Star Painters",
+  "destination_address": "260 French St, Watertown, CT 06795",
+  "destination_zip": "06795",
+  "destination_coords": { "lat": 41.59720913472256, "lng": -73.10473630672453 },
+  "business_hours": {
+      "mon": ["08:00-18:00"],
+      "tue": ["08:00-18:00"],
+      "wed": ["08:00-18:00"],
+      "thu": ["08:00-18:00"],
+      "fri": ["08:00-18:00"],
+      "sat": ["08:00-13:00"],
+      "sun": []
+  },
+  "timezone": "America/New_York",
+  "origin_zones": [
+    {
+      "name": "Thomaston",
+      "canonical": "Thomaston, CT, USA",
+      "zip": "06787",
+      "lat": 41.67258750378915,
+      "lng": -73.07706197089021,
+      "radius": 4,
+      "weight": 0.5,
+      "keywords": [
+        { "term": "painters in Thomaston ct", "weight": 0.75 },
+        { "term": "star painters", "weight": 0.25 }
+      ]
+    },
+    {
+      "name": "Waterbury",
+      "canonical": "Waterbury, CT, USA",
+      "zip": "06762",
+      "lat": 41.5600221,
+      "lng": -73.0550293,
+      "radius": 2,
+      "weight": 0.5,
+      "keywords": [
+        { "term": "painters in waterbury ct", "weight": 0.40 },
+        { "term": "star painters", "weight": 0.20 },
+        { "term": "house painters in waterbury ct", "weight": 0.40 }
+      ]
+    }
+  ],
+  "drives_per_day": 15,
+  "soax": {
+    "username": "package-300495-country-us-region-connecticut-city-waterbury-sessionid-__SESSION_ID__-sessionlength-300-opt-wb",
+    "password": "1uah0tSq5HB26dFM",
+    "endpoint": "proxy.soax.com:5000"
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "business_id": 4,
+  "company_id": "finishingtouch-prescott",
+  "business_name": "Finishing Touch Painting",
+  "mid": "11fnpjqswy",
+  "place_id": "ChIJWe-ubt4jLYcRUvYoz6nuh10",
+  "brand_search": "Finishing Touch Painting",
+  "destination_address": "1030 Sandretto Dr suite j, Prescott, AZ 86305",
+  "destination_zip": "86305",
+  "destination_coords": { "lat": 34.602845597111624, "lng": -112.45859816126456 },
+  "business_hours": {
+      "mon": ["07:00-16:00"],
+      "tue": ["07:00-16:00"],
+      "wed": ["07:00-16:00"],
+      "thu": ["07:00-16:00"],
+      "fri": ["07:00-16:00"],
+      "sat": [],
+      "sun": []
+  },
+  "timezone": "America/Phoenix",
+  "origin_zones": [
+    {
+      "name": "Prescott",
+      "canonical": "Prescott, AZ, USA",
+      "zip": "86305",
+      "lat": 34.542156,
+      "lng": -112.470359,
+      "radius": 2,
+      "weight": 0.5,
+      "keywords": [
+        { "term": "painters Prescott", "weight": 0.3 },
+        { "term": "house painters in Prescott", "weight": 0.3 },
+        { "term": "painting contractors", "weight": 0.3 },
+        { "term": "Prescott house painters", "weight": 0.2 },
+        { "term": "interior painters Prescott az", "weight": 0.2 },
+        { "term": "exterior painters prescott az", "weight": 0.15 },
+        { "term": "cabinet painters Prescott", "weight": 0.15 },
+        { "term": "finishing touch painting", "weight": 0.15 },
+        { "term": "finishing touch paint", "weight": 0.15 }
+      ]
+    }
+  ],
+  "drives_per_day": 5,
+  "soax": {
+    "username": "package-300495-country-us-region-arizona-city-phoenix-sessionid-__SESSION_ID__-sessionlength-300-opt-wb",
+    "password": "1uah0tSq5HB26dFM",
+    "endpoint": "proxy.soax.com:5000"
+  }
+}

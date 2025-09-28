@@ -1,0 +1,43 @@
+{
+  "business_id": 3,
+  "company_id": "qcd-prescott",
+  "business_name": "Quad Cities Design",
+  "mid": "11k3pwy820",
+  "place_id": "ChIJa78YQLMvLYcRmR3jfg4pJfM",
+  "brand_search": "Quad Cities Design",
+  "destination_address": "3623 Crossings Dr #217 Prescott AZ, 86305",
+  "destination_zip": "86305",
+  "destination_coords": { "lat": 34.59605705096851, "lng": -112.46599002043959 },
+  "business_hours": {
+    "mon": ["09:00-17:00"],
+    "tue": ["09:00-17:00"],
+    "wed": ["09:00-17:00"],
+    "thu": ["09:00-17:00"],
+    "fri": ["09:00-17:00"],
+    "sat": ["09:00-17:00"],
+    "sun": ["09:00-17:00"]
+  },
+  "timezone": "America/Phoenix",
+  "origin_zones": [
+    {
+      "name": "Prescott",
+      "canonical": "Prescott, AZ, USA",
+      "zip": "86301",
+      "lat": 34.55451,
+      "lng": -112.46799,
+      "radius": 4,
+      "weight": 1,
+      "keywords": [
+        { "term": "prescott seo", "weight": 0.33 },
+        { "term": "web design in prescott", "weight": 0.33 },
+        { "term": "quad cities design", "weight": 0.33 }
+      ]
+    }
+  ],
+  "drives_per_day": 20,
+  "soax": {
+    "username": "package-300495-country-us-region-arizona-city-phoenix-sessionid-__SESSION_ID__-sessionlength-300-opt-wb",
+    "password": "1uah0tSq5HB26dFM",
+    "endpoint": "proxy.soax.com:5000"
+  }
+}
