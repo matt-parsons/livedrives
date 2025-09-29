@@ -98,61 +98,11 @@ function addToRetryQueue(config) {
   let sessionId = randomSessionId();
   console.log('→ Using sessionId:', sessionId);
 
-  // 2.7) Collect SERP snapshot via in-house parser
+  // 2.7) Prepare SERP placeholders (acquired after CTR success)
   let serpRank = null;
   let serpReason = 'not_started';
   let serpPlaces = [];
   let serpMatched = null;
-
-  try {
-    const acquisition = await getProfileRank({
-      runId,
-      pointId: 0,
-      keyword,
-      origin: { lat: origin.lat, lng: origin.lng },
-      config
-    });
-
-    if (acquisition?.rawHtml) {
-      const parseResult = parseRankFromString(acquisition.rawHtml, config.business_name);
-      serpRank = Number.isFinite(parseResult.rank) ? parseResult.rank : null;
-      serpReason = parseResult.reason || 'unknown';
-      serpPlaces = Array.isArray(parseResult.places) ? parseResult.places : [];
-      serpMatched = parseResult.matched || null;
-      note(`→ [SERP] rank@${origin.lat.toFixed(5)},${origin.lng.toFixed(5)}: ${serpRank ?? 'not_found'} / ${parseResult.totalResults ?? serpPlaces.length} (${serpReason})`);
-    } else {
-      serpReason = acquisition?.reason || 'no_html_captured';
-      note(`→ [SERP] acquisition succeeded without HTML (${serpReason})`);
-    }
-  } catch (err) {
-    serpReason = `acquisition_failed: ${err.message}`;
-    note(`→ [SERP] Acquisition failed: ${err.message}`);
-  }
-
-  console.log(serpPlaces);
-
-  const matchedPlaceId = serpMatched?.raw_place_id || serpMatched?.place_id || null;
-  const matchedBySource = serpMatched?.place_id_source === 'place_id' ? 'place_id' : (serpMatched ? 'name_addr' : 'none');
-  const targetPlaceId = config.place_id || (matchedBySource === 'place_id' ? matchedPlaceId : null);
-  const matchedBy = config.place_id ? 'place_id' : matchedBySource;
-
-  if (serpPlaces.length) {
-    await recordRankingSnapshot({
-      runId,
-      businessId: config.business_id,
-      keyword,
-      originLat: origin.lat,
-      originLng: origin.lng,
-      radiusMi: 0,
-      sessionId,
-      requestId: 'serp@' + Date.now(),
-      places: serpPlaces,
-      matchedPlaceId,
-      matchedPosition: Number.isFinite(serpRank) ? serpRank : null,
-      targetPlaceId,
-      matchedBy
-    });
-  }
 
   try {
     let driveResult = null;
@@ -171,15 +121,66 @@ function addToRetryQueue(config) {
       } else {
         break; // either success or failed captcha
       }
-      if(attempts === 3) { run2Captcha = true;}
+      if(attempts === 1) { run2Captcha = true;}
     }
 
     if (ctrResult.reason !== 'success') {
       console.log('→ CTR Failed / Captcha Failed. We have quit.');
+      serpReason = 'skipped_due_to_ctr_failure';
       addToRetryQueue(config);
     } else {
       console.log('→ CTR Success. Start Your Engines.');
       console.log('');
+
+      try {
+        const acquisition = await getProfileRank({
+          runId,
+          pointId: 0,
+          keyword,
+          origin: { lat: origin.lat, lng: origin.lng },
+          config
+        });
+
+        if (acquisition?.rawHtml) {
+          const parseResult = parseRankFromString(acquisition.rawHtml, config.business_name);
+          serpRank = Number.isFinite(parseResult.rank) ? parseResult.rank : null;
+          serpReason = parseResult.reason || 'unknown';
+          serpPlaces = Array.isArray(parseResult.places) ? parseResult.places : [];
+          serpMatched = parseResult.matched || null;
+          note(`→ [SERP] rank@${origin.lat.toFixed(5)},${origin.lng.toFixed(5)}: ${serpRank ?? 'not_found'} / ${parseResult.totalResults ?? serpPlaces.length} (${serpReason})`);
+        } else {
+          serpReason = acquisition?.reason || 'no_html_captured';
+          note(`→ [SERP] acquisition succeeded without HTML (${serpReason})`);
+        }
+      } catch (err) {
+        serpReason = `acquisition_failed: ${err.message}`;
+        note(`→ [SERP] Acquisition failed: ${err.message}`);
+      }
+
+      if (serpPlaces.length) {
+        console.log(serpPlaces);
+        const matchedPlaceId = serpMatched?.raw_place_id || serpMatched?.place_id || null;
+        const matchedBySource = serpMatched?.place_id_source === 'place_id' ? 'place_id' : (serpMatched ? 'name_addr' : 'none');
+        const targetPlaceId = config.place_id || (matchedBySource === 'place_id' ? matchedPlaceId : null);
+        const matchedBy = config.place_id ? 'place_id' : matchedBySource;
+
+        await recordRankingSnapshot({
+          runId,
+          businessId: config.business_id,
+          keyword,
+          originLat: origin.lat,
+          originLng: origin.lng,
+          radiusMi: 0,
+          sessionId,
+          requestId: 'serp@' + Date.now(),
+          places: serpPlaces,
+          matchedPlaceId,
+          matchedPosition: Number.isFinite(serpRank) ? serpRank : null,
+          targetPlaceId,
+          matchedBy
+        });
+      }
+
       // driveResult = await runDrive({ config, origin, sessionId });
     }
 
