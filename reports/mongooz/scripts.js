@@ -661,6 +661,7 @@ function renderBizMapSessions(sessions, contextId, runId = null){
     bizGeoMapMarkers = validSessions.map(session => {
       const rank = Number(session.rank);
       const runKey = session.run_id != null ? Number(session.run_id) : null;
+      const queryKey = session.query_id != null ? Number(session.query_id) : null;
       let color = '#e74c3c';
       let zIndex = 1;
       if (Number.isFinite(rank) && rank <= 3) {
@@ -675,6 +676,13 @@ function renderBizMapSessions(sessions, contextId, runId = null){
       const rankLabel = Number.isFinite(rank)
         ? (rank > 20 ? '20+' : (rank > 0 ? String(rank) : '—'))
         : '—';
+      const titleLines = [
+        `Run: ${runKey ?? 'unknown'}`,
+        queryKey != null ? `Query: ${queryKey}` : null,
+        `Rank: ${rankLabel !== '—' ? rankLabel : 'n/a'}`,
+        `Lat/Lng: ${position.lat.toFixed(5)}, ${position.lng.toFixed(5)}`
+      ].filter(Boolean);
+
       const marker = new google.maps.Marker({
         position,
         map: bizGeoMap,
@@ -692,7 +700,7 @@ function renderBizMapSessions(sessions, contextId, runId = null){
           fontWeight: 'bold',
           fontSize: '12px'
         },
-        title: `Run: ${runKey ?? 'unknown'}\nRank: ${rankLabel !== '—' ? rankLabel : 'n/a'}\nLat/Lng: ${position.lat.toFixed(5)}, ${position.lng.toFixed(5)}`,
+        title: titleLines.join('\n'),
         zIndex
       });
       return marker;
@@ -787,6 +795,7 @@ function renderBizMapReport(run, points, contextId){
     bizGeoMapMarkers = validPoints.map(point => {
       const rank = Number(point.rank_pos);
       const runKey = point.run_id != null ? Number(point.run_id) : null;
+      const queryKey = point.query_id != null ? Number(point.query_id) : null;
       let color = '#e74c3c';
       let zIndex = 1;
       if (Number.isFinite(rank) && rank <= 3) {
@@ -801,6 +810,13 @@ function renderBizMapReport(run, points, contextId){
       const rankLabel = Number.isFinite(rank)
         ? (rank > 20 ? '20+' : (rank > 0 ? String(rank) : '—'))
         : '—';
+      const titleLines = [
+        `Run: ${runKey ?? 'unknown'}`,
+        queryKey != null ? `Query: ${queryKey}` : null,
+        `Rank: ${rankLabel !== '—' ? rankLabel : 'n/a'}`,
+        `Lat/Lng: ${position.lat.toFixed(5)}, ${position.lng.toFixed(5)}`
+      ].filter(Boolean);
+
       const marker = new google.maps.Marker({
         position,
         map: bizGeoMap,
@@ -818,7 +834,7 @@ function renderBizMapReport(run, points, contextId){
           fontWeight: 'bold',
           fontSize: '12px'
         },
-        title: `Run: ${runKey ?? 'unknown'}\nRank: ${rankLabel !== '—' ? rankLabel : 'n/a'}\nLat/Lng: ${position.lat.toFixed(5)}, ${position.lng.toFixed(5)}`,
+        title: titleLines.join('\n'),
         zIndex
       });
       return marker;

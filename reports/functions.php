@@ -325,25 +325,47 @@ register_rest_route('livedrive', '/keyword-trend', [
       } catch (Throwable $e) { return new WP_Error('db_connect','DB connect failed: '.$e->getMessage(),['status'=>500]); }
 
       // Phoenix local day computed from query timestamps (snapshots inherit query time)
+      $snapshotUnionSql = "
+        SELECT
+          rq.business_id,
+          rq.keyword,
+          rq.timestamp_utc AS snap_ts,
+          rs.matched_position,
+          rs.results_json
+        FROM ranking_snapshots rs
+        JOIN ranking_queries rq ON rq.id = rs.run_id
+        WHERE rq.source = 'google_places'
+        UNION ALL
+        SELECT
+          rq.business_id,
+          rq.keyword,
+          rq.timestamp_utc AS snap_ts,
+          rs.matched_position,
+          rs.results_json
+        FROM ranking_snapshots rs
+        JOIN ranking_queries rq ON rq.run_id = rs.run_id
+        LEFT JOIN ranking_queries rq_new ON rq_new.id = rs.run_id
+        WHERE rq_new.id IS NULL
+          AND (rq.source IS NULL OR rq.source = 'google_places')
+      ";
+
       $tsUtc = "
         CASE
-          WHEN rq.timestamp_utc LIKE '%T%' THEN STR_TO_DATE(REPLACE(REPLACE(rq.timestamp_utc,'T',' '),'Z',''), '%Y-%m-%d %H:%i:%s.%f')
-          ELSE rq.timestamp_utc
+          WHEN snap.snap_ts LIKE '%T%' THEN STR_TO_DATE(REPLACE(REPLACE(snap.snap_ts,'T',' '),'Z',''), '%Y-%m-%d %H:%i:%s.%f')
+          ELSE snap.snap_ts
         END
       ";
       $dayPhx = "DATE(CONVERT_TZ($tsUtc, '+00:00', '-07:00'))";
 
       // -------- Our business series from snapshots --------
-      // Removed redundant JOIN to 'runs' table as filtering is done on 'ranking_queries'.
       $stmt = $pdo->prepare("
         SELECT
           $dayPhx AS day,
           COUNT(*) AS snapshots,
-          AVG(NULLIF(rs.matched_position,0)) AS avg_rank,
-          ROUND(100 * SUM(rs.matched_position IS NOT NULL AND rs.matched_position <= 3) / COUNT(*), 1) AS solv_top3
-        FROM ranking_snapshots rs
-          JOIN ranking_queries rq ON rq.run_id = rs.run_id
-        WHERE rq.business_id = ? AND rq.keyword = ?
+          AVG(NULLIF(snap.matched_position,0)) AS avg_rank,
+          ROUND(100 * SUM(snap.matched_position IS NOT NULL AND snap.matched_position <= 3) / COUNT(*), 1) AS solv_top3
+        FROM ( $snapshotUnionSql ) snap
+        WHERE snap.business_id = ? AND snap.keyword = ?
           AND $tsUtc >= (UTC_TIMESTAMP() - INTERVAL ? DAY)
         GROUP BY day
         ORDER BY day ASC
@@ -403,15 +425,13 @@ register_rest_route('livedrive', '/keyword-trend', [
 
       // -------- Competitor aggregation (pick top_N, then build per-day series) --------
       // 1) Aggregate across the lookback to choose competitors
-      // Removed redundant JOIN to 'runs' table as filtering is done on 'ranking_queries'.
       $stmt = $pdo->prepare("
-        SELECT rs.results_json,
+        SELECT snap.results_json,
                $dayPhx AS day
-        FROM ranking_snapshots rs
-        JOIN ranking_queries rq ON rq.run_id = rs.run_id
-        WHERE rq.business_id = ? AND rq.keyword = ?
+        FROM ( $snapshotUnionSql ) snap
+        WHERE snap.business_id = ? AND snap.keyword = ?
           AND $tsUtc >= (UTC_TIMESTAMP() - INTERVAL ? DAY)
-        ORDER BY rq.timestamp_utc ASC
+        ORDER BY snap.snap_ts ASC
       ");
       $stmt->execute([$bid, $kw, $days+1]);
 
@@ -568,20 +588,51 @@ add_action('rest_api_init', function () {
                 // --- Step 1: Return recent run_logs entries if available ---
                 $points = [];
 
-                // Gather snapshot points for the requested period window
-                $sqlRecentSnapshots = "
+                $geoSnapshotUnionSql = "
                     SELECT
-                        rs.run_id,
+                        rq.run_id AS run_id,
+                        rs.run_id AS query_id,
+                        COALESCE(rq.business_id, g.business_id) AS business_id,
+                        rq.keyword,
+                        rq.timestamp_utc AS snap_ts,
+                        rs.origin_lat,
+                        rs.origin_lng,
+                        rs.matched_position AS rank
+                    FROM ranking_snapshots rs
+                    JOIN ranking_queries rq ON rq.id = rs.run_id
+                    JOIN geo_grid_runs g ON g.id = rq.run_id
+                    WHERE rq.source = 'serp'
+                    UNION ALL
+                    SELECT
+                        rq.run_id AS run_id,
+                        rs.run_id AS query_id,
+                        COALESCE(rq.business_id, g.business_id) AS business_id,
+                        rq.keyword,
+                        rq.timestamp_utc AS snap_ts,
                         rs.origin_lat,
                         rs.origin_lng,
                         rs.matched_position AS rank
                     FROM ranking_snapshots rs
                     JOIN ranking_queries rq ON rq.run_id = rs.run_id
-                    JOIN runs r ON r.id = rs.run_id
-                    WHERE r.business_id = ?
-                      AND rq.keyword = ?
-                      AND rq.timestamp_utc >= ?
-                      AND rq.timestamp_utc < ?
+                    LEFT JOIN ranking_queries rq_new ON rq_new.id = rs.run_id
+                    JOIN geo_grid_runs g ON g.id = rq.run_id
+                    WHERE rq_new.id IS NULL
+                      AND (rq.source IS NULL OR rq.source = 'serp')
+                ";
+
+                // Gather snapshot points for the requested period window
+                $sqlRecentSnapshots = "
+                    SELECT
+                        snap.run_id,
+                        snap.query_id,
+                        snap.origin_lat,
+                        snap.origin_lng,
+                        snap.rank
+                    FROM ( $geoSnapshotUnionSql ) snap
+                    WHERE snap.business_id = ?
+                      AND snap.keyword = ?
+                      AND snap.snap_ts >= ?
+                      AND snap.snap_ts < ?
                 ";
                 $stmtRecent = $pdo->prepare($sqlRecentSnapshots);
                 $stmtRecent->execute([$bid, $kw, $windowStartSql, $windowEndSql]);
@@ -594,6 +645,7 @@ add_action('rest_api_init', function () {
 
                     $points[] = [
                         'run_id'     => (int)$row['run_id'],
+                        'query_id'   => isset($row['query_id']) ? (int)$row['query_id'] : null,
                         'origin_lat' => $lat,
                         'origin_lng' => $lng,
                         'rank'       => isset($row['rank']) ? (int)$row['rank'] : null,
@@ -611,13 +663,12 @@ add_action('rest_api_init', function () {
 
                 // Fallback: use the most recent run regardless of age
                 $sqlLatestRun = "
-                    SELECT r.id AS run_id
-                    FROM runs r
-                    JOIN ranking_queries rq ON rq.run_id = r.id
-                    WHERE r.business_id = ? AND rq.keyword = ?
-                      AND rq.timestamp_utc >= ?
-                      AND rq.timestamp_utc < ?
-                    ORDER BY rq.timestamp_utc DESC
+                    SELECT snap.run_id
+                    FROM ( $geoSnapshotUnionSql ) snap
+                    WHERE snap.business_id = ? AND snap.keyword = ?
+                      AND snap.snap_ts >= ?
+                      AND snap.snap_ts < ?
+                    ORDER BY snap.snap_ts DESC
                     LIMIT 1
                 ";
                 $stmtLatest = $pdo->prepare($sqlLatestRun);
@@ -625,19 +676,30 @@ add_action('rest_api_init', function () {
                 $latestRunId = $stmtLatest->fetchColumn();
 
                 if (!$latestRunId) {
-                    return [];
+                    $sqlLatestRunAny = "
+                        SELECT snap.run_id
+                        FROM ( $geoSnapshotUnionSql ) snap
+                        WHERE snap.business_id = ? AND snap.keyword = ?
+                        ORDER BY snap.snap_ts DESC
+                        LIMIT 1
+                    ";
+                    $stmtLatestAny = $pdo->prepare($sqlLatestRunAny);
+                    $stmtLatestAny->execute([$bid, $kw]);
+                    $latestRunId = $stmtLatestAny->fetchColumn();
+                    if (!$latestRunId) {
+                        return [];
+                    }
                 }
 
                 $sqlLatestSnapshots = "
                     SELECT
-                        rs.run_id,
-                        rs.origin_lat,
-                        rs.origin_lng,
-                        rs.matched_position AS rank
-                    FROM ranking_snapshots rs
-                    JOIN ranking_queries rq ON rq.run_id = rs.run_id
-                    JOIN runs r ON r.id = rs.run_id
-                    WHERE rs.run_id = ? AND r.business_id = ? AND rq.keyword = ?
+                        snap.run_id,
+                        snap.query_id,
+                        snap.origin_lat,
+                        snap.origin_lng,
+                        snap.rank
+                    FROM ( $geoSnapshotUnionSql ) snap
+                    WHERE snap.run_id = ? AND snap.business_id = ? AND snap.keyword = ?
                 ";
                 $stmtLatestPoints = $pdo->prepare($sqlLatestSnapshots);
                 $stmtLatestPoints->execute([$latestRunId, $bid, $kw]);
@@ -651,6 +713,7 @@ add_action('rest_api_init', function () {
 
                     $latestPoints[] = [
                         'run_id'     => (int)$row['run_id'],
+                        'query_id'   => isset($row['query_id']) ? (int)$row['query_id'] : null,
                         'origin_lat' => $lat,
                         'origin_lng' => $lng,
                         'rank'       => isset($row['rank']) ? (int)$row['rank'] : null,
