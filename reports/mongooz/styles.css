@@ -20,7 +20,7 @@
   table { border-collapse: collapse; width: 100%; font-size: .92em; background-color: #fff; border-radius: var(--radius); overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
   th, td { padding: 8px; border: 1px solid var(--line); vertical-align: top; }
   thead th { position: sticky; top: 0; background: #e9ecef; z-index: 1; }
-  .muted { color: var(--muted); font-size: 11px; }
+  .muted { color: var(--muted); font-size: 11px; white-space: pre-wrap; }
   .chip { display: inline-block; padding: 2px 6px; border: 1px solid var(--line); border-radius: 999px; margin: 0 6px 6px 0; font-size: .9em; }
   .link { color: #0073aa; text-decoration: none; }
   .link:hover { text-decoration: underline; }

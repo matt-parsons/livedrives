@@ -672,24 +672,27 @@ function renderBizMapSessions(sessions, contextId, runId = null){
       }
       const position = { lat: Number(session.origin_lat), lng: Number(session.origin_lng) };
       bounds.extend(position);
+      const rankLabel = Number.isFinite(rank)
+        ? (rank > 20 ? '20+' : (rank > 0 ? String(rank) : '—'))
+        : '—';
       const marker = new google.maps.Marker({
         position,
         map: bizGeoMap,
         icon: {
           path: google.maps.SymbolPath.CIRCLE,
-          scale: 14,
+          scale: 20,
           fillColor: color,
           fillOpacity: 0.9,
           strokeWeight: 1,
           strokeColor: '#555'
         },
         label: {
-          text: Number.isFinite(rank) && rank > 0 ? String(rank) : '—',
+          text: rankLabel,
           color: '#fff',
           fontWeight: 'bold',
           fontSize: '12px'
         },
-        title: `Run: ${runKey ?? 'unknown'}\nRank: ${Number.isFinite(rank) && rank > 0 ? rank : 'n/a'}\nLat/Lng: ${position.lat.toFixed(5)}, ${position.lng.toFixed(5)}`,
+        title: `Run: ${runKey ?? 'unknown'}\nRank: ${rankLabel !== '—' ? rankLabel : 'n/a'}\nLat/Lng: ${position.lat.toFixed(5)}, ${position.lng.toFixed(5)}`,
         zIndex
       });
       return marker;
@@ -795,24 +798,27 @@ function renderBizMapReport(run, points, contextId){
       }
       const position = { lat: Number(point.lat), lng: Number(point.lng) };
       bounds.extend(position);
+      const rankLabel = Number.isFinite(rank)
+        ? (rank > 20 ? '20+' : (rank > 0 ? String(rank) : '—'))
+        : '—';
       const marker = new google.maps.Marker({
         position,
         map: bizGeoMap,
         icon: {
           path: google.maps.SymbolPath.CIRCLE,
-          scale: 14,
+          scale: 20,
           fillColor: color,
           fillOpacity: 0.9,
           strokeWeight: 1,
           strokeColor: '#555'
         },
         label: {
-          text: Number.isFinite(rank) && rank > 0 ? String(rank) : '—',
+          text: rankLabel,
           color: '#fff',
           fontWeight: 'bold',
           fontSize: '12px'
         },
-        title: `Run: ${runKey ?? 'unknown'}\nRank: ${Number.isFinite(rank) && rank > 0 ? rank : 'n/a'}\nLat/Lng: ${position.lat.toFixed(5)}, ${position.lng.toFixed(5)}`,
+        title: `Run: ${runKey ?? 'unknown'}\nRank: ${rankLabel !== '—' ? rankLabel : 'n/a'}\nLat/Lng: ${position.lat.toFixed(5)}, ${position.lng.toFixed(5)}`,
         zIndex
       });
       return marker;
@@ -902,6 +908,55 @@ function formatDateTime(value){
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return value;
   return d.toLocaleString();
+}
+
+function describeRadiusMiles(value){
+  const num = Number(value);
+  if (!Number.isFinite(num)) return null;
+  const rounded = Math.round(num * 10) / 10;
+  return Math.abs(rounded - Math.round(rounded)) < 1e-9
+    ? String(Math.round(rounded))
+    : rounded.toFixed(1);
+}
+
+function formatRankStat(value){
+  const num = Number(value);
+  if (!Number.isFinite(num)) return null;
+  if (num >= 20.95) return '20+';
+  const fixed = num.toFixed(2);
+  return fixed
+    .replace(/\.00$/, '')
+    .replace(/(\.\d)0$/, '$1');
+}
+
+function buildGeoRunMeta(run){
+  const parts = [];
+  if (run.created_at) parts.push(formatDateTime(run.created_at));
+  if (run.status) parts.push(run.status);
+
+  const rows = Number(run.grid_rows);
+  const cols = Number(run.grid_cols);
+  if (Number.isFinite(rows) && Number.isFinite(cols) && rows > 0 && cols > 0) {
+    parts.push(`${rows}×${cols} grid`);
+  }
+
+  const radius = describeRadiusMiles(run.radius_miles);
+  if (radius) {
+    parts.push(`${radius} mi radius`);
+  }
+
+  const arp = Number(run.avg_rank);
+  const arpText = formatRankStat(arp);
+  if (arpText) {
+    parts.push(`ARP ${arpText}`);
+  }
+
+  const solv = Number(run.solv_top3);
+  if (Number.isFinite(solv)) {
+    parts.push(`SoLV ${solv.toFixed(1)}%`);
+  }
+
+  return parts.join(' · ');
 }
 
 async function renderBizReports(businessId){
@@ -1006,7 +1061,7 @@ async function renderBizReports(businessId){
 
       const meta = document.createElement('span');
       meta.className = 'muted';
-      meta.textContent = `${formatDateTime(run.created_at)} · ${run.status}`;
+      meta.textContent = buildGeoRunMeta(run);
 
       button.appendChild(name);
       button.appendChild(meta);
@@ -1484,34 +1539,39 @@ async function initMap(sessions) {
             lng: parseFloat(session.origin_lng)
         };
         
+        const sessionRank = Number(session.rank);
         let color = '#e74c3c'; // Red for low ranks
         let zIndex = 1;
-        if (session.rank <= 3) {
+        if (Number.isFinite(sessionRank) && sessionRank <= 3) {
             color = '#2ecc71'; // Green for top 3
             zIndex = 3;
-        } else if (session.rank <= 10) {
+        } else if (Number.isFinite(sessionRank) && sessionRank <= 10) {
             color = '#f1c40f'; // Yellow for 4-10
             zIndex = 2;
         }
+
+        const rankLabel = Number.isFinite(sessionRank)
+          ? (sessionRank > 20 ? '20+' : (sessionRank > 0 ? String(sessionRank) : '—'))
+          : '—';
 
         const marker = new google.maps.Marker({
             position: position,
             map: geoMap,
             icon: {
                 path: google.maps.SymbolPath.CIRCLE,
-                scale: 15,
+                scale: 20,
                 fillColor: color,
                 fillOpacity: 0.9,
                 strokeWeight: 1,
                 strokeColor: '#555'
             },
             label: {
-                text: String(session.rank),
+                text: rankLabel,
                 color: 'white',
                 fontWeight: 'bold',
                 fontSize: '12px'
             },
-            title: `Rank: ${session.rank}`,
+            title: `Rank: ${rankLabel}`,
             zIndex: zIndex
         });
         geoMap.markers.push(marker);
@@ -1555,35 +1615,32 @@ function initGridMap(run, points) {
             lng: parseFloat(point.lng)
         };
         
+        const rankValue = Number(point.rank_pos);
         let color = '#e74c3c'; // Red for low ranks
         let zIndex = 1;
-        if (point.rank_pos <= 3) {
+        if (rankValue <= 3) {
             color = '#2ecc71'; // Green for top 3
             zIndex = 3;
-        } else if (point.rank_pos <= 10) {
+        } else if (rankValue <= 10) {
             color = '#f1c40f'; // Yellow for 4-10
             zIndex = 2;
         }
 
-        let rankPos = point.rank_pos;
-
-        if(point.rank_pos > 20) {
-          rankPos = '20+';
-        }
+        const rankPos = Number.isFinite(rankValue) && rankValue > 20 ? '20+' : String(rankValue);
 
         const marker = new google.maps.Marker({
             position: position,
             map: geoMap,
             icon: {
                 path: google.maps.SymbolPath.CIRCLE,
-                scale: 15,
+                scale: 20,
                 fillColor: color,
                 fillOpacity: 0.9,
                 strokeWeight: 1,
                 strokeColor: '#555'
             },
             label: {
-                text: String(rankPos),
+                text: rankPos,
                 color: 'white',
                 fontWeight: 'bold',
                 fontSize: '12px'

@@ -1026,23 +1026,63 @@ exec($command, $output, $return_var);
                 return new WP_REST_Response(['error'=>'business_id required'], 400);
             }
 
+            $params = [$business_id];
+            $query = "
+                SELECT
+                    r.id,
+                    r.keyword,
+                    r.status,
+                    r.created_at,
+                    r.finished_at,
+                    r.grid_rows,
+                    r.grid_cols,
+                    r.radius_miles,
+                    ROUND(AVG(
+                        CASE
+                            WHEN p.rank_pos IS NULL OR p.rank_pos <= 0 THEN NULL
+                            WHEN p.rank_pos >= 999 THEN 21
+                            ELSE p.rank_pos
+                        END
+                    ), 2) AS avg_rank,
+                    ROUND(
+                        100 * SUM(
+                            CASE
+                                WHEN p.rank_pos IS NULL OR p.rank_pos <= 0 THEN 0
+                                WHEN p.rank_pos <= 3 THEN 1
+                                ELSE 0
+                            END
+                        )
+                        / NULLIF(SUM(
+                            CASE
+                                WHEN p.rank_pos IS NULL OR p.rank_pos <= 0 THEN 0
+                                ELSE 1
+                            END
+                        ), 0)
+                    , 1) AS solv_top3
+                FROM geo_grid_runs r
+                LEFT JOIN geo_grid_points p ON p.run_id = r.id
+                WHERE r.business_id = ?";
+
             if ($keyword !== null && $keyword !== '') {
-                $s = $pdo->prepare("
-                    SELECT id, keyword, status, created_at, finished_at
-                    FROM geo_grid_runs
-                    WHERE business_id = ? AND keyword = ?
-                    ORDER BY created_at DESC
-                ");
-                $s->execute([$business_id, $keyword]);
-            } else {
-                $s = $pdo->prepare("
-                    SELECT id, keyword, status, created_at, finished_at
-                    FROM geo_grid_runs
-                    WHERE business_id = ?
-                    ORDER BY created_at DESC
-                ");
-                $s->execute([$business_id]);
+                $query  .= " AND r.keyword = ?";
+                $params[] = $keyword;
             }
+
+            $query .= "
+                GROUP BY
+                    r.id,
+                    r.keyword,
+                    r.status,
+                    r.created_at,
+                    r.finished_at,
+                    r.grid_rows,
+                    r.grid_cols,
+                    r.radius_miles
+                ORDER BY r.created_at DESC
+            ";
+
+            $s = $pdo->prepare($query);
+            $s->execute($params);
 
             $runs = $s->fetchAll(PDO::FETCH_ASSOC);
             return new WP_REST_Response(['runs' => $runs], 200);
