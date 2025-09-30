@@ -429,7 +429,6 @@ register_rest_route('livedrive', '/keyword-trend', [
         SELECT snap.results_json,
                $dayPhx AS day
         FROM ( $snapshotUnionSql ) snap
-        WHERE snap.business_id = ? AND snap.keyword = ?
           AND $tsUtc >= (UTC_TIMESTAMP() - INTERVAL ? DAY)
         ORDER BY snap.snap_ts ASC
       ");
