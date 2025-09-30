@@ -155,9 +155,9 @@ schedule.scheduleJob('5 0 * * *', () => {
 });
 
 // Light poll to pick up DB edits every 10 minutes
-schedule.scheduleJob('*/10 * * * *', () => {
-  loadAllFromDb().catch(err => console.error('[scheduler] poll reload:', err.message));
-});
+// schedule.scheduleJob('*/10 * * * *', () => {
+//   loadAllFromDb().catch(err => console.error('[scheduler] poll reload:', err.message));
+// });
 
 /* ---------- Retry queue handling (unchanged) ---------- */
 
