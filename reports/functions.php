@@ -342,8 +342,9 @@ register_rest_route('livedrive', '/keyword-trend', [
           AVG(NULLIF(rs.matched_position,0)) AS avg_rank,
           ROUND(100 * SUM(rs.matched_position IS NOT NULL AND rs.matched_position <= 3) / COUNT(*), 1) AS solv_top3
         FROM ranking_snapshots rs
-          JOIN ranking_queries rq ON rq.run_id = rs.run_id
+          JOIN ranking_queries rq ON rq.id = rs.run_id
         WHERE rq.business_id = ? AND rq.keyword = ?
+          AND rq.source = 'google_places'
           AND $tsUtc >= (UTC_TIMESTAMP() - INTERVAL ? DAY)
         GROUP BY day
         ORDER BY day ASC
@@ -408,8 +409,9 @@ register_rest_route('livedrive', '/keyword-trend', [
         SELECT rs.results_json,
                $dayPhx AS day
         FROM ranking_snapshots rs
-        JOIN ranking_queries rq ON rq.run_id = rs.run_id
+        JOIN ranking_queries rq ON rq.id = rs.run_id
         WHERE rq.business_id = ? AND rq.keyword = ?
+          AND rq.source = 'google_places'
           AND $tsUtc >= (UTC_TIMESTAMP() - INTERVAL ? DAY)
         ORDER BY rq.timestamp_utc ASC
       ");
@@ -571,15 +573,17 @@ add_action('rest_api_init', function () {
                 // Gather snapshot points for the requested period window
                 $sqlRecentSnapshots = "
                     SELECT
-                        rs.run_id,
+                        rq.run_id AS run_id,
+                        rs.run_id AS query_id,
                         rs.origin_lat,
                         rs.origin_lng,
                         rs.matched_position AS rank
                     FROM ranking_snapshots rs
-                    JOIN ranking_queries rq ON rq.run_id = rs.run_id
-                    JOIN runs r ON r.id = rs.run_id
-                    WHERE r.business_id = ?
+                    JOIN ranking_queries rq ON rq.id = rs.run_id
+                    JOIN geo_grid_runs g ON g.id = rq.run_id
+                    WHERE g.business_id = ?
                       AND rq.keyword = ?
+                      AND rq.source = 'serp'
                       AND rq.timestamp_utc >= ?
                       AND rq.timestamp_utc < ?
                 ";
@@ -594,6 +598,7 @@ add_action('rest_api_init', function () {
 
                     $points[] = [
                         'run_id'     => (int)$row['run_id'],
+                        'query_id'   => isset($row['query_id']) ? (int)$row['query_id'] : null,
                         'origin_lat' => $lat,
                         'origin_lng' => $lng,
                         'rank'       => isset($row['rank']) ? (int)$row['rank'] : null,
@@ -611,10 +616,11 @@ add_action('rest_api_init', function () {
 
                 // Fallback: use the most recent run regardless of age
                 $sqlLatestRun = "
-                    SELECT r.id AS run_id
-                    FROM runs r
-                    JOIN ranking_queries rq ON rq.run_id = r.id
-                    WHERE r.business_id = ? AND rq.keyword = ?
+                    SELECT rq.run_id AS run_id
+                    FROM ranking_queries rq
+                    JOIN geo_grid_runs g ON g.id = rq.run_id
+                    WHERE g.business_id = ? AND rq.keyword = ?
+                      AND rq.source = 'serp'
                       AND rq.timestamp_utc >= ?
                       AND rq.timestamp_utc < ?
                     ORDER BY rq.timestamp_utc DESC
@@ -625,19 +631,35 @@ add_action('rest_api_init', function () {
                 $latestRunId = $stmtLatest->fetchColumn();
 
                 if (!$latestRunId) {
-                    return [];
+                    $sqlLatestRunAny = "
+                        SELECT rq.run_id AS run_id
+                        FROM ranking_queries rq
+                        JOIN geo_grid_runs g ON g.id = rq.run_id
+                        WHERE g.business_id = ? AND rq.keyword = ?
+                          AND rq.source = 'serp'
+                        ORDER BY rq.timestamp_utc DESC
+                        LIMIT 1
+                    ";
+                    $stmtLatestAny = $pdo->prepare($sqlLatestRunAny);
+                    $stmtLatestAny->execute([$bid, $kw]);
+                    $latestRunId = $stmtLatestAny->fetchColumn();
+                    if (!$latestRunId) {
+                        return [];
+                    }
                 }
 
                 $sqlLatestSnapshots = "
                     SELECT
-                        rs.run_id,
+                        rq.run_id AS run_id,
+                        rs.run_id AS query_id,
                         rs.origin_lat,
                         rs.origin_lng,
                         rs.matched_position AS rank
                     FROM ranking_snapshots rs
-                    JOIN ranking_queries rq ON rq.run_id = rs.run_id
-                    JOIN runs r ON r.id = rs.run_id
-                    WHERE rs.run_id = ? AND r.business_id = ? AND rq.keyword = ?
+                    JOIN ranking_queries rq ON rq.id = rs.run_id
+                    JOIN geo_grid_runs g ON g.id = rq.run_id
+                    WHERE rq.run_id = ? AND g.business_id = ? AND rq.keyword = ?
+                      AND rq.source = 'serp'
                 ";
                 $stmtLatestPoints = $pdo->prepare($sqlLatestSnapshots);
                 $stmtLatestPoints->execute([$latestRunId, $bid, $kw]);
@@ -651,6 +673,7 @@ add_action('rest_api_init', function () {
 
                     $latestPoints[] = [
                         'run_id'     => (int)$row['run_id'],
+                        'query_id'   => isset($row['query_id']) ? (int)$row['query_id'] : null,
                         'origin_lat' => $lat,
                         'origin_lng' => $lng,
                         'rank'       => isset($row['rank']) ? (int)$row['rank'] : null,
