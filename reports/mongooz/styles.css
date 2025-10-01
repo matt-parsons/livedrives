@@ -140,6 +140,30 @@
   .report-item.active { border-color: #0073aa; box-shadow: 0 0 0 2px rgba(0,115,170,0.15); }
 
   /* Keyword list in biz overlay */
+  .keyword-scope-controls {
+    display: inline-flex;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .keyword-scope-button {
+    padding: 6px 12px;
+    border: 1px solid #d0d0d0;
+    border-radius: 4px;
+    background: #fff;
+    cursor: pointer;
+    font-size: 0.9em;
+    transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+  }
+  .keyword-scope-button:hover {
+    background-color: #f0f4ff;
+    border-color: #b0c6ff;
+  }
+  .keyword-scope-button.active {
+    background-color: #eef6ff;
+    border-color: #0073aa;
+    color: #004a7c;
+    font-weight: 600;
+  }
   .keyword-item {
     display: flex;
     flex-direction: column;

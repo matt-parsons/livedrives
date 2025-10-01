@@ -571,17 +571,19 @@ add_action('rest_api_init', function () {
                 // Gather snapshot points for the requested period window
                 $sqlRecentSnapshots = "
                     SELECT
-                        rs.run_id,
+                        COALESCE(rq_run.run_id, rq_id.run_id, rs.run_id) AS resolved_run_id,
                         rs.origin_lat,
                         rs.origin_lng,
                         rs.matched_position AS rank
                     FROM ranking_snapshots rs
-                    JOIN ranking_queries rq ON rq.run_id = rs.run_id
-                    JOIN runs r ON r.id = rs.run_id
+                    LEFT JOIN ranking_queries rq_run ON rq_run.run_id = rs.run_id
+                    LEFT JOIN ranking_queries rq_id ON rq_id.id = rs.run_id
+                    JOIN runs r ON r.id = COALESCE(rq_run.run_id, rq_id.run_id, rs.run_id)
                     WHERE r.business_id = ?
-                      AND rq.keyword = ?
-                      AND rq.timestamp_utc >= ?
-                      AND rq.timestamp_utc < ?
+                      AND COALESCE(rq_run.keyword, rq_id.keyword) = ?
+                      AND COALESCE(rq_run.timestamp_utc, rq_id.timestamp_utc) >= ?
+                      AND COALESCE(rq_run.timestamp_utc, rq_id.timestamp_utc) < ?
+                      AND (rq_run.id IS NOT NULL OR rq_id.id IS NOT NULL)
                 ";
                 $stmtRecent = $pdo->prepare($sqlRecentSnapshots);
                 $stmtRecent->execute([$bid, $kw, $windowStartSql, $windowEndSql]);
@@ -593,7 +595,7 @@ add_action('rest_api_init', function () {
                     if (!is_finite($lat) || !is_finite($lng)) continue;
 
                     $points[] = [
-                        'run_id'     => (int)$row['run_id'],
+                        'run_id'     => (int)$row['resolved_run_id'],
                         'origin_lat' => $lat,
                         'origin_lng' => $lng,
                         'rank'       => isset($row['rank']) ? (int)$row['rank'] : null,
@@ -630,14 +632,18 @@ add_action('rest_api_init', function () {
 
                 $sqlLatestSnapshots = "
                     SELECT
-                        rs.run_id,
+                        COALESCE(rq_run.run_id, rq_id.run_id, rs.run_id) AS resolved_run_id,
                         rs.origin_lat,
                         rs.origin_lng,
                         rs.matched_position AS rank
                     FROM ranking_snapshots rs
-                    JOIN ranking_queries rq ON rq.run_id = rs.run_id
-                    JOIN runs r ON r.id = rs.run_id
-                    WHERE rs.run_id = ? AND r.business_id = ? AND rq.keyword = ?
+                    LEFT JOIN ranking_queries rq_run ON rq_run.run_id = rs.run_id
+                    LEFT JOIN ranking_queries rq_id ON rq_id.id = rs.run_id
+                    JOIN runs r ON r.id = COALESCE(rq_run.run_id, rq_id.run_id, rs.run_id)
+                    WHERE COALESCE(rq_run.run_id, rq_id.run_id, rs.run_id) = ?
+                      AND r.business_id = ?
+                      AND COALESCE(rq_run.keyword, rq_id.keyword) = ?
+                      AND (rq_run.id IS NOT NULL OR rq_id.id IS NOT NULL)
                 ";
                 $stmtLatestPoints = $pdo->prepare($sqlLatestSnapshots);
                 $stmtLatestPoints->execute([$latestRunId, $bid, $kw]);
@@ -650,7 +656,7 @@ add_action('rest_api_init', function () {
                     if (!is_finite($lat) || !is_finite($lng)) continue;
 
                     $latestPoints[] = [
-                        'run_id'     => (int)$row['run_id'],
+                        'run_id'     => (int)$row['resolved_run_id'],
                         'origin_lat' => $lat,
                         'origin_lng' => $lng,
                         'rank'       => isset($row['rank']) ? (int)$row['rank'] : null,
@@ -695,6 +701,148 @@ function ld_geo_grid_spacing(float $radiusMiles, int $rows, int $cols): float {
     $spacing = 3.0;
   }
   return $spacing;
+}
+
+function ld_origin_zone_keywords_parse($raw): array {
+  if ($raw === null) return [];
+  $str = trim((string)$raw);
+  if ($str === '') return [];
+
+  if ($str[0] === '[') {
+    $decoded = json_decode($str, true);
+    if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+      $out = [];
+      foreach ($decoded as $entry) {
+        if (is_array($entry)) {
+          $term = isset($entry['term']) ? trim((string)$entry['term']) : '';
+          if ($term === '') continue;
+          $weight = isset($entry['weight']) && is_numeric($entry['weight']) ? (float)$entry['weight'] : 1.0;
+          if ($weight <= 0) $weight = 1.0;
+          $out[] = ['term' => $term, 'weight' => $weight];
+        } else {
+          $term = trim((string)$entry);
+          if ($term === '') continue;
+          $out[] = ['term' => $term, 'weight' => 1.0];
+        }
+      }
+      return $out;
+    }
+  }
+
+  $parts = preg_split('/[,;\n]+/', $str);
+  $out = [];
+  foreach ($parts as $part) {
+    $term = trim($part);
+    if ($term === '') continue;
+    $out[] = ['term' => $term, 'weight' => 1.0];
+  }
+  return $out;
+}
+
+function ld_geo_grid_fetch_origin_zones(PDO $pdo, int $businessId): array {
+  $stmt = $pdo->prepare("
+    SELECT
+      id, name, canonical, zip,
+      lat, lng, radius_mi, weight, keywords
+    FROM origin_zones
+    WHERE business_id = ?
+    ORDER BY id ASC
+  ");
+  $stmt->execute([$businessId]);
+  $zones = [];
+  while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+    if (!is_numeric($row['lat']) || !is_numeric($row['lng'])) {
+      continue;
+    }
+    $zones[] = [
+      'id'       => (int)$row['id'],
+      'name'     => isset($row['name']) ? (string)$row['name'] : '',
+      'canonical'=> isset($row['canonical']) ? (string)$row['canonical'] : null,
+      'zip'      => isset($row['zip']) ? (string)$row['zip'] : null,
+      'lat'      => (float)$row['lat'],
+      'lng'      => (float)$row['lng'],
+      'radius'   => is_numeric($row['radius_mi']) ? (float)$row['radius_mi'] : null,
+      'weight'   => is_numeric($row['weight']) ? (float)$row['weight'] : 0.0,
+      'keywords' => ld_origin_zone_keywords_parse($row['keywords'] ?? '')
+    ];
+  }
+  return $zones;
+}
+
+function ld_geo_grid_pick_origin_zone(PDO $pdo, int $businessId, array $args): ?array {
+  $bizStmt = $pdo->prepare("SELECT id, dest_lat, dest_lng FROM businesses WHERE id = ? LIMIT 1");
+  $bizStmt->execute([$businessId]);
+  $biz = $bizStmt->fetch(PDO::FETCH_ASSOC);
+  if (!$biz) {
+    return null;
+  }
+
+  $zones = ld_geo_grid_fetch_origin_zones($pdo, $businessId);
+  if (!$zones) {
+    $cfg = [];
+  } else {
+    $cfg = ['origin_zones' => array_map(function ($zone) {
+      return [
+        'id'       => $zone['id'],
+        'name'     => $zone['name'],
+        'canonical'=> $zone['canonical'],
+        'zip'      => $zone['zip'],
+        'lat'      => $zone['lat'],
+        'lng'      => $zone['lng'],
+        'radius'   => $zone['radius'],
+        'weight'   => $zone['weight'],
+        'keywords' => array_map(function ($entry) {
+          return ['term' => $entry['term'], 'weight' => $entry['weight']];
+        }, $zone['keywords'])
+      ];
+    }, $zones)];
+  }
+
+  $bizForOrigin = [
+    'dest_lat'    => isset($biz['dest_lat']) ? (float)$biz['dest_lat'] : null,
+    'dest_lng'    => isset($biz['dest_lng']) ? (float)$biz['dest_lng'] : null,
+    'config_json' => json_encode($cfg)
+  ];
+
+  $origin = ld_geo_grid_resolve_origin_row($bizForOrigin, $args);
+  if (!$origin || !isset($origin['lat'], $origin['lng'])) {
+    return null;
+  }
+
+  $match = null;
+  foreach ($zones as $zone) {
+    $latMatch = abs($zone['lat'] - (float)$origin['lat']) < 1e-6;
+    $lngMatch = abs($zone['lng'] - (float)$origin['lng']) < 1e-6;
+    if ($latMatch && $lngMatch) {
+      $match = $zone;
+      break;
+    }
+  }
+
+  if ($match) {
+    $radius = $match['radius'] !== null ? (float)$match['radius'] : ($origin['radius'] ?? null);
+    return [
+      'zone_id'      => $match['id'],
+      'zone_name'    => $match['name'],
+      'canonical'    => $match['canonical'],
+      'zip'          => $match['zip'],
+      'lat'          => (float)$origin['lat'],
+      'lng'          => (float)$origin['lng'],
+      'radius_miles' => $radius,
+      'weight'       => $match['weight'],
+    ];
+  }
+
+  return [
+    'zone_id'      => null,
+    'zone_name'    => null,
+    'canonical'    => null,
+    'zip'          => null,
+    'lat'          => (float)$origin['lat'],
+    'lng'          => (float)$origin['lng'],
+    'radius_miles' => $origin['radius'] ?? null,
+    'weight'       => null,
+  ];
 }
 
 function ld_geo_grid_resolve_origin_row(array $biz, array $args): array {
@@ -908,6 +1056,49 @@ function ld_geo_grid_finish_run(int $run_id, bool $had_error=false){
 
 add_action('rest_api_init', function () {
 
+  register_rest_route('livedrive', '/geo-grid/origin', [
+    'methods'  => 'GET',
+    'permission_callback' => '__return_true',
+    'callback' => function (WP_REST_Request $req) {
+      $business_id = (int)$req->get_param('business_id');
+      $keywordRaw  = (string)$req->get_param('keyword');
+      $keyword     = trim($keywordRaw);
+      $radiusParam = $req->get_param('radius_miles');
+
+      if ($business_id <= 0) {
+        return new WP_REST_Response(['error' => 'business_id is required'], 400);
+      }
+
+      $args = [
+        'keyword'      => $keyword !== '' ? $keyword : null,
+        'radius_miles' => ($radiusParam !== null && $radiusParam !== '') ? (float)$radiusParam : null,
+      ];
+
+      try {
+        $pdo = ld_db();
+        $match = ld_geo_grid_pick_origin_zone($pdo, $business_id, $args);
+      } catch (Throwable $e) {
+        error_log('livedrive geo-grid/origin error: '.$e->getMessage());
+        return new WP_REST_Response(['error' => 'Failed to resolve origin zone'], 500);
+      }
+
+      if (!$match || !isset($match['lat'], $match['lng']) || $match['zone_id'] === null) {
+        return new WP_REST_Response(['error' => 'Origin zone not found'], 404);
+      }
+
+      return new WP_REST_Response([
+        'zone_id'      => $match['zone_id'],
+        'zone_name'    => $match['zone_name'],
+        'canonical'    => $match['canonical'],
+        'zip'          => $match['zip'],
+        'lat'          => $match['lat'],
+        'lng'          => $match['lng'],
+        'radius_miles' => $match['radius_miles'],
+        'weight'       => $match['weight'],
+      ], 200);
+    }
+  ]);
+
   register_rest_route('livedrive', '/geo-grid/run', [
     'methods'  => 'POST',
     'permission_callback' => '__return_true',
@@ -1019,17 +1210,50 @@ exec($command, $output, $return_var);
         'permission_callback' => '__return_true',
         'callback' => function(WP_REST_Request $req){
             $pdo = ld_db();
-            $business_id = (int)$req->get_param('business_id');
-            $keyword = $req->get_param('keyword');
 
-            if (!$business_id) {
-                return new WP_REST_Response(['error'=>'business_id required'], 400);
+            $businessParam = $req->get_param('business_id');
+            $keyword = $req->get_param('keyword');
+            $limitParam = $req->get_param('limit');
+
+            $businessId = null;
+            if ($businessParam !== null && $businessParam !== '') {
+                $businessId = (int)$businessParam;
+                if ($businessId <= 0) {
+                    $businessId = null;
+                }
             }
 
-            $params = [$business_id];
+            $limit = is_numeric($limitParam) ? (int)$limitParam : 200;
+            if ($limit < 1) {
+                $limit = 1;
+            }
+            if ($limit > 500) {
+                $limit = 500;
+            }
+
+            $params = [];
+            $conditions = [];
+
+            if ($businessId !== null) {
+                $conditions[] = 'r.business_id = ?';
+                $params[] = $businessId;
+            }
+
+            if ($keyword !== null && $keyword !== '') {
+                $conditions[] = 'r.keyword = ?';
+                $params[] = $keyword;
+            }
+
+            $whereSql = '';
+            if ($conditions) {
+                $whereSql = 'WHERE ' . implode(' AND ', $conditions);
+            }
+
             $query = "
                 SELECT
                     r.id,
+                    r.business_id,
+                    b.business_name,
                     r.keyword,
                     r.status,
                     r.created_at,
@@ -1061,16 +1285,12 @@ exec($command, $output, $return_var);
                     , 1) AS solv_top3
                 FROM geo_grid_runs r
                 LEFT JOIN geo_grid_points p ON p.run_id = r.id
-                WHERE r.business_id = ?";
-
-            if ($keyword !== null && $keyword !== '') {
-                $query  .= " AND r.keyword = ?";
-                $params[] = $keyword;
-            }
-
-            $query .= "
+                LEFT JOIN businesses b ON b.id = r.business_id
+                $whereSql
                 GROUP BY
                     r.id,
+                    r.business_id,
+                    b.business_name,
                     r.keyword,
                     r.status,
                     r.created_at,
@@ -1079,6 +1299,7 @@ exec($command, $output, $return_var);
                     r.grid_cols,
                     r.radius_miles
                 ORDER BY r.created_at DESC
+                LIMIT $limit
             ";
 
             $s = $pdo->prepare($query);

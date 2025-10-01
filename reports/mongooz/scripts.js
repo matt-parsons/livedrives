@@ -11,6 +11,9 @@ function phoenixDateKey(row){
   const d  = parseUtc(ts);
   return d ? d.toLocaleDateString('en-CA', { timeZone: 'America/Phoenix' }) : 'Unknown';
 }
+function phoenixTodayKey(){
+  return new Date().toLocaleDateString('en-CA', { timeZone: 'America/Phoenix' });
+}
 function phoenixDateTime(ts){
   const d = parseUtc(ts);
   return d ? d.toLocaleString('en-US', { timeZone: 'America/Phoenix' }) : '';
@@ -89,6 +92,7 @@ let dailyRowsCache = [];   // raw rows from /daily
 let byBizCache     = new Map(); // aggregated per business
 let currentBizContext = null;
 let currentBizKeywordSelection = null;
+let bizKeywordScope = 'today';
 let currentBizReportSelection = null;
 let bizKwChartInstance = null;
 let bizGeoMap = null;
@@ -99,6 +103,10 @@ let bizReportsLastMessage = '';
 let bizReportsLastIsError = false;
 let bizMapWeekOffset = 0;
 
+let geoRunsLoaded = false;
+let geoRunsLoading = false;
+let geoRunsCache = [];
+
 const GEO_GRID_CHOICES = [
   { label: '5×5', rows: 5, cols: 5 },
   { label: '7×7', rows: 7, cols: 7 },
@@ -106,6 +114,7 @@ const GEO_GRID_CHOICES = [
 ];
 const GEO_RADIUS_CHOICES = [1, 2, 3, 5];
 const geoRunSettings = new Map();
+const keywordOriginCache = new Map();
 
 function getGeoSettingsForBusiness(businessId) {
   if (!geoRunSettings.has(businessId)) {
@@ -129,6 +138,57 @@ function buildGeoRunConfig(businessId) {
     label: gridChoice.label,
     points: gridChoice.rows * gridChoice.cols
   };
+}
+
+async function resolveKeywordOriginZone(businessId, keyword, radiusMiles) {
+  const normalizedKeyword = String(keyword || '').trim();
+  if (!normalizedKeyword) return null;
+
+  const cacheKey = `${businessId}||${normalizedKeyword.toLowerCase()}||${Number.isFinite(radiusMiles) ? radiusMiles : 'na'}`;
+  if (keywordOriginCache.has(cacheKey)) {
+    return keywordOriginCache.get(cacheKey);
+  }
+
+  const params = new URLSearchParams({ business_id: String(businessId), keyword: normalizedKeyword });
+  if (Number.isFinite(radiusMiles)) {
+    params.append('radius_miles', String(radiusMiles));
+  }
+
+  const res = await fetch(`${ENDPOINT_ORIGIN_ZONE}?${params.toString()}`);
+  let data = null;
+  try {
+    data = await res.json();
+  } catch (error) {
+    data = null;
+  }
+
+  if (res.status === 404) {
+    keywordOriginCache.set(cacheKey, null);
+    return null;
+  }
+
+  if (!res.ok || (data && data.error)) {
+    const message = data && data.error ? data.error : `Request failed (${res.status})`;
+    throw new Error(message);
+  }
+
+  const origin = {
+    zoneId: data?.zone_id ?? null,
+    zoneName: data?.zone_name || data?.canonical || null,
+    canonical: data?.canonical ?? null,
+    zip: data?.zip ?? null,
+    lat: Number(data?.lat),
+    lng: Number(data?.lng),
+    radius: data?.radius_miles != null ? Number(data.radius_miles) : null,
+    weight: data?.weight != null ? Number(data.weight) : null
+  };
+
+  if (!Number.isFinite(origin.lat) || !Number.isFinite(origin.lng)) {
+    throw new Error('Origin zone response missing coordinates.');
+  }
+
+  keywordOriginCache.set(cacheKey, origin);
+  return origin;
 }
 
 async function loadDaily(){
@@ -158,9 +218,12 @@ function buildBusinessDirectory(rows){
       const id = Number(r.business_id);
       if (!Number.isFinite(id) || id <= 0) return;
       if (!keywordTotals.has(id)) {
-          keywordTotals.set(id, new Map());
+          keywordTotals.set(id, { all: new Map(), byDay: new Map() });
       }
-      const totalsMap = keywordTotals.get(id);
+      const totals = keywordTotals.get(id);
+      const totalsMap = totals.all;
+      const dayMapKey = r.day;
+      const dayMap = totals.byDay.get(dayMapKey) || new Map();
       const targetMap = last7Days.has(r.day) ? byBizLast7 : (prev7Days.has(r.day) ? byBizPrev7 : null);
       if (!targetMap) return;
       if (!targetMap.has(id)) {
@@ -177,8 +240,11 @@ function buildBusinessDirectory(rows){
       keywordSource.forEach(k => {
           const key = String(k.keyword || '').trim() || '(none)';
           b.kwCounts.set(key, (b.kwCounts.get(key) || 0) + Number(k.count || 0));
-          totalsMap.set(key, (totalsMap.get(key) || 0) + Number(k.count || 0));
+          const count = Number(k.count || 0);
+          totalsMap.set(key, (totalsMap.get(key) || 0) + count);
+          dayMap.set(key, (dayMap.get(key) || 0) + count);
       });
+      totals.byDay.set(dayMapKey, dayMap);
   });
 
   const allBizIds = new Set([...byBizLast7.keys(), ...byBizPrev7.keys()]);
@@ -189,11 +255,15 @@ function buildBusinessDirectory(rows){
       const prevArp = prev7?.arpN ? (prev7.arpSum / prev7.arpN) : null;
       const trend = arrowDelta(arp, prevArp, false);
       const kwCounts = last7?.kwCounts || new Map();
-      const totals = keywordTotals.get(id) || new Map();
-      const keywords = Array.from(totals.entries())
+      const totals = keywordTotals.get(id) || { all: new Map(), byDay: new Map() };
+      const keywordsAll = Array.from(totals.all.entries())
         .sort((a, b) => b[1] - a[1])
         .map(([keyword, count]) => ({ keyword, count }));
-      const topKeywords = keywords.slice(0, 5);
+      const todayKey = phoenixTodayKey();
+      const keywordsToday = Array.from((totals.byDay.get(todayKey) || new Map()).entries())
+        .sort((a, b) => b[1] - a[1])
+        .map(([keyword, count]) => ({ keyword, count }));
+      const topKeywords = keywordsAll.slice(0, 5);
 
       const bizData = {
           id: id,
@@ -203,7 +273,9 @@ function buildBusinessDirectory(rows){
           solv: last7?.solvN ? (last7.solvSum / last7.solvN) : null,
           lastDay: last7?.lastDay || prev7?.lastDay || '—',
           daysSeen: (last7?.arpN ?? 0) + (prev7?.arpN ?? 0),
-          keywords,
+          keywords: keywordsAll,
+          keywordsAll,
+          keywordsToday,
           topKeywords,
           trend: trend
       };
@@ -246,6 +318,7 @@ function openBizOverlay(businessId, businessName){
   bizReportsLastMessage = '';
   bizReportsLastIsError = false;
   renderBizDaily(businessId);
+  bizKeywordScope = 'today';
   renderBizKeywords(businessId, businessName);
   renderBizReports(businessId);
   const overlay = document.getElementById('bizOverlay');
@@ -353,11 +426,14 @@ function buildKeywordSuccessMap(businessId, keyword){
   return map;
 }
 
-function renderBizKeywords(businessId, businessName){
+function renderBizKeywords(businessId, businessName, options = {}){
   const container = document.getElementById('bizKeywords');
   if (!container) return;
 
-  const previousSelection = (currentBizKeywordSelection && currentBizKeywordSelection.businessId === businessId)
+  const preserveSelection = Boolean(options.preserveSelection);
+  const heading = document.getElementById('bizKeywordsHeading');
+  const controls = document.getElementById('bizKeywordScopeControls');
+  const previousSelection = preserveSelection && currentBizKeywordSelection && currentBizKeywordSelection.businessId === businessId
     ? currentBizKeywordSelection.keyword
     : null;
 
@@ -370,17 +446,44 @@ function renderBizKeywords(businessId, businessName){
   }
 
   const bizData = byBizCache.get(businessId);
-  const keywords = bizData?.keywords || [];
-
-  if (!keywords.length){
+  if (!bizData) {
     container.innerHTML = '<div class="muted">(no keyword data available)</div>';
+    if (heading) {
+      heading.textContent = 'Keywords';
+    }
     resetBizKeywordDetail();
+    updateBizReportsActionButton();
     return;
   }
 
-  const totalSuccesses = keywords.reduce((sum, entry) => sum + Number(entry.count || 0), 0) || 0;
+  const normalizedScope = bizKeywordScope === 'all' ? 'all' : 'today';
+  const keywordsAll = bizData.keywordsAll || bizData.keywords || [];
+  const keywordsToday = bizData.keywordsToday || [];
+  const activeKeywords = normalizedScope === 'today' ? keywordsToday : keywordsAll;
 
-  keywords.forEach(({ keyword, count }) => {
+  if (heading) {
+    heading.textContent = normalizedScope === 'today' ? 'Keywords (today)' : 'Keywords (all time)';
+  }
+  if (controls) {
+    controls.querySelectorAll('.keyword-scope-button').forEach(btn => {
+      const scope = btn.dataset.scope === 'all' ? 'all' : 'today';
+      btn.classList.toggle('active', scope === normalizedScope);
+    });
+  }
+
+  if (!activeKeywords.length) {
+    const message = normalizedScope === 'today'
+      ? 'No keywords recorded today. Select "All time" to view historical keywords.'
+      : '(no keyword data available)';
+    container.innerHTML = `<div class="muted">${message}</div>`;
+    resetBizKeywordDetail();
+    updateBizReportsActionButton();
+    return;
+  }
+
+  const totalSuccesses = activeKeywords.reduce((sum, entry) => sum + Number(entry.count || 0), 0) || 0;
+
+  activeKeywords.forEach(({ keyword, count }) => {
     const row = document.createElement('div');
     row.className = 'keyword-item';
     row.dataset.keyword = keyword;
@@ -401,13 +504,26 @@ function renderBizKeywords(businessId, businessName){
     container.appendChild(row);
   });
 
-  const defaultKeyword = previousSelection && keywords.some(k => k.keyword === previousSelection)
+  const defaultKeyword = previousSelection && activeKeywords.some(k => k.keyword === previousSelection)
     ? previousSelection
-    : keywords[0]?.keyword;
+    : activeKeywords[0]?.keyword;
   if (defaultKeyword) {
     showBizKeywordDetails(businessId, businessName, defaultKeyword);
+  } else {
+    resetBizKeywordDetail();
   }
   updateBizReportsActionButton();
+}
+
+function setBizKeywordScope(scope){
+  const normalized = scope === 'all' ? 'all' : 'today';
+  if (bizKeywordScope === normalized) {
+    return;
+  }
+  bizKeywordScope = normalized;
+  if (currentBizContext) {
+    renderBizKeywords(currentBizContext.id, currentBizContext.name, { preserveSelection: true });
+  }
 }
 
 function resetBizKeywordDetail(){
@@ -561,7 +677,7 @@ function updateBizReportsActionButton(){
   }
 }
 
-function handleNewGeoGridRunClick(businessId){
+async function handleNewGeoGridRunClick(businessId){
   if (!currentBizContext || currentBizContext.id !== businessId) return;
   const keyword = currentBizKeywordSelection && currentBizKeywordSelection.businessId === businessId
     ? currentBizKeywordSelection.keyword
@@ -571,11 +687,29 @@ function handleNewGeoGridRunClick(businessId){
     return;
   }
   const config = buildGeoRunConfig(businessId);
-  const message = `Start a ${config.label} grid (${config.radius} mi radius, ${config.points} points) for ${currentBizContext.name} — “${keyword}”?`;
+  let originInfo = null;
+  try {
+    originInfo = await resolveKeywordOriginZone(businessId, keyword, config.radius);
+  } catch (error) {
+    console.error('Failed to resolve origin zone for keyword:', error);
+    alert(error?.message || 'Failed to resolve origin zone for this keyword.');
+    return;
+  }
+
+  if (!originInfo) {
+    alert('No origin zone is configured for this keyword yet.');
+    return;
+  }
+
+  const effectiveRadius = Number.isFinite(originInfo.radius) ? originInfo.radius : config.radius;
+  const radiusLabel = describeRadiusMiles(effectiveRadius) || effectiveRadius;
+  const zoneLabel = originInfo.zoneName || 'origin zone';
+  const coordsLabel = `${originInfo.lat.toFixed(4)}, ${originInfo.lng.toFixed(4)}`;
+  const message = `Start a ${config.label} grid (${radiusLabel} mi radius, ${config.points} points) for ${currentBizContext.name} — “${keyword}”?\nOrigin: ${zoneLabel} (${coordsLabel})`;
   if (!window.confirm(message)) {
     return;
   }
-  startGeoGridRun(businessId, currentBizContext.name, keyword, config);
+  startGeoGridRun(businessId, currentBizContext.name, keyword, config, originInfo);
 }
 
 function withGoogleMaps(callback, retries = 24){
@@ -929,6 +1063,31 @@ function formatRankStat(value){
     .replace(/(\.\d)0$/, '$1');
 }
 
+function formatPercentStat(value){
+  const num = Number(value);
+  if (!Number.isFinite(num)) return null;
+  return `${num.toFixed(1).replace(/\.0$/, '')}%`;
+}
+
+function describeGeoRunScan(run){
+  if (!run || typeof run !== 'object') return '—';
+  const parts = [];
+  const rows = Number(run.grid_rows);
+  const cols = Number(run.grid_cols);
+  if (Number.isFinite(rows) && Number.isFinite(cols) && rows > 0 && cols > 0) {
+    parts.push(`${rows}×${cols} grid`);
+  }
+  const radius = describeRadiusMiles(run.radius_miles);
+  if (radius) {
+    parts.push(`${radius} mi radius`);
+  }
+  const status = typeof run.status === 'string' ? run.status.trim() : '';
+  if (status) {
+    parts.push(status);
+  }
+  return parts.length ? parts.join(' · ') : '—';
+}
+
 function buildGeoRunMeta(run){
   const parts = [];
   if (run.created_at) parts.push(formatDateTime(run.created_at));
@@ -1094,6 +1253,116 @@ async function renderBizReports(businessId){
       container.innerHTML = '<div class="muted">Failed to load reports.</div>';
     }
   }
+}
+
+/* =================== GEO RUNS OVERLAY =================== */
+function setGeoRunsStatus(message, isError = false){
+  const statusEl = document.getElementById('geoRunsStatus');
+  if (!statusEl) return;
+  statusEl.textContent = message || '';
+  statusEl.style.color = isError ? '#c0392b' : '';
+  statusEl.style.fontWeight = isError ? '600' : '';
+}
+
+function renderGeoRunsTable(runs){
+  const tbody = document.getElementById('geoRunsBody');
+  if (!tbody) return;
+
+  if (!Array.isArray(runs) || runs.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" class="muted">No geo grid runs yet.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = '';
+  runs.forEach(run => {
+    const tr = document.createElement('tr');
+
+    const created = document.createElement('td');
+    created.textContent = formatDateTime(run.created_at) || '—';
+    tr.appendChild(created);
+
+    const business = document.createElement('td');
+    business.textContent = run.business_name || '(unknown)';
+    tr.appendChild(business);
+
+    const keyword = document.createElement('td');
+    keyword.textContent = run.keyword ? `“${run.keyword}”` : '—';
+    tr.appendChild(keyword);
+
+    const scan = document.createElement('td');
+    scan.textContent = describeGeoRunScan(run);
+    tr.appendChild(scan);
+
+    const arp = document.createElement('td');
+    const arpText = formatRankStat(run.avg_rank);
+    arp.textContent = arpText ?? '—';
+    tr.appendChild(arp);
+
+    const solv = document.createElement('td');
+    const solvText = formatPercentStat(run.solv_top3);
+    solv.textContent = solvText ?? '—';
+    tr.appendChild(solv);
+
+    tbody.appendChild(tr);
+  });
+}
+
+async function loadGeoRuns(){
+  if (geoRunsLoading) return;
+
+  const tbody = document.getElementById('geoRunsBody');
+  if (tbody) {
+    tbody.innerHTML = '<tr><td colspan="6" class="muted">Loading…</td></tr>';
+  }
+  setGeoRunsStatus('Loading latest runs…');
+  geoRunsLoading = true;
+
+  try {
+    const res = await fetch(`${ENDPOINT_LIST_RUNS}?limit=200`);
+    const data = await res.json();
+    if (!res.ok || data?.error) {
+      throw new Error(data?.error || 'Request failed');
+    }
+    geoRunsCache = Array.isArray(data.runs) ? data.runs : [];
+    renderGeoRunsTable(geoRunsCache);
+    geoRunsLoaded = true;
+    const count = geoRunsCache.length;
+    setGeoRunsStatus(count ? `Loaded ${count} run${count === 1 ? '' : 's'}.` : 'No runs yet.');
+  } catch (error) {
+    console.error('Failed to load geo grid runs:', error);
+    if (!geoRunsLoaded) {
+      const body = document.getElementById('geoRunsBody');
+      if (body) {
+        body.innerHTML = '<tr><td colspan="6" class="muted">Failed to load runs.</td></tr>';
+      }
+    } else {
+      renderGeoRunsTable(geoRunsCache);
+    }
+    setGeoRunsStatus(error.message || 'Failed to load runs.', true);
+  } finally {
+    geoRunsLoading = false;
+  }
+}
+
+async function openGeoRunsOverlay(){
+  const overlay = document.getElementById('geoRunsOverlay');
+  if (!overlay) return;
+  overlay.style.display = 'flex';
+  if (!geoRunsLoaded) {
+    await loadGeoRuns();
+  }
+}
+
+function closeGeoRunsOverlay(){
+  const overlay = document.getElementById('geoRunsOverlay');
+  if (overlay) {
+    overlay.style.display = 'none';
+  }
+}
+
+function refreshGeoRuns(){
+  geoRunsLoaded = false;
+  return loadGeoRuns();
 }
 
 /* =================== LOGS OVERLAY =================== */
@@ -1504,7 +1773,28 @@ async function showKeywordTrend(businessId, businessName, keyword, options = {})
 /* =================== GEODATA VIEWER (Integrated) =================== */
 let geoMap = null; // Store the map instance globally
 
-async function initMap(sessions) {
+function buildGeoTooltip(keyword, lat, lng, rankText) {
+    const latNum = Number(lat);
+    const lngNum = Number(lng);
+    const latParam = Number.isFinite(latNum) ? latNum.toFixed(6) : String(lat ?? '');
+    const lngParam = Number.isFinite(lngNum) ? lngNum.toFixed(6) : String(lng ?? '');
+    const hasKeyword = typeof keyword === 'string' && keyword.trim().length > 0;
+    const encodedKeyword = hasKeyword ? encodeURIComponent(keyword) : '';
+    const mapsUrl = hasKeyword
+        ? `https://www.google.com/maps/search/${encodedKeyword}/@${latParam},${lngParam},13z`
+        : `https://www.google.com/maps/@${latParam},${lngParam},13z`;
+    const lines = [];
+    if (typeof rankText === 'string' && rankText.trim().length > 0) {
+        lines.push(`Rank: ${rankText}`);
+    }
+    if (hasKeyword) lines.push(`Keyword: ${keyword}`);
+    lines.push(`Lat: ${latParam}`);
+    lines.push(`Lng: ${lngParam}`);
+    lines.push(`Maps: ${mapsUrl}`);
+    return lines.join('\n');
+}
+
+async function initMap(sessions, keyword) {
     if (!sessions || sessions.length === 0) {
         document.getElementById('geoMap').innerHTML = '<p style="text-align: center; color: #eee; padding-top: 50%;">No geo data to plot.</p>';
         return;
@@ -1554,6 +1844,9 @@ async function initMap(sessions) {
           ? (sessionRank > 20 ? '20+' : (sessionRank > 0 ? String(sessionRank) : '—'))
           : '—';
 
+        const markerKeyword = keyword || session.keyword || '';
+        const tooltip = buildGeoTooltip(markerKeyword, position.lat, position.lng, rankLabel);
+
         const marker = new google.maps.Marker({
             position: position,
             map: geoMap,
@@ -1571,7 +1864,7 @@ async function initMap(sessions) {
                 fontWeight: 'bold',
                 fontSize: '12px'
             },
-            title: `Rank: ${rankLabel}`,
+            title: tooltip,
             zIndex: zIndex
         });
         geoMap.markers.push(marker);
@@ -1608,6 +1901,8 @@ function initGridMap(run, points) {
     }
     geoMap.markers = [];
     
+    const runKeyword = (run && typeof run.keyword === 'string') ? run.keyword : '';
+
     // Plot markers for each point in the report
     points.forEach(point => {
         const position = {
@@ -1626,7 +1921,11 @@ function initGridMap(run, points) {
             zIndex = 2;
         }
 
-        const rankPos = Number.isFinite(rankValue) && rankValue > 20 ? '20+' : String(rankValue);
+        const rankPos = Number.isFinite(rankValue)
+            ? (rankValue > 20 ? '20+' : (rankValue > 0 ? String(rankValue) : '—'))
+            : '—';
+
+        const tooltip = buildGeoTooltip(runKeyword, position.lat, position.lng, rankPos);
 
         const marker = new google.maps.Marker({
             position: position,
@@ -1645,7 +1944,7 @@ function initGridMap(run, points) {
                 fontWeight: 'bold',
                 fontSize: '12px'
             },
-            title: `Rank: ${rankPos}`,
+            title: tooltip,
             zIndex: zIndex
         });
         geoMap.markers.push(marker);
@@ -1669,11 +1968,11 @@ async function showGeoGrid(keyword, businessId) {
 
         // Load and initialize the map with the session data
         if (typeof google === 'object' && typeof google.maps === 'object') {
-            initMap(sessions);
+            initMap(sessions, keyword);
         } else {
             // If Google Maps API is not loaded yet, wait for it
             window.initMap = () => {
-                initMap(sessions);
+                initMap(sessions, keyword);
             };
         }
     } catch (error) {
@@ -1695,10 +1994,10 @@ async function displayGeoGridReport(runId) {
 
         document.getElementById('geoMap').innerHTML = ''; // Clear status message
         if (typeof google === 'object' && typeof google.maps === 'object') {
-            initMap(reportData.run, reportData.points);
+            initGridMap(reportData.run, reportData.points);
         } else {
             window.initMap = () => {
-                initMap(reportData.run, reportData.points);
+                initGridMap(reportData.run, reportData.points);
             };
         }
     } catch (error) {
@@ -1778,27 +2077,46 @@ async function displayGeoGridReport(runId) {
 }
 
 
-async function startGeoGridRun(businessId, businessName, keyword, configOverride) {
-  const config = configOverride || buildGeoRunConfig(businessId);
+async function startGeoGridRun(businessId, businessName, keyword, configOverride, originOverride) {
+  const baseConfig = configOverride || buildGeoRunConfig(businessId);
+  const origin = originOverride && Number.isFinite(originOverride?.lat) && Number.isFinite(originOverride?.lng)
+    ? originOverride
+    : null;
+  const effectiveRadius = Number.isFinite(origin?.radius) ? origin.radius : baseConfig.radius;
+  const config = { ...baseConfig, radius: effectiveRadius };
+  const radiusLabel = describeRadiusMiles(config.radius) || config.radius;
+  const originLabel = origin?.zoneName || origin?.canonical || null;
+  const originSummary = origin
+    ? ` from ${originLabel || 'origin zone'} (${origin.lat.toFixed(4)}, ${origin.lng.toFixed(4)})`
+    : '';
   const statusEl = document.getElementById('bizReportsStatus');
   if (statusEl) {
     statusEl.classList.remove('error');
-    statusEl.textContent = `Starting ${config.label} grid (${config.radius} mi) for “${keyword}”…`;
+    statusEl.textContent = `Starting ${config.label} grid (${radiusLabel} mi) for “${keyword}”${originSummary}…`;
   }
-  bizReportsLastMessage = `Starting ${config.label} grid (${config.radius} mi) for “${keyword}”…`;
+  bizReportsLastMessage = `Starting ${config.label} grid (${radiusLabel} mi) for “${keyword}”${originSummary}…`;
   bizReportsLastIsError = false;
 
   try {
+    const payload = {
+      business_id: businessId,
+      keyword,
+      grid_rows: config.rows,
+      grid_cols: config.cols,
+      radius_miles: config.radius
+    };
+    if (origin) {
+      payload.origin_lat = origin.lat;
+      payload.origin_lng = origin.lng;
+      if (originLabel) {
+        payload.origin_zone = originLabel;
+      }
+    }
+
     const createRes = await fetch(ENDPOINT_CREATE_RUN, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        business_id: businessId,
-        keyword,
-        grid_rows: config.rows,
-        grid_cols: config.cols,
-        radius_miles: config.radius
-      })
+      body: JSON.stringify(payload)
     });
     const createData = await createRes.json();
     if (!createRes.ok || createData.error) {
@@ -1806,7 +2124,7 @@ async function startGeoGridRun(businessId, businessName, keyword, configOverride
     }
 
     const runId = createData.run_id;
-    bizReportsLastMessage = `Run #${runId} created (${config.label}, ${config.radius} mi). Monitoring progress…`;
+    bizReportsLastMessage = `Run #${runId} created (${config.label}, ${radiusLabel} mi). Monitoring progress…`;
     if (statusEl) statusEl.textContent = bizReportsLastMessage;
 
     await pollGeoGridRun(businessId, businessName, keyword, runId, config);
@@ -1889,9 +2207,20 @@ async function pollGeoGridRun(businessId, businessName, keyword, runId, config){
 }
 
 // Legacy alias used by older overlay markup
-function createNewRun(businessId, businessName, keyword){
-  const config = buildGeoRunConfig(Number(businessId));
-  startGeoGridRun(businessId, businessName, keyword, config);
+async function createNewRun(businessId, businessName, keyword){
+  const numericBusinessId = Number(businessId);
+  const config = buildGeoRunConfig(numericBusinessId);
+  try {
+    const originInfo = await resolveKeywordOriginZone(numericBusinessId, keyword, config.radius);
+    if (!originInfo) {
+      alert('No origin zone is configured for this keyword yet.');
+      return;
+    }
+    await startGeoGridRun(numericBusinessId, businessName, keyword, config, originInfo);
+  } catch (error) {
+    console.error('Failed to create new geo grid run:', error);
+    alert(error?.message || 'Failed to resolve origin zone for this keyword.');
+  }
 }
 
 // Function to close the geo overlay
@@ -1936,6 +2265,11 @@ document.addEventListener('DOMContentLoaded', () => {
 function refreshAll(){
   loadDaily();
   if(document.getElementById('logsOverlay').style.display==='flex') loadLogs();
+  const geoRunsOverlay = document.getElementById('geoRunsOverlay');
+  geoRunsLoaded = false;
+  if (geoRunsOverlay && geoRunsOverlay.style.display === 'flex') {
+    loadGeoRuns();
+  }
 }
 
 // expose period controls for inline handlers

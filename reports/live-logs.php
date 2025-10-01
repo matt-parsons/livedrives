@@ -19,6 +19,7 @@ $scriptsversion = filemtime($template_path . '/scripts.js');
 
     <button onclick="showTodaySchedule()">📅 View Today’s Schedule</button>
     <button onclick="toggleBizSummary()">📊 Business Summary</button>
+    <button onclick="openGeoRunsOverlay()">🌐 Geo Runs</button>
 
     <button onclick="refreshAll()">🔄 Refresh</button>
   </div>
@@ -50,7 +51,11 @@ $scriptsversion = filemtime($template_path . '/scripts.js');
 
     <div class="biz-detail-grid stack-16">
       <section class="biz-pane biz-pane--keywords" aria-labelledby="bizKeywordsHeading">
-        <h4 id="bizKeywordsHeading" style="margin:6px 0;">Keywords (all time)</h4>
+        <h4 id="bizKeywordsHeading" style="margin:6px 0;">Keywords (today)</h4>
+        <div class="keyword-scope-controls" id="bizKeywordScopeControls" role="group" aria-label="Keyword scope">
+          <button type="button" class="keyword-scope-button" data-scope="today" onclick="setBizKeywordScope('today')">Today</button>
+          <button type="button" class="keyword-scope-button" data-scope="all" onclick="setBizKeywordScope('all')">All time</button>
+        </div>
         <div id="bizKeywords" class="stack-6"></div>
         <div class="muted" style="margin-top:6px;">
           Tip: ARP axis is reversed (lower is better).
@@ -256,13 +261,41 @@ $scriptsversion = filemtime($template_path . '/scripts.js');
   </div>
 </div>
 
+<div id="geoRunsOverlay" class="overlay" onclick="closeGeoRunsOverlay()">
+  <div class="box" onclick="event.stopPropagation();">
+    <span class="close" onclick="closeGeoRunsOverlay()">❌</span>
+    <h3 style="margin-top:0;">Geo Grid Runs</h3>
+    <div class="toolbar stack-10" style="margin:0 0 12px 0;">
+      <button type="button" onclick="refreshGeoRuns()">Refresh</button>
+      <span class="muted" id="geoRunsStatus"></span>
+    </div>
+    <div style="width:100%; overflow-x:auto;">
+      <table id="geoRunsTable">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Business</th>
+            <th>Keyword</th>
+            <th>Scan</th>
+            <th>ARP</th>
+            <th>SoLV</th>
+          </tr>
+        </thead>
+        <tbody id="geoRunsBody">
+          <tr><td colspan="6" class="muted">Loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
 <!-- Chart.js for charts -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
   /* =================== CONFIG / CONSTANTS =================== */
 const LOGS_BASE_URL = '<?php echo site_url("/live-drive-logs/screenshots/"); ?>/';
 // Request 14 days of data to compare last 7 vs previous 7
-const ENDPOINT_DAILY = '<?php echo site_url("/wp-json/livedrive/daily?days=14"); ?>';
+const ENDPOINT_DAILY = '<?php echo site_url("/wp-json/livedrive/daily?days=7"); ?>';
 const ENDPOINT_LOGS  = '<?php echo site_url("/wp-json/livedrive/logs"); ?>';
 const ENDPOINT_SCH   = '<?php echo site_url("/wp-json/livedrive/schedule"); ?>';
 const ENDPOINT_KTREND= '<?php echo site_url("/wp-json/livedrive/keyword-trend"); ?>';
@@ -270,6 +303,7 @@ const ENDPOINT_GEO= '<?php echo site_url("/wp-json/livedrive/geo-snapshots"); ?>
 const ENDPOINT_CREATE_RUN= '<?php echo site_url("/wp-json/livedrive/geo-grid/run"); ?>';
 const ENDPOINT_LIST_RUNS  = '<?php echo site_url("/wp-json/livedrive/geo-grid/runs"); ?>';
 const ENDPOINT_GET_REPORT= '<?php echo site_url("/wp-json/livedrive/geo-grid/report"); ?>';
+const ENDPOINT_ORIGIN_ZONE= '<?php echo site_url("/wp-json/livedrive/geo-grid/origin"); ?>';
 
 const WINDOW_DAYS = 7;
 </script>
