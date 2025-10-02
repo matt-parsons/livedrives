@@ -195,6 +195,10 @@ if (!isMainThread) {
         totalResults: totalResultsPayload,
         places: placesPayload,
         matched: matchedPayload,
+        screenshotPath: rankResult?.screenshotPath ?? null,
+        screenshotFile: rankResult?.screenshotFile ?? null,
+        searchUrl: rankResult?.requestedUrl ?? null,
+        landingUrl: rankResult?.currentUrl ?? rankResult?.requestedUrl ?? null,
         error: lastError ? (lastError.stack || lastError.message || String(lastError)) : undefined
       });
     }
@@ -202,6 +206,8 @@ if (!isMainThread) {
 
   
 } else { // Main Thread Code
+
+  let geoGridArtifactColumnsSupported = true;
 
   // --- Database Interaction Functions ---
   async function getActiveRuns(conn) {
@@ -382,7 +388,20 @@ if (!isMainThread) {
             };
 
             const handleWorkerMessage = (worker) => async (message) => {
-                const { status, pointId, rank, reason, error, places, matched, totalResults } = message;
+                const {
+                    status,
+                    pointId,
+                    rank,
+                    reason,
+                    error,
+                    places,
+                    matched,
+                    totalResults,
+                    screenshotPath,
+                    screenshotFile,
+                    searchUrl,
+                    landingUrl,
+                } = message;
                 let messageStatus = status;
                 let dbErrorMessage = null;
                 const pointInfo = pointMeta.get(pointId) || { lat: null, lng: null };
@@ -397,8 +416,45 @@ if (!isMainThread) {
                         try {
                             pointConn = await pool.getConnection();
                             const rankToSave = rank !== null ? rank : 999;
-                            const sql = 'UPDATE geo_grid_points SET rank_pos = ?, measured_at = NOW() WHERE id = ?';
-                            await pointConn.execute(sql, [rankToSave, pointId]);
+                            const normalizedScreenshotPath = typeof screenshotPath === 'string' && screenshotPath.trim().length
+                                ? screenshotPath.trim()
+                                : (typeof screenshotFile === 'string' && screenshotFile.trim().length
+                                    ? `logs/screenshots/${screenshotFile.trim()}`
+                                    : null);
+                            const normalizedSearchUrl = typeof searchUrl === 'string' && searchUrl.trim().length
+                                ? searchUrl.trim()
+                                : null;
+                            const normalizedLandingUrl = typeof landingUrl === 'string' && landingUrl.trim().length
+                                ? landingUrl.trim()
+                                : normalizedSearchUrl;
+                            const newSql = `
+                                UPDATE geo_grid_points
+                                SET rank_pos = ?, measured_at = NOW(), screenshot_path = ?, search_url = ?, landing_url = ?
+                                WHERE id = ?
+                            `;
+                            const legacySql = 'UPDATE geo_grid_points SET rank_pos = ?, measured_at = NOW() WHERE id = ?';
+
+                            try {
+                                if (geoGridArtifactColumnsSupported) {
+                                    await pointConn.execute(newSql, [
+                                        rankToSave,
+                                        normalizedScreenshotPath,
+                                        normalizedSearchUrl,
+                                        normalizedLandingUrl,
+                                        pointId,
+                                    ]);
+                                } else {
+                                    await pointConn.execute(legacySql, [rankToSave, pointId]);
+                                }
+                            } catch (sqlError) {
+                                if (geoGridArtifactColumnsSupported && sqlError && sqlError.code === 'ER_BAD_FIELD_ERROR') {
+                                    console.warn('[WORKER] geo_grid_points missing artifact columns; using legacy update.');
+                                    geoGridArtifactColumnsSupported = false;
+                                    await pointConn.execute(legacySql, [rankToSave, pointId]);
+                                } else {
+                                    throw sqlError;
+                                }
+                            }
                         } catch (dbError) {
                             dbErrorMessage = dbError.message;
                             console.error(`- DB Save failed for point ${pointId}:`, dbError.message);

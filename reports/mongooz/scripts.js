@@ -97,6 +97,7 @@ let currentBizReportSelection = null;
 let bizKwChartInstance = null;
 let bizGeoMap = null;
 let bizGeoMapMarkers = [];
+let bizGeoInfoWindow = null;
 let bizReportRequestId = 0;
 let bizMapContextId = 0;
 let bizReportsLastMessage = '';
@@ -733,6 +734,10 @@ function clearBizGeoMarkers(){
 
 function resetBizGeoMap(){
   clearBizGeoMarkers();
+  if (bizGeoInfoWindow) {
+    bizGeoInfoWindow.close();
+    bizGeoInfoWindow = null;
+  }
   if (bizGeoMap) {
     bizGeoMap = null;
   }
@@ -740,6 +745,67 @@ function resetBizGeoMap(){
   if (container) {
     container.innerHTML = '';
   }
+}
+
+function escapeHtml(value) {
+  if (value == null) return '';
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+function escapeHtmlAttr(value) {
+  if (value == null) return '';
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+function resolveMarkerArtifacts(data) {
+  const rawScreenshot = (() => {
+    if (!data) return null;
+    if (typeof data.screenshot_path === 'string' && data.screenshot_path.trim()) return data.screenshot_path.trim();
+    if (typeof data.screenshotPath === 'string' && data.screenshotPath.trim()) return data.screenshotPath.trim();
+    if (typeof data.screenshot_file === 'string' && data.screenshot_file.trim()) return data.screenshot_file.trim();
+    if (typeof data.screenshotFile === 'string' && data.screenshotFile.trim()) return data.screenshotFile.trim();
+    return null;
+  })();
+
+  const screenshotFilename = rawScreenshot
+    ? rawScreenshot.split(/[\\/]/).filter(Boolean).pop()
+    : null;
+  const screenshotHref = screenshotFilename
+    ? (typeof LOGS_BASE_URL === 'string' && LOGS_BASE_URL
+        ? `${LOGS_BASE_URL}${screenshotFilename}`
+        : screenshotFilename)
+    : null;
+
+  const searchUrl = (() => {
+    if (!data) return null;
+    const candidates = [data.search_url, data.searchUrl, data.requestedUrl];
+    for (const candidate of candidates) {
+      if (typeof candidate === 'string' && candidate.trim()) return candidate.trim();
+    }
+    return null;
+  })();
+
+  const landingUrl = (() => {
+    if (!data) return null;
+    const candidates = [data.landing_url, data.landingUrl, data.currentUrl];
+    for (const candidate of candidates) {
+      if (typeof candidate === 'string' && candidate.trim()) return candidate.trim();
+    }
+    return null;
+  })();
+
+  return {
+    screenshotHref,
+    queryHref: landingUrl || searchUrl || null,
+  };
 }
 
 function renderBizMapSessions(sessions, contextId, runId = null){
@@ -836,6 +902,33 @@ function renderBizMapSessions(sessions, contextId, runId = null){
         },
         title: titleLines.join('\n'),
         zIndex
+      });
+
+      marker.addListener('click', () => {
+        if (!bizGeoInfoWindow) {
+          bizGeoInfoWindow = new google.maps.InfoWindow();
+        }
+        const { screenshotHref, queryHref } = resolveMarkerArtifacts(session);
+        const coordLabel = `${position.lat.toFixed(5)}, ${position.lng.toFixed(5)}`;
+        const safeRank = escapeHtml(rankLabel);
+        const safeCoord = escapeHtml(coordLabel);
+        const queryHrefAttr = queryHref ? escapeHtmlAttr(queryHref) : null;
+        const screenshotHrefAttr = screenshotHref ? escapeHtmlAttr(screenshotHref) : null;
+        const parts = [
+          `<div><strong>Rank:</strong> ${safeRank}</div>`,
+          `<div><strong>Lat/Lng:</strong> ${safeCoord}</div>`
+        ];
+        if (queryHref) {
+          parts.push(`<div><a href="${queryHrefAttr}" target="_blank" rel="noopener noreferrer">Open Search</a></div>`);
+        }
+        if (screenshotHref) {
+          parts.push(`<div><a href="${screenshotHrefAttr}" target="_blank" rel="noopener noreferrer">View Screenshot</a></div>`);
+        }
+        if (parts.length === 2) {
+          parts.push('<div>No artifacts captured for this point.</div>');
+        }
+        bizGeoInfoWindow.setContent(`<div class="geo-marker-info">${parts.join('')}</div>`);
+        bizGeoInfoWindow.open({ map: bizGeoMap, anchor: marker });
       });
       return marker;
     });
@@ -970,6 +1063,33 @@ function renderBizMapReport(run, points, contextId){
         },
         title: titleLines.join('\n'),
         zIndex
+      });
+
+      marker.addListener('click', () => {
+        if (!bizGeoInfoWindow) {
+          bizGeoInfoWindow = new google.maps.InfoWindow();
+        }
+        const { screenshotHref, queryHref } = resolveMarkerArtifacts(point);
+        const coordLabel = `${position.lat.toFixed(5)}, ${position.lng.toFixed(5)}`;
+        const safeRank = escapeHtml(rankLabel);
+        const safeCoord = escapeHtml(coordLabel);
+        const queryHrefAttr = queryHref ? escapeHtmlAttr(queryHref) : null;
+        const screenshotHrefAttr = screenshotHref ? escapeHtmlAttr(screenshotHref) : null;
+        const parts = [
+          `<div><strong>Rank:</strong> ${safeRank}</div>`,
+          `<div><strong>Lat/Lng:</strong> ${safeCoord}</div>`
+        ];
+        if (queryHref) {
+          parts.push(`<div><a href="${queryHrefAttr}" target="_blank" rel="noopener noreferrer">Open Search</a></div>`);
+        }
+        if (screenshotHref) {
+          parts.push(`<div><a href="${screenshotHrefAttr}" target="_blank" rel="noopener noreferrer">View Screenshot</a></div>`);
+        }
+        if (parts.length === 2) {
+          parts.push('<div>No artifacts captured for this point.</div>');
+        }
+        bizGeoInfoWindow.setContent(`<div class="geo-marker-info">${parts.join('')}</div>`);
+        bizGeoInfoWindow.open({ map: bizGeoMap, anchor: marker });
       });
       return marker;
     });

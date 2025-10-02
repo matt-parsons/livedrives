@@ -1194,7 +1194,7 @@ exec($command, $output, $return_var);
       if (!$run) return new WP_REST_Response(['error'=>'Run not found'], 404);
 
       $ps = $pdo->prepare("
-        SELECT row_idx, col_idx, lat, lng, rank_pos, place_id, measured_at
+        SELECT row_idx, col_idx, lat, lng, rank_pos, place_id, measured_at, screenshot_path, search_url, landing_url
         FROM geo_grid_points
         WHERE run_id = ?
         ORDER BY row_idx ASC, col_idx ASC
