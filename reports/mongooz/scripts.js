@@ -2098,7 +2098,7 @@ async function startGeoGridRun(businessId, businessName, keyword, configOverride
   const origin = originOverride && Number.isFinite(originOverride?.lat) && Number.isFinite(originOverride?.lng)
     ? originOverride
     : null;
-  const effectiveRadius = Number.isFinite(origin?.radius) ? origin.radius : baseConfig.radius;
+  const effectiveRadius = Number.isFinite(baseConfig.radius) ? baseConfig.radius : origin?.radius;
   const config = { ...baseConfig, radius: effectiveRadius };
   const radiusLabel = describeRadiusMiles(config.radius) || config.radius;
   const originLabel = origin?.zoneName || origin?.canonical || null;
