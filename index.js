@@ -6,7 +6,7 @@ const runDrive     = require('./lib/core/drive');
 const { pickOrigin, pickOriginWithAddress }  = require('./lib/business/originGenerator');
 const { DateTime } = require('luxon');
 const { getZone, isOpenNow, nextOpenAt } = require('./lib/business/businessHours');
-const { getProfileRank } = require('./lib/core/rankTrack');
+const { getPackRank } = require('./lib/core/rankTrack');
 
 const { startRun, finishRun, logResult } = require('./lib/db/logger');
 const { recordRankingSnapshot } = require('./lib/db/ranking_store');
@@ -132,61 +132,10 @@ function addToRetryQueue(config) {
       console.log('→ CTR Success. Start Your Engines.');
       console.log('');
 
-      try {
-        const acquisition = await getProfileRank({
-          runId,
-          pointId: 0,
-          keyword,
-          origin: { lat: origin.lat, lng: origin.lng },
-          config
-        });
-
-        if (acquisition?.rawHtml) {
-          const parseResult = parseRankFromString(acquisition.rawHtml, config.business_name);
-          serpRank = Number.isFinite(parseResult.rank) ? parseResult.rank : null;
-          serpReason = parseResult.reason || 'unknown';
-          serpPlaces = Array.isArray(parseResult.places) ? parseResult.places : [];
-          serpMatched = parseResult.matched || null;
-          note(`→ [SERP] rank@${origin.lat.toFixed(5)},${origin.lng.toFixed(5)}: ${serpRank ?? 'not_found'} / ${parseResult.totalResults ?? serpPlaces.length} (${serpReason})`);
-        } else {
-          serpReason = acquisition?.reason || 'no_html_captured';
-          note(`→ [SERP] acquisition succeeded without HTML (${serpReason})`);
-        }
-      } catch (err) {
-        serpReason = `acquisition_failed: ${err.message}`;
-        note(`→ [SERP] Acquisition failed: ${err.message}`);
-      }
-
-      if (serpPlaces.length) {
-        console.log(serpPlaces);
-        const matchedPlaceId = serpMatched?.raw_place_id || serpMatched?.place_id || null;
-        const matchedBySource = serpMatched?.place_id_source === 'place_id' ? 'place_id' : (serpMatched ? 'name_addr' : 'none');
-        const targetPlaceId = config.place_id || (matchedBySource === 'place_id' ? matchedPlaceId : null);
-        const matchedBy = config.place_id ? 'place_id' : matchedBySource;
-
-        await recordRankingSnapshot({
-          runId,
-          businessId: config.business_id,
-          keyword,
-          originLat: origin.lat,
-          originLng: origin.lng,
-          radiusMi: 0,
-          sessionId,
-          requestId: 'serp@' + Date.now(),
-          places: serpPlaces,
-          matchedPlaceId,
-          matchedPosition: Number.isFinite(serpRank) ? serpRank : null,
-          targetPlaceId,
-          matchedBy
-        });
-      }
-
       // driveResult = await runDrive({ config, origin, sessionId });
     }
 
 
-    ctrResult.rank = serpRank;
-    ctrResult.placesRank = serpRank;
     ctrResult.serpReason = serpReason;
     // console.log('rank', ctrResult.rank, ctrResult);
     console.log('');
