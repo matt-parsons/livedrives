@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { SESSION_COOKIE_NAME } from '@/lib/authServer';
 
 export const runtime = 'nodejs';
 
@@ -6,7 +7,7 @@ export async function POST() {
   const response = NextResponse.json({ status: 'ok' });
 
   response.cookies.set({
-    name: '__session',
+    name: SESSION_COOKIE_NAME,
     value: '',
     maxAge: 0,
     httpOnly: true,

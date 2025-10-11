@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { adminAuth } from '@/lib/firebaseAdmin';
-
-const SESSION_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+import { SESSION_COOKIE_NAME, SESSION_MAX_AGE_MS } from '@/lib/authServer';
 
 export const runtime = 'nodejs';
 
@@ -20,7 +19,7 @@ export async function POST(request) {
 
     const response = NextResponse.json({ status: 'ok' });
     response.cookies.set({
-      name: '__session',
+      name: SESSION_COOKIE_NAME,
       value: sessionCookie,
       maxAge: SESSION_MAX_AGE_MS / 1000,
       httpOnly: true,
