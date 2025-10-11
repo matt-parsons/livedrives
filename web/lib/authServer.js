@@ -2,7 +2,8 @@ import { cookies } from 'next/headers';
 import pool from '@lib/db.js';
 import { adminAuth } from '@/lib/firebaseAdmin';
 
-const SESSION_COOKIE_NAME = '__session';
+export const SESSION_COOKIE_NAME = '__session';
+export const SESSION_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 
 export class AuthError extends Error {
   constructor(statusCode = 401, message = 'Unauthorized') {
