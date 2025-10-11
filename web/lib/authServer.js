@@ -1,5 +1,5 @@
 import { cookies } from 'next/headers';
-import pool from '@/lib/db';
+import pool from '@lib/db.js';
 import { adminAuth } from '@/lib/firebaseAdmin';
 
 const SESSION_COOKIE_NAME = '__session';
@@ -12,7 +12,7 @@ export class AuthError extends Error {
   }
 }
 
-async function getSessionCookie(request) {
+export async function getSessionCookie(request) {
   if (request?.cookies) {
     const cookie = typeof request.cookies.get === 'function'
       ? request.cookies.get(SESSION_COOKIE_NAME)
@@ -24,27 +24,30 @@ async function getSessionCookie(request) {
   return cookies().get(SESSION_COOKIE_NAME)?.value ?? null;
 }
 
-export async function requireAuth(request) {
+export async function verifySession(request) {
   const sessionCookie = await getSessionCookie(request);
 
   if (!sessionCookie) {
     throw new AuthError(401, 'Missing session cookie');
   }
 
-  let decoded;
   try {
-    decoded = await adminAuth.verifySessionCookie(sessionCookie, true);
+    return await adminAuth.verifySessionCookie(sessionCookie, true);
   } catch (error) {
     throw new AuthError(401, 'Invalid session cookie');
   }
+}
+
+export async function requireAuth(request) {
+  const decoded = await verifySession(request);
 
   const [rows] = await pool.query(
-    `SELECT u.id            AS userId,
-            u.firebase_uid  AS firebaseUid,
-            u.email         AS email,
-            u.name          AS name,
+    `SELECT u.id              AS userId,
+            u.firebase_uid    AS firebaseUid,
+            u.email           AS email,
+            u.name            AS name,
             m.organization_id AS organizationId,
-            m.role          AS role
+            m.role            AS role
        FROM users u
        JOIN user_org_members m ON m.user_id = u.id
       WHERE u.firebase_uid = ?
