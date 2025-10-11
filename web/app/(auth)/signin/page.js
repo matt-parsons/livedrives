@@ -13,26 +13,40 @@ const googleProvider = new GoogleAuthProvider();
 
 googleProvider.setCustomParameters({ prompt: 'select_account' });
 
+async function bootstrapSession() {
+  const res = await fetch('/api/auth/bootstrap', {
+    method: 'POST',
+    credentials: 'include'
+  });
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || 'Failed to bootstrap session');
+  }
+
+  return res.json();
+}
+
+async function exchangeSession(idToken) {
+  const res = await fetch('/api/auth/session', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ idToken })
+  });
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || 'Failed to establish session');
+  }
+}
+
 export default function SignInPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-
-  const exchangeSession = async (idToken) => {
-    const res = await fetch('/api/auth/session', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ idToken })
-    });
-
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      throw new Error(data.error || 'Failed to establish session');
-    }
-  };
 
   const handleEmailPassword = async (event) => {
     event.preventDefault();
@@ -43,6 +57,7 @@ export default function SignInPage() {
       const credential = await signInWithEmailAndPassword(auth, email, password);
       const idToken = await credential.user.getIdToken();
       await exchangeSession(idToken);
+      await bootstrapSession();
       await auth.signOut();
       router.push('/dashboard');
       router.refresh();
@@ -61,6 +76,7 @@ export default function SignInPage() {
       const credential = await signInWithPopup(auth, googleProvider);
       const idToken = await credential.user.getIdToken();
       await exchangeSession(idToken);
+      await bootstrapSession();
       await auth.signOut();
       router.push('/dashboard');
       router.refresh();

@@ -2,8 +2,9 @@
 const nextConfig = {
   reactStrictMode: true,
   experimental: {
-    typedRoutes: false
+    typedRoutes: false,
+    externalDir: true
   }
 };
 
-module.exports = nextConfig;
+export default nextConfig;
