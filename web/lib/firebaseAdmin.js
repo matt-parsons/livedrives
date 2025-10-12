@@ -1,43 +1,39 @@
+// web/lib/firebaseAdmin.js
 import { getApps, initializeApp, cert } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
+import { readFileSync } from 'fs';
+import { join, resolve, isAbsolute } from 'path';
 
 function parseServiceAccount() {
   const raw = process.env.FIREBASE_SERVICE_ACCOUNT;
-
-  if (!raw) {
-    throw new Error('Missing FIREBASE_SERVICE_ACCOUNT environment variable');
-  }
+  if (!raw) throw new Error('Missing FIREBASE_SERVICE_ACCOUNT environment variable');
 
   let parsed;
   try {
-    parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+    if (raw.endsWith('.json')) {
+      const p = isAbsolute(raw) ? raw : join(process.cwd(), raw);
+      const fileContent = readFileSync(p, 'utf8');
+      parsed = JSON.parse(fileContent);
+    } else {
+      parsed = JSON.parse(raw);
+    }
   } catch (error) {
-    throw new Error('Invalid FIREBASE_SERVICE_ACCOUNT JSON');
+    throw new Error(`Invalid FIREBASE_SERVICE_ACCOUNT: ${error.message}`);
   }
 
   if (!parsed.private_key || !parsed.client_email || !parsed.project_id) {
     throw new Error('Incomplete Firebase service account configuration');
   }
 
-  return {
-    projectId: parsed.project_id,
-    clientEmail: parsed.client_email,
-    privateKey: parsed.private_key.replace(/\\n/g, '\n')
-  };
+  parsed.private_key = parsed.private_key.replace(/\\n/g, '\n');
+  return parsed;
 }
 
-if (!getApps().length) {
-  const credentials = parseServiceAccount();
+const app = getApps().length
+  ? getApps()[0]
+  : initializeApp({
+      credential: cert(parseServiceAccount()),
+      projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+    });
 
-  initializeApp({
-    credential: cert({
-      projectId: credentials.projectId,
-      clientEmail: credentials.clientEmail,
-      privateKey: credentials.privateKey
-    })
-  });
-}
-
-const adminAuth = getAuth();
-
-export { adminAuth };
+export const adminAuth = getAuth(app);
