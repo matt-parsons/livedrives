@@ -7,10 +7,13 @@ export async function GET(request) {
   try {
     const session = await requireAuth(request);
     const [rows] = await pool.query(
-      `SELECT id, name, organization_id AS organizationId
+      `SELECT id,
+              business_name AS businessName,
+              business_slug AS businessSlug,
+              organization_id AS organizationId
          FROM businesses
         WHERE organization_id = ?
-        ORDER BY name ASC`,
+        ORDER BY business_name ASC`,
       [session.organizationId]
     );
 
