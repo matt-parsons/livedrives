@@ -21,26 +21,47 @@ export default async function DashboardPage() {
   try {
     const session = await requireAuth();
     const businesses = await loadBusinesses(session.organizationId);
+    const userIdentity = session.email || session.firebaseUid;
 
     return (
-      <div className="dashboard">
-        <h1>Dashboard</h1>
+      <div className="page-shell">
+        <section className="page-header">
+          <h1 className="page-title">Command central</h1>
+          <p className="page-subtitle">
+            Welcome back, {userIdentity}. Keep every business, run, and role aligned from this unified
+            dashboard.
+          </p>
+        </section>
 
-        <section>
-          <h2>Businesses</h2>
+        <section className="section">
+          <div className="section-header">
+            <h2 className="section-title">Businesses</h2>
+            <p className="section-caption">
+              {businesses.length === 0 ? 'Create your first business to get started.' : 'Select a business to drill into live operations and run insights.'}
+            </p>
+          </div>
+
           {businesses.length === 0 ? (
-            <p>You do not have any businesses yet.</p>
+            <div className="empty-state">
+              <div>
+                <h3>No businesses yet</h3>
+                <p>Set up a business to unlock scheduling, driver assignments, and run orchestration.</p>
+              </div>
+            </div>
           ) : (
-            <ul>
+            <ul className="business-grid">
               {businesses.map((business) => {
                 const href = `/dashboard/${business.businessSlug ?? business.id}`;
 
                 return (
                   <li key={business.id}>
-                    <Link href={href}>
+                    <Link className="business-card" href={href}>
+                      <span className="badge">Managed business</span>
                       <strong>{business.businessName || 'Unnamed Business'}</strong>
-                      <div>Business ID: {business.id}</div>
-                      {business.businessSlug ? <div>Slug: {business.businessSlug}</div> : null}
+                      <div className="business-meta">
+                        <span>Business ID: {business.id}</span>
+                        {business.businessSlug ? <span>Slug: {business.businessSlug}</span> : null}
+                      </div>
                     </Link>
                   </li>
                 );
@@ -49,16 +70,30 @@ export default async function DashboardPage() {
           )}
         </section>
 
-        <section>
-          <h2>Account</h2>
-          <p>Signed in as <strong>{session.email || session.firebaseUid}</strong></p>
-          <p>
-            Organization ID: <strong>{session.organizationId}</strong>
-          </p>
-          <p>
-            Role: <strong>{session.role}</strong>
-          </p>
-          <pre>{JSON.stringify(session, null, 2)}</pre>
+        <section className="section">
+          <div className="section-header">
+            <h2 className="section-title">Account snapshot</h2>
+            <p className="section-caption">Secure context for your current session and permissions.</p>
+          </div>
+
+          <div className="surface-card surface-card--muted">
+            <div className="account-details">
+              <div className="detail-tile">
+                <strong>Signed in as</strong>
+                <span>{userIdentity}</span>
+              </div>
+              <div className="detail-tile">
+                <strong>Organization</strong>
+                <span>{session.organizationId}</span>
+              </div>
+              <div className="detail-tile">
+                <strong>Role</strong>
+                <span>{session.role}</span>
+              </div>
+            </div>
+
+            <pre className="code-block">{JSON.stringify(session, null, 2)}</pre>
+          </div>
         </section>
       </div>
     );

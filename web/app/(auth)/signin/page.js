@@ -88,43 +88,74 @@ export default function SignInPage() {
   };
 
   return (
-    <main>
-      <div className="card">
-        <h1>Sign in</h1>
-        <form onSubmit={handleEmailPassword}>
-          <label htmlFor="email">Email</label>
-          <input
-            id="email"
-            type="email"
-            autoComplete="email"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            required
-            disabled={loading}
-          />
+    <div className="page-shell">
+      <div className="auth-page">
+        <section className="auth-intro">
+          <h1>Operational control, beautifully streamlined.</h1>
+          <p>
+            Step into a refined workspace crafted for clarity and focus. Coordinate your businesses,
+            monitor runs in real time, and keep your teams aligned from a single command center.
+          </p>
+        </section>
 
-          <label htmlFor="password">Password</label>
-          <input
-            id="password"
-            type="password"
-            autoComplete="current-password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            required
-            disabled={loading}
-          />
+        <div className="auth-card">
+          <div>
+            <h2>Welcome back</h2>
+            <p className="auth-subheading">Sign in to orchestrate your Livedrives operations.</p>
+          </div>
 
-          <button type="submit" disabled={loading}>
-            {loading ? 'Signing in…' : 'Sign in'}
+          <form className="form-grid" onSubmit={handleEmailPassword}>
+            <div className="input-field">
+              <label className="input-label" htmlFor="email">
+                Work email
+              </label>
+              <input
+                id="email"
+                className="text-input"
+                type="email"
+                autoComplete="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                required
+                disabled={loading}
+              />
+            </div>
+
+            <div className="input-field">
+              <label className="input-label" htmlFor="password">
+                Password
+              </label>
+              <input
+                id="password"
+                className="text-input"
+                type="password"
+                autoComplete="current-password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                required
+                disabled={loading}
+              />
+            </div>
+
+            <button className="primary-button" type="submit" disabled={loading}>
+              {loading ? 'Signing you in…' : 'Sign in securely'}
+            </button>
+          </form>
+
+          <div className="form-separator">or</div>
+
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={handleGoogle}
+            disabled={loading}
+          >
+            {loading ? 'Preparing Google sign-in…' : 'Continue with Google'}
           </button>
-        </form>
 
-        <button type="button" className="secondary" onClick={handleGoogle} disabled={loading}>
-          {loading ? 'Please wait…' : 'Continue with Google'}
-        </button>
-
-        {error ? <div className="error">{error}</div> : null}
+          {error ? <div className="error-banner">{error}</div> : null}
+        </div>
       </div>
-    </main>
+    </div>
   );
 }

@@ -4,6 +4,12 @@ import { useEffect, useRef, useState } from 'react';
 
 let googleMapsLoaderPromise = null;
 
+const RANK_GRADIENT = ['#196600', '#59810a', '#969c15', '#cbb21d', '#ffc826', '#ef9e1e', '#dd7015', '#cc430d'];
+const RANK_ELEVATED = '#d9480f';
+const RANK_LONGTAIL = '#b91c1c';
+const RANK_MAX = '#7f1d1d';
+const RANK_UNKNOWN = '#4b5563';
+
 function loadGoogleMaps(apiKey) {
   if (typeof window === 'undefined') {
     return Promise.resolve(null);
@@ -39,6 +45,32 @@ function loadGoogleMaps(apiKey) {
   return googleMapsLoaderPromise;
 }
 
+function getMarkerColor(rankPosition) {
+  if (rankPosition === null || rankPosition === undefined) {
+    return RANK_UNKNOWN;
+  }
+
+  const rank = Number(rankPosition);
+
+  if (!Number.isFinite(rank)) {
+    return RANK_UNKNOWN;
+  }
+
+  if (rank >= 1 && rank <= 8) {
+    return RANK_GRADIENT[Math.max(0, Math.min(RANK_GRADIENT.length - 1, rank - 1))];
+  }
+
+  if (rank <= 12) {
+    return RANK_ELEVATED;
+  }
+
+  if (rank <= 20) {
+    return RANK_LONGTAIL;
+  }
+
+  return RANK_MAX;
+}
+
 function buildMarkerIcon(rankPosition) {
   const safeRank = rankPosition === null || rankPosition === undefined
     ? null
@@ -49,40 +81,25 @@ function buildMarkerIcon(rankPosition) {
     : safeRank > 20
       ? '20+'
       : String(safeRank);
-  let fill = '#6c757d';
-
-  if (safeRank !== null) {
-    if (safeRank <= 3) {
-      fill = '#2ba84a';
-    } else if (safeRank <= 10) {
-      fill = '#f1c40f';
-    } else {
-      fill = '#e67e22';
-    }
-  }
+  const fill = getMarkerColor(rankPosition);
 
   const svg = `<?xml version="1.0" encoding="UTF-8"?>
-<svg width="48" height="48" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
-      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="rgba(0,0,0,0.35)"/>
-    </filter>
-  </defs>
-  <circle cx="24" cy="24" r="18" fill="${fill}" filter="url(#shadow)" />
-  <text x="24" y="28" font-size="18" font-family="Arial, Helvetica, sans-serif" font-weight="600" fill="#ffffff" text-anchor="middle">${label}</text>
+<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="50" cy="50" r="40" fill="${fill}" stroke="#ffffff" stroke-width="2" />
+  <text x="50" y="57" font-size="24" font-family="Arial, Helvetica, sans-serif" font-weight="300" fill="#ffffff" text-anchor="middle">${label}</text>
 </svg>`;
 
   return {
     url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
-    scaledSize: new window.google.maps.Size(36, 36),
-    anchor: new window.google.maps.Point(18, 18)
+    scaledSize: new window.google.maps.Size(52, 52),
+    anchor: new window.google.maps.Point(26, 26)
   };
 }
 
 function fitBoundsToPoints(map, mapsApi, center, points) {
   if (!points.length) {
     map.setCenter(center);
-    map.setZoom(12);
+    map.setZoom(13);
     return;
   }
 
@@ -93,10 +110,10 @@ function fitBoundsToPoints(map, mapsApi, center, points) {
     bounds.extend({ lat: point.lat, lng: point.lng });
   });
 
-  map.fitBounds(bounds, 64);
+  map.fitBounds(bounds, 80);
 }
 
-export default function GeoGridMap({ apiKey, center, points, radiusMiles, spacingMiles, gridRows, gridCols }) {
+export default function GeoGridMap({ apiKey, center, points }) {
   const mapRef = useRef(null);
   const [loadError, setLoadError] = useState(null);
 
@@ -148,102 +165,38 @@ export default function GeoGridMap({ apiKey, center, points, radiusMiles, spacin
   return (
     <div className="geo-grid-map">
       <div ref={mapRef} className="geo-grid-map__canvas" aria-label="Geo grid map" />
-      <aside className="geo-grid-map__legend">
-        <h3>Legend</h3>
-        <ul>
-          <li><span className="legend-swatch legend-swatch--strong" /> Rank 1-3</li>
-          <li><span className="legend-swatch legend-swatch--medium" /> Rank 4-10</li>
-          <li><span className="legend-swatch legend-swatch--weak" /> Rank 11+</li>
-          <li><span className="legend-swatch legend-swatch--unknown" /> No rank</li>
-        </ul>
-        <div className="geo-grid-map__meta">
-          <p>Grid: {gridRows ?? '—'} x {gridCols ?? '—'}</p>
-          <p>Radius: {radiusMiles !== null && radiusMiles !== undefined ? `${Number(radiusMiles).toFixed(2)} mi` : '—'}</p>
-          <p>Spacing: {spacingMiles !== null && spacingMiles !== undefined ? `${Number(spacingMiles).toFixed(2)} mi` : '—'}</p>
-        </div>
-        {loadError ? <p className="geo-grid-map__error">{loadError}</p> : null}
-      </aside>
+      {loadError ? <p className="geo-grid-map__error">{loadError}</p> : null}
       <style jsx>{`
         .geo-grid-map {
-          display: grid;
-          gap: 1rem;
-          grid-template-columns: minmax(0, 1fr) 220px;
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
         }
 
         .geo-grid-map__canvas {
           width: 100%;
-          min-height: 420px;
-          border-radius: 8px;
-          border: 1px solid #d9d9d9;
+          min-height: clamp(360px, 60vw, 520px);
+          aspect-ratio: 1 / 1;
+          border-radius: var(--radius-md);
+          border: 1px solid rgba(99, 102, 241, 0.18);
           overflow: hidden;
-        }
-
-        .geo-grid-map__legend {
-          border: 1px solid #d9d9d9;
-          border-radius: 8px;
-          padding: 1rem;
-          background-color: #fafafa;
-        }
-
-        .geo-grid-map__legend ul {
-          list-style: none;
-          padding: 0;
-          margin: 0 0 1rem 0;
-        }
-
-        .geo-grid-map__legend li {
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-          font-size: 0.9rem;
-          margin-bottom: 0.4rem;
-        }
-
-        .legend-swatch {
-          display: inline-block;
-          width: 14px;
-          height: 14px;
-          border-radius: 7px;
-        }
-
-        .legend-swatch--strong {
-          background-color: #2ba84a;
-        }
-
-        .legend-swatch--medium {
-          background-color: #f1c40f;
-        }
-
-        .legend-swatch--weak {
-          background-color: #e67e22;
-        }
-
-        .legend-swatch--unknown {
-          background-color: #6c757d;
-        }
-
-        .geo-grid-map__meta {
-          font-size: 0.9rem;
-          color: #444;
-        }
-
-        .geo-grid-map__meta p {
-          margin: 0.3rem 0;
+          box-shadow: 0 28px 64px rgba(15, 23, 42, 0.38);
+          background: rgba(15, 23, 42, 0.4);
         }
 
         .geo-grid-map__error {
-          color: #d9534f;
-          font-size: 0.9rem;
-          margin-top: 0.5rem;
+          color: #fca5a5;
+          font-size: 0.85rem;
+          font-weight: 600;
+          background: rgba(15, 23, 42, 0.72);
+          border-radius: var(--radius-sm);
+          padding: 12px 16px;
+          border: 1px solid rgba(248, 113, 113, 0.32);
         }
 
-        @media (max-width: 900px) {
-          .geo-grid-map {
-            grid-template-columns: minmax(0, 1fr);
-          }
-
-          .geo-grid-map__legend {
-            order: -1;
+        @media (max-width: 1024px) {
+          .geo-grid-map__canvas {
+            min-height: clamp(320px, 70vw, 520px);
           }
         }
       `}</style>
