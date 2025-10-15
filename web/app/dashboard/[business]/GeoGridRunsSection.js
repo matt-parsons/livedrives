@@ -82,14 +82,8 @@ function TrendMetric({ label, dataset, invert = false, unit = '', digits = 2 }) 
   const latest = formatValue(dataset.latest, digits, unit);
 
   return (
-    <div className="trend-stat">
-      <div className="trend-stat__header">
-        <span className="trend-stat__label">{label}</span>
-        <span className={`trend-indicator ${indicator.className}`} title={indicator.description}>
-          <span aria-hidden="true">{indicator.icon}</span>
-          <span>{indicator.text}</span>
-        </span>
-      </div>
+    <div className="trend-stat trend-stat--compact">
+      <span className="trend-stat__label">{label}</span>
       <div className="trend-stat__values">
         <span>{first}</span>
         <span className="trend-stat__arrow" aria-hidden="true">
@@ -97,6 +91,10 @@ function TrendMetric({ label, dataset, invert = false, unit = '', digits = 2 }) 
         </span>
         <span>{latest}</span>
       </div>
+      <span className={`trend-indicator ${indicator.className}`} title={indicator.description}>
+        <span aria-hidden="true">{indicator.icon}</span>
+        <span>{indicator.text}</span>
+      </span>
     </div>
   );
 }
@@ -157,26 +155,49 @@ export default function GeoGridRunsSection({ caption, defaultView = 'trend', tre
             </div>
           </div>
         ) : (
-          <ul className="card-list" style={{ marginTop: '24px' }}>
-            {trendItems.map((item) => {
-              const avgLatest = formatValue(item.avg.latest, 2);
-              const solvLatest = formatValue(item.solv.latest, 1, '%');
-              const avgTrendIndicator = item.avgTrendIndicator ?? null;
-              const solvTrendIndicator = item.solvTrendIndicator ?? null;
+            <ul className="card-list" style={{ marginTop: '24px' }}>
+              {trendItems.map((item) => {
+                const avgLatest = formatValue(item.avg.latest, 2);
+                const solvLatest = formatValue(item.solv.latest, 1, '%');
+                const avgTrendIndicator = item.avgTrendIndicator ?? null;
+                const solvTrendIndicator = item.solvTrendIndicator ?? null;
 
-              return (
-                <li key={item.key}>
-                  <div className="list-card">
-                    <div className="list-card-header">
+                return (
+                  <li key={item.key}>
+                  <div className="list-card list-card--tight">
+                    <div className="list-card-header list-card-header--compact">
                       <div>
                         <h3 className="list-card-title">{item.keyword}</h3>
                         <p className="list-card-subtitle">
                           Runs tracked <strong>{item.runCount}</strong>
                         </p>
                       </div>
-                      <span className="status-pill" data-status={item.status.key}>
-                        {item.status.label}
-                      </span>
+                      <div className="list-card-header__metrics">
+                        <span className="metric-chip metric-chip--inline">
+                          <strong>{solvLatest}</strong> SoLV
+                          {solvTrendIndicator ? (
+                            <span
+                              className={`trend-indicator ${solvTrendIndicator.className}`}
+                              title={solvTrendIndicator.title}
+                            >
+                              <span aria-hidden="true">{solvTrendIndicator.icon}</span>
+                              <span>{solvTrendIndicator.text}</span>
+                            </span>
+                          ) : null}
+                        </span>
+                        <span className="metric-chip metric-chip--inline">
+                          <strong>{avgLatest}</strong> Avg position
+                          {avgTrendIndicator ? (
+                            <span
+                              className={`trend-indicator ${avgTrendIndicator.className}`}
+                              title={avgTrendIndicator.title}
+                            >
+                              <span aria-hidden="true">{avgTrendIndicator.icon}</span>
+                              <span>{avgTrendIndicator.text}</span>
+                            </span>
+                          ) : null}
+                        </span>
+                      </div>
                     </div>
 
                     <div className="trend-meta">
@@ -192,33 +213,6 @@ export default function GeoGridRunsSection({ caption, defaultView = 'trend', tre
                       </span>
                     </div>
 
-                    <div className="list-card-meta">
-                      <span className="metric-chip">
-                        <strong>{solvLatest}</strong> SoLV top 3
-                        {solvTrendIndicator ? (
-                          <span
-                            className={`trend-indicator ${solvTrendIndicator.className}`}
-                            title={solvTrendIndicator.title}
-                          >
-                            <span aria-hidden="true">{solvTrendIndicator.icon}</span>
-                            <span>{solvTrendIndicator.text}</span>
-                          </span>
-                        ) : null}
-                      </span>
-                      <span className="metric-chip">
-                        <strong>{avgLatest}</strong> Avg position
-                        {avgTrendIndicator ? (
-                          <span
-                            className={`trend-indicator ${avgTrendIndicator.className}`}
-                            title={avgTrendIndicator.title}
-                          >
-                            <span aria-hidden="true">{avgTrendIndicator.icon}</span>
-                            <span>{avgTrendIndicator.text}</span>
-                          </span>
-                        ) : null}
-                      </span>
-                    </div>
-
                     <div className="trend-metrics">
                       <TrendMetric label="Avg position" dataset={item.avg} invert digits={2} />
                       <TrendMetric label="SoLV (Top 3)" dataset={item.solv} unit="%" digits={1} />
@@ -229,53 +223,49 @@ export default function GeoGridRunsSection({ caption, defaultView = 'trend', tre
             })}
           </ul>
         )
-      ) : runItems.length === 0 ? (
-        <div className="empty-state" style={{ marginTop: '20px' }}>
-          <div>
-            <h3>No geo grid runs yet</h3>
-            <p>Deploy a run to start mapping rankings across your coverage area.</p>
-          </div>
-        </div>
-      ) : (
-        <ul className="card-list" style={{ marginTop: '24px' }}>
-          {runItems.map((run) => (
-            <li key={run.id}>
-              <Link className="list-card list-card--interactive" href={run.href}>
-                <div className="list-card-header">
+          ) : runItems.length === 0 ? (
+            <div className="empty-state" style={{ marginTop: '20px' }}>
+              <div>
+                <h3>No geo grid runs yet</h3>
+                <p>Deploy a run to start mapping rankings across your coverage area.</p>
+              </div>
+            </div>
+          ) : (
+            <ul className="card-list" style={{ marginTop: '24px' }}>
+              {runItems.map((run) => (
+                <li key={run.id}>
+              <Link className="list-card list-card--interactive list-card--tight" href={run.href}>
+                <div className="list-card-header list-card-header--compact">
                   <div>
                     <h3 className="list-card-title">{run.keyword}</h3>
                     <p className="list-card-subtitle">Run date {run.runDate}</p>
                   </div>
-                  <span className="status-pill" data-status={run.status.key}>
-                    {run.status.label}
-                  </span>
-                </div>
-
-                <div className="list-card-meta">
-                  <span className="metric-chip">
-                    <strong>{run.solvTop3}</strong> SoLV top 3
-                    {run.solvTrendIndicator ? (
-                      <span
-                        className={`trend-indicator ${run.solvTrendIndicator.className}`}
-                        title={run.solvTrendIndicator.title}
-                      >
-                        <span aria-hidden="true">{run.solvTrendIndicator.icon}</span>
-                        <span>{run.solvTrendIndicator.text}</span>
-                      </span>
-                    ) : null}
-                  </span>
-                  <span className="metric-chip">
-                    <strong>{run.avgPosition}</strong> Avg position
-                    {run.avgTrendIndicator ? (
-                      <span
-                        className={`trend-indicator ${run.avgTrendIndicator.className}`}
-                        title={run.avgTrendIndicator.title}
-                      >
-                        <span aria-hidden="true">{run.avgTrendIndicator.icon}</span>
-                        <span>{run.avgTrendIndicator.text}</span>
-                      </span>
-                    ) : null}
-                  </span>
+                  <div className="list-card-header__metrics">
+                    <span className="metric-chip metric-chip--inline">
+                      <strong>{run.solvTop3}</strong> SoLV
+                      {run.solvTrendIndicator ? (
+                        <span
+                          className={`trend-indicator ${run.solvTrendIndicator.className}`}
+                          title={run.solvTrendIndicator.title}
+                        >
+                          <span aria-hidden="true">{run.solvTrendIndicator.icon}</span>
+                          <span>{run.solvTrendIndicator.text}</span>
+                        </span>
+                      ) : null}
+                    </span>
+                    <span className="metric-chip metric-chip--inline">
+                      <strong>{run.avgPosition}</strong> Avg position
+                      {run.avgTrendIndicator ? (
+                        <span
+                          className={`trend-indicator ${run.avgTrendIndicator.className}`}
+                          title={run.avgTrendIndicator.title}
+                        >
+                          <span aria-hidden="true">{run.avgTrendIndicator.icon}</span>
+                          <span>{run.avgTrendIndicator.text}</span>
+                        </span>
+                      ) : null}
+                    </span>
+                  </div>
                 </div>
 
                 {run.gridDetails.length ? (

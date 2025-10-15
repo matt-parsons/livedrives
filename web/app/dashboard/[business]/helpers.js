@@ -1,4 +1,7 @@
 import pool from '@lib/db.js';
+import { formatDate, formatDecimal, toTimestamp } from './runs/formatters.js';
+
+export { formatDate, formatDecimal, toTimestamp };
 
 export const BUSINESS_FIELDS = `
   id,
@@ -55,39 +58,6 @@ export function isNumericIdentifier(value) {
   return typeof value === 'string' && /^[0-9]+$/.test(value);
 }
 
-export function formatDate(value) {
-  if (!value) {
-    return null;
-  }
-
-  const date = value instanceof Date ? value : new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return String(value);
-  }
-
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  const year = date.getFullYear();
-  const hours = String(date.getHours()).padStart(2, '0');
-  const minutes = String(date.getMinutes()).padStart(2, '0');
-
-  return `${month}-${day}-${year} ${hours}:${minutes}`;
-}
-
-export function formatDecimal(value, digits = 2) {
-  if (value === null || value === undefined) {
-    return null;
-  }
-
-  const number = Number(value);
-
-  if (Number.isNaN(number)) {
-    return null;
-  }
-
-  return number.toFixed(digits);
-}
-
 export function formatTrend(first, latest, digits = 2, unitSuffix = '') {
   const firstStr = first === null || first === undefined
     ? '—'
@@ -105,21 +75,6 @@ export function formatTrend(first, latest, digits = 2, unitSuffix = '') {
   const sign = diff > 0 ? '+' : diff < 0 ? '-' : '';
 
   return `${firstStr} -> ${latestStr} (delta ${sign}${diffMagnitude}${unitSuffix})`;
-}
-
-export function toTimestamp(value) {
-  if (!value) {
-    return 0;
-  }
-
-  if (value instanceof Date) {
-    return value.getTime();
-  }
-
-  const date = new Date(value);
-  const time = date.getTime();
-
-  return Number.isNaN(time) ? 0 : time;
 }
 
 export async function loadBusiness(organizationId, identifier) {
@@ -168,6 +123,41 @@ export async function loadGeoGridRunSummaries(businessId) {
       ORDER BY r.created_at DESC, r.id DESC`,
     [businessId]
   );
+
+  return rows;
+}
+
+export async function loadGeoGridRunsForKeyword(businessId, keyword) {
+  const keywordIsNull = keyword === null || keyword === undefined;
+  const sql = keywordIsNull
+    ? `SELECT r.id,
+              r.keyword,
+              r.status,
+              r.created_at   AS createdAt,
+              r.finished_at  AS finishedAt,
+              MAX(gp.measured_at) AS lastMeasuredAt
+         FROM geo_grid_runs r
+         LEFT JOIN geo_grid_points gp ON gp.run_id = r.id
+        WHERE r.business_id = ?
+          AND r.keyword IS NULL
+        GROUP BY r.id
+        ORDER BY r.created_at DESC, r.id DESC`
+    : `SELECT r.id,
+              r.keyword,
+              r.status,
+              r.created_at   AS createdAt,
+              r.finished_at  AS finishedAt,
+              MAX(gp.measured_at) AS lastMeasuredAt
+         FROM geo_grid_runs r
+         LEFT JOIN geo_grid_points gp ON gp.run_id = r.id
+        WHERE r.business_id = ?
+          AND r.keyword = ?
+        GROUP BY r.id
+        ORDER BY r.created_at DESC, r.id DESC`;
+
+  const params = keywordIsNull ? [businessId] : [businessId, keyword];
+
+  const [rows] = await pool.query(sql, params);
 
   return rows;
 }
