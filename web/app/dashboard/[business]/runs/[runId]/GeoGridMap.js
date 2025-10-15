@@ -180,7 +180,6 @@ export default function GeoGridMap({ apiKey, center, points }) {
           border-radius: var(--radius-md);
           border: 1px solid rgba(40, 40, 40, 0.08);
           overflow: hidden;
-          box-shadow: 0 28px 54px rgba(40, 40, 40, 0.16);
           background: rgba(255, 255, 255, 0.9);
         }
 

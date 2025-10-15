@@ -5,7 +5,8 @@ import {
   formatDate,
   formatDecimal,
   loadBusiness,
-  loadGeoGridRunWithPoints
+  loadGeoGridRunWithPoints,
+  toTimestamp
 } from '../../helpers';
 import GeoGridMap from './GeoGridMap';
 
@@ -63,6 +64,37 @@ function buildCoordinatePair(lat, lng, digits = 5) {
 
 function resolveMapsApiKey() {
   return process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? process.env.GOOGLE_API_KEY ?? null;
+}
+
+function formatDuration(ms) {
+  if (!Number.isFinite(ms) || ms <= 0) {
+    return null;
+  }
+
+  if (ms < 1000) {
+    return '<1s';
+  }
+
+  const totalSeconds = Math.round(ms / 1000);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+
+  const parts = [];
+
+  if (hours) {
+    parts.push(`${hours}h`);
+  }
+
+  if (minutes) {
+    parts.push(`${minutes}m`);
+  }
+
+  if (!hours && seconds) {
+    parts.push(`${seconds}s`);
+  }
+
+  return parts.length ? parts.join(' ') : '<1s';
 }
 
 function buildMapPoints(points) {
@@ -215,18 +247,20 @@ export default async function GeoGridRunPage({ params }) {
     runSummary.spacingMiles !== null && runSummary.spacingMiles !== undefined
       ? `${formatDecimal(runSummary.spacingMiles, 2) ?? runSummary.spacingMiles} mi`
       : '—';
-  const firstPoint = runSummary.createdAt ?? '—';
-  const latestPoint = runSummary.lastMeasuredAt ?? runSummary.finishedAt ?? '—';
-  const runHighlights = [
-    { label: 'Keyword', value: runSummary.keyword || 'Unspecified keyword' },
-    { label: 'Status', value: runStatus.label, status: runStatus.key },
-    { label: 'Run date', value: runSummary.runDate ?? '—' }
-  ];
   const originLatRaw = runSummary.originLat === null || runSummary.originLat === undefined ? null : Number(runSummary.originLat);
   const originLngRaw = runSummary.originLng === null || runSummary.originLng === undefined ? null : Number(runSummary.originLng);
   const originLink = originLatRaw !== null && originLngRaw !== null
     ? `https://www.google.com/maps?q=${originLatRaw},${originLngRaw}`
     : null;
+  const firstTimestamp = toTimestamp(run.createdAt);
+  const latestSource = run.lastMeasuredAt ?? run.finishedAt ?? null;
+  const latestTimestamp = latestSource ? toTimestamp(latestSource) : 0;
+  const runDurationMs =
+    firstTimestamp > 0 && latestTimestamp > 0 && latestTimestamp >= firstTimestamp
+      ? latestTimestamp - firstTimestamp
+      : null;
+  const runDurationLabel = runDurationMs === null ? null : formatDuration(runDurationMs);
+  const rankedSummary = `${runSummary.rankedPoints} / ${totalPoints}`;
 
   return (
     <div className="page-shell">
@@ -236,80 +270,61 @@ export default async function GeoGridRunPage({ params }) {
         </Link>
       </nav>
 
-      <section className="page-header">
-        <h1 className="page-title">Geo grid run #{runSummary.runId}</h1>
-        <p className="page-subtitle">
-          Coverage snapshot for {businessName}. Inspect ranking performance, point density, and timing details in
-          one place.
-        </p>
-      </section>
-
       <section className="section">
-        <div className="surface-card surface-card--muted">
-          <div className="account-details account-details--compact">
-            {runHighlights.map((tile) => (
-              <div className="detail-tile detail-tile--contrast" key={tile.label}>
-                <strong>{tile.label}</strong>
-                {tile.status ? (
-                  <span className="status-pill" data-status={tile.status}>
-                    {tile.value}
-                  </span>
-                ) : (
-                  <span>{tile.value}</span>
-                )}
+        <div className="surface-card surface-card--muted run-summary">
+          <div className="run-summary-col">
+            <div className="run-summary__header">
+              <div className="run-summary__keyword">
+                <span className="run-summary__label">Keyword</span>
+                <span className="run-summary__value">"{runSummary.keyword || 'Unspecified keyword'}"</span>
               </div>
-            ))}
-          </div>
+            </div>
 
-          <div className="stat-grid">
-            <div className="stat-card">
-              <strong>Performance</strong>
-              <div className="stat-highlight stat-highlight--positive">
-                <span className="stat-highlight__label">SoLV (Top 3)</span>
-                <span className="stat-highlight__value">{solvTop3}</span>
-              </div>
-              <div className="stat-highlight stat-highlight--inverse">
-                <span className="stat-highlight__label">Avg position</span>
-                <span className="stat-highlight__value">{avgPosition}</span>
-              </div>
-              <small>
-                Ranked points {runSummary.rankedPoints} / {totalPoints}
-              </small>
+            <div className="run-summary__metrics">
+              <span className="metric-highlight metric-highlight--solv">
+                <span className="metric-highlight__label">SoLV (Top 3)</span>
+                <span className="metric-highlight__value">{solvTop3}</span>
+              </span>
+              <span className="metric-highlight">
+                <span className="metric-highlight__label">ARP</span>
+                <span className="metric-highlight__value">{avgPosition}</span>
+              </span>
             </div>
-            <div className="stat-card">
-              <strong>Grid layout</strong>
-              <span>{gridSizeLabel}</span>
-              <small>Radius {radiusLabel}</small>
-              <small>Spacing {spacingLabel}</small>
-            </div>
-            <div className="stat-card">
-              <strong>Timeline</strong>
-              <span>{runSummary.runDate ?? '—'}</span>
-              <small>First point {firstPoint}</small>
-              <small>Latest point {latestPoint}</small>
-            </div>
-            <div className="stat-card">
-              <strong>Origin</strong>
-              <span>{originCoordinates ?? '—'}</span>
-              {originLink ? (
-                <a className="inline-link" href={originLink} target="_blank" rel="noopener noreferrer">
-                  Open in Google Maps ↗
-                </a>
-              ) : null}
-              <small>Keyword focus {runSummary.keyword || 'Unspecified'}</small>
-              <small>Status {runStatus.label}</small>
-            </div>
+          </div>
+          <div className="run-summary-col">
+            <ul className="run-summary__facts">
+              <li>
+                <strong>Search performed:</strong>{' '}
+                <span className="run-summary__date">{runSummary.runDate ?? '—'}</span>
+              </li>
+              <li>
+                <strong>Grid:</strong> {gridSizeLabel} · Radius {radiusLabel} · Spacing {spacingLabel}
+              </li>
+              <li>
+                <strong>Duration:</strong>{' '}
+                {runDurationLabel ? `${runDurationLabel}` : '—'}
+              </li>
+              <li>
+                <strong>Origin:</strong> {originCoordinates ?? '—'}{' '}
+                {originLink ? (
+                  <a className="inline-link" href={originLink} target="_blank" rel="noopener noreferrer">
+                    View on Google Maps ↗
+                  </a>
+                ) : null}
+              </li>
+              <li>
+                <strong>Run:</strong> #{runSummary.runId}
+              </li>
+              <li>
+                <strong>Status:</strong> {runStatus.label}
+              </li>
+            </ul>
           </div>
         </div>
       </section>
 
-      <section className="section">
+      <section className="section align-center">
         <div className="surface-card surface-card--muted map-card">
-          <div className="section-header">
-            <h2 className="section-title">Coverage map</h2>
-            <p className="section-caption">Interactive point grid with real-time ranking markers and legend.</p>
-          </div>
-
           <GeoGridMap
             apiKey={mapsApiKey}
             center={center}

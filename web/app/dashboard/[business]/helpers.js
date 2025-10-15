@@ -60,11 +60,18 @@ export function formatDate(value) {
     return null;
   }
 
-  if (value instanceof Date) {
-    return value.toISOString();
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return String(value);
   }
 
-  return String(value);
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const year = date.getFullYear();
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+
+  return `${month}-${day}-${year} ${hours}:${minutes}`;
 }
 
 export function formatDecimal(value, digits = 2) {
@@ -241,7 +248,17 @@ export async function loadCtrRunsWithSnapshots(businessId, startDate, endDate) {
     [runIds, businessId]
   );
 
-  return { runs, snapshots };
+  if (!snapshots.length) {
+    return { runs: [], snapshots: [] };
+  }
+
+  const runIdsWithSnapshots = new Set(snapshots.map((snapshot) => snapshot.runId));
+  const filteredRuns = runs.filter((row) => runIdsWithSnapshots.has(row.runId));
+
+  return {
+    runs: filteredRuns,
+    snapshots: snapshots.filter((snapshot) => runIdsWithSnapshots.has(snapshot.runId))
+  };
 }
 
 function toSqlDateTime(value) {

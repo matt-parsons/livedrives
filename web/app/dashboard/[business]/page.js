@@ -123,6 +123,61 @@ export default async function BusinessDashboardPage({ params, searchParams }) {
       createdAt: formatDate(createdAtValue)
     };
   });
+  function buildRunTrendIndicator(delta, { invert = false, unit = '', digits = 1 } = {}) {
+    if (delta === null || delta === undefined) {
+      return null;
+    }
+
+    const value = Number(delta);
+
+    if (!Number.isFinite(value)) {
+      return null;
+    }
+
+    const magnitudeStr = formatDecimal(Math.abs(value), digits);
+
+    if (magnitudeStr === null) {
+      return null;
+    }
+
+    const magnitudeNumeric = Number(magnitudeStr);
+
+    if (Number.isNaN(magnitudeNumeric)) {
+      return null;
+    }
+
+    const isImproving = invert ? value < 0 : value > 0;
+    const isDeclining = invert ? value > 0 : value < 0;
+
+    if (magnitudeNumeric === 0) {
+      return {
+        className: 'trend-indicator--neutral',
+        icon: '→',
+        text: `0${unit}`,
+        title: 'No change'
+      };
+    }
+
+    let className = 'trend-indicator--neutral';
+    let icon = '→';
+    let title = 'No change';
+
+    if (isImproving) {
+      className = 'trend-indicator--positive';
+      icon = invert ? '▼' : '▲';
+      title = 'Improving';
+    } else if (isDeclining) {
+      className = 'trend-indicator--negative';
+      icon = invert ? '▲' : '▼';
+      title = 'Declining';
+    }
+
+    const prefix = value > 0 ? '+' : '-';
+    const text = `${prefix}${magnitudeStr}${unit}`;
+
+    return { className, icon, text, title };
+  }
+  const runTrendComparisons = new Map();
   const geoGridTrend = (() => {
     if (!geoGridRuns.length) {
       return [];
@@ -143,6 +198,40 @@ export default async function BusinessDashboardPage({ params, searchParams }) {
 
     const entries = Array.from(grouped.values()).map((entry) => {
       const runs = entry.runs.slice().sort((a, b) => toTimestamp(a.runDateValue) - toTimestamp(b.runDateValue));
+      let previous = null;
+
+      for (const run of runs) {
+        let avgDeltaToPrevious = null;
+        let solvDeltaToPrevious = null;
+
+        if (previous) {
+          if (
+            run.avgPositionValue !== null &&
+            run.avgPositionValue !== undefined &&
+            previous.avgPositionValue !== null &&
+            previous.avgPositionValue !== undefined
+          ) {
+            avgDeltaToPrevious = run.avgPositionValue - previous.avgPositionValue;
+          }
+
+          if (
+            run.solvTop3Value !== null &&
+            run.solvTop3Value !== undefined &&
+            previous.solvTop3Value !== null &&
+            previous.solvTop3Value !== undefined
+          ) {
+            solvDeltaToPrevious = run.solvTop3Value - previous.solvTop3Value;
+          }
+        }
+
+        runTrendComparisons.set(run.id, {
+          avgDelta: avgDeltaToPrevious,
+          solvDelta: solvDeltaToPrevious
+        });
+
+        previous = run;
+      }
+
       const first = runs[0];
       const latest = runs[runs.length - 1];
       const firstRunDateValue = first?.runDateValue ?? null;
@@ -151,6 +240,10 @@ export default async function BusinessDashboardPage({ params, searchParams }) {
       const latestAvg = latest?.avgPositionValue ?? null;
       const firstSolv = first?.solvTop3Value ?? null;
       const latestSolv = latest?.solvTop3Value ?? null;
+      const avgDelta = firstAvg !== null && latestAvg !== null ? latestAvg - firstAvg : null;
+      const solvDelta = firstSolv !== null && latestSolv !== null ? latestSolv - firstSolv : null;
+      const avgTrendIndicator = buildRunTrendIndicator(avgDelta, { invert: true, digits: 2 });
+      const solvTrendIndicator = buildRunTrendIndicator(solvDelta, { unit: '%', digits: 1 });
 
       return {
         key: entry.key,
@@ -164,11 +257,13 @@ export default async function BusinessDashboardPage({ params, searchParams }) {
         avgTrend: formatTrend(firstAvg, latestAvg, 2),
         avgFirst: firstAvg,
         avgLatest: latestAvg,
-        avgDelta: firstAvg !== null && latestAvg !== null ? latestAvg - firstAvg : null,
+        avgDelta,
         solvTrend: formatTrend(firstSolv, latestSolv, 1, '%'),
         solvFirst: firstSolv,
         solvLatest: latestSolv,
-        solvDelta: firstSolv !== null && latestSolv !== null ? latestSolv - firstSolv : null,
+        solvDelta,
+        avgTrendIndicator,
+        solvTrendIndicator,
         latestStatus: latest?.status ?? 'unknown'
       };
     });
@@ -205,6 +300,20 @@ export default async function BusinessDashboardPage({ params, searchParams }) {
     createdAt ? { label: 'Created', value: createdAt } : null,
     updatedAt ? { label: 'Updated', value: updatedAt } : null
   ].filter(Boolean);
+  const businessOverviewItems = [
+    ...highlightTiles.map((tile) => ({
+      key: tile.label,
+      label: tile.label,
+      value: tile.value,
+      status: tile.status ?? null
+    })),
+    ...infoBlocks.map((item) => ({
+      key: item.label,
+      label: item.label,
+      value: item.value,
+      status: null
+    }))
+  ];
   const geoSectionCaption = geoGridRuns.length === 0
     ? 'Launch your first geo grid run to start mapping local rankings.'
     : 'Switch between detailed runs and keyword trend arcs to track performance.';
@@ -271,6 +380,9 @@ export default async function BusinessDashboardPage({ params, searchParams }) {
         : null,
       `Ranked points: ${run.rankedPoints ?? 0} of ${run.totalPoints ?? 0}`
     ].filter(Boolean);
+    const trends = runTrendComparisons.get(run.id) ?? { avgDelta: null, solvDelta: null };
+    const solvTrendIndicator = buildRunTrendIndicator(trends.solvDelta, { unit: '%', digits: 1 });
+    const avgTrendIndicator = buildRunTrendIndicator(trends.avgDelta, { invert: true, digits: 2 });
 
     return {
       id: run.id,
@@ -279,7 +391,9 @@ export default async function BusinessDashboardPage({ params, searchParams }) {
       runDate,
       status,
       solvTop3,
+      solvTrendIndicator,
       avgPosition,
+      avgTrendIndicator,
       gridDetails,
       footerDetails,
       notes: run.notes || null
@@ -293,6 +407,8 @@ export default async function BusinessDashboardPage({ params, searchParams }) {
     latestRunDate: item.latestRunDate,
     latestRunHref: item.latestRunId ? `${baseHref}/runs/${item.latestRunId}` : null,
     status: resolveStatus(item.latestStatus),
+    avgTrendIndicator: item.avgTrendIndicator,
+    solvTrendIndicator: item.solvTrendIndicator,
     avg: {
       first: item.avgFirst,
       latest: item.avgLatest,
@@ -457,29 +573,53 @@ export default async function BusinessDashboardPage({ params, searchParams }) {
             </Link>
           </div>
 
-          <div className="account-details account-details--compact">
-            {highlightTiles.map((tile) => (
-              <div className="detail-tile detail-tile--contrast" key={tile.label}>
-                <strong>{tile.label}</strong>
-                {tile.status ? (
-                  <span className="status-pill" data-status={tile.status}>
-                    {tile.value}
-                  </span>
-                ) : (
-                  <span>{tile.value}</span>
-                )}
-              </div>
-            ))}
-          </div>
-
-          {infoBlocks.length ? (
-            <div className="info-grid">
-              {infoBlocks.map((item) => (
-                <div className="info-block" key={item.label}>
-                  <span className="info-label">{item.label}</span>
-                  <span className="info-value">{item.value}</span>
-                </div>
-              ))}
+          {businessOverviewItems.length ? (
+            <div style={{ marginTop: '0.5rem', overflowX: 'auto' }}>
+              <table
+                style={{
+                  width: '100%',
+                  minWidth: '640px',
+                  borderCollapse: 'separate',
+                  borderSpacing: '0 0.25rem',
+                  fontSize: '0.9rem',
+                  lineHeight: 1.4,
+                  textAlign: 'center',
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                <thead>
+                  <tr>
+                    {businessOverviewItems.map((item) => (
+                      <th
+                        key={`${item.key}-header`}
+                        style={{
+                          padding: '0.35rem 0.5rem',
+                          color: '#6b7280',
+                          fontWeight: 600
+                        }}
+                        scope="col"
+                      >
+                        {item.label}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    {businessOverviewItems.map((item) => (
+                      <td key={`${item.key}-value`} style={{ padding: '0.35rem 0.5rem', color: '#111827' }}>
+                        {item.status ? (
+                          <span className="status-pill" data-status={item.status}>
+                            {item.value}
+                          </span>
+                        ) : (
+                          item.value
+                        )}
+                      </td>
+                    ))}
+                  </tr>
+                </tbody>
+              </table>
             </div>
           ) : null}
         </div>
