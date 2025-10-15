@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { AuthError, requireAuth } from '@/lib/authServer';
 import GeoGridRunsSection from './GeoGridRunsSection';
+import OriginZonesManager from './OriginZonesManager';
 import {
   formatDate,
   formatDecimal,
@@ -69,6 +70,7 @@ export default async function BusinessDashboardPage({ params, searchParams }) {
   const viewMode = searchParams?.view === 'list' ? 'list' : 'trend';
   const baseHref = `/dashboard/${encodeURIComponent(identifier)}`;
   const ctrHref = `${baseHref}/ctr`;
+  const editHref = `${baseHref}/edit`;
 
   let session;
   try {
@@ -305,8 +307,13 @@ export default async function BusinessDashboardPage({ params, searchParams }) {
       <section className="section">
         <div className="surface-card surface-card--muted">
           <div className="section-header">
-            <h2 className="section-title">Business overview</h2>
-            <p className="section-caption">Current state and identifiers powering live operations.</p>
+            <div>
+              <h2 className="section-title">Business overview</h2>
+              <p className="section-caption">Current state and identifiers powering live operations.</p>
+            </div>
+            <Link className="cta-link" href={editHref}>
+              Edit business
+            </Link>
           </div>
 
           <div className="account-details account-details--compact">
@@ -338,59 +345,11 @@ export default async function BusinessDashboardPage({ params, searchParams }) {
       </section>
 
       <section className="section">
-        <div className="surface-card surface-card--muted">
-          <div className="section-header">
-            <h2 className="section-title">Origin zones</h2>
-            <p className="section-caption">{originSectionCaption}</p>
-          </div>
-
-          {originZones.length === 0 ? (
-            <div className="empty-state">
-              <div>
-                <h3>Origin strategy pending</h3>
-                <p>Set up origin zones to activate balanced pickup coverage and routing logic.</p>
-              </div>
-            </div>
-          ) : (
-            <ul className="card-list card-list--grid zone-grid">
-              {originZones.map((zone) => {
-                const zoneCreatedAt = formatDate(zone.createdAt);
-                const zoneRadius =
-                  zone.radiusMi !== null && zone.radiusMi !== undefined
-                    ? `${formatDecimal(zone.radiusMi, 1) ?? zone.radiusMi} mi radius`
-                    : null;
-                const zoneCoords = buildCoordinatePair(zone.lat, zone.lng);
-
-                return (
-                  <li key={zone.id}>
-                    <div className="list-card zone-card">
-                      <div className="list-card-header">
-                        <h3 className="list-card-title">{zone.name || 'Unnamed zone'}</h3>
-                        {zone.weight !== null && zone.weight !== undefined ? (
-                          <span className="metric-chip">
-                            <strong>{formatDecimal(zone.weight, 1) ?? zone.weight}</strong> weight
-                          </span>
-                        ) : null}
-                      </div>
-
-                      <div className="zone-card__meta">
-                        {zone.canonical ? <span>{zone.canonical}</span> : null}
-                        {zone.zip ? <span>ZIP {zone.zip}</span> : null}
-                        {zoneRadius ? <span>{zoneRadius}</span> : null}
-                      </div>
-
-                      <div className="zone-card__grid">
-                        {zoneCoords ? <div>Coordinates: {zoneCoords}</div> : null}
-                        {zone.keywords ? <div>Keywords: {zone.keywords}</div> : null}
-                        {zoneCreatedAt ? <div>Created: {zoneCreatedAt}</div> : null}
-                      </div>
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </div>
+        <OriginZonesManager
+          businessId={business.id}
+          initialZones={originZones}
+          caption={originSectionCaption}
+        />
       </section>
 
     </div>

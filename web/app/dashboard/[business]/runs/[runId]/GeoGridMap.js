@@ -4,10 +4,10 @@ import { useEffect, useRef, useState } from 'react';
 
 let googleMapsLoaderPromise = null;
 
-const RANK_GRADIENT = ['#196600', '#59810a', '#969c15', '#cbb21d', '#ffc826', '#ef9e1e', '#dd7015', '#cc430d'];
-const RANK_ELEVATED = '#d9480f';
-const RANK_LONGTAIL = '#b91c1c';
-const RANK_MAX = '#7f1d1d';
+const RANK_GRADIENT = ['#1a7431', '#2d8a3c', '#4c9f4c', '#6db460', '#94c978', '#c8dd96', '#f4e6a4', '#f8c77e'];
+const RANK_ELEVATED = '#f5a623';
+const RANK_LONGTAIL = '#f07b3f';
+const RANK_MAX = '#718f94';
 const RANK_UNKNOWN = '#4b5563';
 
 function loadGoogleMaps(apiKey) {
@@ -178,20 +178,20 @@ export default function GeoGridMap({ apiKey, center, points }) {
           min-height: clamp(360px, 60vw, 520px);
           aspect-ratio: 1 / 1;
           border-radius: var(--radius-md);
-          border: 1px solid rgba(99, 102, 241, 0.18);
+          border: 1px solid rgba(40, 40, 40, 0.08);
           overflow: hidden;
-          box-shadow: 0 28px 64px rgba(15, 23, 42, 0.38);
-          background: rgba(15, 23, 42, 0.4);
+          box-shadow: 0 28px 54px rgba(40, 40, 40, 0.16);
+          background: rgba(255, 255, 255, 0.9);
         }
 
         .geo-grid-map__error {
-          color: #fca5a5;
+          color: var(--color-primary);
           font-size: 0.85rem;
           font-weight: 600;
-          background: rgba(15, 23, 42, 0.72);
+          background: rgba(233, 61, 35, 0.12);
           border-radius: var(--radius-sm);
           padding: 12px 16px;
-          border: 1px solid rgba(248, 113, 113, 0.32);
+          border: 1px solid rgba(233, 61, 35, 0.26);
         }
 
         @media (max-width: 1024px) {

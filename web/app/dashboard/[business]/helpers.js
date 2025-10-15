@@ -4,6 +4,7 @@ export const BUSINESS_FIELDS = `
   id,
   business_name   AS businessName,
   business_slug   AS businessSlug,
+  brand_search    AS brandSearch,
   mid,
   destination_address AS destinationAddress,
   destination_zip AS destinationZip,
@@ -12,6 +13,7 @@ export const BUSINESS_FIELDS = `
   timezone,
   drives_per_day  AS drivesPerDay,
   is_active       AS isActive,
+  g_place_id      AS gPlaceId,
   created_at      AS createdAt,
   updated_at      AS updatedAt
 `;

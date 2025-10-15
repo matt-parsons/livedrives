@@ -157,29 +157,28 @@ function addToRetryQueue(config) {
         note(`→ [SERP] Acquisition failed: ${err.message}`);
       }
 
-      if (serpPlaces.length) {
-        console.log(serpPlaces);
-        const matchedPlaceId = serpMatched?.raw_place_id || serpMatched?.place_id || null;
-        const matchedBySource = serpMatched?.place_id_source === 'place_id' ? 'place_id' : (serpMatched ? 'name_addr' : 'none');
-        const targetPlaceId = config.place_id || (matchedBySource === 'place_id' ? matchedPlaceId : null);
-        const matchedBy = config.place_id ? 'place_id' : matchedBySource;
+      const matchedPlaceId = serpMatched?.raw_place_id || serpMatched?.place_id || null;
+      const matchedBySource = serpMatched?.place_id_source === 'place_id' ? 'place_id' : (serpMatched ? 'name_addr' : 'none');
+      const targetPlaceId = config.place_id || (matchedBySource === 'place_id' ? matchedPlaceId : null);
+      const matchedBy = config.place_id ? 'place_id' : matchedBySource;
 
-        await recordRankingSnapshot({
-          runId,
-          businessId: config.business_id,
-          keyword,
-          originLat: origin.lat,
-          originLng: origin.lng,
-          radiusMi: 0,
-          sessionId,
-          requestId: 'serp@' + Date.now(),
-          places: serpPlaces,
-          matchedPlaceId,
-          matchedPosition: Number.isFinite(serpRank) ? serpRank : null,
-          targetPlaceId,
-          matchedBy
-        });
-      }
+      await recordRankingSnapshot({
+        runId,
+        businessId: config.business_id,
+        keyword,
+        originZoneId: origin.zone_id || null,
+        originLat: origin.lat,
+        originLng: origin.lng,
+        radiusMi: origin.radius_miles || origin.radius || 0,
+        sessionId,
+        requestId: 'serp@' + Date.now(),
+        timestampUtc: new Date(),
+        places: serpPlaces,
+        matchedPlaceId,
+        matchedPosition: Number.isFinite(serpRank) ? serpRank : null,
+        targetPlaceId,
+        matchedBy
+      });
 
       // driveResult = await runDrive({ config, origin, sessionId });
     }

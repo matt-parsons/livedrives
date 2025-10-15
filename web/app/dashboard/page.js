@@ -35,10 +35,15 @@ export default async function DashboardPage() {
 
         <section className="section">
           <div className="section-header">
-            <h2 className="section-title">Businesses</h2>
-            <p className="section-caption">
-              {businesses.length === 0 ? 'Create your first business to get started.' : 'Select a business to drill into live operations and run insights.'}
-            </p>
+            <div>
+              <h2 className="section-title">Businesses</h2>
+              <p className="section-caption">
+                {businesses.length === 0 ? 'Create your first business to get started.' : 'Select a business to drill into live operations and run insights.'}
+              </p>
+            </div>
+            <Link className="cta-link" href="/dashboard/businesses/new">
+              + New business
+            </Link>
           </div>
 
           {businesses.length === 0 ? (
