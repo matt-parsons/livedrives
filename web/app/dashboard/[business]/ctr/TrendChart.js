@@ -115,16 +115,16 @@ export default function TrendChart({ data, title }) {
       <svg width={width} height={height} role="img" aria-label={`${title} trend`}>
         <line x1={padding} y1={baselineY} x2={width - padding} y2={baselineY} stroke="#d9d9d9" strokeWidth="1" />
         {avgLine.path ? (
-          <path d={avgLine.path} fill="none" stroke="#0070f3" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          <path d={avgLine.path} fill="none" stroke="#4c9f4c" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
         ) : null}
         {solvLine.path ? (
-          <path d={solvLine.path} fill="none" stroke="#2ba84a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          <path d={solvLine.path} fill="none" stroke="#f07b3f" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
         ) : null}
         {avgLine.circles.map((circle, index) => (
-          <circle key={`avg-${index}`} cx={circle.x} cy={circle.y} r={4} fill="#0070f3" />
+          <circle key={`avg-${index}`} cx={circle.x} cy={circle.y} r={4} fill="#1a7431" stroke="#ffffff" strokeWidth="1.5" />
         ))}
         {solvLine.circles.map((circle, index) => (
-          <circle key={`solv-${index}`} cx={circle.x} cy={circle.y} r={4} fill="#2ba84a" />
+          <circle key={`solv-${index}`} cx={circle.x} cy={circle.y} r={4} fill="#f5a623" stroke="#ffffff" strokeWidth="1.5" />
         ))}
         {data.map((item, index) => {
           const x = padding + xStep * index;
@@ -146,7 +146,7 @@ export default function TrendChart({ data, title }) {
         header {
           display: flex;
           justify-content: space-between;
-          align-items: baseline;
+          align-items: center;
           margin-bottom: 0.5rem;
         }
 
@@ -155,10 +155,15 @@ export default function TrendChart({ data, title }) {
           font-size: 1rem;
         }
 
+        svg {
+          width: 100%;
+        }
+
         .legend {
           display: flex;
           gap: 1rem;
           font-size: 0.85rem;
+          align-items: center;
         }
 
         .legend-item {
@@ -175,8 +180,8 @@ export default function TrendChart({ data, title }) {
           border-radius: 6px;
         }
 
-        .legend-item--avg::before { background-color: #0070f3; }
-        .legend-item--solv::before { background-color: #2ba84a; }
+        .legend-item--avg::before { background-color: #1a7431; }
+        .legend-item--solv::before { background-color: #f5a623; }
       `}</style>
     </div>
   );

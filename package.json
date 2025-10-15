@@ -7,7 +7,9 @@
     "lib": "lib"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "rank:test": "node scripts/test-get-profile-rank.js",
+    "rank:session": "node scripts/manual-rank-session.js"
   },
   "keywords": [],
   "author": "",

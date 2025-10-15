@@ -79,13 +79,20 @@ function dedupePoints(records) {
 
     const timestampSource = record.timestampUtc ?? record.createdAt ?? record.timestamp;
     const timestamp = timestampSource ? new Date(timestampSource).getTime() : 0;
+    const timestampIso = timestampSource ? new Date(timestampSource).toISOString() : null;
 
     const candidate = {
       lat: Number(latValue),
       lng: Number(lngValue),
       rankPosition: rank,
       rankLabel,
-      timestamp
+      timestamp,
+      timestampIso,
+      runId: record.runId ?? null,
+      keyword: record.keyword ?? null,
+      runDate: record.runDate ?? null,
+      startedAt: record.startedAt ?? null,
+      finishedAt: record.finishedAt ?? null
     };
 
     const current = map.get(key);
@@ -140,10 +147,10 @@ export default async function CtrDashboardPage({ params, searchParams }) {
   today.setUTCHours(0, 0, 0, 0);
 
   const windowStart = new Date(today);
-  windowStart.setUTCDate(windowStart.getUTCDate() - 6 - offset * 7);
+  windowStart.setUTCDate(windowStart.getUTCDate() - 29 - offset * 30);
 
   const windowEnd = new Date(today);
-  windowEnd.setUTCDate(windowEnd.getUTCDate() + 1 - offset * 7);
+  windowEnd.setUTCDate(windowEnd.getUTCDate() + 1 - offset * 30);
 
   const { runs, snapshots } = await loadCtrRunsWithSnapshots(
     business.id,
@@ -160,7 +167,7 @@ export default async function CtrDashboardPage({ params, searchParams }) {
   });
 
   const groups = new Map();
-  const windowDays = Array.from({ length: 7 }, (_, index) => {
+  const windowDays = Array.from({ length: 30 }, (_, index) => {
     const day = new Date(windowStart);
     day.setUTCDate(windowStart.getUTCDate() + index);
     return day;
@@ -168,7 +175,14 @@ export default async function CtrDashboardPage({ params, searchParams }) {
 
   runs.forEach((row) => {
     const keywordLabel = (row.keyword ?? '(no keyword)').trim() || '(no keyword)';
-    const runPointsRaw = snapshotByRun.get(row.runId) ?? [];
+    const runPointsRaw = (snapshotByRun.get(row.runId) ?? []).map((snap) => ({
+      ...snap,
+      runId: row.runId,
+      keyword: keywordLabel,
+      runDate: row.runDate ?? null,
+      startedAt: row.startedAt ?? null,
+      finishedAt: row.finishedAt ?? null
+    }));
 
     const stats = runPointsRaw.reduce((acc, snap) => {
       const rankValue = snap.matchedPosition === null || snap.matchedPosition === undefined
@@ -195,7 +209,7 @@ export default async function CtrDashboardPage({ params, searchParams }) {
     const points = dedupePoints(runPointsRaw);
     const runCenter = computeCenter(points);
     const runDateValue = row.runDate ? new Date(row.runDate) : null;
-    const runDateKey = row.runDate ? String(row.runDate) : null;
+    const runDateKey = runDateValue ? runDateValue.toISOString().slice(0, 10) : null;
 
     const entry = groups.get(keywordLabel) ?? {
       keyword: keywordLabel,
@@ -296,8 +310,8 @@ export default async function CtrDashboardPage({ params, searchParams }) {
         <div className={styles.headerRight}>
           <span className={styles.sessionCount}>{totalSessions} session{totalSessions === 1 ? '' : 's'} tracked</span>
           <div className={styles.navButtons}>
-            <Link href={prevHref}>Previous 7 days</Link>
-            {nextHref ? <Link href={nextHref}>Next 7 days</Link> : <span className={styles.navDisabled}>Next 7 days</span>}
+            <Link href={prevHref}>Previous 30 days</Link>
+            {nextHref ? <Link href={nextHref}>Next 30 days</Link> : <span className={styles.navDisabled}>Next 30 days</span>}
           </div>
         </div>
       </header>
@@ -319,7 +333,12 @@ export default async function CtrDashboardPage({ params, searchParams }) {
                   <p>No location data captured.</p>
                 </div>
               ) : (
-                <CtrMap apiKey={mapsApiKey} center={summary.center} points={summary.mapPoints} />
+                <CtrMap
+                  apiKey={mapsApiKey}
+                  center={summary.center}
+                  points={summary.mapPoints}
+                  businessName={business.businessName || business.brandSearch || 'Business'}
+                />
               )}
             </div>
 

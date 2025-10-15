@@ -228,16 +228,180 @@ export async function loadCtrRunsWithSnapshots(businessId, startDate, endDate) {
   const runIds = runs.map((row) => row.runId);
 
   const [snapshots] = await pool.query(
-    `SELECT run_id        AS runId,
-            origin_lat     AS originLat,
-            origin_lng     AS originLng,
-            matched_position AS matchedPosition,
-            created_at     AS createdAt
-       FROM ranking_snapshots
-      WHERE run_id IN (?)
-      ORDER BY run_id, created_at`,
-    [runIds]
+    `SELECT rq.run_id        AS runId,
+            rs.origin_lat     AS originLat,
+            rs.origin_lng     AS originLng,
+            rs.matched_position AS matchedPosition,
+            rs.created_at     AS createdAt
+       FROM ranking_snapshots rs
+       JOIN ranking_queries rq ON rq.id = rs.run_id
+      WHERE rq.run_id IN (?)
+        AND rq.business_id = ?
+      ORDER BY rq.run_id, rs.created_at`,
+    [runIds, businessId]
   );
 
   return { runs, snapshots };
+}
+
+function toSqlDateTime(value) {
+  return value.toISOString().slice(0, 19).replace('T', ' ');
+}
+
+export async function loadCtrKeywordOverview(businessId, days = 30) {
+  const end = new Date();
+  end.setUTCHours(0, 0, 0, 0);
+  end.setUTCDate(end.getUTCDate() + 1);
+
+  const start = new Date(end);
+  start.setUTCDate(start.getUTCDate() - Math.max(1, Number(days)));
+
+  const [rows] = await pool.query(
+    `SELECT
+        rq.id              AS queryId,
+        rq.keyword         AS keyword,
+        rq.matched_position AS matchedPosition,
+        rq.timestamp_utc   AS timestampUtc,
+        rs.results_json    AS resultsJson
+     FROM ranking_queries rq
+     JOIN ranking_snapshots rs ON rs.run_id = rq.id
+    WHERE rq.business_id = ?
+      AND rq.timestamp_utc >= ?
+      AND rq.timestamp_utc < ?
+    ORDER BY rq.timestamp_utc ASC`,
+    [businessId, toSqlDateTime(start), toSqlDateTime(end)]
+  );
+
+  if (!rows.length) {
+    return [];
+  }
+
+  const summaries = new Map();
+
+  for (const row of rows) {
+    const keywordRaw = row.keyword ?? '(no keyword)';
+    const keywordLabel = keywordRaw.trim() || '(no keyword)';
+    const key = keywordLabel.toLowerCase();
+    const timestamp = row.timestampUtc ? new Date(row.timestampUtc).getTime() : 0;
+
+    if (!summaries.has(key)) {
+      summaries.set(key, {
+        keyword: keywordLabel,
+        sessions: 0,
+        rankedSum: 0,
+        rankedCount: 0,
+        top3Sum: 0,
+        timeline: []
+      });
+    }
+
+    const entry = summaries.get(key);
+    entry.sessions += 1;
+
+    let rankedCount = 0;
+    let top3Count = 0;
+    let rankSum = 0;
+
+    if (row.resultsJson) {
+      try {
+        const places = JSON.parse(row.resultsJson);
+        if (Array.isArray(places)) {
+          for (const place of places) {
+            const position = Number(place?.position);
+            if (Number.isFinite(position) && position > 0 && position <= 20) {
+              rankedCount += 1;
+              rankSum += Math.min(position, 20);
+              if (position <= 3) {
+                top3Count += 1;
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.warn('[loadCtrKeywordOverview] Failed to parse results_json for query', row.queryId, error.message);
+      }
+    }
+
+    if (rankedCount === 0 && row.matchedPosition != null) {
+      const matched = Number(row.matchedPosition);
+      if (Number.isFinite(matched) && matched > 0) {
+        rankedCount = 1;
+        rankSum = Math.min(matched, 20);
+        top3Count = matched <= 3 ? 1 : 0;
+      }
+    }
+
+    let avgValue = null;
+    let solvValue = null;
+
+    if (rankedCount > 0) {
+      avgValue = rankSum / rankedCount;
+      solvValue = (top3Count * 100) / rankedCount;
+      entry.rankedSum += rankSum;
+      entry.rankedCount += rankedCount;
+      entry.top3Sum += top3Count;
+    }
+
+    entry.timeline.push({ timestamp, avg: avgValue, solv: solvValue });
+  }
+
+  const deltas = [];
+
+  summaries.forEach((entry) => {
+    entry.timeline.sort((a, b) => a.timestamp - b.timestamp);
+
+    const firstAvgSample = entry.timeline.find((sample) => sample.avg != null) || null;
+    const lastAvgSample = [...entry.timeline].reverse().find((sample) => sample.avg != null) || null;
+    const firstSolvSample = entry.timeline.find((sample) => sample.solv != null) || null;
+    const lastSolvSample = [...entry.timeline].reverse().find((sample) => sample.solv != null) || null;
+
+    let avgTrend = 'neutral';
+    let avgDelta = null;
+    if (firstAvgSample && lastAvgSample) {
+      avgDelta = lastAvgSample.avg - firstAvgSample.avg;
+      if (avgDelta < -0.1) {
+        avgTrend = 'positive';
+      } else if (avgDelta > 0.1) {
+        avgTrend = 'negative';
+      }
+    }
+
+    let solvTrend = 'neutral';
+    let solvDelta = null;
+    if (firstSolvSample && lastSolvSample) {
+      solvDelta = lastSolvSample.solv - firstSolvSample.solv;
+      if (solvDelta > 1) {
+        solvTrend = 'positive';
+      } else if (solvDelta < -1) {
+        solvTrend = 'negative';
+      }
+    }
+
+    const avgPosition = entry.rankedCount > 0
+      ? entry.rankedSum / entry.rankedCount
+      : null;
+    const solvTop3 = entry.rankedCount > 0
+      ? (entry.top3Sum * 100) / entry.rankedCount
+      : null;
+
+    deltas.push({
+      keyword: entry.keyword,
+      sessions: entry.sessions,
+      avgPosition,
+      avgTrend,
+      avgDelta,
+      solvTop3,
+      solvTrend,
+      solvDelta
+    });
+  });
+
+  deltas.sort((a, b) => {
+    if (b.sessions !== a.sessions) {
+      return b.sessions - a.sessions;
+    }
+    return a.keyword.localeCompare(b.keyword);
+  });
+
+  return deltas;
 }

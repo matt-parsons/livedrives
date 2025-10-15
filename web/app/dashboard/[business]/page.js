@@ -10,7 +10,8 @@ import {
   toTimestamp,
   loadBusiness,
   loadOriginZones,
-  loadGeoGridRunSummaries
+  loadGeoGridRunSummaries,
+  loadCtrKeywordOverview
 } from './helpers';
 
 function resolveStatus(status) {
@@ -90,6 +91,7 @@ export default async function BusinessDashboardPage({ params, searchParams }) {
   }
 
   const originZones = await loadOriginZones(business.id);
+  const ctrOverview = await loadCtrKeywordOverview(business.id, 30);
   const geoGridRunsRaw = await loadGeoGridRunSummaries(business.id);
   const geoGridRuns = geoGridRunsRaw.map((run) => {
     const rankedPoints = Number(run.rankedPoints ?? 0);
@@ -206,6 +208,46 @@ export default async function BusinessDashboardPage({ params, searchParams }) {
   const geoSectionCaption = geoGridRuns.length === 0
     ? 'Launch your first geo grid run to start mapping local rankings.'
     : 'Switch between detailed runs and keyword trend arcs to track performance.';
+  const trendMeta = {
+    positive: { label: 'Improving', fg: '#1a7431', bg: 'rgba(26, 116, 49, 0.12)' },
+    negative: { label: 'Declining', fg: '#b91c1c', bg: 'rgba(185, 28, 28, 0.12)' },
+    neutral: { label: 'Stable', fg: '#4b5563', bg: 'rgba(75, 85, 99, 0.12)' }
+  };
+  const ctrOverviewRows = ctrOverview.map((item) => {
+    const avgLabel = item.avgPosition != null ? formatDecimal(item.avgPosition, 2) : '—';
+    const solvLabel = item.solvTop3 != null ? `${formatDecimal(item.solvTop3, 1)}%` : '—';
+
+    const avgTrendConfig = trendMeta[item.avgTrend] ?? trendMeta.neutral;
+    const avgDeltaLabel = item.avgDelta != null
+      ? `${item.avgDelta > 0 ? '+' : item.avgDelta < 0 ? '-' : ''}${formatDecimal(Math.abs(item.avgDelta), 2)}`
+      : null;
+    const avgPillStyle = {
+      backgroundColor: avgTrendConfig.bg,
+      color: avgTrendConfig.fg
+    };
+
+    const solvTrendConfig = trendMeta[item.solvTrend] ?? trendMeta.neutral;
+    const solvDeltaLabel = item.solvDelta != null
+      ? `${item.solvDelta > 0 ? '+' : item.solvDelta < 0 ? '-' : ''}${formatDecimal(Math.abs(item.solvDelta), 1)}%`
+      : null;
+    const solvPillStyle = {
+      backgroundColor: solvTrendConfig.bg,
+      color: solvTrendConfig.fg
+    };
+
+    return {
+      keyword: item.keyword,
+      sessions: item.sessions,
+      avgLabel,
+      avgTrendLabel: avgTrendConfig.label,
+      avgDeltaLabel,
+      avgPillStyle,
+      solvLabel,
+      solvTrendLabel: solvTrendConfig.label,
+      solvDeltaLabel,
+      solvPillStyle
+    };
+  });
   const geoGridRunsList = geoGridRuns.map((run) => {
     const status = resolveStatus(run.status);
     const solvTop3 = run.solvTop3 ? `${run.solvTop3}%` : '—';
@@ -288,6 +330,105 @@ export default async function BusinessDashboardPage({ params, searchParams }) {
             <h2 className="section-title">CTR sessions</h2>
             <p className="section-caption">Analyze click-through behaviors alongside geo performance.</p>
           </div>
+
+          {ctrOverviewRows.length ? (
+            <div
+              className="ctr-overview-list"
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.75rem',
+                marginTop: '1rem',
+                marginBottom: '1rem'
+              }}
+            >
+              {ctrOverviewRows.map((item) => (
+                <div
+                  key={item.keyword}
+                  style={{
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    alignItems: 'center',
+                    gap: '1rem',
+                    border: '1px solid rgba(17, 24, 39, 0.08)',
+                    borderRadius: '12px',
+                    padding: '0.85rem 1.1rem',
+                    backgroundColor: '#ffffff'
+                  }}
+                >
+                  <div style={{ flex: '1 1 200px' }}>
+                    <strong style={{ fontSize: '1rem' }}>{item.keyword}</strong>
+                    <div style={{ color: '#6b7280', fontSize: '0.85rem', marginTop: '0.2rem' }}>
+                      {item.sessions} session{item.sessions === 1 ? '' : 's'} (30 days)
+                    </div>
+                  </div>
+
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      gap: '1.25rem',
+                      flex: '1 1 240px'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                      <span style={{ color: '#374151', fontSize: '0.9rem' }}>
+                        Avg position{' '}
+                        <strong style={{ fontSize: '1rem' }}>
+                          {item.avgLabel}
+                        </strong>
+                      </span>
+                      <span
+                        style={{
+                          ...item.avgPillStyle,
+                          padding: '0.3rem 0.75rem',
+                          borderRadius: '999px',
+                          fontSize: '0.8rem',
+                          fontWeight: 600
+                        }}
+                      >
+                        {item.avgTrendLabel}
+                        {item.avgDeltaLabel ? (
+                          <span style={{ fontWeight: 500, opacity: 0.8 }}>
+                            {' '}({item.avgDeltaLabel})
+                          </span>
+                        ) : null}
+                      </span>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                      <span style={{ color: '#374151', fontSize: '0.9rem' }}>
+                        SoLV (Top 3){' '}
+                        <strong style={{ fontSize: '1rem' }}>
+                          {item.solvLabel}
+                        </strong>
+                      </span>
+                      <span
+                        style={{
+                          ...item.solvPillStyle,
+                          padding: '0.3rem 0.75rem',
+                          borderRadius: '999px',
+                          fontSize: '0.8rem',
+                          fontWeight: 600
+                        }}
+                      >
+                        {item.solvTrendLabel}
+                        {item.solvDeltaLabel ? (
+                          <span style={{ fontWeight: 500, opacity: 0.8 }}>
+                            {' '}({item.solvDeltaLabel})
+                          </span>
+                        ) : null}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p style={{ marginTop: '1rem', color: '#6b7280' }}>
+              No CTR sessions recorded in the last 30 days.
+            </p>
+          )}
 
           <Link className="cta-link" href={ctrHref}>
             Open CTR dashboard ↗
