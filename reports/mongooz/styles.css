@@ -14,6 +14,45 @@
   }
   .wrap { padding: 20px; max-width: 1400px; margin: auto; }
   .toolbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 20px; }
+  .geo-run-launcher {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background: #fff;
+  }
+  .geo-run-launcher select {
+    padding: 6px 10px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    font-size: 14px;
+    min-width: 150px;
+  }
+  .geo-run-launcher button {
+    white-space: nowrap;
+  }
+  .geo-run-launcher button small {
+    display: block;
+    font-size: 12px;
+    color: var(--muted);
+    font-weight: 500;
+    margin-top: 2px;
+  }
+  .geo-run-status {
+    flex-basis: 100%;
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .geo-run-status.error {
+    color: #c0392b;
+    font-weight: 600;
+  }
+  .geo-run-status.is-hidden {
+    display: none;
+  }
   .search { padding: 6px 10px; border: 1px solid var(--line); border-radius: 6px; font-size: 14px; min-width: 240px; }
   button { padding: 6px 14px; font-size: 14px; cursor: pointer; border: 1px solid #ccc; background-color: #fff; border-radius: 6px; transition: all 0.2s ease; }
   button:hover { background-color: #f0f0f0; border-color: #aaa; }
@@ -197,6 +236,12 @@
     .toolbar { flex-direction: column; align-items: stretch; gap: 8px; }
     .toolbar button,
     .toolbar .search { width: 100%; }
+    .geo-run-launcher {
+      width: 100%;
+      padding: 12px;
+    }
+    .geo-run-launcher select,
+    .geo-run-launcher button { width: 100%; }
     .overlay .box { width: 100%; max-height: 92vh; padding: 16px; }
     .biz-keyword-visuals { flex-direction: column; }
     .biz-keyword-chart { order: 1; }
