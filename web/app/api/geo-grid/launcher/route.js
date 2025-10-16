@@ -7,6 +7,66 @@ const DEFAULT_OFFSET = process.env.LOGS_TIMEZONE_OFFSET || '-07:00';
 
 export const runtime = 'nodejs';
 
+function parseOriginZoneKeywords(raw) {
+  if (raw === null || raw === undefined) {
+    return [];
+  }
+
+  const str = String(raw).trim();
+  if (!str) {
+    return [];
+  }
+
+  const addKeyword = (set, value) => {
+    if (!value && value !== 0) return;
+    const term = String(value).trim();
+    if (term) {
+      set.add(term);
+    }
+  };
+
+  const keywords = new Set();
+
+  if (str.startsWith('[')) {
+    try {
+      const decoded = JSON.parse(str);
+
+      if (Array.isArray(decoded)) {
+        for (const entry of decoded) {
+          if (!entry && entry !== 0) {
+            continue;
+          }
+
+          if (typeof entry === 'string') {
+            addKeyword(keywords, entry);
+            continue;
+          }
+
+          if (typeof entry === 'object') {
+            const candidate = entry.term ?? entry.keyword ?? entry.value ?? entry.name;
+            addKeyword(keywords, candidate);
+            continue;
+          }
+        }
+      }
+
+      if (keywords.size) {
+        return Array.from(keywords);
+      }
+    } catch {
+      // fall through to delimiter parsing below
+    }
+  }
+
+  str
+    .split(/[,;\n]+/)
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .forEach((term) => keywords.add(term));
+
+  return Array.from(keywords);
+}
+
 function minutesToOffset(minutes) {
   if (!Number.isFinite(minutes)) {
     return DEFAULT_OFFSET;
@@ -167,14 +227,52 @@ export async function GET(request) {
       totalsByBusiness.set(businessId, entry);
     }
 
+    if (businesses.length) {
+      const placeholders = businesses.map(() => '?').join(',');
+      const [originRows] = await pool.query(
+        `SELECT business_id AS businessId, keywords FROM origin_zones WHERE business_id IN (${placeholders})`,
+        businesses.map((business) => business.id)
+      );
+
+      for (const row of originRows) {
+        const businessId = Number(row.businessId);
+        if (!Number.isFinite(businessId)) {
+          continue;
+        }
+
+        const keywords = parseOriginZoneKeywords(row.keywords);
+        if (!keywords.length) {
+          continue;
+        }
+
+        const entry = totalsByBusiness.get(businessId) || { all: new Map(), byDay: new Map() };
+        for (const keyword of keywords) {
+          if (!entry.all.has(keyword)) {
+            entry.all.set(keyword, 0);
+          }
+        }
+        totalsByBusiness.set(businessId, entry);
+      }
+    }
+
     const payloadBusinesses = businesses.map((business) => {
       const entry = totalsByBusiness.get(business.id) || { all: new Map(), byDay: new Map() };
       const keywordsAll = Array.from(entry.all.entries())
-        .sort((a, b) => b[1] - a[1])
+        .sort((a, b) => {
+          if (b[1] !== a[1]) {
+            return b[1] - a[1];
+          }
+          return a[0].localeCompare(b[0]);
+        })
         .map(([keyword, count]) => ({ keyword, count }));
       const todayMap = entry.byDay.get(todayKey) || new Map();
       const keywordsToday = Array.from(todayMap.entries())
-        .sort((a, b) => b[1] - a[1])
+        .sort((a, b) => {
+          if (b[1] !== a[1]) {
+            return b[1] - a[1];
+          }
+          return a[0].localeCompare(b[0]);
+        })
         .map(([keyword, count]) => ({ keyword, count }));
 
       return {
