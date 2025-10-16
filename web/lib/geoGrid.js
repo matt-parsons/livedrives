@@ -213,15 +213,28 @@ export function resolveOrigin({
   originLng,
   originZoneName
 }) {
-  const providedLat = Number(originLat);
-  const providedLng = Number(originLng);
+  const rawLat = typeof originLat === 'string' ? originLat.trim() : originLat;
+  const rawLng = typeof originLng === 'string' ? originLng.trim() : originLng;
+
+  const latSupplied = rawLat !== null && rawLat !== undefined && rawLat !== '';
+  const lngSupplied = rawLng !== null && rawLng !== undefined && rawLng !== '';
+
+  const parsedLat = latSupplied ? Number(rawLat) : null;
+  const parsedLng = lngSupplied ? Number(rawLng) : null;
+
+  const hasExplicitCoordinates =
+    latSupplied &&
+    lngSupplied &&
+    Number.isFinite(parsedLat) &&
+    Number.isFinite(parsedLng);
+
   const radiusOverride = Number(radiusMiles);
   const fallbackRadius = Number.isFinite(radiusOverride) && radiusOverride > 0 ? radiusOverride : 3;
 
-  if (Number.isFinite(providedLat) && Number.isFinite(providedLng)) {
+  if (hasExplicitCoordinates) {
     return {
-      lat: providedLat,
-      lng: providedLng,
+      lat: parsedLat,
+      lng: parsedLng,
       radiusMiles: fallbackRadius,
       zone: null
     };
