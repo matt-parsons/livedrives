@@ -240,10 +240,16 @@ export default function GeoGridLauncher() {
           gridRows: selectedGrid.rows,
           gridCols: selectedGrid.cols,
           radiusMiles: effectiveRadius,
-          originLat: originData.lat,
-          originLng: originData.lng,
           originZone: originData.zoneName || originData.canonical || null
         };
+
+        const originLat = Number(originData.lat);
+        const originLng = Number(originData.lng);
+
+        if (Number.isFinite(originLat) && Number.isFinite(originLng)) {
+          payload.originLat = originLat;
+          payload.originLng = originLng;
+        }
 
         const createResponse = await fetch(`/api/businesses/${businessId}/geo-grid/runs`, {
           method: 'POST',
