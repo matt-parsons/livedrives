@@ -108,6 +108,10 @@ let geoRunsLoaded = false;
 let geoRunsLoading = false;
 let geoRunsCache = [];
 
+let globalGeoSelectedBusinessId = null;
+const globalGeoKeywordSelections = new Map();
+let globalGeoControlsInitialized = false;
+
 const GEO_GRID_CHOICES = [
   { label: '5×5', rows: 5, cols: 5 },
   { label: '7×7', rows: 7, cols: 7 },
@@ -139,6 +143,341 @@ function buildGeoRunConfig(businessId) {
     label: gridChoice.label,
     points: gridChoice.rows * gridChoice.cols
   };
+}
+
+function updateGlobalGeoRunStatus(message, isError = false) {
+  const statusEl = document.getElementById('globalGeoRunStatus');
+  if (!statusEl) return;
+  statusEl.textContent = message || '';
+  if (isError) {
+    statusEl.classList.add('error');
+  } else {
+    statusEl.classList.remove('error');
+  }
+  statusEl.classList.toggle('is-hidden', !message);
+}
+
+function reflectGeoRunStatus(message, isError = false) {
+  const statusEl = document.getElementById('bizReportsStatus');
+  if (statusEl) {
+    statusEl.textContent = message || '';
+    statusEl.classList.toggle('error', Boolean(isError));
+  }
+  updateGlobalGeoRunStatus(message, isError);
+}
+
+function setupGlobalGeoRunControls() {
+  if (globalGeoControlsInitialized) return;
+
+  const gridSelect = document.getElementById('globalGeoGridSelect');
+  const radiusSelect = document.getElementById('globalGeoRadiusSelect');
+  const businessSelect = document.getElementById('globalGeoBusinessSelect');
+  const keywordSelect = document.getElementById('globalGeoKeywordSelect');
+  const runButton = document.getElementById('globalGeoRunButton');
+
+  if (!gridSelect || !radiusSelect || !businessSelect || !keywordSelect || !runButton) {
+    return;
+  }
+
+  if (!gridSelect.options.length) {
+    GEO_GRID_CHOICES.forEach((choice, idx) => {
+      const option = document.createElement('option');
+      option.value = String(idx);
+      option.textContent = `${choice.label} (${choice.rows * choice.cols} pts)`;
+      gridSelect.appendChild(option);
+    });
+  }
+
+  if (!radiusSelect.options.length) {
+    GEO_RADIUS_CHOICES.forEach((radius, idx) => {
+      const option = document.createElement('option');
+      option.value = String(idx);
+      option.textContent = `${radius} mi radius`;
+      radiusSelect.appendChild(option);
+    });
+  }
+
+  gridSelect.disabled = true;
+  radiusSelect.disabled = true;
+  keywordSelect.disabled = true;
+  runButton.disabled = true;
+
+  businessSelect.innerHTML = '';
+  const placeholder = document.createElement('option');
+  placeholder.value = '';
+  placeholder.textContent = 'Loading businesses…';
+  businessSelect.appendChild(placeholder);
+
+  gridSelect.addEventListener('change', onGlobalGeoGridChange);
+  radiusSelect.addEventListener('change', onGlobalGeoRadiusChange);
+  businessSelect.addEventListener('change', onGlobalGeoBusinessChange);
+  keywordSelect.addEventListener('change', onGlobalGeoKeywordChange);
+  runButton.addEventListener('click', handleGlobalGeoRunStart);
+
+  globalGeoControlsInitialized = true;
+  updateGlobalGeoRunButtonLabel();
+  updateGlobalGeoRunStatus('');
+}
+
+function refreshGlobalGeoBusinesses(businessList = []) {
+  setupGlobalGeoRunControls();
+  const businessSelect = document.getElementById('globalGeoBusinessSelect');
+  if (!businessSelect) return;
+
+  const previousId = globalGeoSelectedBusinessId;
+  businessSelect.innerHTML = '';
+
+  const placeholder = document.createElement('option');
+  placeholder.value = '';
+  placeholder.textContent = businessList.length ? 'Select a business…' : 'No businesses available';
+  businessSelect.appendChild(placeholder);
+
+  businessList.forEach(biz => {
+    const option = document.createElement('option');
+    option.value = String(biz.id);
+    option.textContent = biz.name;
+    businessSelect.appendChild(option);
+  });
+
+  if (previousId && businessList.some(biz => biz.id === previousId)) {
+    businessSelect.value = String(previousId);
+  } else {
+    businessSelect.value = '';
+  }
+
+  onGlobalGeoBusinessChange();
+}
+
+function persistGlobalGeoSettings() {
+  if (!globalGeoSelectedBusinessId) return;
+  const gridSelect = document.getElementById('globalGeoGridSelect');
+  const radiusSelect = document.getElementById('globalGeoRadiusSelect');
+  if (!gridSelect || !radiusSelect) return;
+  const gridIndex = Math.min(Math.max(0, Number(gridSelect.value) || 0), GEO_GRID_CHOICES.length - 1);
+  const radiusIndex = Math.min(Math.max(0, Number(radiusSelect.value) || 0), GEO_RADIUS_CHOICES.length - 1);
+  geoRunSettings.set(globalGeoSelectedBusinessId, { gridIndex, radiusIndex });
+}
+
+function onGlobalGeoGridChange() {
+  persistGlobalGeoSettings();
+  updateGlobalGeoRunButtonLabel();
+}
+
+function onGlobalGeoRadiusChange() {
+  persistGlobalGeoSettings();
+  updateGlobalGeoRunButtonLabel();
+}
+
+function onGlobalGeoKeywordChange() {
+  const keywordSelect = document.getElementById('globalGeoKeywordSelect');
+  if (!keywordSelect) return;
+  if (!globalGeoSelectedBusinessId) {
+    updateGlobalGeoRunButtonLabel();
+    return;
+  }
+  const keyword = keywordSelect.value;
+  if (keyword) {
+    globalGeoKeywordSelections.set(globalGeoSelectedBusinessId, keyword);
+  } else {
+    globalGeoKeywordSelections.delete(globalGeoSelectedBusinessId);
+  }
+  updateGlobalGeoRunButtonLabel();
+}
+
+function onGlobalGeoBusinessChange() {
+  const businessSelect = document.getElementById('globalGeoBusinessSelect');
+  const gridSelect = document.getElementById('globalGeoGridSelect');
+  const radiusSelect = document.getElementById('globalGeoRadiusSelect');
+  const keywordSelect = document.getElementById('globalGeoKeywordSelect');
+  const runButton = document.getElementById('globalGeoRunButton');
+  if (!businessSelect || !gridSelect || !radiusSelect || !keywordSelect || !runButton) return;
+
+  const previousSelectedId = globalGeoSelectedBusinessId;
+  const selectedId = Number(businessSelect.value);
+  if (!Number.isFinite(selectedId) || selectedId <= 0) {
+    globalGeoSelectedBusinessId = null;
+    gridSelect.disabled = true;
+    radiusSelect.disabled = true;
+    keywordSelect.disabled = true;
+    keywordSelect.innerHTML = '';
+    const placeholder = document.createElement('option');
+    placeholder.value = '';
+    placeholder.textContent = 'Select a business…';
+    keywordSelect.appendChild(placeholder);
+    runButton.disabled = true;
+    updateGlobalGeoRunButtonLabel();
+    updateGlobalGeoRunStatus('');
+    return;
+  }
+
+  globalGeoSelectedBusinessId = selectedId;
+
+  const { gridIndex, radiusIndex } = getGeoSettingsForBusiness(selectedId);
+  gridSelect.disabled = false;
+  radiusSelect.disabled = false;
+  gridSelect.value = String(gridIndex);
+  radiusSelect.value = String(radiusIndex);
+
+  populateGlobalGeoKeywords(selectedId);
+  if (previousSelectedId !== selectedId) {
+    updateGlobalGeoRunStatus('');
+  }
+  updateGlobalGeoRunButtonLabel();
+}
+
+function populateGlobalGeoKeywords(businessId) {
+  const keywordSelect = document.getElementById('globalGeoKeywordSelect');
+  if (!keywordSelect) return;
+
+  keywordSelect.disabled = true;
+  keywordSelect.innerHTML = '';
+  const placeholder = document.createElement('option');
+  placeholder.value = '';
+  placeholder.textContent = 'Select a keyword…';
+  keywordSelect.appendChild(placeholder);
+
+  const bizData = byBizCache.get(businessId);
+  if (!bizData) {
+    globalGeoKeywordSelections.delete(businessId);
+    updateGlobalGeoRunButtonLabel();
+    return;
+  }
+
+  const availableValues = [];
+  const seen = new Set();
+
+  const addOption = (parent, keyword, count) => {
+    const normalized = String(keyword || '').trim();
+    if (!normalized) return;
+    const key = normalized.toLowerCase();
+    if (seen.has(key)) return;
+    const option = document.createElement('option');
+    option.value = normalized;
+    const numericCount = Number(count);
+    option.textContent = Number.isFinite(numericCount) && numericCount > 0
+      ? `${normalized} (${numericCount})`
+      : normalized;
+    parent.appendChild(option);
+    seen.add(key);
+    availableValues.push(option.value);
+  };
+
+  const appendGroup = (label, entries) => {
+    if (!Array.isArray(entries) || !entries.length) return;
+    const group = document.createElement('optgroup');
+    group.label = label;
+    entries.forEach(({ keyword, count }) => addOption(group, keyword, count));
+    if (group.children.length) {
+      keywordSelect.appendChild(group);
+    }
+  };
+
+  appendGroup('Today', bizData.keywordsToday || []);
+  appendGroup('All time', bizData.keywordsAll || bizData.keywords || []);
+
+  const hasKeywords = availableValues.length > 0;
+  let selection = globalGeoKeywordSelections.get(businessId) || '';
+  if (!selection || !availableValues.includes(selection)) {
+    selection = hasKeywords ? availableValues[0] : '';
+  }
+
+  if (selection) {
+    keywordSelect.value = selection;
+    globalGeoKeywordSelections.set(businessId, selection);
+  } else {
+    keywordSelect.value = '';
+    globalGeoKeywordSelections.delete(businessId);
+  }
+
+  keywordSelect.disabled = !hasKeywords;
+  onGlobalGeoKeywordChange();
+}
+
+function updateGlobalGeoRunButtonLabel() {
+  const runButton = document.getElementById('globalGeoRunButton');
+  const keywordSelect = document.getElementById('globalGeoKeywordSelect');
+  if (!runButton) return;
+
+  if (!globalGeoSelectedBusinessId) {
+    runButton.innerHTML = '🚀 Start Geo Run<br><small>Select a business</small>';
+    runButton.disabled = true;
+    runButton.title = 'Select a business and keyword to start a geo grid run';
+    return;
+  }
+
+  const config = buildGeoRunConfig(globalGeoSelectedBusinessId);
+  const radiusLabel = describeRadiusMiles(config.radius) || config.radius;
+  const keyword = keywordSelect ? keywordSelect.value : '';
+  const baseLabel = `🚀 Run ${config.label} (${radiusLabel} mi)`;
+
+  if (keyword) {
+    runButton.innerHTML = `${baseLabel}<br><small>“${escapeHtml(keyword)}”</small>`;
+    runButton.disabled = false;
+    runButton.title = `Start ${config.label} grid (${radiusLabel} mi) for “${keyword}”`;
+  } else {
+    runButton.innerHTML = `${baseLabel}<br><small>Select a keyword</small>`;
+    runButton.disabled = true;
+    runButton.title = 'Select a keyword to start this geo grid run';
+  }
+}
+
+async function handleGlobalGeoRunStart(event) {
+  if (event && typeof event.preventDefault === 'function') {
+    event.preventDefault();
+  }
+  if (!globalGeoSelectedBusinessId) {
+    updateGlobalGeoRunStatus('Select a business to start a geo grid run.', true);
+    return;
+  }
+
+  const keywordSelect = document.getElementById('globalGeoKeywordSelect');
+  const businessSelect = document.getElementById('globalGeoBusinessSelect');
+  if (!keywordSelect || !businessSelect) return;
+
+  const keyword = String(keywordSelect.value || '').trim();
+  if (!keyword) {
+    updateGlobalGeoRunStatus('Select a keyword to start a geo grid run.', true);
+    return;
+  }
+
+  const businessId = globalGeoSelectedBusinessId;
+  const bizData = byBizCache.get(businessId);
+  const businessName = bizData?.name || (businessSelect.selectedOptions[0]?.textContent || 'Business');
+
+  persistGlobalGeoSettings();
+  const config = buildGeoRunConfig(businessId);
+
+  updateGlobalGeoRunStatus('Resolving origin zone…');
+
+  let originInfo = null;
+  try {
+    originInfo = await resolveKeywordOriginZone(businessId, keyword, config.radius);
+  } catch (error) {
+    console.error('Failed to resolve origin zone for keyword:', error);
+    const message = error?.message || 'Failed to resolve origin zone for this keyword.';
+    updateGlobalGeoRunStatus(message, true);
+    alert(message);
+    return;
+  }
+
+  if (!originInfo) {
+    const message = 'No origin zone is configured for this keyword yet.';
+    updateGlobalGeoRunStatus(message, true);
+    alert(message);
+    return;
+  }
+
+  const effectiveRadius = Number.isFinite(originInfo.radius) ? originInfo.radius : config.radius;
+  const radiusLabel = describeRadiusMiles(effectiveRadius) || effectiveRadius;
+  const zoneLabel = originInfo.zoneName || 'origin zone';
+  const coordsLabel = `${originInfo.lat.toFixed(4)}, ${originInfo.lng.toFixed(4)}`;
+  const confirmMessage = `Start a ${config.label} grid (${radiusLabel} mi radius, ${config.points} points) for ${businessName} — “${keyword}”?\nOrigin: ${zoneLabel} (${coordsLabel})`;
+  if (!window.confirm(confirmMessage)) {
+    updateGlobalGeoRunStatus('Geo grid run cancelled.', false);
+    return;
+  }
+
+  await startGeoGridRun(businessId, businessName, keyword, config, originInfo);
 }
 
 async function resolveKeywordOriginZone(businessId, keyword, radiusMiles) {
@@ -303,6 +642,8 @@ function buildBusinessDirectory(rows){
       tr.dataset.businessName = b.name.toLowerCase();
       tbody.appendChild(tr);
   });
+
+  refreshGlobalGeoBusinesses(list);
 }
 
 function filterBusinesses(q){
@@ -2225,13 +2566,10 @@ async function startGeoGridRun(businessId, businessName, keyword, configOverride
   const originSummary = origin
     ? ` from ${originLabel || 'origin zone'} (${origin.lat.toFixed(4)}, ${origin.lng.toFixed(4)})`
     : '';
-  const statusEl = document.getElementById('bizReportsStatus');
-  if (statusEl) {
-    statusEl.classList.remove('error');
-    statusEl.textContent = `Starting ${config.label} grid (${radiusLabel} mi) for “${keyword}”${originSummary}…`;
-  }
-  bizReportsLastMessage = `Starting ${config.label} grid (${radiusLabel} mi) for “${keyword}”${originSummary}…`;
+  const startingMessage = `Starting ${config.label} grid (${radiusLabel} mi) for “${keyword}”${originSummary}…`;
+  bizReportsLastMessage = startingMessage;
   bizReportsLastIsError = false;
+  reflectGeoRunStatus(startingMessage, false);
 
   try {
     const payload = {
@@ -2261,17 +2599,14 @@ async function startGeoGridRun(businessId, businessName, keyword, configOverride
 
     const runId = createData.run_id;
     bizReportsLastMessage = `Run #${runId} created (${config.label}, ${radiusLabel} mi). Monitoring progress…`;
-    if (statusEl) statusEl.textContent = bizReportsLastMessage;
+    reflectGeoRunStatus(bizReportsLastMessage, false);
 
     await pollGeoGridRun(businessId, businessName, keyword, runId, config);
   } catch (error) {
     console.error('Failed to start new geo grid run:', error);
     bizReportsLastMessage = error.message || 'Failed to create run.';
     bizReportsLastIsError = true;
-    if (statusEl) {
-      statusEl.textContent = bizReportsLastMessage;
-      statusEl.classList.add('error');
-    }
+    reflectGeoRunStatus(bizReportsLastMessage, true);
   }
 }
 
@@ -2288,15 +2623,11 @@ async function pollGeoGridRun(businessId, businessName, keyword, runId, config){
       }
 
       const status = runData.run?.status;
-      const statusEl = document.getElementById('bizReportsStatus');
       if (status === 'done') {
         const cfgText = config ? ` (${config.label}, ${config.radius} mi)` : '';
         bizReportsLastMessage = `Run #${runId} completed${cfgText}.`;
         bizReportsLastIsError = false;
-        if (statusEl) {
-          statusEl.textContent = bizReportsLastMessage;
-          statusEl.classList.remove('error');
-        }
+        reflectGeoRunStatus(bizReportsLastMessage, false);
         currentBizReportSelection = { businessId, runId };
         renderBizReports(businessId);
         loadBizReport(runId, keyword);
@@ -2306,26 +2637,17 @@ async function pollGeoGridRun(businessId, businessName, keyword, runId, config){
         const cfgText = config ? ` (${config.label}, ${config.radius} mi)` : '';
         bizReportsLastMessage = `Run #${runId} encountered an error${cfgText}.`;
         bizReportsLastIsError = true;
-        if (statusEl) {
-          statusEl.textContent = bizReportsLastMessage;
-          statusEl.classList.add('error');
-        }
+        reflectGeoRunStatus(bizReportsLastMessage, true);
         renderBizReports(businessId);
         return;
       }
 
-      if (statusEl) {
-        statusEl.textContent = `Run #${runId} is ${status || 'in progress'}…`;
-      }
+      reflectGeoRunStatus(`Run #${runId} is ${status || 'in progress'}…`, false);
     } catch (error) {
       console.error('Geo grid run polling failed:', error);
       bizReportsLastMessage = error.message || 'Error while polling run status.';
       bizReportsLastIsError = true;
-      const statusEl = document.getElementById('bizReportsStatus');
-      if (statusEl) {
-        statusEl.textContent = bizReportsLastMessage;
-        statusEl.classList.add('error');
-      }
+      reflectGeoRunStatus(bizReportsLastMessage, true);
       return;
     }
 
@@ -2335,11 +2657,7 @@ async function pollGeoGridRun(businessId, businessName, keyword, runId, config){
   const cfgText = config ? ` (${config.label}, ${config.radius} mi)` : '';
   bizReportsLastMessage = `Run #${runId} is taking longer than expected${cfgText}.`;
   bizReportsLastIsError = true;
-  const statusEl = document.getElementById('bizReportsStatus');
-  if (statusEl) {
-    statusEl.textContent = bizReportsLastMessage;
-    statusEl.classList.add('error');
-  }
+  reflectGeoRunStatus(bizReportsLastMessage, true);
 }
 
 // Legacy alias used by older overlay markup
@@ -2389,6 +2707,7 @@ function closeGeoOverlay() {
 
 /* =================== INITIALIZATION =================== */
 document.addEventListener('DOMContentLoaded', () => {
+  setupGlobalGeoRunControls();
   loadDaily();
   const bizSearch = document.getElementById('bizSearch');
   if (bizSearch) {

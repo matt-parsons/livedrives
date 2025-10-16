@@ -21,6 +21,15 @@ $scriptsversion = filemtime($template_path . '/scripts.js');
     <button onclick="toggleBizSummary()">📊 Business Summary</button>
     <button onclick="openGeoRunsOverlay()">🌐 Geo Runs</button>
 
+    <div class="geo-run-launcher" id="globalGeoControls" aria-label="Start a geo grid run">
+      <select id="globalGeoGridSelect" aria-label="Geo grid size"></select>
+      <select id="globalGeoRadiusSelect" aria-label="Geo grid radius"></select>
+      <select id="globalGeoBusinessSelect" aria-label="Business"></select>
+      <select id="globalGeoKeywordSelect" aria-label="Keyword"></select>
+      <button type="button" id="globalGeoRunButton" disabled>🚀 Start Geo Run</button>
+      <div id="globalGeoRunStatus" class="geo-run-status muted is-hidden"></div>
+    </div>
+
     <button onclick="refreshAll()">🔄 Refresh</button>
   </div>
 
