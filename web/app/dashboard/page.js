@@ -77,17 +77,32 @@ export default async function DashboardPage() {
 
         {session.role === 'owner' ? (
           <section className="section">
-            <div className="surface-card surface-card--compact operations-card">
-              <div className="operations-card__copy">
-                <h2>Operations hub</h2>
-                <p>
-                  Access the consolidated log viewer and scheduler queue that previously lived in the legacy reports
-                  tooling.
-                </p>
+            <div className="owner-tools-grid">
+              <div className="surface-card surface-card--compact operations-card">
+                <div className="operations-card__copy">
+                  <h2>Operations hub</h2>
+                  <p>
+                    Access the consolidated log viewer and scheduler queue that previously lived in the legacy reports
+                    tooling.
+                  </p>
+                </div>
+                <Link className="cta-link" href="/dashboard/operations">
+                  Open hub
+                </Link>
               </div>
-              <Link className="cta-link" href="/dashboard/operations">
-                Open hub
-              </Link>
+
+              <div className="surface-card surface-card--compact operations-card">
+                <div className="operations-card__copy">
+                  <h2>Geo grid launcher</h2>
+                  <p>
+                    Start geo grid runs with the new workflow—select a business, keyword, grid size, and radius without
+                    leaving the console.
+                  </p>
+                </div>
+                <Link className="cta-link" href="/dashboard/geo-grid-launcher">
+                  Open launcher
+                </Link>
+              </div>
             </div>
           </section>
         ) : null}
