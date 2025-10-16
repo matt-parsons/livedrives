@@ -37,6 +37,10 @@ export default function BusinessForm({ mode = 'create', businessId = null, initi
   }));
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [placesQuery, setPlacesQuery] = useState('');
+  const [placesResults, setPlacesResults] = useState([]);
+  const [placesError, setPlacesError] = useState('');
+  const [placesLoading, setPlacesLoading] = useState(false);
 
   const title = useMemo(() => (mode === 'edit' ? 'Save changes' : 'Create business'), [mode]);
 
@@ -48,6 +52,93 @@ export default function BusinessForm({ mode = 'create', businessId = null, initi
   const handleCheckboxChange = (event) => {
     const { checked } = event.target;
     setFormState((prev) => ({ ...prev, isActive: checked }));
+  };
+
+  const handlePlacesQueryChange = (event) => {
+    setPlacesQuery(event.target.value);
+  };
+
+  const prefillFromPlace = (place) => {
+    setFormState((prev) => ({
+      ...prev,
+      businessName: place.name ?? prev.businessName,
+      brandSearch: place.name ?? prev.brandSearch,
+      destinationAddress: place.formattedAddress ?? prev.destinationAddress,
+      destinationZip: place.postalCode ?? prev.destinationZip,
+      destLat: place.location?.lat !== undefined && place.location?.lat !== null
+        ? String(place.location.lat)
+        : prev.destLat,
+      destLng: place.location?.lng !== undefined && place.location?.lng !== null
+        ? String(place.location.lng)
+        : prev.destLng,
+      timezone: place.timezone ?? prev.timezone,
+      gPlaceId: place.placeId ?? prev.gPlaceId
+    }));
+  };
+
+  const handlePlaceSearch = async (event) => {
+    event.preventDefault();
+
+    const query = placesQuery.trim();
+    if (!query) {
+      setPlacesResults([]);
+      setPlacesError('Enter a business name, address, or keyword to search.');
+      return;
+    }
+
+    setPlacesLoading(true);
+    setPlacesError('');
+
+    try {
+      const response = await fetch(`/api/places/search?query=${encodeURIComponent(query)}`);
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Search request failed.');
+      }
+
+      const results = Array.isArray(data.results) ? data.results : [];
+      setPlacesResults(results);
+
+      if (results.length === 0) {
+        setPlacesError('No places matched your search. Try refining the query.');
+      }
+    } catch (err) {
+      setPlacesError(err.message || 'Failed to search for places.');
+      setPlacesResults([]);
+    } finally {
+      setPlacesLoading(false);
+    }
+  };
+
+  const handleSelectPlace = async (placeId) => {
+    if (!placeId) {
+      return;
+    }
+
+    setPlacesLoading(true);
+    setPlacesError('');
+
+    try {
+      const response = await fetch(`/api/places/${encodeURIComponent(placeId)}`);
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to load place details.');
+      }
+
+      if (!data.place) {
+        throw new Error('Place details were missing in the response.');
+      }
+
+      prefillFromPlace(data.place);
+      setPlacesResults([]);
+      setPlacesQuery(data.place.name ?? '');
+    } catch (err) {
+      setPlacesError(err.message || 'Failed to load place details.');
+    } finally {
+      setPlacesLoading(false);
+    }
   };
 
   const handleSubmit = async (event) => {
@@ -102,6 +193,62 @@ export default function BusinessForm({ mode = 'create', businessId = null, initi
 
   return (
     <form className="form-grid" onSubmit={handleSubmit}>
+      <div className="input-field">
+        <label className="input-label" htmlFor="places-query">Search Google Places</label>
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'stretch' }}>
+          <input
+            id="places-query"
+            className="text-input"
+            type="text"
+            value={placesQuery}
+            onChange={handlePlacesQueryChange}
+            disabled={submitting || placesLoading}
+            placeholder="Search by business name or address"
+            autoComplete="off"
+          />
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={handlePlaceSearch}
+            disabled={submitting || placesLoading}
+            style={{ width: 'auto', whiteSpace: 'nowrap' }}
+          >
+            {placesLoading ? 'Loading…' : 'Search'}
+          </button>
+        </div>
+        <p className="input-help">Select a result to automatically fill in the business details.</p>
+        {placesError ? <p className="error-text" role="alert">{placesError}</p> : null}
+      </div>
+
+      {placesResults.length > 0 ? (
+        <div className="input-field">
+          <span className="input-label">Search results</span>
+          <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: '8px' }}>
+            {placesResults.map((place) => (
+              <li key={place.placeId} style={{ border: '1px solid #ccc', borderRadius: '8px', padding: '12px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
+                  <div>
+                    <div style={{ fontWeight: 600 }}>{place.name}</div>
+                    {place.formattedAddress ? (
+                      <div style={{ fontSize: '0.9rem', color: '#555' }}>{place.formattedAddress}</div>
+                    ) : null}
+                  </div>
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    onClick={() => handleSelectPlace(place.placeId)}
+                    disabled={submitting || placesLoading}
+                    style={{ width: 'auto', whiteSpace: 'nowrap' }}
+                  >
+                    Use this place
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
       <div className="input-field">
         <label className="input-label" htmlFor="business-name">Business name</label>
         <input
