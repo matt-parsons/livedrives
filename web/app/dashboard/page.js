@@ -75,6 +75,23 @@ export default async function DashboardPage() {
           )}
         </section>
 
+        {session.role === 'owner' ? (
+          <section className="section">
+            <div className="surface-card surface-card--compact operations-card">
+              <div className="operations-card__copy">
+                <h2>Operations hub</h2>
+                <p>
+                  Access the consolidated log viewer and scheduler queue that previously lived in the legacy reports
+                  tooling.
+                </p>
+              </div>
+              <Link className="cta-link" href="/dashboard/operations">
+                Open hub
+              </Link>
+            </div>
+          </section>
+        ) : null}
+
         <section className="section">
           <div className="section-header">
             <h2 className="section-title">Account snapshot</h2>
