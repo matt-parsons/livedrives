@@ -143,6 +143,10 @@ export default async function CtrDashboardPage({ params, searchParams }) {
     notFound();
   }
 
+  if (session.role !== 'owner') {
+    redirect(`/dashboard/${encodeURIComponent(identifier)}`);
+  }
+
   const today = new Date();
   today.setUTCHours(0, 0, 0, 0);
 
