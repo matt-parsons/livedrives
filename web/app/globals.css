@@ -1414,6 +1414,51 @@ textarea {
   gap: clamp(28px, 3vw, 42px);
 }
 
+.operations-tabs {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.operations-tablist {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  border-radius: 999px;
+  padding: 6px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(40, 40, 40, 0.12);
+}
+
+.operations-tab {
+  appearance: none;
+  border: none;
+  background: transparent;
+  padding: 10px 18px;
+  border-radius: 999px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: rgba(40, 40, 40, 0.65);
+  cursor: pointer;
+  transition: var(--transition-base);
+}
+
+.operations-tab:hover,
+.operations-tab:focus-visible {
+  background: rgba(192, 109, 47, 0.12);
+  color: var(--color-primary-strong);
+}
+
+.operations-tab--active {
+  background: var(--color-primary);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(192, 109, 47, 0.2);
+}
+
+.operations-tab:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(192, 109, 47, 0.35);
+}
+
 .owner-tools-grid {
   display: grid;
   gap: 18px;
@@ -1497,6 +1542,23 @@ textarea {
   align-items: center;
   flex-wrap: wrap;
   gap: 10px;
+}
+
+.logs-toolbar__actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.toolbar-link {
+  font-weight: 600;
+  text-decoration: none;
+  color: var(--color-primary-strong);
+}
+
+.toolbar-link:hover,
+.toolbar-link:focus-visible {
+  text-decoration: underline;
 }
 
 .refresh-button {
