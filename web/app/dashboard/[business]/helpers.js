@@ -207,9 +207,14 @@ export async function loadCtrRunsWithSnapshots(businessId, startDate, endDate) {
             r.started_at       AS startedAt,
             r.finished_at      AS finishedAt,
             DATE(r.started_at) AS runDate,
-            COALESCE(MAX(NULLIF(rl.keyword, '')), '(no keyword)') AS keyword
+            COALESCE(
+              MAX(NULLIF(rq.keyword, '')),
+              MAX(NULLIF(rl.keyword, '')),
+              '(no keyword)'
+            ) AS keyword
        FROM runs r
        LEFT JOIN run_logs rl ON rl.run_id = r.id
+       LEFT JOIN ranking_queries rq ON rq.run_id = r.id
       WHERE r.business_id = ?
         AND r.started_at >= ?
         AND r.started_at < ?
@@ -226,6 +231,7 @@ export async function loadCtrRunsWithSnapshots(businessId, startDate, endDate) {
 
   const [snapshots] = await pool.query(
     `SELECT rq.run_id        AS runId,
+            rq.keyword       AS keyword,
             rs.origin_lat     AS originLat,
             rs.origin_lng     AS originLng,
             rs.matched_position AS matchedPosition,
