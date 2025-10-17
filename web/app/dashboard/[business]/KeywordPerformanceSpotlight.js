@@ -254,10 +254,9 @@ export default function KeywordPerformanceSpotlight({ items }) {
     return null;
   }
 
-  const runsDescription = `Runs (30d) ${activeItem.runCount ?? 0}`;
   const latestRunDescription =
     activeItem.latestRunDate && activeItem.latestRunDate !== '—'
-      ? `Latest ${activeItem.latestRunDate}`
+      ? `Last scan: ${activeItem.latestRunDate}`
       : null;
   const statusLabel = activeItem.status?.label ?? null;
 
@@ -292,15 +291,14 @@ export default function KeywordPerformanceSpotlight({ items }) {
               style={{
                 fontSize: '1.2rem',
                 fontWeight: 700,
-                marginBottom: '0.3rem',
+                marginBottom: '0rem',
                 color: '#111827'
               }}
             >
               {activeItem.keyword}
             </h3>
-            <p style={{ fontSize: '0.85rem', color: '#6b7280' }}>
-              {runsDescription}
-              {latestRunDescription ? <> · {latestRunDescription}</> : null}
+            <p style={{ fontSize: '0.85rem', color: '#6b7280', marginTop: '0px' }}>
+              {latestRunDescription ? <> {latestRunDescription}</> : null}
             </p>
           </div>
           {statusLabel ? (

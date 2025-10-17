@@ -406,7 +406,6 @@ export default function GeoGridRunViewer({
       <style jsx>{`
         .map-layout {
           display: flex;
-          gap: 24px;
           align-items: stretch;
         }
 
@@ -416,7 +415,7 @@ export default function GeoGridRunViewer({
           display: flex;
           flex-direction: column;
           gap: 18px;
-          padding-right: 20px;
+          padding: 10px;
           border-right: 1px solid rgba(15, 23, 42, 0.08);
         }
 

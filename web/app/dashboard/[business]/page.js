@@ -505,8 +505,8 @@ export default async function BusinessDashboardPage({ params, searchParams }) {
       <section className="section">
         <div className="surface-card surface-card--muted surface-card--compact">
           <div className="section-header">
-            <h2 className="section-title">Keyword performance (30 days)</h2>
-            <p className="section-caption">Latest geo grid movement for active keywords over the past month.</p>
+            <h2 className="section-title">Profile Performance</h2>
+            <p className="section-caption">Latest visibilty for your business over the past 30 days.</p>
           </div>
 
           {keywordPerformance30d.length ? (

@@ -1119,8 +1119,8 @@ textarea {
 .map-card {
   display: flex;
   flex-direction: column;
-  width: 50em;
   padding: 0;
+  width: 100%;
 }
 
 .map-legend {
