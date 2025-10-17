@@ -11,11 +11,12 @@ async function readScheduleEntries(filePath) {
     const contents = await fs.readFile(filePath, 'utf8');
     return contents
       .split(/\r?\n/g)
-      .map((line) => line.trim())
+      .map((line) => line.replace(/^\[\]/, '').trim())
       .filter(Boolean)
       .map((line) => {
         try {
-          return JSON.parse(line);
+          const parsed = JSON.parse(line);
+          return parsed && !Array.isArray(parsed) && typeof parsed === 'object' ? parsed : null;
         } catch (error) {
           return null;
         }
