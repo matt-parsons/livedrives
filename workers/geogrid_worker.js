@@ -87,7 +87,7 @@ function requestWorkerExit(worker, timeoutMs = 10000) {
 // Worker Thread Code (runs on a separate thread)
 if (!isMainThread) {
   const { getProfileRank } = require('../lib/core/rankTrack.js');
-  const { parseRankFromString } = require('../lib/google/counters');
+  const { parseLocalResults } = require('../lib/google/counters');
 
   parentPort.on('message', async (data) => {
     if (data.exit) {
@@ -132,7 +132,7 @@ if (!isMainThread) {
           
           // --- STAGE 2: ANALYSIS (Parse HTML in-memory) ---
           if (rankResult.rawHtml) {
-              const parseResult = parseRankFromString(rankResult.rawHtml, businessName);
+              const parseResult = parseLocalResults(rankResult.rawHtml, businessName);
 
               console.log(`[RANKING] Result ${parseResult.rank} ${parseResult.reason} (total ${parseResult.totalResults ?? parseResult.places?.length ?? 0})`);
 

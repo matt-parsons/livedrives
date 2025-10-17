@@ -235,10 +235,6 @@ textarea {
   color: rgba(40, 40, 40, 0.72);
 }
 
-.surface-card + .surface-card {
-  margin-top: 20px;
-}
-
 .surface-card--compact {
   padding: clamp(18px, 2vw, 24px);
 }

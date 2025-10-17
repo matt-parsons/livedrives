@@ -16,7 +16,7 @@ const { DateTime } = require('luxon');
 
 const { fetchConfigByBusinessId } = require('../lib/db/configLoader');
 const { getProfileRank } = require('../lib/core/rankTrack');
-const { parseRankFromString } = require('../lib/google/counters');
+const { parseRankFromString, parseRankFromPbData, parseLocalResults } = require('../lib/google/counters');
 const { recordRankingSnapshot } = require('../lib/db/ranking_store');
 const { startRun, finishRun, logResult } = require('../lib/db/logger');
 const { note } = require('../lib/utils/note');
@@ -210,7 +210,19 @@ async function main() {
     let serpMatched = null;
 
     if (acquisition?.rawHtml) {
-      const parseResult = parseRankFromString(acquisition.rawHtml, config.business_name);
+      
+      const parseResult = parseLocalResults(acquisition.rawHtml, config.business_name);
+      if (parseResult.length > 0) {
+        console.log(`\n✅ Found ${parseResult.length} Businesses`);
+        parseResult.forEach((b, index) => {
+          const pid = b.placeId ? b.placeId.substring(0, 10) + '...' : 'N/A';
+          // console.log(`${index + 1}. ${b.name || 'Unnamed business'} (ID: ${pid})`);
+          console.log(b);
+        });
+      } else {
+        console.log(`\n❌ Could not extract any business names`, parseResult);
+      }
+
       serpRank = Number.isFinite(parseResult.rank) ? parseResult.rank : null;
       serpReason = parseResult.reason || 'unknown';
       serpPlaces = Array.isArray(parseResult.places) ? parseResult.places : [];
@@ -226,31 +238,31 @@ async function main() {
     const targetPlaceId = config.place_id || (matchedBySource === 'place_id' ? matchedPlaceId : null);
     const matchedBy = config.place_id ? 'place_id' : matchedBySource;
 
-    await recordRankingSnapshot({
-      runId,
-      businessId: config.business_id,
-      keyword,
-      source: 'serp',
-      variant: 'text',
-      originZoneId: origin.zone_id,
-      originLat: origin.lat,
-      originLng: origin.lng,
-      radiusMi: origin.radius || 0,
-      sessionId,
-      requestId: 'manual-serp@' + Date.now(),
-      timestampUtc: new Date(),
-      places: serpPlaces,
-      targetPlaceId,
-      matchedBy,
-      matchedPlaceId,
-      matchedPosition: serpRank
-    });
+    // await recordRankingSnapshot({
+    //   runId,
+    //   businessId: config.business_id,
+    //   keyword,
+    //   source: 'serp',
+    //   variant: 'text',
+    //   originZoneId: origin.zone_id,
+    //   originLat: origin.lat,
+    //   originLng: origin.lng,
+    //   radiusMi: origin.radius || 0,
+    //   sessionId,
+    //   requestId: 'manual-serp@' + Date.now(),
+    //   timestampUtc: new Date(),
+    //   places: serpPlaces,
+    //   targetPlaceId,
+    //   matchedBy,
+    //   matchedPlaceId,
+    //   matchedPosition: serpRank
+    // });
 
-    ctrResult.rank = serpRank;
-    ctrResult.serpReason = serpReason;
-    ctrResult.places = serpPlaces;
+    // ctrResult.rank = serpRank;
+    // ctrResult.serpReason = serpReason;
+    // ctrResult.places = serpPlaces;
 
-    await logResult({ ctrResult });
+    // await logResult({ ctrResult });
 
     console.log('→ Ranking snapshot recorded');
     console.log('Rank:', serpRank, '| Reason:', serpReason, '| Places:', serpPlaces.length);

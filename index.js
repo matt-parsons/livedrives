@@ -11,7 +11,7 @@ const { getProfileRank } = require('./lib/core/rankTrack');
 const { startRun, finishRun, logResult } = require('./lib/db/logger');
 const { recordRankingSnapshot } = require('./lib/db/ranking_store');
 const { note } = require('./lib/utils/note');
-const { parseRankFromString } = require('./lib/google/counters');
+const { parseLocalResults } = require('./lib/google/counters');
 
 function randomSessionId(length = 16) {
   const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -142,7 +142,7 @@ function addToRetryQueue(config) {
         });
 
         if (acquisition?.rawHtml) {
-          const parseResult = parseRankFromString(acquisition.rawHtml, config.business_name);
+          const parseResult = parseLocalResults(acquisition.rawHtml, config.business_name);
           serpRank = Number.isFinite(parseResult.rank) ? parseResult.rank : null;
           serpReason = parseResult.reason || 'unknown';
           serpPlaces = Array.isArray(parseResult.places) ? parseResult.places : [];
