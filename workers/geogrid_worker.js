@@ -206,6 +206,144 @@ if (!isMainThread) {
 } else { // Main Thread Code
 
   let geoGridArtifactColumnsSupported = true;
+  let geoGridResultsColumnName = 'results_json';
+
+  function toNonEmptyString(value) {
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      return trimmed.length ? trimmed : null;
+    }
+    return null;
+  }
+
+  function toFiniteNumber(value) {
+    if (value === null || value === undefined) {
+      return null;
+    }
+    const numeric = typeof value === 'number' ? value : Number(value);
+    return Number.isFinite(numeric) ? numeric : null;
+  }
+
+  function normalizePlaceResult(place, index) {
+    if (!place || typeof place !== 'object') {
+      return null;
+    }
+
+    const normalized = {
+      rank: toFiniteNumber(place.rank) ?? (index + 1)
+    };
+
+    const stringProps = {
+      name: place.name,
+      category: place.category,
+      address: place.address,
+      website: place.website,
+      domain: place.domain,
+      phone: place.phone,
+      reviews_url: place.reviews_url,
+      hours_today: place.hours_today,
+      status_text: place.status_text,
+      place_id: place.place_id,
+      raw_place_id: place.raw_place_id,
+      place_id_source: place.place_id_source,
+      cid: place.cid
+    };
+
+    for (const [key, raw] of Object.entries(stringProps)) {
+      const value = toNonEmptyString(raw);
+      if (value !== null) {
+        normalized[key] = value;
+      }
+    }
+
+    const numberProps = {
+      rating: place.rating,
+      review_count: place.review_count,
+      latitude: place.latitude,
+      longitude: place.longitude
+    };
+
+    for (const [key, raw] of Object.entries(numberProps)) {
+      const value = toFiniteNumber(raw);
+      if (value !== null) {
+        normalized[key] = value;
+      }
+    }
+
+    return normalized;
+  }
+
+  function normalizeMatchedResult(matched) {
+    if (!matched || typeof matched !== 'object') {
+      return null;
+    }
+
+    const normalized = {};
+
+    const numericIndex = toFiniteNumber(matched.index);
+    if (numericIndex !== null) {
+      normalized.index = numericIndex;
+    }
+
+    const numericRank = toFiniteNumber(matched.rank ?? matched.position);
+    if (numericRank !== null) {
+      normalized.rank = numericRank;
+    }
+
+    const stringProps = {
+      place_id: matched.place_id,
+      raw_place_id: matched.raw_place_id,
+      place_id_source: matched.place_id_source,
+      cid: matched.cid,
+      name: matched.name
+    };
+
+    for (const [key, raw] of Object.entries(stringProps)) {
+      const value = toNonEmptyString(raw);
+      if (value !== null) {
+        normalized[key] = value;
+      }
+    }
+
+    return Object.keys(normalized).length ? normalized : null;
+  }
+
+  function buildPointResultsPayload(places, totalResults, matched) {
+    const normalizedPlaces = Array.isArray(places)
+      ? places
+          .map((place, index) => normalizePlaceResult(place, index))
+          .filter(Boolean)
+      : [];
+
+    const normalizedMatched = normalizeMatchedResult(matched);
+    const total = toFiniteNumber(totalResults);
+
+    if (!normalizedPlaces.length && !normalizedMatched && total === null) {
+      return null;
+    }
+
+    const payload = {};
+
+    if (total !== null) {
+      payload.totalResults = total;
+    }
+
+    if (normalizedMatched) {
+      payload.matched = normalizedMatched;
+    }
+
+    payload.places = normalizedPlaces;
+
+    return payload;
+  }
+
+  function buildGeoGridUpdateSql(resultsColumn) {
+    return `
+      UPDATE geo_grid_points
+      SET rank_pos = ?, measured_at = NOW(), screenshot_path = ?, search_url = ?, landing_url = ?, ${resultsColumn} = ?
+      WHERE id = ?
+    `;
+  }
 
   // --- Database Interaction Functions ---
   async function getActiveRuns(conn) {
@@ -386,7 +524,7 @@ if (!isMainThread) {
             };
 
             const handleWorkerMessage = (worker) => async (message) => {
-                const {
+                const { 
                     status,
                     pointId,
                     rank,
@@ -405,6 +543,17 @@ if (!isMainThread) {
                 const pointInfo = pointMeta.get(pointId) || { lat: null, lng: null };
                 const placesArray = Array.isArray(places) ? places : [];
                 const totalReturned = typeof totalResults === 'number' ? totalResults : placesArray.length;
+                const resultsPayload = buildPointResultsPayload(placesArray, totalReturned, matched);
+                let resultsJsonString = null;
+
+                if (resultsPayload) {
+                    try {
+                        resultsJsonString = JSON.stringify(resultsPayload);
+                    } catch (stringifyError) {
+                        console.warn(`[WORKER] Failed to stringify results payload for point ${pointId}:`, stringifyError.message);
+                        resultsJsonString = null;
+                    }
+                }
 
                 if (status === 'done') {
                     if (!reason || reason === 'puppeteer_exception') {
@@ -425,22 +574,32 @@ if (!isMainThread) {
                             const normalizedLandingUrl = typeof landingUrl === 'string' && landingUrl.trim().length
                                 ? landingUrl.trim()
                                 : normalizedSearchUrl;
-                            const newSql = `
-                                UPDATE geo_grid_points
-                                SET rank_pos = ?, measured_at = NOW(), screenshot_path = ?, search_url = ?, landing_url = ?
-                                WHERE id = ?
-                            `;
+                            const newSql = buildGeoGridUpdateSql(geoGridResultsColumnName);
                             const legacySql = 'UPDATE geo_grid_points SET rank_pos = ?, measured_at = NOW() WHERE id = ?';
 
                             try {
                                 if (geoGridArtifactColumnsSupported) {
-                                    await pointConn.execute(newSql, [
+                                    const params = [
                                         rankToSave,
                                         normalizedScreenshotPath,
                                         normalizedSearchUrl,
                                         normalizedLandingUrl,
+                                        resultsJsonString,
                                         pointId,
-                                    ]);
+                                    ];
+
+                                    try {
+                                        await pointConn.execute(newSql, params);
+                                    } catch (sqlError) {
+                                        if (sqlError && sqlError.code === 'ER_BAD_FIELD_ERROR' && geoGridResultsColumnName === 'results_json') {
+                                            console.warn('[WORKER] geo_grid_points missing results_json column; retrying with result_json.');
+                                            geoGridResultsColumnName = 'result_json';
+                                            const retrySql = buildGeoGridUpdateSql(geoGridResultsColumnName);
+                                            await pointConn.execute(retrySql, params);
+                                        } else {
+                                            throw sqlError;
+                                        }
+                                    }
                                 } else {
                                     await pointConn.execute(legacySql, [rankToSave, pointId]);
                                 }
