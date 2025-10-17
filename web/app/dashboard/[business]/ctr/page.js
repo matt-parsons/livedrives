@@ -114,6 +114,11 @@ function dedupePoints(records) {
   return Array.from(map.values());
 }
 
+function normalizeKeywordLabel(value) {
+  const trimmed = typeof value === 'string' ? value.trim() : '';
+  return trimmed ? trimmed : '(no keyword)';
+}
+
 export default async function CtrDashboardPage({ params, searchParams }) {
   const mapsApiKey = resolveMapsApiKey();
 
@@ -178,8 +183,16 @@ export default async function CtrDashboardPage({ params, searchParams }) {
   });
 
   runs.forEach((row) => {
-    const keywordLabel = (row.keyword ?? '(no keyword)').trim() || '(no keyword)';
-    const runPointsRaw = (snapshotByRun.get(row.runId) ?? []).map((snap) => ({
+    const keywordLabel = normalizeKeywordLabel(row.keyword);
+    const keywordKey = keywordLabel.toLowerCase();
+    const allSnapshots = snapshotByRun.get(row.runId) ?? [];
+    const keywordSnapshots = allSnapshots.filter((snap) => {
+      const snapshotLabel = normalizeKeywordLabel(snap.keyword);
+      return snapshotLabel.toLowerCase() === keywordKey;
+    });
+    const runSnapshots = keywordSnapshots.length ? keywordSnapshots : allSnapshots;
+
+    const runPointsRaw = runSnapshots.map((snap) => ({
       ...snap,
       runId: row.runId,
       keyword: keywordLabel,
