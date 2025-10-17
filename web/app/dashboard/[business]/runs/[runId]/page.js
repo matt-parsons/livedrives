@@ -12,6 +12,7 @@ import {
   extractRunSummary,
   resolveCenter
 } from '../formatters';
+import { buildListingSummaries } from '../listings';
 import GeoGridRunViewer from './GeoGridRunViewer';
 
 function resolveMapsApiKey() {
@@ -64,6 +65,10 @@ export default async function GeoGridRunPage({ params }) {
   }
 
   const runSummary = extractRunSummary(run);
+  const listingSummaries = buildListingSummaries(points, {
+    businessName: business.businessName,
+    businessPlaceId: business.gPlaceId
+  });
   const relatedRuns = await loadGeoGridRunsForKeyword(business.id, runSummary.keyword ?? null);
   const runOptions = relatedRuns.map((item) => {
     const timestamp = item.finishedAt ?? item.lastMeasuredAt ?? item.createdAt;
@@ -97,6 +102,7 @@ export default async function GeoGridRunPage({ params }) {
         initialMapPoints={mapPoints}
         initialCenter={center}
         initialSummary={runSummary}
+        initialListings={listingSummaries}
         runOptions={runOptions}
       />
     </div>
