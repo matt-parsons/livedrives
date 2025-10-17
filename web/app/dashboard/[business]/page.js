@@ -4,6 +4,7 @@ import { AuthError, requireAuth } from '@/lib/authServer';
 import GeoGridRunsSection from './GeoGridRunsSection';
 import OriginZonesManager from './OriginZonesManager';
 import KeywordPerformanceSpotlight from './KeywordPerformanceSpotlight';
+import BusinessOptimizationRoadmap from './BusinessOptimizationRoadmap';
 import {
   formatDate,
   formatDecimal,
@@ -14,6 +15,8 @@ import {
   loadGeoGridRunSummaries,
   loadCtrKeywordOverview
 } from './helpers';
+import { buildOptimizationRoadmap } from './optimization';
+import { fetchPlaceDetails } from '@/lib/googlePlaces';
 
 function resolveStatus(status) {
   if (!status) {
@@ -90,6 +93,18 @@ export default async function BusinessDashboardPage({ params, searchParams }) {
 
   if (!business) {
     notFound();
+  }
+
+  let optimizationRoadmap = null;
+  let optimizationError = null;
+
+  if (business.gPlaceId) {
+    try {
+      const { place } = await fetchPlaceDetails(business.gPlaceId);
+      optimizationRoadmap = buildOptimizationRoadmap(place);
+    } catch (error) {
+      optimizationError = error?.message ?? 'Failed to load Google Places details.';
+    }
   }
 
   const originZones = await loadOriginZones(business.id);
@@ -517,6 +532,15 @@ export default async function BusinessDashboardPage({ params, searchParams }) {
             </p>
           )}
         </div>
+      </section>
+
+      <section className="section">
+        <BusinessOptimizationRoadmap
+          roadmap={optimizationRoadmap}
+          error={optimizationError}
+          placeId={business.gPlaceId}
+          editHref={editHref}
+        />
       </section>
 
       {isOwner ? (
