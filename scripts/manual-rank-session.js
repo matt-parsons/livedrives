@@ -178,7 +178,7 @@ async function main() {
   let runId = null;
 
   try {
-    runId = await startRun(config.business_id);
+    runId = 156486;
 
     const ctrResult = {
       runId,
@@ -269,9 +269,10 @@ async function main() {
   } catch (err) {
     console.error('Manual ranking session failed:', err);
   } finally {
-    if (runId != null) {
-      await finishRun(runId).catch(() => {});
-    }
+    console.log('finally');
+    // if (runId != null) {
+    //   await finishRun(runId).catch(() => {});
+    // }
   }
 }
 
