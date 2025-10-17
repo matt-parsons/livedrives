@@ -126,9 +126,7 @@ if (!isMainThread) {
           });
           
           rankResult = acquisitionResult; // Store the acquisition object
-          const hasHtml = rankResult.rawHtml && rankResult.rawHtml.trim().length > 0;
-
-          console.log(`[RANKING] Keyword "${keyword}" for "${businessName}" and we have HTML: "${hasHtml}"`);
+          console.log(`[RANKING] Keyword "${keyword}" for "${businessName}" and we have HTML`);
           
           // --- STAGE 2: ANALYSIS (Parse HTML in-memory) ---
           if (rankResult.rawHtml) {
@@ -536,7 +534,8 @@ if (!isMainThread) {
             // Initialize the worker pool and start the first batch of jobs
             for (let i = 0; i < MAX_CONCURRENCY && tasks.length > 0; i++) {
               const worker = new Worker(path.join(__dirname, 'geogrid_worker.js'), {
-                  workerData: workerConfig
+                  workerData: workerConfig,
+                  execArgv: ['--experimental-default-type=commonjs']
               });
 
               worker.hasExited = false;
