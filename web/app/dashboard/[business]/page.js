@@ -3,6 +3,7 @@ import { notFound, redirect } from 'next/navigation';
 import { AuthError, requireAuth } from '@/lib/authServer';
 import GeoGridRunsSection from './GeoGridRunsSection';
 import OriginZonesManager from './OriginZonesManager';
+import KeywordPerformanceSpotlight from './KeywordPerformanceSpotlight';
 import {
   formatDate,
   formatDecimal,
@@ -509,95 +510,7 @@ export default async function BusinessDashboardPage({ params, searchParams }) {
           </div>
 
           {keywordPerformance30d.length ? (
-            <div
-              style={{
-                marginTop: '16px',
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-                gap: '1rem'
-              }}
-            >
-              {keywordPerformance30d.map((item) => (
-                <div
-                  key={item.key}
-                  style={{
-                    border: '1px solid rgba(17, 24, 39, 0.08)',
-                    borderRadius: '16px',
-                    padding: '1.1rem',
-                    backgroundColor: '#ffffff',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: '0.75rem',
-                    minHeight: '220px',
-                    textAlign: 'center',
-                    justifyContent: 'space-between'
-                  }}
-                >
-                  <div>
-                    <h3
-                      style={{
-                        fontSize: '1rem',
-                        color: '#111827',
-                        marginBottom: '0.4rem'
-                      }}
-                    >
-                      {item.keyword}
-                    </h3>
-                    <p style={{ fontSize: '0.85rem', color: '#6b7280' }}>
-                      Runs (30d) <strong>{item.runCount}</strong>
-                      {item.latestRunDate && item.latestRunDate !== '—' ? (
-                        <>
-                          {' · '}Latest {item.latestRunDate}
-                        </>
-                      ) : null}
-                    </p>
-                  </div>
-
-                  <div
-                    style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '0.6rem',
-                      width: '100%',
-                      alignItems: 'center'
-                    }}
-                  >
-                    <span className="metric-chip" style={{ justifyContent: 'center' }}>
-                      <strong>{item.solvLabel}</strong> SoLV top 3
-                      {item.solvTrendIndicator ? (
-                        <span
-                          className={`trend-indicator ${item.solvTrendIndicator.className}`}
-                          title={item.solvTrendIndicator.title}
-                        >
-                          <span aria-hidden="true">{item.solvTrendIndicator.icon}</span>
-                          <span>{item.solvTrendIndicator.text}</span>
-                        </span>
-                      ) : null}
-                    </span>
-                    {item.solvDeltaLabel ? (
-                      <span style={{ fontSize: '0.75rem', color: '#4b5563' }}>Last 30d Δ {item.solvDeltaLabel}</span>
-                    ) : null}
-
-                    <span className="metric-chip" style={{ justifyContent: 'center' }}>
-                      <strong>{item.avgLabel}</strong> Avg position
-                      {item.avgTrendIndicator ? (
-                        <span
-                          className={`trend-indicator ${item.avgTrendIndicator.className}`}
-                          title={item.avgTrendIndicator.title}
-                        >
-                          <span aria-hidden="true">{item.avgTrendIndicator.icon}</span>
-                          <span>{item.avgTrendIndicator.text}</span>
-                        </span>
-                      ) : null}
-                    </span>
-                    {item.avgDeltaLabel ? (
-                      <span style={{ fontSize: '0.75rem', color: '#4b5563' }}>Last 30d Δ {item.avgDeltaLabel}</span>
-                    ) : null}
-                  </div>
-                </div>
-              ))}
-            </div>
+            <KeywordPerformanceSpotlight items={keywordPerformance30d} />
           ) : (
             <p style={{ marginTop: '1rem', color: '#6b7280' }}>
               Not enough geo grid runs in the last 30 days to chart keyword movement.
