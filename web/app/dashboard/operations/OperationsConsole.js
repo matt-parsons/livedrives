@@ -1,10 +1,17 @@
 'use client';
 
+import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 const LOG_SCOPE_OPTIONS = [
   { id: 'today', label: "Today's logs" },
   { id: 'all', label: 'All logs' }
+];
+
+const TAB_OPTIONS = [
+  { id: 'logs', label: 'Run logs' },
+  { id: 'schedule', label: "Today's scheduled drives" },
+  { id: 'geo', label: 'Geo map runs' }
 ];
 
 function formatDateTime(value, timezone, options = {}) {
@@ -65,9 +72,24 @@ function normalizeEvents(events) {
   });
 }
 
+function formatDecimal(value, digits = 2) {
+  if (value === null || value === undefined || Number.isNaN(Number(value))) {
+    return '—';
+  }
+
+  const num = Number(value);
+
+  if (!Number.isFinite(num)) {
+    return '—';
+  }
+
+  return num.toFixed(digits);
+}
+
 export default function OperationsConsole({ timezone: initialTimezone }) {
   const fallbackTimezone = initialTimezone || 'America/Phoenix';
 
+  const [activeTab, setActiveTab] = useState('logs');
   const [logsScope, setLogsScope] = useState('today');
   const [logsLoading, setLogsLoading] = useState(false);
   const [logsError, setLogsError] = useState(null);
@@ -77,8 +99,14 @@ export default function OperationsConsole({ timezone: initialTimezone }) {
   const [scheduleError, setScheduleError] = useState(null);
   const [scheduleData, setScheduleData] = useState({ timezone: fallbackTimezone, entries: [] });
 
+  const [geoRunsLoading, setGeoRunsLoading] = useState(false);
+  const [geoRunsError, setGeoRunsError] = useState(null);
+  const [geoRunsData, setGeoRunsData] = useState({ timezone: fallbackTimezone, runs: [] });
+  const [geoRunsLoaded, setGeoRunsLoaded] = useState(false);
+
   const activeLogsTimezone = logsData?.timezone || fallbackTimezone;
   const activeScheduleTimezone = scheduleData?.timezone || fallbackTimezone;
+  const activeGeoTimezone = geoRunsData?.timezone || fallbackTimezone;
 
   const loadLogs = useCallback(
     async (scope) => {
@@ -139,6 +167,31 @@ export default function OperationsConsole({ timezone: initialTimezone }) {
     refreshSchedule();
   }, [refreshSchedule]);
 
+  const loadGeoRuns = useCallback(async () => {
+    setGeoRunsLoading(true);
+    setGeoRunsError(null);
+
+    try {
+      const response = await fetch('/api/geo-grid/runs', {
+        method: 'GET',
+        headers: { Accept: 'application/json' },
+        cache: 'no-store'
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to load geo map runs (status ${response.status})`);
+      }
+
+      const payload = await response.json();
+      setGeoRunsData(payload);
+      setGeoRunsLoaded(true);
+    } catch (error) {
+      setGeoRunsError(error);
+    } finally {
+      setGeoRunsLoading(false);
+    }
+  }, []);
+
   const scheduleEntries = useMemo(() => {
     const entries = Array.isArray(scheduleData?.entries) ? scheduleData.entries : [];
     const todayKey = getDateKey(new Date(), activeScheduleTimezone);
@@ -155,9 +208,39 @@ export default function OperationsConsole({ timezone: initialTimezone }) {
       });
   }, [scheduleData, activeScheduleTimezone]);
 
+  const geoRuns = useMemo(() => {
+    return Array.isArray(geoRunsData?.runs) ? geoRunsData.runs : [];
+  }, [geoRunsData]);
+
   return (
     <div className="operations-layout">
-      <section className="section">
+      <div className="operations-tabs" role="presentation">
+        <div className="operations-tablist" role="tablist" aria-label="Operations views">
+          {TAB_OPTIONS.map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              role="tab"
+              id={`operations-tab-${tab.id}`}
+              aria-controls={`operations-panel-${tab.id}`}
+              className={tab.id === activeTab ? 'operations-tab operations-tab--active' : 'operations-tab'}
+              aria-selected={tab.id === activeTab}
+              tabIndex={tab.id === activeTab ? 0 : -1}
+              onClick={() => setActiveTab(tab.id)}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {activeTab === 'logs' ? (
+        <section
+          id="operations-panel-logs"
+          className="section"
+          role="tabpanel"
+          aria-labelledby="operations-tab-logs"
+        >
         <div className="section-header">
           <div>
             <h2 className="section-title">Run logs</h2>
@@ -188,9 +271,19 @@ export default function OperationsConsole({ timezone: initialTimezone }) {
               </span>
               <span className="status-pill status-pill--muted">Timezone: {activeLogsTimezone}</span>
             </div>
-            <button type="button" className="refresh-button" onClick={() => loadLogs(logsScope)} disabled={logsLoading}>
-              Refresh
-            </button>
+            <div className="logs-toolbar__actions">
+              <Link className="toolbar-link" href="/runs">
+                View run dashboard
+              </Link>
+              <button
+                type="button"
+                className="refresh-button"
+                onClick={() => loadLogs(logsScope)}
+                disabled={logsLoading}
+              >
+                Refresh
+              </button>
+            </div>
           </div>
 
           {logsError ? (
@@ -299,9 +392,16 @@ export default function OperationsConsole({ timezone: initialTimezone }) {
             </table>
           </div>
         </div>
-      </section>
+        </section>
+      ) : null}
 
-      <section className="section">
+      {activeTab === 'schedule' ? (
+        <section
+          id="operations-panel-schedule"
+          className="section"
+          role="tabpanel"
+          aria-labelledby="operations-tab-schedule"
+        >
         <div className="section-header">
           <div>
             <h2 className="section-title">Today’s scheduled drives</h2>
@@ -383,7 +483,120 @@ export default function OperationsConsole({ timezone: initialTimezone }) {
             </table>
           </div>
         </div>
-      </section>
+        </section>
+      ) : null}
+
+      {activeTab === 'geo' ? (
+        <section
+          id="operations-panel-geo"
+          className="section"
+          role="tabpanel"
+          aria-labelledby="operations-tab-geo"
+        >
+          <div className="section-header">
+            <div>
+              <h2 className="section-title">Geo map runs</h2>
+              <p className="section-caption">
+                Load the full history of geo grid runs across your managed businesses on demand.
+              </p>
+            </div>
+            <button type="button" className="refresh-button" onClick={loadGeoRuns} disabled={geoRunsLoading}>
+              {geoRunsLoaded ? 'Refresh' : 'Load geo map runs'}
+            </button>
+          </div>
+
+          <div className="surface-card">
+            <div className="logs-toolbar">
+              <div className="logs-toolbar__meta">
+                <span className="status-pill">
+                  {geoRunsLoading
+                    ? 'Loading…'
+                    : `${geoRuns.length} geo map run${geoRuns.length === 1 ? '' : 's'}`}
+                </span>
+                <span className="status-pill status-pill--muted">Timezone: {activeGeoTimezone}</span>
+              </div>
+            </div>
+
+            {geoRunsError ? (
+              <div className="inline-error" role="alert">
+                <strong>Unable to load geo map runs.</strong>
+                <span>{geoRunsError.message}</span>
+              </div>
+            ) : null}
+
+            <div className="table-scroll">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th style={{ minWidth: 120 }}>Run ID</th>
+                    <th style={{ minWidth: 200 }}>Business</th>
+                    <th style={{ minWidth: 160 }}>Keyword</th>
+                    <th style={{ minWidth: 140 }}>Status</th>
+                    <th style={{ minWidth: 180 }}>Created</th>
+                    <th style={{ minWidth: 180 }}>Finished</th>
+                    <th style={{ minWidth: 140 }}>Grid</th>
+                    <th style={{ minWidth: 120 }}>Radius (mi)</th>
+                    <th style={{ minWidth: 120 }}>Spacing (mi)</th>
+                    <th style={{ minWidth: 160 }}>Ranked points</th>
+                    <th style={{ minWidth: 140 }}>Top 3 points</th>
+                    <th style={{ minWidth: 140 }}>Avg rank</th>
+                    <th style={{ minWidth: 180 }}>Last measured</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {geoRunsLoading && !geoRunsLoaded ? (
+                    <tr>
+                      <td colSpan={13} className="table-placeholder">
+                        Loading geo map runs…
+                      </td>
+                    </tr>
+                  ) : null}
+
+                  {!geoRunsLoading && (!geoRunsLoaded || geoRuns.length === 0) ? (
+                    <tr>
+                      <td colSpan={13} className="table-placeholder">
+                        {geoRunsLoaded
+                          ? 'No geo map runs found for your organization.'
+                          : 'Geo map runs have not been loaded yet.'}
+                      </td>
+                    </tr>
+                  ) : null}
+
+                  {geoRuns.map((run) => (
+                    <tr key={run.id}>
+                      <td>{run.id}</td>
+                      <td>{run.businessName ?? run.businessId ?? '—'}</td>
+                      <td>{run.keyword ?? '—'}</td>
+                      <td>{run.status ?? '—'}</td>
+                      <td>{formatDateTime(run.createdAt, activeGeoTimezone)}</td>
+                      <td>{formatDateTime(run.finishedAt, activeGeoTimezone)}</td>
+                      <td>
+                        {run.gridRows != null && run.gridCols != null
+                          ? `${run.gridRows} × ${run.gridCols}`
+                          : '—'}
+                      </td>
+                      <td>{run.radiusMiles != null ? formatDecimal(run.radiusMiles, 1) : '—'}</td>
+                      <td>{run.spacingMiles != null ? formatDecimal(run.spacingMiles, 2) : '—'}</td>
+                      <td>
+                        {run.totalPoints != null
+                          ? `${run.rankedPoints ?? 0} / ${run.totalPoints}`
+                          : '—'}
+                      </td>
+                      <td>
+                        {run.totalPoints != null
+                          ? `${run.top3Points ?? 0} / ${run.totalPoints}`
+                          : '—'}
+                      </td>
+                      <td>{formatDecimal(run.avgRank)}</td>
+                      <td>{formatDateTime(run.lastMeasuredAt, activeGeoTimezone)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      ) : null}
     </div>
   );
 }
