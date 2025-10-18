@@ -88,7 +88,7 @@ function buildMarkerIcon(rankPosition, isSelected = false) {
       : String(safeRank);
   const fill = getMarkerColor(rankPosition);
   const strokeColor = isSelected ? '#111827' : '#ffffff';
-  const strokeWidth = isSelected ? 6 : 2;
+  const strokeWidth = isSelected ? 1 : 2;
   const radius = isSelected ? 44 : 40;
   const size = isSelected ? 60 : 52;
   const anchor = size / 2;
@@ -199,8 +199,9 @@ export default function GeoGridMap({ apiKey, center, points, selectedPointId = n
             }
           });
 
-          if (activeMarker && mapInstanceRef.current) {
-            mapInstanceRef.current.panTo(activeMarker.getPosition());
+          // Keep selected marker visually distinct without panning the map.
+          if (activeMarker) {
+            activeMarker.setZIndex(1000);
           }
         }
       })
@@ -246,8 +247,9 @@ export default function GeoGridMap({ apiKey, center, points, selectedPointId = n
       }
     });
 
-    if (activeMarker && mapInstanceRef.current) {
-      mapInstanceRef.current.panTo(activeMarker.getPosition());
+    // Maintain marker emphasis without shifting the viewport when the selection changes.
+    if (activeMarker) {
+      activeMarker.setZIndex(1000);
     }
   }, [selectedPointId]);
 

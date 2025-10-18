@@ -6,7 +6,6 @@ import {
   buildCoordinatePair,
   buildMapPoints,
   extractRunSummary,
-  formatDecimal,
   formatDuration,
   resolveCenter,
   resolveStatus,
@@ -494,12 +493,9 @@ export default function GeoGridRunViewer({
               {selectedListings.length ? (
                 <ul className="listing-list">
                   {selectedListings.map((entry, index) => {
-                    const ratingLabel = entry.rating !== null && entry.rating !== undefined
-                      ? `${formatDecimal(entry.rating, 1)}★`
-                      : null;
                     const reviewsLabel = Number.isFinite(entry.reviewCount)
                       ? `${entry.reviewCount.toLocaleString()} review${entry.reviewCount === 1 ? '' : 's'}`
-                      : null;
+                      : 'Reviews unavailable';
                     const rankBadge = entry.rankLabel && entry.rankLabel !== '?'
                       ? `#${entry.rankLabel}`
                       : '?';
@@ -524,27 +520,8 @@ export default function GeoGridRunViewer({
                           <p className="listing-card__address">{entry.address}</p>
                         ) : null}
                         <div className="listing-card__meta">
-                          {ratingLabel ? (
-                            <span className="listing-card__stat">
-                              {ratingLabel}
-                              {reviewsLabel ? (
-                                <span className="listing-card__muted"> · {reviewsLabel}</span>
-                              ) : null}
-                            </span>
-                          ) : reviewsLabel ? (
-                            <span className="listing-card__stat">{reviewsLabel}</span>
-                          ) : null}
+                          <span className="listing-card__stat">{reviewsLabel}</span>
                         </div>
-                        {entry.reviewsUrl ? (
-                          <a
-                            className="listing-card__link"
-                            href={entry.reviewsUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                          >
-                            View Google reviews ↗
-                          </a>
-                        ) : null}
                       </li>
                     );
                   })}
