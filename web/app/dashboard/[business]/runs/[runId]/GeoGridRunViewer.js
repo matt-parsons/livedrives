@@ -6,6 +6,7 @@ import {
   buildCoordinatePair,
   buildMapPoints,
   extractRunSummary,
+  formatDecimal,
   formatDuration,
   resolveCenter,
   resolveStatus,
@@ -151,7 +152,8 @@ export default function GeoGridRunViewer({
   initialCenter,
   initialSummary,
   initialPointListings,
-  runOptions
+  runOptions,
+  canRerun = false
 }) {
   const [run, setRun] = useState(initialRun);
   const [runSummary, setRunSummary] = useState(initialSummary);
@@ -162,6 +164,9 @@ export default function GeoGridRunViewer({
   const [selectedPointId, setSelectedPointId] = useState(() => resolveDefaultPointId(initialMapPoints));
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState(null);
+  const [rerunPending, setRerunPending] = useState(false);
+  const [rerunSuccessMessage, setRerunSuccessMessage] = useState(null);
+  const [rerunError, setRerunError] = useState(null);
   const requestRef = useRef(0);
 
   const options = useMemo(
@@ -204,6 +209,15 @@ export default function GeoGridRunViewer({
       ? latestTimestamp - firstTimestamp
       : null;
   const runDurationLabel = runDurationMs === null ? null : formatDuration(runDurationMs);
+  const runKeyword = typeof run?.keyword === 'string' ? run.keyword.trim() : '';
+  const runGridRows = toFiniteNumber(run?.gridRows);
+  const runGridCols = toFiniteNumber(run?.gridCols);
+  const runRadiusMiles = toFiniteNumber(run?.radiusMiles);
+  const runOriginLatValue = toFiniteNumber(run?.originLat);
+  const runOriginLngValue = toFiniteNumber(run?.originLng);
+  const canDisplayRerunButton =
+    canRerun && Boolean(runKeyword) && runGridRows !== null && runGridCols !== null;
+  const rerunButtonDisabled = !canDisplayRerunButton || rerunPending;
 
   const selectedPoint = useMemo(() => {
     if (selectedPointId === null) {
@@ -263,6 +277,11 @@ export default function GeoGridRunViewer({
       }
     }
   }, [mapPoints, selectedPointId]);
+
+  useEffect(() => {
+    setRerunSuccessMessage(null);
+    setRerunError(null);
+  }, [run.id]);
 
   const handleRunSelection = async (event) => {
     const nextRunId = Number(event.target.value);
@@ -359,6 +378,67 @@ export default function GeoGridRunViewer({
     setSelectedPointId(normalized);
   }, [selectedPointId]);
 
+  const handleRerunClick = async () => {
+    if (!canDisplayRerunButton || rerunPending) {
+      return;
+    }
+
+    setRerunPending(true);
+    setRerunSuccessMessage(null);
+    setRerunError(null);
+
+    const requestBody = {
+      keyword: runKeyword,
+      gridRows: runGridRows,
+      gridCols: runGridCols
+    };
+
+    if (runRadiusMiles !== null) {
+      requestBody.radiusMiles = runRadiusMiles;
+    }
+
+    if (runOriginLatValue !== null) {
+      requestBody.originLat = runOriginLatValue;
+    }
+
+    if (runOriginLngValue !== null) {
+      requestBody.originLng = runOriginLngValue;
+    }
+
+    try {
+      const response = await fetch(
+        `/api/businesses/${businessId}/geo-grid/runs`,
+        {
+          method: 'POST',
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(requestBody)
+        }
+      );
+
+      const payload = await response.json().catch(() => ({}));
+
+      if (!response.ok || payload?.error) {
+        throw new Error(payload?.error || 'Failed to start geo grid run.');
+      }
+
+      setRerunSuccessMessage(
+        payload?.runId
+          ? `Queued new geo grid run #${payload.runId}.`
+          : 'Geo grid run queued.'
+      );
+    } catch (error) {
+      console.error('Failed to re-run geo grid', error);
+      setRerunError(
+        error instanceof Error ? error.message : 'Failed to start geo grid run.'
+      );
+    } finally {
+      setRerunPending(false);
+    }
+  };
+
   return (
     <>
       <section className="section">
@@ -372,38 +452,55 @@ export default function GeoGridRunViewer({
                 </span>
               </div>
 
-              {hasOtherRuns ? (
-                <div
-                  className="run-summary__selector"
-                  style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}
-                >
-                  <label
-                    htmlFor="geo-grid-run-selector"
-                    className="run-summary__label"
-                    style={{ fontSize: '0.68rem' }}
-                  >
-                    Other runs for this keyword
-                  </label>
-                  <select
-                    id="geo-grid-run-selector"
-                    value={selectedRunId}
-                    onChange={handleRunSelection}
-                    disabled={loading}
-                    style={{ minWidth: '220px' }}
-                  >
-                    {options.map((option) => (
-                      <option key={option.id} value={option.id}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                  {loading ? (
-                    <span className="muted" style={{ fontSize: '0.8rem' }}>
-                      Loading run…
-                    </span>
+              {hasOtherRuns || canDisplayRerunButton ? (
+                <div className="run-summary__controls">
+                  {hasOtherRuns ? (
+                    <div className="run-summary__selector">
+                      <label
+                        htmlFor="geo-grid-run-selector"
+                        className="run-summary__label"
+                      >
+                        Other runs for this keyword
+                      </label>
+                      <select
+                        id="geo-grid-run-selector"
+                        value={selectedRunId}
+                        onChange={handleRunSelection}
+                        disabled={loading}
+                      >
+                        {options.map((option) => (
+                          <option key={option.id} value={option.id}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                      {loading ? (
+                        <span className="run-summary__hint muted">Loading run…</span>
+                      ) : null}
+                      {errorMessage ? (
+                        <span className="run-summary__error">{errorMessage}</span>
+                      ) : null}
+                    </div>
                   ) : null}
-                  {errorMessage ? (
-                    <span style={{ color: '#b91c1c', fontSize: '0.82rem' }}>{errorMessage}</span>
+
+                  {canDisplayRerunButton ? (
+                    <div className="run-summary__actions">
+                      <button
+                        type="button"
+                        onClick={handleRerunClick}
+                        disabled={rerunButtonDisabled}
+                      >
+                        {rerunPending ? 'Queueing…' : 'Re-run geo grid'}
+                      </button>
+                      {rerunSuccessMessage ? (
+                        <span className="run-summary__feedback" role="status">
+                          {rerunSuccessMessage}
+                        </span>
+                      ) : null}
+                      {rerunError ? (
+                        <span className="run-summary__error">{rerunError}</span>
+                      ) : null}
+                    </div>
                   ) : null}
                 </div>
               ) : null}
@@ -552,6 +649,165 @@ export default function GeoGridRunViewer({
         </section>
       ) : null}
       <style jsx>{`
+        .run-summary {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 24px;
+        }
+
+        .run-summary-col {
+          flex: 1 1 320px;
+          display: flex;
+          flex-direction: column;
+          gap: 18px;
+        }
+
+        .run-summary__header {
+          display: flex;
+          flex-wrap: wrap;
+          justify-content: space-between;
+          gap: 18px;
+        }
+
+        .run-summary__keyword {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+        }
+
+        .run-summary__label {
+          font-size: 0.75rem;
+          text-transform: uppercase;
+          letter-spacing: 0.08em;
+          color: var(--color-muted, #64748b);
+          font-weight: 600;
+        }
+
+        .run-summary__value {
+          font-size: 1.1rem;
+          font-weight: 600;
+          color: var(--color-heading, #0f172a);
+        }
+
+        .run-summary__controls {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 16px;
+          align-items: flex-end;
+        }
+
+        .run-summary__selector {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+          min-width: 220px;
+        }
+
+        .run-summary__selector select {
+          padding: 6px 8px;
+          border-radius: var(--radius-sm, 8px);
+          border: 1px solid rgba(15, 23, 42, 0.18);
+          font-size: 0.85rem;
+          background: #fff;
+          color: var(--color-heading, #0f172a);
+        }
+
+        .run-summary__selector select:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+
+        .run-summary__actions {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+          align-items: flex-start;
+        }
+
+        .run-summary__actions button {
+          appearance: none;
+          border: none;
+          border-radius: var(--radius-sm, 8px);
+          background: var(--color-primary, #2563eb);
+          color: #fff;
+          font-weight: 600;
+          padding: 8px 14px;
+          font-size: 0.85rem;
+          cursor: pointer;
+          transition: background 0.15s ease-in-out;
+        }
+
+        .run-summary__actions button:hover:not(:disabled) {
+          background: #1d4ed8;
+        }
+
+        .run-summary__actions button:disabled {
+          background: rgba(37, 99, 235, 0.45);
+          cursor: not-allowed;
+        }
+
+        .run-summary__feedback {
+          font-size: 0.78rem;
+          color: var(--color-muted, #475569);
+        }
+
+        .run-summary__error {
+          font-size: 0.78rem;
+          color: #b91c1c;
+        }
+
+        .run-summary__hint {
+          font-size: 0.78rem;
+        }
+
+        .run-summary__metrics {
+          display: flex;
+          gap: 12px;
+          flex-wrap: wrap;
+        }
+
+        .metric-highlight {
+          display: inline-flex;
+          flex-direction: column;
+          gap: 4px;
+          padding: 10px 16px;
+          border-radius: var(--radius-md, 12px);
+          background: rgba(15, 23, 42, 0.04);
+        }
+
+        .metric-highlight--solv {
+          background: rgba(37, 99, 235, 0.08);
+        }
+
+        .metric-highlight__label {
+          font-size: 0.72rem;
+          text-transform: uppercase;
+          letter-spacing: 0.08em;
+          color: var(--color-muted, #64748b);
+          font-weight: 600;
+        }
+
+        .metric-highlight__value {
+          font-size: 1.15rem;
+          font-weight: 600;
+          color: var(--color-heading, #0f172a);
+        }
+
+        .run-summary__facts {
+          margin: 0;
+          padding: 0;
+          list-style: none;
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          font-size: 0.88rem;
+          color: var(--color-heading, #0f172a);
+        }
+
+        .run-summary__date {
+          font-weight: 600;
+        }
+
         .map-layout {
           display: flex;
           align-items: stretch;

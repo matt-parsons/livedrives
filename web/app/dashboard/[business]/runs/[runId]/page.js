@@ -104,6 +104,7 @@ export default async function GeoGridRunPage({ params }) {
         initialSummary={runSummary}
         initialPointListings={pointListings}
         runOptions={runOptions}
+        canRerun={session.role === 'owner'}
       />
     </div>
   );
