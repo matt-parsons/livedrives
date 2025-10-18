@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import GeoGridLauncher from '../geo-grid-launcher/GeoGridLauncher';
 
 const LOG_SCOPE_OPTIONS = [
   { id: 'today', label: "Today's logs" },
@@ -11,8 +12,11 @@ const LOG_SCOPE_OPTIONS = [
 const TAB_OPTIONS = [
   { id: 'logs', label: 'Run logs' },
   { id: 'schedule', label: "Today's scheduled drives" },
-  { id: 'geo', label: 'Geo map runs' }
+  { id: 'geo', label: 'Geo map runs' },
+  { id: 'launcher', label: 'Geo grid launcher' }
 ];
+
+const TAB_IDS = new Set(TAB_OPTIONS.map((tab) => tab.id));
 
 function formatDateTime(value, timezone, options = {}) {
   if (!value) return '';
@@ -86,10 +90,15 @@ function formatDecimal(value, digits = 2) {
   return num.toFixed(digits);
 }
 
-export default function OperationsConsole({ timezone: initialTimezone }) {
+export default function OperationsConsole({ timezone: initialTimezone, initialTab }) {
   const fallbackTimezone = initialTimezone || 'America/Phoenix';
 
-  const [activeTab, setActiveTab] = useState('logs');
+  const [activeTab, setActiveTab] = useState(() => {
+    if (initialTab && TAB_IDS.has(initialTab)) {
+      return initialTab;
+    }
+    return 'logs';
+  });
   const [logsScope, setLogsScope] = useState('today');
   const [logsLoading, setLogsLoading] = useState(false);
   const [logsError, setLogsError] = useState(null);
@@ -102,7 +111,7 @@ export default function OperationsConsole({ timezone: initialTimezone }) {
   const [geoRunsLoading, setGeoRunsLoading] = useState(false);
   const [geoRunsError, setGeoRunsError] = useState(null);
   const [geoRunsData, setGeoRunsData] = useState({ timezone: fallbackTimezone, runs: [] });
-  const [geoRunsLoaded, setGeoRunsLoaded] = useState(false);
+  const [geoRunsInitialized, setGeoRunsInitialized] = useState(false);
 
   const activeLogsTimezone = logsData?.timezone || fallbackTimezone;
   const activeScheduleTimezone = scheduleData?.timezone || fallbackTimezone;
@@ -170,6 +179,7 @@ export default function OperationsConsole({ timezone: initialTimezone }) {
   const loadGeoRuns = useCallback(async () => {
     setGeoRunsLoading(true);
     setGeoRunsError(null);
+    setGeoRunsInitialized(true);
 
     try {
       const response = await fetch('/api/geo-grid/runs', {
@@ -184,13 +194,18 @@ export default function OperationsConsole({ timezone: initialTimezone }) {
 
       const payload = await response.json();
       setGeoRunsData(payload);
-      setGeoRunsLoaded(true);
     } catch (error) {
       setGeoRunsError(error);
     } finally {
       setGeoRunsLoading(false);
     }
   }, []);
+
+  useEffect(() => {
+    if (activeTab === 'geo' && !geoRunsInitialized && !geoRunsLoading) {
+      loadGeoRuns();
+    }
+  }, [activeTab, geoRunsInitialized, geoRunsLoading, loadGeoRuns]);
 
   const scheduleEntries = useMemo(() => {
     const entries = Array.isArray(scheduleData?.entries) ? scheduleData.entries : [];
@@ -497,11 +512,11 @@ export default function OperationsConsole({ timezone: initialTimezone }) {
             <div>
               <h2 className="section-title">Geo map runs</h2>
               <p className="section-caption">
-                Load the full history of geo grid runs across your managed businesses on demand.
+                Review the full history of geo grid runs across your managed businesses and refresh results on demand.
               </p>
             </div>
             <button type="button" className="refresh-button" onClick={loadGeoRuns} disabled={geoRunsLoading}>
-              {geoRunsLoaded ? 'Refresh' : 'Load geo map runs'}
+              Refresh
             </button>
           </div>
 
@@ -544,7 +559,7 @@ export default function OperationsConsole({ timezone: initialTimezone }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {geoRunsLoading && !geoRunsLoaded ? (
+                  {geoRunsLoading && geoRuns.length === 0 ? (
                     <tr>
                       <td colSpan={13} className="table-placeholder">
                         Loading geo map runs…
@@ -552,12 +567,10 @@ export default function OperationsConsole({ timezone: initialTimezone }) {
                     </tr>
                   ) : null}
 
-                  {!geoRunsLoading && (!geoRunsLoaded || geoRuns.length === 0) ? (
+                  {!geoRunsLoading && geoRuns.length === 0 ? (
                     <tr>
                       <td colSpan={13} className="table-placeholder">
-                        {geoRunsLoaded
-                          ? 'No geo map runs found for your organization.'
-                          : 'Geo map runs have not been loaded yet.'}
+                        No geo map runs found for your organization.
                       </td>
                     </tr>
                   ) : null}
@@ -595,6 +608,27 @@ export default function OperationsConsole({ timezone: initialTimezone }) {
               </table>
             </div>
           </div>
+        </section>
+      ) : null}
+
+      {activeTab === 'launcher' ? (
+        <section
+          id="operations-panel-launcher"
+          className="section"
+          role="tabpanel"
+          aria-labelledby="operations-tab-launcher"
+        >
+          <div className="section-header">
+            <div>
+              <h2 className="section-title">Geo grid launcher</h2>
+              <p className="section-caption">
+                Spin up fresh geo grid runs without leaving the operations workspace. Configure your business, keyword,
+                and grid settings in one place.
+              </p>
+            </div>
+          </div>
+
+          <GeoGridLauncher showHeader={false} />
         </section>
       ) : null}
     </div>

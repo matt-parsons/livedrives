@@ -8,7 +8,7 @@ function toBusinessId(value) {
   return String(value);
 }
 
-export default function GeoGridLauncher() {
+export default function GeoGridLauncher({ showHeader = true }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [data, setData] = useState(null);
@@ -277,13 +277,15 @@ export default function GeoGridLauncher() {
 
   return (
     <div className="surface-card geo-launcher-card">
-      <div>
-        <h2 className="section-title">Launch a geo grid</h2>
-        <p className="section-caption">
-          Kick off a geo grid run for any managed business. Choose a keyword and configuration, confirm the origin zone,
-          and the worker queue will handle the rest.
-        </p>
-      </div>
+      {showHeader ? (
+        <div>
+          <h2 className="section-title">Launch a geo grid</h2>
+          <p className="section-caption">
+            Kick off a geo grid run for any managed business. Choose a keyword and configuration, confirm the origin zone,
+            and the worker queue will handle the rest.
+          </p>
+        </div>
+      ) : null}
 
       <form className="geo-launcher__form" onSubmit={handleSubmit}>
         {error ? (
