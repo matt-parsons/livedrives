@@ -379,7 +379,10 @@ if (!isMainThread) {
       const maxRetries = 3;
       while (retries < maxRetries) {
         try {
-          await conn.execute('UPDATE geo_grid_runs SET status = ? WHERE id = ?', [status, runId]);
+          const shouldStampFinished = status === 'done' || status === 'error';
+          const finishedAtExpression = shouldStampFinished ? 'UTC_TIMESTAMP()' : 'NULL';
+          const sql = `UPDATE geo_grid_runs SET status = ?, finished_at = ${finishedAtExpression} WHERE id = ?`;
+          await conn.execute(sql, [status, runId]);
           console.log(`Successfully updated run #${runId} status to '${status}'.`);
           return true;
         } catch (updateError) {
@@ -463,10 +466,60 @@ if (!isMainThread) {
         const FAILURE_CHECK_WINDOW = 10; // Check last 10 tasks
         const FAILURE_PAUSE_MS = 300000; // 5 minutes
 
+        let runTerminationRequested = false;
         await new Promise(resolve => {
             const idleWorkers = new Set();
             let isPaused = false;
             let pauseInProgress = false;
+            let activeTaskCount = 0;
+            let lastStatusCheck = 0;
+
+            const maybeResolve = () => {
+                if ((tasks.length === 0 && activeTaskCount === 0) || (runTerminationRequested && activeTaskCount === 0)) {
+                    resolve();
+                }
+            };
+
+            const markRunTermination = (statusLabel) => {
+                if (runTerminationRequested) {
+                    return;
+                }
+                runTerminationRequested = true;
+                tasks.length = 0;
+                console.warn(`[WORKER] Run #${runId} marked as '${statusLabel}'. Halting new tasks.`);
+                maybeResolve();
+            };
+
+            const checkRunStillActive = async (force = false) => {
+                if (runTerminationRequested) {
+                    return false;
+                }
+
+                const now = Date.now();
+                if (!force && now - lastStatusCheck < 5000) {
+                    return true;
+                }
+
+                lastStatusCheck = now;
+
+                try {
+                    const [rows] = await pool.query('SELECT status FROM geo_grid_runs WHERE id = ? LIMIT 1', [runId]);
+                    if (!rows.length) {
+                        markRunTermination('deleted');
+                        return false;
+                    }
+
+                    const currentStatus = rows[0].status;
+                    if (currentStatus !== 'running') {
+                        markRunTermination(currentStatus);
+                        return false;
+                    }
+                } catch (statusError) {
+                    console.error(`[WORKER] Failed to check status for run ${runId}:`, statusError.message || statusError);
+                }
+
+                return !runTerminationRequested;
+            };
 
             const resumeAfterPause = () => {
                 if (!pauseInProgress) {
@@ -478,7 +531,9 @@ if (!isMainThread) {
                 pauseInProgress = false;
                 for (const idleWorker of Array.from(idleWorkers)) {
                     idleWorkers.delete(idleWorker);
-                    startNextTask(idleWorker);
+                    startNextTask(idleWorker).catch((err) => {
+                        console.error('Failed to resume worker task:', err);
+                    });
                 }
             };
 
@@ -492,9 +547,23 @@ if (!isMainThread) {
                 setTimeout(resumeAfterPause, FAILURE_PAUSE_MS);
             };
 
-            const startNextTask = (worker) => {
+            const startNextTask = async (worker) => {
                 if (!worker || worker.hasExited) {
                     idleWorkers.delete(worker);
+                    maybeResolve();
+                    return;
+                }
+
+                if (runTerminationRequested) {
+                    idleWorkers.add(worker);
+                    maybeResolve();
+                    return;
+                }
+
+                const runIsActive = await checkRunStillActive();
+                if (!runIsActive) {
+                    idleWorkers.add(worker);
+                    maybeResolve();
                     return;
                 }
 
@@ -510,6 +579,7 @@ if (!isMainThread) {
                     const latNum = task.lat != null ? Number(task.lat) : null;
                     const lngNum = task.lng != null ? Number(task.lng) : null;
                     pointMeta.set(task.pointId, { lat: latNum, lng: lngNum });
+                    activeTaskCount++;
                     worker.postMessage({
                         point: { ...task, lat: latNum, lng: lngNum },
                         runId,
@@ -519,7 +589,8 @@ if (!isMainThread) {
                         soaxConfig,
                     });
                 } else {
-                    worker.postMessage({ exit: true });
+                    idleWorkers.add(worker);
+                    maybeResolve();
                 }
             };
 
@@ -545,6 +616,17 @@ if (!isMainThread) {
                 const totalReturned = typeof totalResults === 'number' ? totalResults : placesArray.length;
                 const resultsPayload = buildPointResultsPayload(placesArray, totalReturned, matched);
                 let resultsJsonString = null;
+
+                if (activeTaskCount > 0) {
+                    activeTaskCount--;
+                }
+
+                if (runTerminationRequested) {
+                    pointMeta.delete(pointId);
+                    console.log(`[WORKER] Ignoring result for point ${pointId} because run #${runId} is stopping.`);
+                    maybeResolve();
+                    return;
+                }
 
                 if (resultsPayload) {
                     try {
@@ -682,11 +764,12 @@ if (!isMainThread) {
                 }
 
                 completedCount++;
-                if (completedCount === allPoints.length) {
-                    resolve();
-                } else {
+                maybeResolve();
+                if (!runTerminationRequested) {
                     await new Promise(res => setTimeout(res, SCRAPE_DELAY_MS));
-                    startNextTask(worker);
+                    startNextTask(worker).catch((err) => {
+                        console.error('Failed to queue next task for worker:', err);
+                    });
                 }
             };
 
@@ -704,6 +787,7 @@ if (!isMainThread) {
                 worker.hasExited = true;
                 idleWorkers.delete(worker);
                 console.log(`Worker ${worker.threadId} exited with code ${code}`);
+                maybeResolve();
               });
 
               worker.on('error', (err) => {
@@ -711,15 +795,28 @@ if (!isMainThread) {
               });
 
               workers.push(worker);
-              startNextTask(worker);
+              startNextTask(worker).catch((err) => {
+                  console.error('Failed to start worker task:', err);
+              });
             }
         });
 
         // Check if the run is now complete and update the status
-        const remainingPoints = await getUnrankedPoints(conn, runId);
-        if (remainingPoints.length === 0) {
-          await safeUpdateRunStatus(runId, 'done');
-          console.log(`Run #${runId} finished successfully.`);          
+        if (!runTerminationRequested) {
+          const remainingPoints = await getUnrankedPoints(conn, runId);
+          if (remainingPoints.length === 0) {
+            await safeUpdateRunStatus(runId, 'done');
+            console.log(`Run #${runId} finished successfully.`);
+          } else {
+            console.log(`Run #${runId} ended with ${remainingPoints.length} unprocessed point(s).`);
+          }
+        } else {
+          const [statusRows] = await conn.query('SELECT status FROM geo_grid_runs WHERE id = ? LIMIT 1', [runId]);
+          const currentStatus = statusRows?.[0]?.status;
+          if (currentStatus === 'running') {
+            await safeUpdateRunStatus(runId, 'error');
+          }
+          console.log(`Run #${runId} was halted early with status '${currentStatus ?? 'unknown'}'.`);
         }
         // ✅ NEW: Terminate workers only AFTER the run status is confirmed and updated.
         await Promise.all(workers.map(w => requestWorkerExit(w)));
