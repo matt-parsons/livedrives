@@ -23,18 +23,19 @@ function extractPostalCode(components) {
 const SERVICE_FIELDS = [
   { key: 'delivery', label: 'Delivery' },
   { key: 'takeout', label: 'Takeout' },
-  { key: 'dine_in', label: 'Dine-in' },
-  { key: 'serves_breakfast', label: 'Breakfast service' },
-  { key: 'serves_brunch', label: 'Brunch service' },
-  { key: 'serves_lunch', label: 'Lunch service' },
-  { key: 'serves_dinner', label: 'Dinner service' },
-  { key: 'serves_dessert', label: 'Dessert service' },
-  { key: 'serves_beer', label: 'Beer' },
-  { key: 'serves_wine', label: 'Wine' },
-  { key: 'serves_vegetarian_friendly', label: 'Vegetarian-friendly options' },
-  { key: 'serves_vegan', label: 'Vegan options' },
-  { key: 'serves_dairy_free', label: 'Dairy-free options' },
-  { key: 'serves_gluten_free', label: 'Gluten-free options' }
+  { key: 'dineIn', legacyKeys: ['dine_in'], label: 'Dine-in' },
+  { key: 'servesBreakfast', legacyKeys: ['serves_breakfast'], label: 'Breakfast service' },
+  { key: 'servesBrunch', legacyKeys: ['serves_brunch'], label: 'Brunch service' },
+  { key: 'servesLunch', legacyKeys: ['serves_lunch'], label: 'Lunch service' },
+  { key: 'servesDinner', legacyKeys: ['serves_dinner'], label: 'Dinner service' },
+  { key: 'servesDessert', legacyKeys: ['serves_dessert'], label: 'Dessert service' },
+  { key: 'servesBeer', legacyKeys: ['serves_beer'], label: 'Beer' },
+  { key: 'servesWine', legacyKeys: ['serves_wine'], label: 'Wine' },
+  {
+    key: 'servesVegetarianFood',
+    legacyKeys: ['serves_vegetarian_friendly'],
+    label: 'Vegetarian-friendly options'
+  }
 ];
 
 function titleCase(value) {
@@ -78,7 +79,10 @@ function extractCategories(types) {
 }
 
 function extractServiceCapabilities(result) {
-  return SERVICE_FIELDS.filter((field) => result?.[field.key] === true).map((field) => field.label);
+  return SERVICE_FIELDS.filter((field) => {
+    const candidates = [field.key, ...(field.legacyKeys ?? [])];
+    return candidates.some((candidate) => result?.[candidate] === true);
+  }).map((field) => field.label);
 }
 
 async function fetchTimezone(location, { signal } = {}) {
@@ -183,18 +187,15 @@ export async function fetchPlaceDetails(placeId, { signal } = {}) {
       'url',
       'delivery',
       'takeout',
-      'dine_in',
-      'serves_breakfast',
-      'serves_brunch',
-      'serves_lunch',
-      'serves_dinner',
-      'serves_dessert',
-      'serves_beer',
-      'serves_wine',
-      'serves_vegetarian_friendly',
-      'serves_vegan',
-      'serves_dairy_free',
-      'serves_gluten_free'
+      'dineIn',
+      'servesBreakfast',
+      'servesBrunch',
+      'servesLunch',
+      'servesDinner',
+      'servesDessert',
+      'servesBeer',
+      'servesWine',
+      'servesVegetarianFood'
     ].join(',')
   );
   detailsEndpoint.searchParams.set('key', GOOGLE_API_KEY);
