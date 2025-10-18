@@ -5,6 +5,7 @@ import GeoGridRunsSection from './GeoGridRunsSection';
 import OriginZonesManager from './OriginZonesManager';
 import KeywordPerformanceSpotlight from './KeywordPerformanceSpotlight';
 import BusinessOptimizationRoadmap from './BusinessOptimizationRoadmap';
+import BusinessSwitcher from './BusinessSwitcher';
 import {
   formatDate,
   formatDecimal,
@@ -13,7 +14,8 @@ import {
   loadBusiness,
   loadOriginZones,
   loadGeoGridRunSummaries,
-  loadCtrKeywordOverview
+  loadCtrKeywordOverview,
+  loadOrganizationBusinesses
 } from './helpers';
 import { buildOptimizationRoadmap } from './optimization';
 import { fetchPlaceDetails } from '@/lib/googlePlaces';
@@ -90,6 +92,19 @@ export default async function BusinessDashboardPage({ params, searchParams }) {
 
   const business = await loadBusiness(session.organizationId, identifier);
   const isOwner = session.role === 'owner';
+
+  let ownerBusinessOptions = [];
+
+  if (isOwner) {
+    const organizationBusinesses = await loadOrganizationBusinesses(session.organizationId);
+
+    ownerBusinessOptions = organizationBusinesses.map((entry) => ({
+      id: entry.id,
+      value: entry.businessSlug ?? String(entry.id),
+      label: entry.businessName || `Business #${entry.id}`,
+      isActive: entry.isActive
+    }));
+  }
 
   if (!business) {
     notFound();
@@ -353,6 +368,7 @@ export default async function BusinessDashboardPage({ params, searchParams }) {
   const updatedAt = formatDate(business.updatedAt);
   const businessStatus = business.isActive ? { key: 'active', label: 'Active' } : { key: 'inactive', label: 'Inactive' };
   const businessName = business.businessName || 'Business Dashboard';
+  const currentBusinessOptionValue = business.businessSlug ?? String(business.id);
   const destination = business.destinationAddress
     ? `${business.destinationAddress}${business.destinationZip ? `, ${business.destinationZip}` : ''}`
     : null;
@@ -503,11 +519,11 @@ export default async function BusinessDashboardPage({ params, searchParams }) {
 
   return (
     <div className="page-shell">
-      <nav className="page-nav" aria-label="Breadcrumb">
-        <Link className="back-link" href="/dashboard">
-          ← Command central
-        </Link>
-      </nav>
+      {isOwner && ownerBusinessOptions.length ? (
+        <nav className="page-nav" aria-label="Business selection">
+          <BusinessSwitcher businesses={ownerBusinessOptions} currentValue={currentBusinessOptionValue} />
+        </nav>
+      ) : null}
 
       <section className="page-header">
         <h1 className="page-title">{businessName}</h1>

@@ -1,139 +1,34 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import pool from '@lib/db.js';
 import { AuthError, requireAuth } from '@/lib/authServer';
+import { loadOrganizationBusinesses } from './[business]/helpers.js';
 
-async function loadBusinesses(organizationId) {
-  const [rows] = await pool.query(
-    `SELECT id,
-            business_name AS businessName,
-            business_slug AS businessSlug
-       FROM businesses
-      WHERE organization_id = ?
-      ORDER BY business_name ASC`,
-    [organizationId]
-  );
+function selectDefaultBusiness(session, businesses) {
+  if (!Array.isArray(businesses) || businesses.length === 0) {
+    return null;
+  }
 
-  return rows;
+  const defaultBusinessId = session?.defaultBusinessId;
+  const numericDefaultId = defaultBusinessId != null ? Number(defaultBusinessId) : null;
+
+  if (Number.isFinite(numericDefaultId)) {
+    const match = businesses.find((business) => Number(business.id) === numericDefaultId);
+
+    if (match) {
+      return match;
+    }
+  }
+
+  const firstActive = businesses.find((business) => business.isActive);
+
+  return firstActive ?? businesses[0] ?? null;
 }
 
 export default async function DashboardPage() {
+  let session;
+
   try {
-    const session = await requireAuth();
-    const businesses = await loadBusinesses(session.organizationId);
-    const userIdentity = session.email || session.firebaseUid;
-
-    return (
-      <div className="page-shell">
-        <section className="page-header">
-          <h1 className="page-title">Command central</h1>
-          <p className="page-subtitle">
-            Welcome back, {userIdentity}. Keep every business, run, and role aligned from this unified
-            dashboard.
-          </p>
-        </section>
-
-        <section className="section">
-          <div className="section-header">
-            <div>
-              <h2 className="section-title">Businesses</h2>
-              <p className="section-caption">
-                {businesses.length === 0 ? 'Create your first business to get started.' : 'Select a business to drill into live operations and run insights.'}
-              </p>
-            </div>
-            <Link className="cta-link" href="/dashboard/businesses/new">
-              + New business
-            </Link>
-          </div>
-
-          {businesses.length === 0 ? (
-            <div className="empty-state">
-              <div>
-                <h3>No businesses yet</h3>
-                <p>Set up a business to unlock scheduling, driver assignments, and run orchestration.</p>
-              </div>
-            </div>
-          ) : (
-            <ul className="business-grid">
-              {businesses.map((business) => {
-                const href = `/dashboard/${business.businessSlug ?? business.id}`;
-
-                return (
-                  <li key={business.id}>
-                    <Link className="business-card" href={href}>
-                      <span className="badge">Managed business</span>
-                      <strong>{business.businessName || 'Unnamed Business'}</strong>
-                      <div className="business-meta">
-                        <span>Business ID: {business.id}</span>
-                        {business.businessSlug ? <span>Slug: {business.businessSlug}</span> : null}
-                      </div>
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </section>
-
-        {session.role === 'owner' ? (
-          <section className="section">
-            <div className="owner-tools-grid">
-              <div className="surface-card surface-card--compact operations-card">
-                <div className="operations-card__copy">
-                  <h2>Operations hub</h2>
-                  <p>
-                    Access the consolidated log viewer and scheduler queue that previously lived in the legacy reports
-                    tooling.
-                  </p>
-                </div>
-                <Link className="cta-link" href="/dashboard/operations">
-                  Open hub
-                </Link>
-              </div>
-
-              <div className="surface-card surface-card--compact operations-card">
-                <div className="operations-card__copy">
-                  <h2>Geo grid launcher</h2>
-                  <p>
-                    Start geo grid runs with the new workflow—select a business, keyword, grid size, and radius without
-                    leaving the console.
-                  </p>
-                </div>
-                <Link className="cta-link" href="/dashboard/geo-grid-launcher">
-                  Open launcher
-                </Link>
-              </div>
-            </div>
-          </section>
-        ) : null}
-
-        <section className="section">
-          <div className="section-header">
-            <h2 className="section-title">Account snapshot</h2>
-            <p className="section-caption">Secure context for your current session and permissions.</p>
-          </div>
-
-          <div className="surface-card surface-card--muted">
-            <div className="account-details">
-              <div className="detail-tile">
-                <strong>Signed in as</strong>
-                <span>{userIdentity}</span>
-              </div>
-              <div className="detail-tile">
-                <strong>Organization</strong>
-                <span>{session.organizationId}</span>
-              </div>
-              <div className="detail-tile">
-                <strong>Role</strong>
-                <span>{session.role}</span>
-              </div>
-            </div>
-
-            <pre className="code-block">{JSON.stringify(session, null, 2)}</pre>
-          </div>
-        </section>
-      </div>
-    );
+    session = await requireAuth();
   } catch (error) {
     if (error instanceof AuthError && error.statusCode >= 400 && error.statusCode < 500) {
       redirect('/signin');
@@ -141,4 +36,49 @@ export default async function DashboardPage() {
 
     throw error;
   }
+
+  const businesses = await loadOrganizationBusinesses(session.organizationId);
+
+  if (!businesses.length) {
+    const isOwner = session.role === 'owner';
+
+    return (
+      <div className="page-shell">
+        <section className="page-header">
+          <h1 className="page-title">Set up your first business</h1>
+          <p className="page-subtitle">
+            Create a business profile to unlock scheduling, geo grid insights, and live operations monitoring.
+          </p>
+        </section>
+
+        <section className="section">
+          <div className="surface-card surface-card--muted surface-card--compact" role="status">
+            <p style={{ margin: 0 }}>
+              There are no businesses linked to your organization yet.
+            </p>
+            {isOwner ? (
+              <Link className="cta-link" href="/dashboard/businesses/new">
+                + New business
+              </Link>
+            ) : (
+              <p style={{ margin: '8px 0 0', color: 'rgba(40, 40, 40, 0.7)' }}>
+                Reach out to an owner or admin so they can create and assign a business to you.
+              </p>
+            )}
+          </div>
+        </section>
+      </div>
+    );
+  }
+
+  const defaultBusiness = selectDefaultBusiness(session, businesses);
+
+  if (!defaultBusiness) {
+    return null;
+  }
+
+  const identifier = defaultBusiness.businessSlug ?? String(defaultBusiness.id);
+  const target = `/dashboard/${encodeURIComponent(identifier)}`;
+
+  redirect(target);
 }

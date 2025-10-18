@@ -101,6 +101,24 @@ export async function loadBusiness(organizationId, identifier) {
   return rows[0] ?? null;
 }
 
+export async function loadOrganizationBusinesses(organizationId) {
+  const [rows] = await pool.query(
+    `SELECT id,
+            business_name AS businessName,
+            business_slug AS businessSlug,
+            is_active     AS isActive
+       FROM businesses
+      WHERE organization_id = ?
+      ORDER BY is_active DESC, business_name ASC, id ASC`,
+    [organizationId]
+  );
+
+  return rows.map((row) => ({
+    ...row,
+    isActive: Boolean(row.isActive)
+  }));
+}
+
 export async function loadOriginZones(businessId) {
   const [rows] = await pool.query(
     `SELECT ${ORIGIN_ZONE_FIELDS}
