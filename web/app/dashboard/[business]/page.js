@@ -517,11 +517,57 @@ export default async function BusinessDashboardPage({ params, searchParams }) {
     ? 'Define origin zones to balance coverage and routing priorities.'
     : 'Targeted pickup regions shaping this business’s live operations.';
 
+  const ownerMenuLinks = isOwner
+    ? [
+        {
+          href: '/dashboard/operations',
+          label: 'Operations hub',
+          description: 'Logs, scheduler, and geo operations overview.'
+        },
+        {
+          href: '/dashboard/operations?tab=geo',
+          label: 'Geo map runs',
+          description: 'Monitor cross-business geo grid performance.'
+        },
+        {
+          href: '/dashboard/operations?tab=launcher',
+          label: 'Launch geo grid',
+          description: 'Start a geo grid run for any managed business.'
+        }
+      ]
+    : [];
+
+  const showBusinessSwitcher = isOwner && ownerBusinessOptions.length > 0;
+  const showOwnerMenu = isOwner && ownerMenuLinks.length > 0;
+  const navAriaLabel = showOwnerMenu ? 'Owner workspace controls' : 'Business selection';
+
   return (
     <div className="page-shell">
-      {isOwner && ownerBusinessOptions.length ? (
-        <nav className="page-nav" aria-label="Business selection">
-          <BusinessSwitcher businesses={ownerBusinessOptions} currentValue={currentBusinessOptionValue} />
+      {showBusinessSwitcher || showOwnerMenu ? (
+        <nav className="page-nav" aria-label={navAriaLabel}>
+          {showBusinessSwitcher ? (
+            <BusinessSwitcher businesses={ownerBusinessOptions} currentValue={currentBusinessOptionValue} />
+          ) : null}
+          {showOwnerMenu ? (
+            <div className="owner-tools-menu">
+              <details className="owner-tools-menu__details">
+                <summary className="owner-tools-menu__summary">
+                  Owner tools
+                  <span aria-hidden="true" className="owner-tools-menu__chevron">▾</span>
+                </summary>
+                <ul className="owner-tools-menu__list">
+                  {ownerMenuLinks.map((item) => (
+                    <li key={item.href} className="owner-tools-menu__item">
+                      <Link className="owner-tools-menu__link" href={item.href}>
+                        <span className="owner-tools-menu__link-label">{item.label}</span>
+                        <span className="owner-tools-menu__link-description">{item.description}</span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            </div>
+          ) : null}
         </nav>
       ) : null}
 

@@ -4,7 +4,9 @@ import { AuthError, requireAuth } from '@/lib/authServer';
 
 const DEFAULT_TIMEZONE = process.env.LOGS_TIMEZONE || 'America/Phoenix';
 
-export default async function OperationsPage() {
+const TAB_IDS = new Set(['logs', 'schedule', 'geo', 'launcher']);
+
+export default async function OperationsPage({ searchParams }) {
   try {
     const session = await requireAuth();
 
@@ -12,16 +14,20 @@ export default async function OperationsPage() {
       redirect('/dashboard');
     }
 
+    const requestedTab = typeof searchParams?.tab === 'string' ? searchParams.tab : undefined;
+    const initialTab = requestedTab && TAB_IDS.has(requestedTab) ? requestedTab : undefined;
+
     return (
       <div className="page-shell">
         <section className="page-header">
           <h1 className="page-title">Operations hub</h1>
           <p className="page-subtitle">
-            Review live execution logs and today’s scheduler queue for your organization.
+            Review live execution logs, monitor today’s scheduler queue, and control geo grid operations from one
+            workspace.
           </p>
         </section>
 
-        <OperationsConsole timezone={DEFAULT_TIMEZONE} />
+        <OperationsConsole timezone={DEFAULT_TIMEZONE} initialTab={initialTab} />
       </div>
     );
   } catch (error) {
