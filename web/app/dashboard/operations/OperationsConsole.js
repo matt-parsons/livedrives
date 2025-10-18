@@ -11,6 +11,7 @@ const LOG_SCOPE_OPTIONS = [
 
 const TAB_OPTIONS = [
   { id: 'logs', label: 'Run logs' },
+  { id: 'geosearch', label: 'GeoSearch log' },
   { id: 'schedule', label: "Today's scheduled drives" },
   { id: 'geo', label: 'Geo map runs' },
   { id: 'launcher', label: 'Geo grid launcher' }
@@ -104,6 +105,11 @@ export default function OperationsConsole({ timezone: initialTimezone, initialTa
   const [logsError, setLogsError] = useState(null);
   const [logsData, setLogsData] = useState({ scope: 'today', timezone: fallbackTimezone, rows: [] });
 
+  const [geoLogLoading, setGeoLogLoading] = useState(false);
+  const [geoLogError, setGeoLogError] = useState(null);
+  const [geoLogData, setGeoLogData] = useState(null);
+  const [geoLogInitialized, setGeoLogInitialized] = useState(false);
+
   const [scheduleLoading, setScheduleLoading] = useState(false);
   const [scheduleError, setScheduleError] = useState(null);
   const [scheduleData, setScheduleData] = useState({ timezone: fallbackTimezone, entries: [] });
@@ -116,6 +122,39 @@ export default function OperationsConsole({ timezone: initialTimezone, initialTa
   const activeLogsTimezone = logsData?.timezone || fallbackTimezone;
   const activeScheduleTimezone = scheduleData?.timezone || fallbackTimezone;
   const activeGeoTimezone = geoRunsData?.timezone || fallbackTimezone;
+  const geoLogLines = useMemo(() => (Array.isArray(geoLogData?.lines) ? geoLogData.lines : []), [geoLogData]);
+  const geoLogTotalLines = Number.isFinite(geoLogData?.totalLines) ? Number(geoLogData.totalLines) : geoLogLines.length;
+  const geoLogStartLine = Number.isFinite(geoLogData?.startLineNumber)
+    ? geoLogData.startLineNumber
+    : geoLogLines.length > 0
+      ? Math.max(geoLogTotalLines - geoLogLines.length + 1, 1)
+      : 0;
+  const geoLogEndLine = geoLogStartLine > 0 ? geoLogStartLine + geoLogLines.length - 1 : 0;
+  const geoLogPath = typeof geoLogData?.path === 'string' && geoLogData.path.length
+    ? geoLogData.path
+    : '/var/log/geosearch.log';
+  const geoLogTruncated = Boolean(geoLogData?.truncated);
+  const geoLogLastModified = geoLogData?.lastModified ?? null;
+  const geoLogExists = geoLogData?.exists !== false;
+  const geoLogLimit = Number.isFinite(geoLogData?.limit) ? Number(geoLogData.limit) : null;
+  const geoLogLineCount = geoLogLines.length;
+  const geoLogStatusLabel = geoLogLoading
+    ? 'Loading…'
+    : !geoLogExists
+      ? 'Log file unavailable'
+      : geoLogTotalLines === 0
+        ? 'Log file is empty'
+        : geoLogTruncated
+          ? `Showing last ${geoLogLineCount} of ${geoLogTotalLines} lines`
+          : `${geoLogLineCount} line${geoLogLineCount === 1 ? '' : 's'} loaded`;
+  const geoLogRangeLabel = geoLogExists && geoLogStartLine > 0 && geoLogEndLine >= geoLogStartLine
+    ? geoLogEndLine > geoLogStartLine
+      ? `Lines ${geoLogStartLine} – ${geoLogEndLine}`
+      : `Line ${geoLogStartLine}`
+    : null;
+  const geoLogLastUpdatedLabel = geoLogLastModified
+    ? formatDateTime(geoLogLastModified, fallbackTimezone, { timeStyle: 'medium' })
+    : null;
 
   const loadLogs = useCallback(
     async (scope) => {
@@ -143,6 +182,50 @@ export default function OperationsConsole({ timezone: initialTimezone, initialTa
     },
     []
   );
+
+  const loadGeoLog = useCallback(async () => {
+    setGeoLogLoading(true);
+    setGeoLogError(null);
+
+    try {
+      const response = await fetch('/api/system/geosearch-log', {
+        method: 'GET',
+        headers: { Accept: 'application/json' },
+        cache: 'no-store'
+      });
+
+      const text = await response.text();
+      let payload;
+
+      if (text) {
+        try {
+          payload = JSON.parse(text);
+        } catch (parseError) {
+          throw new Error('Received malformed GeoSearch log response.');
+        }
+      } else {
+        payload = { lines: [] };
+      }
+
+      if (!response.ok) {
+        const error = new Error(payload?.error ?? `Failed to load GeoSearch log (status ${response.status})`);
+        error.status = response.status;
+        error.payload = payload;
+        throw error;
+      }
+
+      setGeoLogData(payload);
+    } catch (caughtError) {
+      if (caughtError?.payload) {
+        setGeoLogData(caughtError.payload);
+      }
+
+      setGeoLogError(caughtError);
+    } finally {
+      setGeoLogLoading(false);
+      setGeoLogInitialized(true);
+    }
+  }, []);
 
   const refreshSchedule = useCallback(async () => {
     setScheduleLoading(true);
@@ -175,6 +258,12 @@ export default function OperationsConsole({ timezone: initialTimezone, initialTa
   useEffect(() => {
     refreshSchedule();
   }, [refreshSchedule]);
+
+  useEffect(() => {
+    if (activeTab === 'geosearch' && !geoLogInitialized && !geoLogLoading) {
+      loadGeoLog();
+    }
+  }, [activeTab, geoLogInitialized, geoLogLoading, loadGeoLog]);
 
   const loadGeoRuns = useCallback(async () => {
     setGeoRunsLoading(true);
@@ -407,6 +496,90 @@ export default function OperationsConsole({ timezone: initialTimezone, initialTa
             </table>
           </div>
         </div>
+        </section>
+      ) : null}
+
+      {activeTab === 'geosearch' ? (
+        <section
+          id="operations-panel-geosearch"
+          className="section"
+          role="tabpanel"
+          aria-labelledby="operations-tab-geosearch"
+        >
+          <div className="section-header">
+            <div>
+              <h2 className="section-title">GeoSearch log</h2>
+              <p className="section-caption">
+                Tail the GeoSearch service output without leaving the operations workspace.
+              </p>
+            </div>
+          </div>
+
+          <div className="surface-card">
+            <div className="logs-toolbar">
+              <div className="logs-toolbar__meta">
+                <span className="status-pill">{geoLogStatusLabel}</span>
+                {geoLogRangeLabel ? (
+                  <span className="status-pill status-pill--muted">{geoLogRangeLabel}</span>
+                ) : null}
+                {geoLogLastUpdatedLabel ? (
+                  <span className="status-pill status-pill--muted">Updated {geoLogLastUpdatedLabel}</span>
+                ) : null}
+              </div>
+              <div className="logs-toolbar__actions">
+                <button type="button" className="refresh-button" onClick={loadGeoLog} disabled={geoLogLoading}>
+                  Refresh
+                </button>
+              </div>
+            </div>
+
+            <div className="log-file-meta">
+              <span>
+                Source: <code className="code-inline">{geoLogPath}</code>
+              </span>
+              {geoLogLimit ? (
+                <span>
+                  Limit: {geoLogLimit} line{geoLogLimit === 1 ? '' : 's'}
+                </span>
+              ) : null}
+            </div>
+
+            {geoLogError ? (
+              <div className="inline-error" role="alert">
+                <strong>Unable to load the GeoSearch log.</strong>
+                <span>{geoLogError.message}</span>
+                {!geoLogExists ? (
+                  <span>
+                    Expected log at <code className="code-inline">{geoLogPath}</code>
+                  </span>
+                ) : null}
+              </div>
+            ) : null}
+
+            <div className="log-file-viewer" role="log" aria-live="polite">
+              {geoLogLoading && geoLogLineCount === 0 ? (
+                <p className="log-file-viewer__placeholder">Loading GeoSearch log…</p>
+              ) : null}
+
+              {!geoLogLoading && geoLogLineCount === 0 ? (
+                <p className="log-file-viewer__placeholder">
+                  {geoLogExists
+                    ? 'GeoSearch log is currently empty.'
+                    : 'GeoSearch log file is unavailable at the configured path.'}
+                </p>
+              ) : null}
+
+              {geoLogLines.map((line, index) => {
+                const lineNumber = geoLogStartLine > 0 ? geoLogStartLine + index : index + 1;
+                return (
+                  <div key={`${lineNumber}-${index}`} className="log-file-viewer__line">
+                    <span className="log-file-viewer__line-number">{lineNumber}</span>
+                    <span className="log-file-viewer__line-content">{line || ' '}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </section>
       ) : null}
 

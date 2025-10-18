@@ -1,5 +1,7 @@
+import Link from 'next/link';
 import './globals.css';
 import { Inter } from 'next/font/google';
+import OwnerOperationsMenu from '@/app/components/OwnerOperationsMenu';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -69,7 +71,7 @@ export default function RootLayout({ children }) {
         <div className="app-grid" aria-hidden="true" />
         <div className="app-wrapper">
           <header className="app-header">
-            <div className="app-brand">
+            <Link className="app-brand" href="/dashboard">
               <div className="brand-mark">
                 <MongoozBoostMark />
               </div>
@@ -77,6 +79,9 @@ export default function RootLayout({ children }) {
                 <span className="brand-title">Mongooz Boost</span>
                 <span className="brand-subtitle">Operations Console</span>
               </div>
+            </Link>
+            <div className="app-header__actions">
+              <OwnerOperationsMenu />
             </div>
           </header>
           <main className="app-main">{children}</main>
