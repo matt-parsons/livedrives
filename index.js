@@ -133,6 +133,9 @@ function addToRetryQueue(config) {
       console.log('');
 
       try {
+        config.soax.username = config.soax.res_username;
+        config.soax.password = config.soax.res_password;
+
         const acquisition = await getProfileRank({
           runId,
           pointId: 0,
