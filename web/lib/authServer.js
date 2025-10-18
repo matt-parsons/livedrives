@@ -47,6 +47,7 @@ export async function requireAuth(request) {
             u.firebase_uid    AS firebaseUid,
             u.email           AS email,
             u.name            AS name,
+            u.business_id     AS defaultBusinessId,
             m.organization_id AS organizationId,
             m.role            AS role
        FROM users u
@@ -66,6 +67,7 @@ export async function requireAuth(request) {
     firebaseUid: rows[0].firebaseUid,
     email: rows[0].email,
     name: rows[0].name,
+    defaultBusinessId: rows[0].defaultBusinessId,
     organizationId: rows[0].organizationId,
     role: rows[0].role
   };
