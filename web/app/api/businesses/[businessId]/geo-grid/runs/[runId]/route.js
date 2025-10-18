@@ -3,7 +3,7 @@ import {
   loadBusiness,
   loadGeoGridRunWithPoints
 } from '@/app/dashboard/[business]/helpers.js';
-import { buildListingSummaries } from '@/app/dashboard/[business]/runs/listings.js';
+import { buildPointListingIndex } from '@/app/dashboard/[business]/runs/listings.js';
 
 export const runtime = 'nodejs';
 
@@ -37,7 +37,7 @@ export async function GET(request, { params }) {
     }
 
     const { run, points } = runData;
-    const listings = buildListingSummaries(points, {
+    const pointListings = buildPointListingIndex(points, {
       businessName: business.businessName,
       businessPlaceId: business.gPlaceId
     });
@@ -51,7 +51,7 @@ export async function GET(request, { params }) {
       measuredAt: point.measuredAt
     }));
 
-    return Response.json({ run, points: sanitizedPoints, listings });
+    return Response.json({ run, points: sanitizedPoints, pointListings });
   } catch (error) {
     if (error instanceof AuthError) {
       return Response.json({ error: error.message }, { status: error.statusCode });

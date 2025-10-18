@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import GeoGridMap from './GeoGridMap';
 import {
   buildCoordinatePair,
@@ -47,6 +47,102 @@ function normalizeOptions(runOptions, initialRunId, initialRunLabel) {
   return result;
 }
 
+function normalizePointId(value) {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? numeric : null;
+}
+
+function toFiniteNumber(value) {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? numeric : null;
+}
+
+function buildListingLookup(entries) {
+  const lookup = new Map();
+
+  if (!Array.isArray(entries)) {
+    return lookup;
+  }
+
+  entries.forEach((entry) => {
+    const pointId = normalizePointId(entry?.pointId);
+
+    if (pointId === null) {
+      return;
+    }
+
+    const listings = Array.isArray(entry?.listings)
+      ? entry.listings.map((item, index) => {
+          const rank = normalizePointId(item?.rank);
+          const rankLabel = typeof item?.rankLabel === 'string' && item.rankLabel.trim()
+            ? item.rankLabel.trim()
+            : rank === null
+              ? '?'
+              : rank > 20
+                ? '20+'
+                : String(rank);
+
+          return {
+            key: item?.key ?? `${pointId}:${index}`,
+            name: typeof item?.name === 'string' && item.name.trim() ? item.name.trim() : 'Unnamed listing',
+            placeId: item?.placeId || null,
+            address: typeof item?.address === 'string' && item.address.trim() ? item.address.trim() : null,
+            rating: toFiniteNumber(item?.rating),
+            reviewCount: toFiniteNumber(item?.reviewCount),
+            reviewsUrl: typeof item?.reviewsUrl === 'string' && item.reviewsUrl.trim() ? item.reviewsUrl : null,
+            rank,
+            rankLabel,
+            isTarget: Boolean(item?.isTarget)
+          };
+        })
+      : [];
+
+    lookup.set(pointId, listings);
+  });
+
+  return lookup;
+}
+
+function resolveDefaultPointId(points) {
+  if (!Array.isArray(points) || !points.length) {
+    return null;
+  }
+
+  const normalizedPoints = points
+    .map((point) => ({
+      id: normalizePointId(point?.id),
+      row: toFiniteNumber(point?.rowIndex),
+      col: toFiniteNumber(point?.colIndex)
+    }))
+    .filter((point) => point.id !== null);
+
+  if (!normalizedPoints.length) {
+    return null;
+  }
+
+  const rowValues = Array.from(new Set(normalizedPoints
+    .map((point) => point.row)
+    .filter((value) => value !== null)))
+    .sort((a, b) => a - b);
+  const colValues = Array.from(new Set(normalizedPoints
+    .map((point) => point.col)
+    .filter((value) => value !== null)))
+    .sort((a, b) => a - b);
+
+  const rowIndex = rowValues.length ? rowValues[Math.floor((rowValues.length - 1) / 2)] : null;
+  const colIndex = colValues.length ? colValues[Math.floor((colValues.length - 1) / 2)] : null;
+
+  if (rowIndex !== null && colIndex !== null) {
+    const center = normalizedPoints.find((point) => point.row === rowIndex && point.col === colIndex);
+
+    if (center && center.id !== null) {
+      return center.id;
+    }
+  }
+
+  return normalizedPoints[0].id;
+}
+
 export default function GeoGridRunViewer({
   apiKey,
   businessId,
@@ -55,7 +151,7 @@ export default function GeoGridRunViewer({
   initialMapPoints,
   initialCenter,
   initialSummary,
-  initialListings,
+  initialPointListings,
   runOptions
 }) {
   const [run, setRun] = useState(initialRun);
@@ -63,13 +159,8 @@ export default function GeoGridRunViewer({
   const [mapPoints, setMapPoints] = useState(initialMapPoints);
   const [center, setCenter] = useState(initialCenter);
   const [selectedRunId, setSelectedRunId] = useState(initialRun.id);
-  const [listingData, setListingData] = useState(() => {
-    if (initialListings && typeof initialListings === 'object') {
-      return initialListings;
-    }
-
-    return { totalPoints: Array.isArray(initialMapPoints) ? initialMapPoints.length : 0, listings: [] };
-  });
+  const [pointListingsIndex, setPointListingsIndex] = useState(() => buildListingLookup(initialPointListings));
+  const [selectedPointId, setSelectedPointId] = useState(() => resolveDefaultPointId(initialMapPoints));
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState(null);
   const requestRef = useRef(0);
@@ -115,10 +206,64 @@ export default function GeoGridRunViewer({
       : null;
   const runDurationLabel = runDurationMs === null ? null : formatDuration(runDurationMs);
 
-  const listingEntries = Array.isArray(listingData?.listings) ? listingData.listings : [];
-  const listingTotalPoints = Number.isFinite(Number(listingData?.totalPoints))
-    ? Number(listingData.totalPoints)
-    : mapPoints.length;
+  const selectedPoint = useMemo(() => {
+    if (selectedPointId === null) {
+      return null;
+    }
+
+    return mapPoints.find((point) => normalizePointId(point?.id) === selectedPointId) ?? null;
+  }, [mapPoints, selectedPointId]);
+
+  const selectedListings = useMemo(() => {
+    if (selectedPointId === null) {
+      return [];
+    }
+
+    const listings = pointListingsIndex.get(selectedPointId);
+    return Array.isArray(listings) ? listings : [];
+  }, [pointListingsIndex, selectedPointId]);
+
+  const selectedRowIndex = toFiniteNumber(selectedPoint?.rowIndex);
+  const selectedColIndex = toFiniteNumber(selectedPoint?.colIndex);
+  const gridPointLabel = selectedRowIndex !== null && selectedColIndex !== null
+    ? `Row ${selectedRowIndex + 1} · Column ${selectedColIndex + 1}`
+    : 'Location unavailable';
+  const observedRankLabel = (() => {
+    if (!selectedPoint) {
+      return '—';
+    }
+
+    const rankLabel = typeof selectedPoint.rankLabel === 'string' ? selectedPoint.rankLabel : null;
+
+    if (!rankLabel || rankLabel === '?') {
+      return 'Not captured';
+    }
+
+    return `#${rankLabel}`;
+  })();
+  const measuredLabel = selectedPoint?.measuredAt ?? '—';
+  const listingCountLabel = selectedListings.length === 0
+    ? 'No listings recorded'
+    : `${selectedListings.length} listing${selectedListings.length === 1 ? '' : 's'} captured`;
+
+  useEffect(() => {
+    if (!Array.isArray(mapPoints) || mapPoints.length === 0) {
+      if (selectedPointId !== null) {
+        setSelectedPointId(null);
+      }
+      return;
+    }
+
+    const hasSelected = mapPoints.some((point) => normalizePointId(point?.id) === selectedPointId);
+
+    if (!hasSelected) {
+      const fallback = resolveDefaultPointId(mapPoints);
+
+      if (fallback !== selectedPointId) {
+        setSelectedPointId(fallback);
+      }
+    }
+  }, [mapPoints, selectedPointId]);
 
   const handleRunSelection = async (event) => {
     const nextRunId = Number(event.target.value);
@@ -172,16 +317,17 @@ export default function GeoGridRunViewer({
       }
 
       const nextSummary = extractRunSummary(nextRun);
-      const nextListings = payload.listings && typeof payload.listings === 'object'
-        ? payload.listings
-        : { totalPoints: nextMapPoints.length, listings: [] };
+      const nextPointListingsRaw = Array.isArray(payload.pointListings) ? payload.pointListings : [];
+      const nextPointListings = buildListingLookup(nextPointListingsRaw);
+      const defaultPointId = resolveDefaultPointId(nextMapPoints);
 
       setRun(nextRun);
       setRunSummary(nextSummary);
       setMapPoints(nextMapPoints);
       setCenter(nextCenter);
       setSelectedRunId(nextRun.id);
-      setListingData(nextListings);
+      setPointListingsIndex(nextPointListings);
+      setSelectedPointId(defaultPointId);
       setErrorMessage(null);
 
       if (typeof window !== 'undefined') {
@@ -203,6 +349,16 @@ export default function GeoGridRunViewer({
       }
     }
   };
+
+  const handlePointSelect = useCallback((pointId) => {
+    const normalized = normalizePointId(pointId);
+
+    if (normalized === null || normalized === selectedPointId) {
+      return;
+    }
+
+    setSelectedPointId(normalized);
+  }, [selectedPointId]);
 
   return (
     <>
@@ -308,33 +464,49 @@ export default function GeoGridRunViewer({
             <aside className="map-layout__sidebar">
               <div className="map-layout__sidebar-header">
                 <h2 className="sidebar-title">Local listings</h2>
-                <p className="sidebar-subtitle">Captured from this run to benchmark nearby competition.</p>
+                <p className="sidebar-subtitle">Click a grid point on the map to inspect the listings captured from that location.</p>
               </div>
-              {listingEntries.length ? (
+              {selectedPoint ? (
+                <div className="listing-point-summary" role="status">
+                  <div className="listing-point-summary__row">
+                    <span className="listing-point-summary__label">Grid point</span>
+                    <span className="listing-point-summary__value">{gridPointLabel}</span>
+                  </div>
+                  <div className="listing-point-summary__row">
+                    <span className="listing-point-summary__label">Observed rank</span>
+                    <span className="listing-point-summary__value">{observedRankLabel}</span>
+                  </div>
+                  <div className="listing-point-summary__row">
+                    <span className="listing-point-summary__label">Measured</span>
+                    <span className="listing-point-summary__value">{measuredLabel}</span>
+                  </div>
+                  <div className="listing-point-summary__row">
+                    <span className="listing-point-summary__label">Listings captured</span>
+                    <span className="listing-point-summary__value">{listingCountLabel}</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="listing-point-summary listing-point-summary--empty">
+                  <p>Select a grid point on the map to reveal captured listings.</p>
+                </div>
+              )}
+
+              {selectedListings.length ? (
                 <ul className="listing-list">
-                  {listingEntries.map((entry) => {
-                    const bestRankLabel = entry.bestRank === null
-                      ? '—'
-                      : `#${entry.bestRank}`;
-                    const averageRankLabel = entry.averageRank !== null && entry.averageRank !== undefined
-                      ? formatDecimal(entry.averageRank, entry.averageRank >= 10 ? 0 : 1)
-                      : null;
+                  {selectedListings.map((entry, index) => {
                     const ratingLabel = entry.rating !== null && entry.rating !== undefined
                       ? `${formatDecimal(entry.rating, 1)}★`
                       : null;
                     const reviewsLabel = Number.isFinite(entry.reviewCount)
                       ? `${entry.reviewCount.toLocaleString()} review${entry.reviewCount === 1 ? '' : 's'}`
                       : null;
-                    const coverageFraction = listingTotalPoints > 0
-                      ? `${entry.appearanceCount}/${listingTotalPoints}`
-                      : `${entry.appearanceCount}`;
-                    const coveragePercentLabel = entry.appearanceRate
-                      ? `${formatDecimal(entry.appearanceRate, entry.appearanceRate >= 10 ? 0 : 1)}%`
-                      : '0%';
+                    const rankBadge = entry.rankLabel && entry.rankLabel !== '?'
+                      ? `#${entry.rankLabel}`
+                      : '?';
 
                     return (
                       <li
-                        key={entry.key}
+                        key={entry.key || `${selectedPointId}:${index}`}
                         className={`listing-card${entry.isTarget ? ' listing-card--target' : ''}`}
                       >
                         <div className="listing-card__header">
@@ -344,8 +516,8 @@ export default function GeoGridRunViewer({
                               <span className="listing-card__badge">Your business</span>
                             ) : null}
                           </div>
-                          <span className="listing-card__rank" aria-label="Best observed rank">
-                            {bestRankLabel}
+                          <span className="listing-card__rank" aria-label="Observed rank">
+                            {rankBadge}
                           </span>
                         </div>
                         {entry.address ? (
@@ -362,13 +534,6 @@ export default function GeoGridRunViewer({
                           ) : reviewsLabel ? (
                             <span className="listing-card__stat">{reviewsLabel}</span>
                           ) : null}
-                          {averageRankLabel ? (
-                            <span className="listing-card__stat">Avg rank {averageRankLabel}</span>
-                          ) : null}
-                          <span className="listing-card__stat">
-                            Seen in {coverageFraction}
-                            <span className="listing-card__muted"> ({coveragePercentLabel})</span>
-                          </span>
                         </div>
                         {entry.reviewsUrl ? (
                           <a
@@ -384,12 +549,18 @@ export default function GeoGridRunViewer({
                     );
                   })}
                 </ul>
-              ) : (
-                <p className="listing-empty">No listings were captured for this run yet.</p>
-              )}
+              ) : selectedPoint ? (
+                <p className="listing-empty">No listings were captured for this grid point.</p>
+              ) : null}
             </aside>
             <div className="map-layout__map">
-              <GeoGridMap apiKey={apiKey} center={center} points={mapPoints} />
+              <GeoGridMap
+                apiKey={apiKey}
+                center={center}
+                points={mapPoints}
+                selectedPointId={selectedPointId}
+                onPointSelect={handlePointSelect}
+              />
             </div>
           </div>
         </div>
@@ -435,6 +606,50 @@ export default function GeoGridRunViewer({
           font-size: 0.85rem;
           color: var(--color-muted, #475569);
           line-height: 1.4;
+        }
+
+        .listing-point-summary {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          padding: 12px 14px;
+          border-radius: var(--radius-md, 12px);
+          background: rgba(15, 23, 42, 0.05);
+          border: 1px solid rgba(15, 23, 42, 0.08);
+        }
+
+        .listing-point-summary__row {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 12px;
+          font-size: 0.78rem;
+        }
+
+        .listing-point-summary__label {
+          color: var(--color-muted, #475569);
+          font-weight: 600;
+        }
+
+        .listing-point-summary__value {
+          color: var(--color-heading, #0f172a);
+          font-weight: 600;
+          text-align: right;
+        }
+
+        .listing-point-summary--empty {
+          background: rgba(15, 23, 42, 0.03);
+          color: var(--color-muted, #475569);
+          align-items: center;
+          justify-content: center;
+          min-height: 96px;
+          text-align: center;
+        }
+
+        .listing-point-summary--empty p {
+          margin: 0;
+          font-size: 0.82rem;
+          line-height: 1.45;
         }
 
         .listing-list {
