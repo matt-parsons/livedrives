@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import GeoGridMap from './runs/[runId]/GeoGridMap';
 
 function getTrendStatus(indicator) {
   if (!indicator || typeof indicator.className !== 'string') {
@@ -233,7 +234,7 @@ function KeywordSwitcher({ items, activeKey, onSelect }) {
   );
 }
 
-export default function KeywordPerformanceSpotlight({ items }) {
+export default function KeywordPerformanceSpotlight({ items, mapsApiKey = null }) {
   const [activeKey, setActiveKey] = useState(() => items[0]?.key ?? null);
 
   useEffect(() => {
@@ -341,6 +342,56 @@ export default function KeywordPerformanceSpotlight({ items }) {
           />
         </div>
 
+        {mapsApiKey ? (
+          activeItem.latestRunMap ? (
+            <div
+              style={{
+                marginTop: '0.5rem',
+                borderRadius: '16px',
+                overflow: 'hidden'
+              }}
+            >
+              <GeoGridMap
+                key={activeItem.latestRunId ?? activeItem.key}
+                apiKey={mapsApiKey}
+                center={activeItem.latestRunMap.center}
+                points={activeItem.latestRunMap.points}
+                interactive={false}
+                selectedPointId={null}
+                minHeight="clamp(220px, 45vw, 320px)"
+              />
+            </div>
+          ) : activeItem.latestRunId ? (
+            <div
+              style={{
+                marginTop: '0.5rem',
+                fontSize: '0.78rem',
+                color: '#6b7280',
+                backgroundColor: '#f9fafb',
+                border: '1px solid rgba(148, 163, 184, 0.32)',
+                borderRadius: '12px',
+                padding: '0.85rem 1rem'
+              }}
+            >
+              Geo grid map preview unavailable for this run.
+            </div>
+          ) : null
+        ) : activeItem.latestRunId ? (
+          <div
+            style={{
+              marginTop: '0.5rem',
+              fontSize: '0.78rem',
+              color: '#6b7280',
+              backgroundColor: '#f9fafb',
+              border: '1px solid rgba(148, 163, 184, 0.32)',
+              borderRadius: '12px',
+              padding: '0.85rem 1rem'
+            }}
+          >
+            Add a Google Maps API key to preview the latest geo grid run.
+          </div>
+        ) : null}
+
         {activeItem.latestRunHref ? (
           <div
             style={{
@@ -365,7 +416,7 @@ export default function KeywordPerformanceSpotlight({ items }) {
                 fontSize: '0.85rem'
               }}
             >
-              View latest run ↗
+              View run details ↗
             </Link>
           </div>
         ) : null}
