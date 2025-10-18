@@ -4,7 +4,7 @@ import { AuthError, requireAuth } from '@/lib/authServer';
 
 const DEFAULT_TIMEZONE = process.env.LOGS_TIMEZONE || 'America/Phoenix';
 
-const TAB_IDS = new Set(['logs', 'schedule', 'geo', 'launcher']);
+const TAB_IDS = new Set(['logs', 'geosearch', 'schedule', 'geo', 'launcher']);
 
 export default async function OperationsPage({ searchParams }) {
   try {
