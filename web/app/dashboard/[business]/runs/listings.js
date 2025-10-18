@@ -85,43 +85,67 @@ function resolveListingKey(place) {
   return null;
 }
 
-function ensureTargetEntry(map, businessName, businessPlaceId, totalPoints) {
-  const targetName = typeof businessName === 'string' && businessName.trim().length
-    ? businessName.trim()
-    : null;
-  const targetKey = businessPlaceId ? `place:${businessPlaceId}` : (targetName ? `name:${normalizeString(targetName)}|` : null);
+function matchesTargetListing(name, placeId, businessName, businessPlaceId) {
+  const normalizedTargetName = normalizeString(businessName);
 
-  if (!targetKey) {
-    return;
+  if (businessPlaceId && placeId) {
+    return String(placeId) === String(businessPlaceId);
   }
 
-  if (!map.has(targetKey)) {
-    map.set(targetKey, {
-      key: targetKey,
-      name: targetName,
-      placeId: businessPlaceId || null,
-      address: null,
-      rating: null,
-      reviewCount: null,
-      reviewsUrl: null,
-      bestRank: null,
-      totalRank: 0,
-      appearanceCount: 0,
-      isTarget: true,
-      sources: new Set(),
-      sample: null,
-      totalPoints
-    });
-  } else {
-    const existing = map.get(targetKey);
-    existing.isTarget = true;
-    if (!existing.name && targetName) {
-      existing.name = targetName;
-    }
-    if (!existing.placeId && businessPlaceId) {
-      existing.placeId = businessPlaceId;
-    }
+  if (normalizedTargetName) {
+    return normalizeString(name) === normalizedTargetName;
   }
+
+  return false;
+}
+
+function buildPointListingEntries(point, { businessName = null, businessPlaceId = null } = {}) {
+  const resultRaw = point?.resultJson ?? point?.result_json ?? null;
+  const resultJson = stringifyBuffer(resultRaw) ?? resultRaw;
+  const places = parseResultPayload(resultJson);
+
+  if (!Array.isArray(places) || !places.length) {
+    return [];
+  }
+
+  return places.map((place, index) => {
+    const rank = Number.isFinite(Number(place?.rank)) ? Number(place.rank) : index + 1;
+    const name = place?.name || 'Unnamed listing';
+    const placeId = place?.place_id || place?.placeId || null;
+    const address = place?.address || null;
+    const rating = place?.rating !== undefined && place?.rating !== null
+      ? Number(place.rating)
+      : null;
+    const reviewCount = place?.review_count !== undefined && place?.review_count !== null
+      ? Number(place.review_count)
+      : null;
+    const reviewsUrl = place?.reviews_url || null;
+    const baseKey = resolveListingKey(place) || `idx:${index}`;
+
+    return {
+      key: `${point?.id ?? 'point'}:${baseKey}`,
+      name,
+      placeId,
+      address,
+      rating: Number.isFinite(rating) ? rating : null,
+      reviewCount: Number.isFinite(reviewCount) ? reviewCount : null,
+      reviewsUrl,
+      rank,
+      rankLabel: rank > 20 ? '20+' : String(rank),
+      isTarget: matchesTargetListing(name, placeId, businessName, businessPlaceId)
+    };
+  });
+}
+
+export function buildPointListingIndex(points, { businessName = null, businessPlaceId = null } = {}) {
+  if (!Array.isArray(points)) {
+    return [];
+  }
+
+  return points.map((point) => ({
+    pointId: point?.id ?? null,
+    listings: buildPointListingEntries(point, { businessName, businessPlaceId })
+  }));
 }
 
 export function buildListingSummaries(points, { businessName = null, businessPlaceId = null } = {}) {
@@ -189,11 +213,13 @@ export function buildListingSummaries(points, { businessName = null, businessPla
         entry.reviewsUrl = place.reviews_url;
       }
 
+      if (matchesTargetListing(entry.name, entry.placeId, businessName, businessPlaceId)) {
+        entry.isTarget = true;
+      }
+
       listingsMap.set(key, entry);
     });
   }
-
-  ensureTargetEntry(listingsMap, businessName, businessPlaceId, totalPoints);
 
   const listings = Array.from(listingsMap.values()).map((entry) => {
     const averageRank = entry.appearanceCount > 0
@@ -220,19 +246,12 @@ export function buildListingSummaries(points, { businessName = null, businessPla
       averageRank,
       appearanceCount: entry.appearanceCount,
       appearanceRate,
-      isTarget: Boolean(entry.isTarget || (entry.placeId && businessPlaceId && entry.placeId === businessPlaceId)),
+      isTarget: Boolean(entry.isTarget),
       totalPoints
     };
   });
 
   listings.sort((a, b) => {
-    if (a.isTarget && !b.isTarget) {
-      return -1;
-    }
-    if (!a.isTarget && b.isTarget) {
-      return 1;
-    }
-
     const rankA = a.bestRank ?? Number.POSITIVE_INFINITY;
     const rankB = b.bestRank ?? Number.POSITIVE_INFINITY;
 

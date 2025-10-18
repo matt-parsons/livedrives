@@ -19,7 +19,7 @@ if (isMainThread) {
 }
 
 const workerConfig = {
-    soaxPassword: process.env.SOAX_PASSWORD ?? '',
+    soaxPassword: process.env.SOAX_PASSWORD_RES ?? '',
 };
 
 const LOCK_FILE = path.join(__dirname, 'workerPool.lock');
@@ -353,7 +353,7 @@ if (!isMainThread) {
         r.keyword,
         r.business_id AS businessId,
         b.business_name AS businessName,
-        sc.username AS soax_user,
+        sc.res_username AS soax_user,
         sc.endpoint AS soax_endpoint
       FROM geo_grid_runs r
       JOIN businesses b ON r.business_id = b.id

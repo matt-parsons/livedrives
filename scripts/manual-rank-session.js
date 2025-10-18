@@ -196,6 +196,11 @@ async function main() {
       rank: null
     };
 
+    // we want residential proxy
+    config.soax.username = config.soax.res_username;
+    config.soax.password = config.soax.res_password;
+    console.log(config.soax);
+
     const acquisition = await getProfileRank({
       runId,
       pointId: 0,
