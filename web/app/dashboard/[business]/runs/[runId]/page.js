@@ -12,7 +12,7 @@ import {
   extractRunSummary,
   resolveCenter
 } from '../formatters';
-import { buildListingSummaries } from '../listings';
+import { buildPointListingIndex } from '../listings';
 import GeoGridRunViewer from './GeoGridRunViewer';
 
 function resolveMapsApiKey() {
@@ -65,7 +65,7 @@ export default async function GeoGridRunPage({ params }) {
   }
 
   const runSummary = extractRunSummary(run);
-  const listingSummaries = buildListingSummaries(points, {
+  const pointListings = buildPointListingIndex(points, {
     businessName: business.businessName,
     businessPlaceId: business.gPlaceId
   });
@@ -102,7 +102,7 @@ export default async function GeoGridRunPage({ params }) {
         initialMapPoints={mapPoints}
         initialCenter={center}
         initialSummary={runSummary}
-        initialListings={listingSummaries}
+        initialPointListings={pointListings}
         runOptions={runOptions}
       />
     </div>

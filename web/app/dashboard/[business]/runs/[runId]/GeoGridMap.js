@@ -10,6 +10,11 @@ const RANK_LONGTAIL = '#f07b3f';
 const RANK_MAX = '#718f94';
 const RANK_UNKNOWN = '#4b5563';
 
+function toNumeric(value) {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? numeric : null;
+}
+
 function loadGoogleMaps(apiKey) {
   if (typeof window === 'undefined') {
     return Promise.resolve(null);
@@ -71,7 +76,7 @@ function getMarkerColor(rankPosition) {
   return RANK_MAX;
 }
 
-function buildMarkerIcon(rankPosition) {
+function buildMarkerIcon(rankPosition, isSelected = false) {
   const safeRank = rankPosition === null || rankPosition === undefined
     ? null
     : Number(rankPosition);
@@ -82,17 +87,22 @@ function buildMarkerIcon(rankPosition) {
       ? '20+'
       : String(safeRank);
   const fill = getMarkerColor(rankPosition);
+  const strokeColor = isSelected ? '#111827' : '#ffffff';
+  const strokeWidth = isSelected ? 6 : 2;
+  const radius = isSelected ? 44 : 40;
+  const size = isSelected ? 60 : 52;
+  const anchor = size / 2;
 
   const svg = `<?xml version="1.0" encoding="UTF-8"?>
 <svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-  <circle cx="50" cy="50" r="40" fill="${fill}" stroke="#ffffff" stroke-width="2" />
+  <circle cx="50" cy="50" r="${radius}" fill="${fill}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
   <text x="50" y="57" font-size="24" font-family="Arial, Helvetica, sans-serif" font-weight="300" fill="#ffffff" text-anchor="middle">${label}</text>
 </svg>`;
 
   return {
     url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
-    scaledSize: new window.google.maps.Size(52, 52),
-    anchor: new window.google.maps.Point(26, 26)
+    scaledSize: new window.google.maps.Size(size, size),
+    anchor: new window.google.maps.Point(anchor, anchor)
   };
 }
 
@@ -113,17 +123,27 @@ function fitBoundsToPoints(map, mapsApi, center, points) {
   map.fitBounds(bounds, 80);
 }
 
-export default function GeoGridMap({ apiKey, center, points }) {
+export default function GeoGridMap({ apiKey, center, points, selectedPointId = null, onPointSelect }) {
   const mapRef = useRef(null);
+  const mapInstanceRef = useRef(null);
+  const markersRef = useRef([]);
+  const selectHandlerRef = useRef(onPointSelect);
   const [loadError, setLoadError] = useState(null);
+
+  useEffect(() => {
+    selectHandlerRef.current = onPointSelect;
+  }, [onPointSelect]);
 
   useEffect(() => {
     let mapInstance = null;
     let markers = [];
+    let cancelled = false;
+
+    setLoadError(null);
 
     loadGoogleMaps(apiKey)
       .then((mapsApi) => {
-        if (!mapRef.current) {
+        if (cancelled || !mapRef.current) {
           return;
         }
 
@@ -135,32 +155,101 @@ export default function GeoGridMap({ apiKey, center, points }) {
           fullscreenControl: false
         });
 
+        mapInstanceRef.current = mapInstance;
+
         fitBoundsToPoints(mapInstance, mapsApi, center, points);
 
-        markers = points.map((point) => new mapsApi.Marker({
-          position: { lat: point.lat, lng: point.lng },
-          map: mapInstance,
-          icon: buildMarkerIcon(point.rankPosition),
-          title: point.rankPosition === null
-            ? 'Rank not available'
-            : `Rank ${point.rankLabel}`,
-          label: undefined
-        }));
+        markers = points.map((point) => {
+          const marker = new mapsApi.Marker({
+            position: { lat: point.lat, lng: point.lng },
+            map: mapInstance,
+            icon: buildMarkerIcon(point.rankPosition, toNumeric(point.id) === toNumeric(selectedPointId)),
+            title: point.rankPosition === null
+              ? 'Rank not available'
+              : `Rank ${point.rankLabel}`,
+            label: undefined
+          });
+
+          marker.__pointId = point.id;
+          marker.__rankPosition = point.rankPosition;
+
+          marker.addListener('click', () => {
+            if (typeof selectHandlerRef.current === 'function') {
+              selectHandlerRef.current(point.id);
+            }
+          });
+
+          return marker;
+        });
+
+        markersRef.current = markers;
+
+        if (markers.length) {
+          const normalizedSelected = toNumeric(selectedPointId);
+          let activeMarker = null;
+
+          markers.forEach((marker) => {
+            const markerId = toNumeric(marker.__pointId);
+            const isActive = normalizedSelected !== null && markerId === normalizedSelected;
+            marker.setIcon(buildMarkerIcon(marker.__rankPosition, isActive));
+            marker.setZIndex(isActive ? 1000 : undefined);
+
+            if (isActive) {
+              activeMarker = marker;
+            }
+          });
+
+          if (activeMarker && mapInstanceRef.current) {
+            mapInstanceRef.current.panTo(activeMarker.getPosition());
+          }
+        }
       })
       .catch((error) => {
-        setLoadError(error.message);
+        if (!cancelled) {
+          setLoadError(error.message);
+        }
       });
 
     return () => {
+      cancelled = true;
+
       if (markers.length) {
         markers.forEach((marker) => marker.setMap(null));
       }
 
+      markersRef.current = [];
+
       if (mapInstance) {
         mapInstance = null;
       }
+
+      mapInstanceRef.current = null;
     };
   }, [apiKey, center, points]);
+
+  useEffect(() => {
+    if (!markersRef.current.length) {
+      return;
+    }
+
+    const normalizedSelected = toNumeric(selectedPointId);
+    let activeMarker = null;
+
+    markersRef.current.forEach((marker) => {
+      const markerId = toNumeric(marker.__pointId);
+      const isActive = normalizedSelected !== null && markerId === normalizedSelected;
+      marker.setIcon(buildMarkerIcon(marker.__rankPosition, isActive));
+      marker.setZIndex(isActive ? 1000 : undefined);
+
+      if (isActive) {
+        activeMarker = marker;
+      }
+    });
+
+    if (activeMarker && mapInstanceRef.current) {
+      mapInstanceRef.current.panTo(activeMarker.getPosition());
+    }
+  }, [selectedPointId]);
 
   return (
     <div className="geo-grid-map">
