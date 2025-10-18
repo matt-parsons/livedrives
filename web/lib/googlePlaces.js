@@ -187,15 +187,13 @@ export async function fetchPlaceDetails(placeId, { signal } = {}) {
       'url',
       'delivery',
       'takeout',
-      'dineIn',
-      'servesBreakfast',
-      'servesBrunch',
-      'servesLunch',
-      'servesDinner',
-      'servesDessert',
-      'servesBeer',
-      'servesWine',
-      'servesVegetarianFood'
+      'dine_in',
+      'serves_breakfast',
+      'serves_brunch',
+      'serves_lunch',
+      'serves_dinner',
+      'serves_beer',
+      'serves_wine'
     ].join(',')
   );
   detailsEndpoint.searchParams.set('key', GOOGLE_API_KEY);
