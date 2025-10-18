@@ -123,7 +123,15 @@ function fitBoundsToPoints(map, mapsApi, center, points) {
   map.fitBounds(bounds, 80);
 }
 
-export default function GeoGridMap({ apiKey, center, points, selectedPointId = null, onPointSelect }) {
+export default function GeoGridMap({
+  apiKey,
+  center,
+  points,
+  selectedPointId = null,
+  onPointSelect,
+  interactive = true,
+  minHeight = 'clamp(360px, 60vw, 520px)'
+}) {
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const markersRef = useRef([]);
@@ -152,7 +160,14 @@ export default function GeoGridMap({ apiKey, center, points, selectedPointId = n
           zoom: 12,
           mapTypeControl: false,
           streetViewControl: false,
-          fullscreenControl: false
+          fullscreenControl: false,
+          gestureHandling: interactive ? 'auto' : 'none',
+          draggable: interactive,
+          keyboardShortcuts: interactive,
+          scrollwheel: interactive,
+          zoomControl: interactive,
+          clickableIcons: interactive,
+          disableDoubleClickZoom: !interactive
         });
 
         mapInstanceRef.current = mapInstance;
@@ -173,11 +188,13 @@ export default function GeoGridMap({ apiKey, center, points, selectedPointId = n
           marker.__pointId = point.id;
           marker.__rankPosition = point.rankPosition;
 
-          marker.addListener('click', () => {
-            if (typeof selectHandlerRef.current === 'function') {
-              selectHandlerRef.current(point.id);
-            }
-          });
+          if (interactive) {
+            marker.addListener('click', () => {
+              if (typeof selectHandlerRef.current === 'function') {
+                selectHandlerRef.current(point.id);
+              }
+            });
+          }
 
           return marker;
         });
@@ -226,7 +243,7 @@ export default function GeoGridMap({ apiKey, center, points, selectedPointId = n
 
       mapInstanceRef.current = null;
     };
-  }, [apiKey, center, points]);
+  }, [apiKey, center, points, interactive]);
 
   useEffect(() => {
     if (!markersRef.current.length) {
@@ -255,7 +272,13 @@ export default function GeoGridMap({ apiKey, center, points, selectedPointId = n
 
   return (
     <div className="geo-grid-map">
-      <div ref={mapRef} className="geo-grid-map__canvas" aria-label="Geo grid map" />
+      <div
+        ref={mapRef}
+        className="geo-grid-map__canvas"
+        aria-label="Geo grid map"
+        data-interactive={interactive ? 'true' : 'false'}
+        style={{ '--geo-grid-map-min-height': minHeight }}
+      />
       {loadError ? <p className="geo-grid-map__error">{loadError}</p> : null}
       <style jsx>{`
         .geo-grid-map {
@@ -266,12 +289,16 @@ export default function GeoGridMap({ apiKey, center, points, selectedPointId = n
 
         .geo-grid-map__canvas {
           width: 100%;
-          min-height: clamp(360px, 60vw, 520px);
+          min-height: var(--geo-grid-map-min-height, clamp(360px, 60vw, 520px));
           aspect-ratio: 1 / 1;
           border-radius: var(--radius-md);
           border: 1px solid rgba(40, 40, 40, 0.08);
           overflow: hidden;
           background: rgba(255, 255, 255, 0.9);
+        }
+
+        .geo-grid-map__canvas[data-interactive='false'] {
+          pointer-events: none;
         }
 
         .geo-grid-map__error {

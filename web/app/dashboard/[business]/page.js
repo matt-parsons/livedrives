@@ -14,11 +14,17 @@ import {
   loadBusiness,
   loadOriginZones,
   loadGeoGridRunSummaries,
+  loadGeoGridRunWithPoints,
   loadCtrKeywordOverview,
   loadOrganizationBusinesses
 } from './helpers';
 import { buildOptimizationRoadmap } from './optimization';
 import { fetchPlaceDetails } from '@/lib/googlePlaces';
+import { buildMapPoints, resolveCenter } from './runs/formatters';
+
+function resolveMapsApiKey() {
+  return process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? process.env.GOOGLE_API_KEY ?? null;
+}
 
 function resolveStatus(status) {
   if (!status) {
@@ -203,6 +209,7 @@ export default async function BusinessDashboardPage({ params, searchParams }) {
         keyword: latestRun.keyword || '(no keyword)',
         runCount: sorted.length,
         latestRunDate: latestRun.runDate ?? '—',
+        latestRunId: latestRun.id ?? null,
         latestRunHref: latestRun.id ? `${baseHref}/runs/${latestRun.id}` : null,
         avgLabel: latestRun.avgPosition ?? '—',
         avgTrendIndicator: buildRunTrendIndicator(avgDelta, { invert: true, digits: 2 }),
@@ -215,6 +222,42 @@ export default async function BusinessDashboardPage({ params, searchParams }) {
     })
     .sort((a, b) => b.latestTimestamp - a.latestTimestamp)
     .map(({ latestTimestamp, ...rest }) => rest);
+
+  const mapsApiKey = resolveMapsApiKey();
+  const keywordPerformanceItems = keywordPerformance30d.length
+    ? await Promise.all(
+        keywordPerformance30d.map(async (item) => {
+          if (!item.latestRunId || !mapsApiKey) {
+            return { ...item, latestRunMap: null };
+          }
+
+          try {
+            const runData = await loadGeoGridRunWithPoints(business.id, item.latestRunId);
+
+            if (!runData) {
+              return { ...item, latestRunMap: null };
+            }
+
+            const mapPoints = buildMapPoints(runData.points);
+            const center = resolveCenter(runData.run, mapPoints);
+
+            if (!center) {
+              return { ...item, latestRunMap: null };
+            }
+
+            return {
+              ...item,
+              latestRunMap: {
+                center,
+                points: mapPoints
+              }
+            };
+          } catch (error) {
+            return { ...item, latestRunMap: null };
+          }
+        })
+      )
+    : [];
   function buildRunTrendIndicator(delta, { invert = false, unit = '', digits = 1 } = {}) {
     if (delta === null || delta === undefined) {
       return null;
@@ -542,8 +585,8 @@ export default async function BusinessDashboardPage({ params, searchParams }) {
             <p className="section-caption">Latest visibilty for your business over the past 30 days.</p>
           </div>
 
-          {keywordPerformance30d.length ? (
-            <KeywordPerformanceSpotlight items={keywordPerformance30d} />
+          {keywordPerformanceItems.length ? (
+            <KeywordPerformanceSpotlight items={keywordPerformanceItems} mapsApiKey={mapsApiKey} />
           ) : (
             <p style={{ marginTop: '1rem', color: '#6b7280' }}>
               Not enough geo grid runs in the last 30 days to chart keyword movement.
