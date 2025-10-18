@@ -1,5 +1,5 @@
 import pool from '@lib/db.js';
-import { launchGeoGridWorker } from '@lib/geoGridWorker';
+import { launchGeoGridWorker } from '@/lib/geoGridWorker';
 import { AuthError, requireAuth } from '@/lib/authServer';
 import {
   loadBusiness,

@@ -6,7 +6,7 @@ import {
   normalizeOriginZoneRow,
   resolveOrigin
 } from '@/lib/geoGrid';
-import { launchGeoGridWorker } from '@lib/geoGridWorker';
+import { launchGeoGridWorker } from '@/lib/geoGridWorker';
 
 export const runtime = 'nodejs';
 
