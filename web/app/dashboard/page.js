@@ -52,8 +52,8 @@ export default async function DashboardPage() {
         </section>
 
         <section className="section">
-          <div className="surface-card surface-card--muted surface-card--compact" role="status">
-            <p style={{ margin: 0 }}>
+          <div className="surface-card surface-card--muted surface-card--compact space-y-3" role="status">
+            <p className="text-sm text-foreground/80">
               There are no businesses linked to your organization yet.
             </p>
             {isOwner ? (
@@ -61,7 +61,7 @@ export default async function DashboardPage() {
                 + New business
               </Link>
             ) : (
-              <p style={{ margin: '8px 0 0', color: 'rgba(40, 40, 40, 0.7)' }}>
+              <p className="text-sm text-foreground/60">
                 Reach out to an owner or admin so they can create and assign a business to you.
               </p>
             )}

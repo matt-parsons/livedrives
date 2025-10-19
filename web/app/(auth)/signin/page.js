@@ -7,6 +7,15 @@ import {
   GoogleAuthProvider,
   signInWithPopup
 } from 'firebase/auth';
+import {
+  Button,
+  Card,
+  CardBody,
+  CardHeader,
+  CardFooter,
+  Divider,
+  Input
+} from '@nextui-org/react';
 import { auth } from '@/lib/firebaseClient';
 
 const googleProvider = new GoogleAuthProvider();
@@ -89,72 +98,88 @@ export default function SignInPage() {
 
   return (
     <div className="page-shell">
-      <div className="auth-page">
-        <section className="auth-intro">
-          <h1>Operational control, beautifully streamlined.</h1>
-          <p>
+      <div className="mx-auto grid w-full max-w-5xl gap-10 lg:grid-cols-[1.35fr_1fr] lg:items-center">
+        <section className="space-y-6 text-foreground">
+          <h1 className="text-4xl font-semibold tracking-tight">
+            Operational control, beautifully streamlined.
+          </h1>
+          <p className="text-base text-foreground/70">
             Step into a refined workspace crafted for clarity and focus. Coordinate your businesses,
             monitor runs in real time, and keep your teams aligned from a single command center.
           </p>
+          <div className="rounded-2xl border border-primary/30 bg-primary/10 p-6 text-sm text-primary/90 shadow-lg">
+            <p className="font-medium uppercase tracking-wide">Why teams love Mongooz Boost</p>
+            <ul className="mt-3 space-y-2 text-foreground/70">
+              <li>• Unified visibility across geo grid intelligence.</li>
+              <li>• Instant launchers for every operational workflow.</li>
+              <li>• Secure access with owner-grade controls.</li>
+            </ul>
+          </div>
         </section>
 
-        <div className="auth-card">
-          <div>
-            <h2>Welcome back</h2>
-            <p className="auth-subheading">Sign in to orchestrate your Livedrives operations.</p>
-          </div>
-
-          <form className="form-grid" onSubmit={handleEmailPassword}>
-            <div className="input-field">
-              <label className="input-label" htmlFor="email">
-                Work email
-              </label>
-              <input
+        <Card className="border border-white/5 bg-content1/80 shadow-2xl backdrop-blur-xl">
+          <CardHeader className="flex-col items-start gap-2">
+            <p className="text-xs font-semibold uppercase tracking-wide text-primary/80">Welcome back</p>
+            <h2 className="text-2xl font-semibold text-foreground">Sign in to orchestrate your operations</h2>
+          </CardHeader>
+          <CardBody className="space-y-6">
+            <form className="space-y-5" onSubmit={handleEmailPassword}>
+              <Input
                 id="email"
-                className="text-input"
+                label="Work email"
+                labelPlacement="outside"
+                placeholder="you@company.com"
                 type="email"
-                autoComplete="email"
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
-                required
-                disabled={loading}
+                isDisabled={loading}
+                isRequired
+                autoComplete="email"
+                variant="bordered"
               />
-            </div>
 
-            <div className="input-field">
-              <label className="input-label" htmlFor="password">
-                Password
-              </label>
-              <input
+              <Input
                 id="password"
-                className="text-input"
+                label="Password"
+                labelPlacement="outside"
                 type="password"
-                autoComplete="current-password"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
-                required
-                disabled={loading}
+                isDisabled={loading}
+                isRequired
+                autoComplete="current-password"
+                variant="bordered"
               />
-            </div>
 
-            <button className="primary-button" type="submit" disabled={loading}>
-              {loading ? 'Signing you in…' : 'Sign in securely'}
-            </button>
-          </form>
+              <Button color="primary" type="submit" className="w-full" isLoading={loading}>
+                {loading ? 'Signing you in…' : 'Sign in securely'}
+              </Button>
+            </form>
 
-          <div className="form-separator">or</div>
+            <Divider className="bg-white/10">
+              <span className="text-xs uppercase tracking-wide text-foreground/50">or</span>
+            </Divider>
 
-          <button
-            type="button"
-            className="secondary-button"
-            onClick={handleGoogle}
-            disabled={loading}
-          >
-            {loading ? 'Preparing Google sign-in…' : 'Continue with Google'}
-          </button>
+            <Button
+              color="secondary"
+              variant="bordered"
+              className="w-full"
+              onPress={handleGoogle}
+              isDisabled={loading}
+            >
+              {loading ? 'Preparing Google sign-in…' : 'Continue with Google'}
+            </Button>
 
-          {error ? <div className="error-banner">{error}</div> : null}
-        </div>
+            {error ? (
+              <div className="rounded-xl border border-danger/50 bg-danger/15 px-4 py-3 text-sm text-danger">
+                {error}
+              </div>
+            ) : null}
+          </CardBody>
+          <CardFooter className="flex flex-col items-start gap-2 text-xs text-foreground/50">
+            <p>Need access? Contact an owner to invite you to the organization.</p>
+          </CardFooter>
+        </Card>
       </div>
     </div>
   );
