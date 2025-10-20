@@ -76,8 +76,6 @@ function TrendMetric({ heading, valueLabel, indicator, deltaLabel }) {
         background: palette.containerBg,
         border: `1px solid ${palette.border}`,
         width: '100%',
-        boxShadow: palette.shadow,
-        transition: 'box-shadow 160ms ease'
       }}
     >
       <span
@@ -268,15 +266,11 @@ export default function KeywordPerformanceSpotlight({ items, mapsApiKey = null }
       <article
         role="tabpanel"
         style={{
-          border: '1px solid rgba(17, 24, 39, 0.08)',
-          borderRadius: '20px',
           backgroundColor: '#ffffff',
-          padding: '1.4rem',
           display: 'flex',
           flexDirection: 'column',
           gap: '1.4rem',
           minHeight: '240px',
-          boxShadow: '0 24px 40px rgba(15, 23, 42, 0.06)'
         }}
       >
         <header

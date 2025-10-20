@@ -285,6 +285,7 @@ export default function GeoGridMap({
           display: flex;
           flex-direction: column;
           gap: 16px;
+          align-items: center;
         }
 
         .geo-grid-map__canvas {
@@ -295,6 +296,7 @@ export default function GeoGridMap({
           border: 1px solid rgba(40, 40, 40, 0.08);
           overflow: hidden;
           background: rgba(255, 255, 255, 0.9);
+          max-width: 800px;
         }
 
         .geo-grid-map__canvas[data-interactive='false'] {

@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 :root {
-  --background: 57 72% 85%;
+  --background: rgb(246, 246, 246);
   --foreground: 199 93% 18%;
   --card: 57 72% 92%;
   --card-foreground: 199 93% 18%;
@@ -27,8 +27,8 @@
   color-scheme: light;
   font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   line-height: 1.5;
-  --color-bg: #f4f1bb;
-  --color-surface: rgba(244, 241, 187, 0.92);
+  --color-bg: rgb(246, 246, 246);
+  --color-surface: rgba(244, 241, 187, 0.621);
   --color-surface-strong: rgba(244, 241, 187, 0.98);
   --color-card: #ffffff;
   --color-border: rgba(3, 60, 87, 0.12);
@@ -136,7 +136,7 @@ textarea {
   margin: 0 auto;
   padding: clamp(14px, 2vw, 18px) clamp(18px, 3vw, 32px);
   border-radius: var(--radius-lg);
-  background: rgba(244, 241, 187, 0.86);
+  background: var(--color-heading);
   border: 1px solid rgba(3, 60, 87, 0.08);
   backdrop-filter: blur(14px);
   display: flex;
@@ -170,8 +170,7 @@ textarea {
   height: clamp(48px, 5vw, 64px);
   padding: 6px;
   border-radius: 22px;
-  background: radial-gradient(circle at 28% 28%, rgba(244, 241, 187, 0.95), rgba(34, 174, 209, 0.18));
-  box-shadow: inset 0 0 0 1px rgba(3, 60, 87, 0.08), 0 6px 12px rgba(3, 60, 87, 0.08);
+  background: #fff;
 }
 
 .brand-mark img {
@@ -196,7 +195,7 @@ textarea {
 
 .brand-subtitle {
   font-size: 0.9rem;
-  color: rgba(3, 60, 87, 0.68);
+  color: var(--color-muted);
 }
 
 .app-main {
@@ -288,7 +287,7 @@ textarea {
 }
 
 .surface-card--muted {
-  background: rgba(34, 174, 209, 0.08);
+  background: var(--color-card);
   color: var(--color-body);
   border: 1px solid rgba(34, 174, 209, 0.16);
 }
@@ -607,7 +606,6 @@ textarea {
 
 .owner-tools-menu__summary:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 3px rgba(109, 142, 160, 0.26);
 }
 
 .owner-tools-menu__chevron {
@@ -629,7 +627,6 @@ textarea {
   min-width: 260px;
   border-radius: 16px;
   background: #fff;
-  box-shadow: 0 12px 30px rgba(3, 60, 87, 0.18);
   border: 1px solid rgba(109, 142, 160, 0.15);
   display: flex;
   flex-direction: column;
@@ -692,7 +689,6 @@ textarea {
 
 .business-switcher__select:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px rgba(34, 174, 209, 0.35);
   border-radius: 6px;
 }
 
@@ -1657,12 +1653,10 @@ textarea {
 .operations-tab--active {
   background: var(--color-primary);
   color: #fff;
-  box-shadow: 0 4px 12px rgba(192, 109, 47, 0.2);
 }
 
 .operations-tab:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 3px rgba(192, 109, 47, 0.35);
 }
 
 .owner-tools-grid {
@@ -1727,7 +1721,6 @@ textarea {
 .segmented-button--active {
   background: var(--color-primary);
   color: #fff;
-  box-shadow: 0 4px 12px rgba(192, 109, 47, 0.24);
 }
 
 .segmented-button:disabled {

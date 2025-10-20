@@ -261,7 +261,7 @@ export default function OriginZonesManager({ businessId, initialZones = [], capt
   });
 
   return (
-    <Card className="bg-card/90 shadow-md">
+    <Card className="shadow-md">
       <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <CardTitle className="text-xl">Origin zones</CardTitle>
