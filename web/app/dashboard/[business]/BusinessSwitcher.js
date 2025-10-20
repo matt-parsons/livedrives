@@ -1,7 +1,8 @@
 'use client';
 
-import { useTransition } from 'react';
+import { useMemo, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
+import { Select, SelectItem } from '@heroui/react';
 
 function buildHref(identifier) {
   const safeIdentifier = encodeURIComponent(identifier);
@@ -14,9 +15,12 @@ export default function BusinessSwitcher({ businesses, currentValue }) {
 
   const hasMultipleOptions = Array.isArray(businesses) && businesses.length > 1;
   const effectiveCurrentValue = currentValue ?? '';
+  const selectedKeys = useMemo(() => (effectiveCurrentValue ? new Set([effectiveCurrentValue]) : new Set()), [
+    effectiveCurrentValue
+  ]);
 
-  function handleChange(event) {
-    const nextValue = event.target.value;
+  function handleSelectionChange(keys) {
+    const [nextValue] = Array.from(keys ?? []);
 
     if (!nextValue || nextValue === effectiveCurrentValue) {
       return;
@@ -32,31 +36,30 @@ export default function BusinessSwitcher({ businesses, currentValue }) {
   }
 
   return (
-    <div className="business-switcher" data-pending={isPending ? 'true' : 'false'}>
-      <label className="business-switcher__label" htmlFor="business-switcher-select">
-        {hasMultipleOptions ? 'Switch business' : 'Business'}
-      </label>
-      <select
-        className="business-switcher__select"
-        id="business-switcher-select"
-        value={effectiveCurrentValue}
-        onChange={handleChange}
-        disabled={isPending}
-        aria-live="polite"
-      >
-        {businesses.map((business) => {
-          const optionValue = business.value;
-          const optionLabel = business.isActive
-            ? business.label
-            : `${business.label} (inactive)`;
-
-          return (
-            <option key={optionValue} value={optionValue}>
-              {optionLabel}
-            </option>
-          );
-        })}
-      </select>
-    </div>
+    <Select
+      aria-label="Select business"
+      label={hasMultipleOptions ? 'Switch business' : 'Business'}
+      placeholder={hasMultipleOptions ? 'Choose a business' : undefined}
+      selectedKeys={selectedKeys}
+      onSelectionChange={handleSelectionChange}
+      isDisabled={isPending || !hasMultipleOptions}
+      variant="bordered"
+      disallowEmptySelection
+      classNames={{
+        trigger: 'bg-content1/80 border-white/10 backdrop-blur-md',
+        label: 'text-xs font-semibold uppercase tracking-wide text-foreground/60'
+      }}
+    >
+      {businesses.map((business) => (
+        <SelectItem
+          key={business.value}
+          value={business.value}
+          description={business.isActive ? undefined : 'Inactive business'}
+          className={!business.isActive ? 'text-foreground/50' : undefined}
+        >
+          {business.label}
+        </SelectItem>
+      ))}
+    </Select>
   );
 }

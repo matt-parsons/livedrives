@@ -2,6 +2,16 @@
 
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import {
+  Button,
+  Card,
+  CardBody,
+  CardHeader,
+  Chip,
+  Divider,
+  Input,
+  Textarea
+} from '@heroui/react';
 
 function toInputString(value) {
   if (value === null || value === undefined) {
@@ -246,208 +256,198 @@ export default function OriginZonesManager({ businessId, initialZones = [], capt
       ...zone,
       radiusLabel,
       coordLabel,
-      createdLabel: zone.createdAt ? new Date(zone.createdAt).toISOString() : null
+      createdLabel: zone.createdAt ? new Date(zone.createdAt).toLocaleString() : null
     };
   });
 
   return (
-    <div className="surface-card surface-card--muted">
-      <div className="section-header">
+    <Card className="border border-content3/40 bg-content1/90 shadow-large">
+      <CardHeader className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
-          <h2 className="section-title">Origin zones</h2>
-          <p className="section-caption">{caption}</p>
+          <h2 className="text-2xl font-semibold text-foreground">Origin zones</h2>
+          <p className="text-sm text-foreground/60">{caption}</p>
         </div>
-        <button type="button" className="cta-link" onClick={openCreateForm}>
+        <Button color="secondary" variant="flat" onPress={openCreateForm} isDisabled={submitting}>
           + Add origin zone
-        </button>
-      </div>
+        </Button>
+      </CardHeader>
+      <Divider />
+      <CardBody className="space-y-6">
+        {error ? (
+          <Card radius="md" className="border border-danger/40 bg-danger-50/40">
+            <CardBody className="space-y-1 text-sm text-danger-700">
+              <p className="font-semibold">We couldn’t complete that request</p>
+              <p>{error}</p>
+            </CardBody>
+          </Card>
+        ) : null}
 
-      {error ? <div className="error-banner">{error}</div> : null}
-
-      {zoneList.length === 0 ? (
-        <div className="empty-state">
-          <div>
-            <h3>Origin strategy pending</h3>
-            <p>Set up origin zones to activate balanced pickup coverage and routing logic.</p>
+        {zoneList.length === 0 ? (
+          <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-content3/60 bg-content2/60 px-6 py-10 text-center">
+            <h3 className="text-lg font-semibold text-foreground">Origin strategy pending</h3>
+            <p className="max-w-md text-sm text-foreground/70">
+              Set up origin zones to activate balanced pickup coverage and routing logic.
+            </p>
           </div>
-        </div>
-      ) : (
-        <ul className="card-list card-list--grid zone-grid">
-          {zoneList.map((zone) => (
-            <li key={zone.id}>
-              <div className="list-card zone-card">
-                <div className="list-card-header">
-                  <div>
-                    <h3 className="list-card-title">{zone.name || 'Unnamed zone'}</h3>
-                    {zone.canonical ? <p className="list-card-subtitle">{zone.canonical}</p> : null}
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {zoneList.map((zone) => (
+              <Card key={zone.id} radius="lg" variant="bordered" className="border-content3/40 bg-content1/80">
+                <CardHeader className="flex items-start justify-between gap-3">
+                  <div className="flex flex-col gap-1">
+                    <h3 className="text-lg font-semibold text-foreground">{zone.name || 'Unnamed zone'}</h3>
+                    {zone.canonical ? (
+                      <p className="text-sm text-foreground/60">{zone.canonical}</p>
+                    ) : null}
                   </div>
-                  <div className="zone-actions">
-                    <button
-                      type="button"
-                      className="inline-button"
-                      onClick={() => openEditForm(zone)}
-                      disabled={submitting}
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="flat"
+                      onPress={() => openEditForm(zone)}
+                      isDisabled={submitting}
                     >
                       Edit
-                    </button>
-                    <button
-                      type="button"
-                      className="inline-button inline-button--danger"
-                      onClick={() => handleDelete(zone)}
-                      disabled={submitting}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="light"
+                      color="danger"
+                      onPress={() => handleDelete(zone)}
+                      isDisabled={submitting}
                     >
                       Remove
-                    </button>
+                    </Button>
                   </div>
-                </div>
-
-                <div className="zone-card__meta">
-                  {zone.zip ? <span>ZIP {zone.zip}</span> : null}
-                  {zone.radiusLabel ? <span>{zone.radiusLabel}</span> : null}
-                  {zone.weight !== null && zone.weight !== undefined ? (
-                    <span>Weight {formatDecimal(zone.weight, 2) ?? zone.weight}</span>
+                </CardHeader>
+                <Divider />
+                <CardBody className="space-y-3 text-sm text-foreground/70">
+                  <div className="flex flex-wrap gap-2">
+                    {zone.zip ? (
+                      <Chip size="sm" variant="flat" color="secondary">
+                        ZIP {zone.zip}
+                      </Chip>
+                    ) : null}
+                    {zone.radiusLabel ? (
+                      <Chip size="sm" variant="flat" color="secondary">
+                        {zone.radiusLabel}
+                      </Chip>
+                    ) : null}
+                    {zone.weight !== null && zone.weight !== undefined ? (
+                      <Chip size="sm" variant="flat" color="secondary">
+                        Weight {formatDecimal(zone.weight, 2) ?? zone.weight}
+                      </Chip>
+                    ) : null}
+                  </div>
+                  {zone.coordLabel ? (
+                    <p className="text-sm text-foreground/70">Coordinates: {zone.coordLabel}</p>
                   ) : null}
-                </div>
-
-                <div className="zone-card__grid">
-                  {zone.coordLabel ? <div>Coordinates: {zone.coordLabel}</div> : null}
-                  {zone.keywords ? <div>Keywords: {zone.keywords}</div> : null}
-                  {zone.createdLabel ? <div>Created: {zone.createdLabel}</div> : null}
-                </div>
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
-
-      {(isCreating || isEditing) ? (
-        <form className="form-grid zone-form" onSubmit={handleSubmit}>
-          <h3>{isEditing ? 'Edit origin zone' : 'Add origin zone'}</h3>
-
-          <div className="input-field">
-            <label className="input-label" htmlFor="zone-name">Zone name</label>
-            <input
-              id="zone-name"
-              className="text-input"
-              type="text"
-              value={formState.name}
-              onChange={handleChange('name')}
-              disabled={submitting}
-            />
+                  {zone.keywords ? (
+                    <p className="text-sm text-foreground/70">Keywords: {zone.keywords}</p>
+                  ) : null}
+                  {zone.createdLabel ? (
+                    <p className="text-xs text-foreground/50">Created {zone.createdLabel}</p>
+                  ) : null}
+                </CardBody>
+              </Card>
+            ))}
           </div>
+        )}
 
-          <div className="input-field">
-            <label className="input-label" htmlFor="zone-canonical">Canonical label</label>
-            <input
-              id="zone-canonical"
-              className="text-input"
-              type="text"
-              value={formState.canonical}
-              onChange={handleChange('canonical')}
-              disabled={submitting}
-            />
-          </div>
+        {(isCreating || isEditing) ? (
+          <form
+            onSubmit={handleSubmit}
+            className="grid gap-4 rounded-2xl border border-content3/40 bg-content2/70 p-6"
+          >
+            <div className="flex flex-col gap-1">
+              <h3 className="text-lg font-semibold text-foreground">
+                {isEditing ? `Edit ${activeZone?.name || 'origin zone'}` : 'Add origin zone'}
+              </h3>
+              <p className="text-sm text-foreground/60">
+                Define coordinates and weighting to balance dispatching coverage.
+              </p>
+            </div>
 
-          <div className="input-field">
-            <label className="input-label" htmlFor="zone-zip">ZIP / postal code</label>
-            <input
-              id="zone-zip"
-              className="text-input"
-              type="text"
-              value={formState.zip}
-              onChange={handleChange('zip')}
-              disabled={submitting}
-            />
-          </div>
+            <div className="grid gap-4 md:grid-cols-2">
+              <Input
+                label="Zone name"
+                value={formState.name}
+                onChange={handleChange('name')}
+                disabled={submitting}
+              />
+              <Input
+                label="Canonical label"
+                value={formState.canonical}
+                onChange={handleChange('canonical')}
+                disabled={submitting}
+              />
+              <Input
+                label="ZIP / postal code"
+                value={formState.zip}
+                onChange={handleChange('zip')}
+                disabled={submitting}
+              />
+              <Input
+                label="Latitude"
+                type="number"
+                inputMode="decimal"
+                step="0.000001"
+                value={formState.lat}
+                onChange={handleChange('lat')}
+                disabled={submitting}
+                required
+              />
+              <Input
+                label="Longitude"
+                type="number"
+                inputMode="decimal"
+                step="0.000001"
+                value={formState.lng}
+                onChange={handleChange('lng')}
+                disabled={submitting}
+                required
+              />
+              <Input
+                label="Radius (miles)"
+                type="number"
+                inputMode="decimal"
+                min="0"
+                step="0.1"
+                value={formState.radiusMi}
+                onChange={handleChange('radiusMi')}
+                disabled={submitting}
+              />
+              <Input
+                label="Weight"
+                type="number"
+                inputMode="decimal"
+                min="0"
+                step="0.1"
+                value={formState.weight}
+                onChange={handleChange('weight')}
+                disabled={submitting}
+              />
+            </div>
 
-          <div className="input-field">
-            <label className="input-label" htmlFor="zone-lat">Latitude</label>
-            <input
-              id="zone-lat"
-              className="text-input"
-              type="number"
-              inputMode="decimal"
-              step="0.000001"
-              value={formState.lat}
-              onChange={handleChange('lat')}
-              disabled={submitting}
-              required
-            />
-          </div>
-
-          <div className="input-field">
-            <label className="input-label" htmlFor="zone-lng">Longitude</label>
-            <input
-              id="zone-lng"
-              className="text-input"
-              type="number"
-              inputMode="decimal"
-              step="0.000001"
-              value={formState.lng}
-              onChange={handleChange('lng')}
-              disabled={submitting}
-              required
-            />
-          </div>
-
-          <div className="input-field">
-            <label className="input-label" htmlFor="zone-radius">Radius (miles)</label>
-            <input
-              id="zone-radius"
-              className="text-input"
-              type="number"
-              inputMode="decimal"
-              min="0"
-              step="0.1"
-              value={formState.radiusMi}
-              onChange={handleChange('radiusMi')}
-              disabled={submitting}
-            />
-          </div>
-
-          <div className="input-field">
-            <label className="input-label" htmlFor="zone-weight">Weight</label>
-            <input
-              id="zone-weight"
-              className="text-input"
-              type="number"
-              inputMode="decimal"
-              min="0"
-              step="0.1"
-              value={formState.weight}
-              onChange={handleChange('weight')}
-              disabled={submitting}
-            />
-          </div>
-
-          <div className="input-field">
-            <label className="input-label" htmlFor="zone-keywords">Keywords</label>
-            <input
-              id="zone-keywords"
-              className="text-input"
-              type="text"
+            <Textarea
+              label="Keywords"
+              placeholder="Comma or JSON list"
               value={formState.keywords}
               onChange={handleChange('keywords')}
               disabled={submitting}
-              placeholder="Comma or JSON list"
             />
-          </div>
 
-          <div className="zone-form__actions">
-            <button className="primary-button" type="submit" disabled={submitting}>
-              {submitting ? 'Saving...' : activeTitle}
-            </button>
-            <button
-              type="button"
-              className="inline-button"
-              onClick={resetForm}
-              disabled={submitting}
-            >
-              Cancel
-            </button>
-          </div>
-        </form>
-      ) : null}
-    </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <Button type="submit" color="primary" isLoading={submitting}>
+                {activeTitle}
+              </Button>
+              <Button variant="light" onPress={resetForm} disabled={submitting}>
+                Cancel
+              </Button>
+            </div>
+          </form>
+        ) : null}
+      </CardBody>
+    </Card>
   );
 }

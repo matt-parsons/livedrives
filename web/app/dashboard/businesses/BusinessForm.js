@@ -195,7 +195,7 @@ export default function BusinessForm({ mode = 'create', businessId = null, initi
     <form className="form-grid" onSubmit={handleSubmit}>
       <div className="input-field">
         <label className="input-label" htmlFor="places-query">Search Google Places</label>
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'stretch' }}>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-stretch">
           <input
             id="places-query"
             className="text-input"
@@ -208,10 +208,9 @@ export default function BusinessForm({ mode = 'create', businessId = null, initi
           />
           <button
             type="button"
-            className="secondary-button"
+            className="secondary-button w-full whitespace-nowrap sm:w-auto"
             onClick={handlePlaceSearch}
             disabled={submitting || placesLoading}
-            style={{ width: 'auto', whiteSpace: 'nowrap' }}
           >
             {placesLoading ? 'Loading…' : 'Search'}
           </button>
@@ -223,22 +222,24 @@ export default function BusinessForm({ mode = 'create', businessId = null, initi
       {placesResults.length > 0 ? (
         <div className="input-field">
           <span className="input-label">Search results</span>
-          <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: '8px' }}>
+          <ul className="grid gap-3">
             {placesResults.map((place) => (
-              <li key={place.placeId} style={{ border: '1px solid #ccc', borderRadius: '8px', padding: '12px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
-                  <div>
-                    <div style={{ fontWeight: 600 }}>{place.name}</div>
+              <li
+                key={place.placeId}
+                className="rounded-2xl border border-white/10 bg-content1/80 p-4 shadow-sm backdrop-blur"
+              >
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="space-y-1">
+                    <div className="text-sm font-semibold text-foreground">{place.name}</div>
                     {place.formattedAddress ? (
-                      <div style={{ fontSize: '0.9rem', color: '#555' }}>{place.formattedAddress}</div>
+                      <div className="text-xs text-foreground/60">{place.formattedAddress}</div>
                     ) : null}
                   </div>
                   <button
                     type="button"
-                    className="secondary-button"
+                    className="secondary-button w-full whitespace-nowrap sm:w-auto"
                     onClick={() => handleSelectPlace(place.placeId)}
                     disabled={submitting || placesLoading}
-                    style={{ width: 'auto', whiteSpace: 'nowrap' }}
                   >
                     Use this place
                   </button>
@@ -395,12 +396,13 @@ export default function BusinessForm({ mode = 'create', businessId = null, initi
 
       <div className="input-field">
         <span className="input-label">Activation</span>
-        <label style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <label className="flex items-center gap-3 text-sm text-foreground/80">
           <input
             type="checkbox"
             checked={formState.isActive}
             onChange={handleCheckboxChange}
             disabled={submitting}
+            className="h-4 w-4 accent-primary"
           />
           <span>{formState.isActive ? 'Active' : 'Inactive'}</span>
         </label>

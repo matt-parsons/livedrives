@@ -2,425 +2,187 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import {
+  Card,
+  CardBody,
+  CardFooter,
+  CardHeader,
+  Chip,
+  Divider,
+  Tab,
+  Tabs
+} from '@heroui/react';
 import GeoGridMap from './runs/[runId]/GeoGridMap';
 
-function getTrendStatus(indicator) {
-  if (!indicator || typeof indicator.className !== 'string') {
-    return 'neutral';
+function resolveTrendTone(indicator) {
+  if (!indicator || typeof indicator !== 'object') {
+    return { color: 'default', icon: '→', text: '—', label: 'No comparison available' };
   }
 
-  if (indicator.className.includes('--positive')) {
-    return 'positive';
-  }
+  const className = indicator.className ?? '';
+  const color = className.includes('--positive')
+    ? 'success'
+    : className.includes('--negative')
+      ? 'danger'
+      : 'secondary';
 
-  if (indicator.className.includes('--negative')) {
-    return 'negative';
-  }
-
-  return 'neutral';
+  return {
+    color,
+    icon: indicator.icon ?? '→',
+    text: indicator.text ?? '—',
+    label: indicator.title ?? indicator.description ?? 'Trend'
+  };
 }
 
-const TREND_PALETTES = {
-  positive: {
-    icon: '↑',
-    iconBg: 'rgba(61, 125, 99, 0.18)',
-    iconColor: '#1f4d3a',
-    containerBg: 'rgba(61, 125, 99, 0.08)',
-    border: 'rgba(61, 125, 99, 0.32)',
-    valueColor: '#0f5132',
-    labelColor: '#1f2937',
-    deltaColor: '#1f4d3a',
-    deltaSubtle: 'rgba(31, 77, 58, 0.85)',
-    shadow: '0 12px 32px rgba(16, 185, 129, 0.15)'
-  },
-  negative: {
-    icon: '↓',
-    iconBg: 'rgba(239, 68, 68, 0.06)',
-    iconColor: 'rgba(127, 29, 29, 0.55)',
-    containerBg: '#ffffff',
-    border: 'rgba(17, 24, 39, 0.08)',
-    valueColor: '#4b5563',
-    labelColor: '#6b7280',
-    deltaColor: 'rgba(127, 29, 29, 0.55)',
-    deltaSubtle: 'rgba(107, 114, 128, 0.85)',
-    shadow: 'none'
-  },
-  neutral: {
-    icon: '→',
-    iconBg: 'rgba(107, 114, 128, 0.08)',
-    iconColor: '#4b5563',
-    containerBg: '#f9fafb',
-    border: 'rgba(148, 163, 184, 0.25)',
-    valueColor: '#1f2937',
-    labelColor: '#6b7280',
-    deltaColor: '#4b5563',
-    deltaSubtle: 'rgba(107, 114, 128, 0.8)',
-    shadow: 'none'
-  }
-};
-
-function TrendMetric({ heading, valueLabel, indicator, deltaLabel }) {
-  const status = getTrendStatus(indicator);
-  const palette = TREND_PALETTES[status] ?? TREND_PALETTES.neutral;
-  const icon = palette.icon;
-  const trendText = indicator?.text ?? '0';
-
+function MetricPanel({ label, value, delta, indicator }) {
+  const tone = resolveTrendTone(indicator);
   return (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '0.9rem',
-        borderRadius: '16px',
-        padding: '1rem 1.15rem',
-        background: palette.containerBg,
-        border: `1px solid ${palette.border}`,
-        width: '100%',
-        boxShadow: palette.shadow,
-        transition: 'box-shadow 160ms ease'
-      }}
-    >
-      <span
-        aria-hidden="true"
-        style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          width: '42px',
-          height: '42px',
-          borderRadius: '999px',
-          background: palette.iconBg,
-          color: palette.iconColor,
-          fontWeight: 700,
-          fontSize: '1.15rem'
-        }}
-      >
-        {icon}
-      </span>
-      <div style={{ flex: '1 1 auto' }}>
-        <div
-          style={{
-            fontSize: '0.78rem',
-            fontWeight: 600,
-            color: palette.labelColor,
-            letterSpacing: '0.04em',
-            textTransform: 'uppercase'
-          }}
-        >
-          {heading}
-        </div>
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'baseline',
-            gap: '0.55rem',
-            marginTop: '0.25rem'
-          }}
-        >
-          <span
-            style={{
-              fontSize: '1.5rem',
-              fontWeight: 700,
-              color: palette.valueColor
-            }}
-          >
-            {valueLabel}
+    <div className="rounded-2xl border border-content3/50 bg-content2/80 p-4">
+      <div className="text-xs font-semibold uppercase tracking-wide text-foreground/50">{label}</div>
+      <div className="mt-3 flex items-end gap-2">
+        <span className="text-3xl font-semibold text-foreground">{value}</span>
+        <Chip color={tone.color} variant="flat" size="sm" className="font-semibold" title={tone.label}>
+          <span className="flex items-center gap-1">
+            <span aria-hidden>{tone.icon}</span>
+            <span>{tone.text}</span>
           </span>
-          {indicator ? (
-            <span
-              style={{
-                fontSize: '0.95rem',
-                fontWeight: 600,
-                color: palette.deltaColor
-              }}
-            >
-              {trendText}
-            </span>
-          ) : null}
-        </div>
-        {deltaLabel ? (
-          <div
-            style={{
-              marginTop: '0.35rem',
-              fontSize: '0.75rem',
-              color: palette.deltaSubtle
-            }}
-          >
-            30d change {deltaLabel}
-          </div>
-        ) : null}
+        </Chip>
       </div>
+      {delta ? (
+        <p className="mt-2 text-xs text-foreground/60">30d change {delta}</p>
+      ) : null}
     </div>
   );
 }
 
-function KeywordSwitcher({ items, activeKey, onSelect }) {
-  if (items.length <= 1) {
-    return null;
-  }
-
-  return (
-    <div
-      role="tablist"
-      aria-label="Keyword performance switcher"
-      style={{
-        display: 'flex',
-        flexWrap: 'wrap',
-        gap: '0.5rem',
-        marginBottom: '1.25rem'
-      }}
-    >
-      {items.map((item) => {
-        const isActive = item.key === activeKey;
-        const status = getTrendStatus(item.solvTrendIndicator ?? item.avgTrendIndicator);
-        const indicatorText = item.solvTrendIndicator?.text ?? item.avgTrendIndicator?.text ?? null;
-        const indicatorIcon =
-          status === 'positive' ? '↑' : status === 'negative' ? '↓' : '→';
-        const indicatorColor =
-          status === 'positive'
-            ? '#0f5132'
-            : status === 'negative'
-              ? 'rgba(107, 114, 128, 0.9)'
-              : '#4b5563';
-        const indicatorBackground =
-          status === 'positive' ? 'rgba(26, 116, 49, 0.12)' : 'transparent';
-
-        return (
-          <button
-            key={item.key}
-            type="button"
-            role="tab"
-            aria-selected={isActive}
-            onClick={() => onSelect(item.key)}
-            style={{
-              borderRadius: '999px',
-              border: isActive ? '1px solid #111827' : '1px solid rgba(17, 24, 39, 0.1)',
-              backgroundColor: isActive ? '#111827' : '#ffffff',
-              color: isActive ? '#ffffff' : '#374151',
-              padding: '0.5rem 0.9rem',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.55rem',
-              fontWeight: 600,
-              fontSize: '0.85rem',
-              cursor: 'pointer',
-              transition: 'background-color 160ms ease, color 160ms ease, border-color 160ms ease'
-            }}
-          >
-            <span>{item.keyword}</span>
-            {indicatorText ? (
-              <span
-                aria-hidden="true"
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '0.25rem',
-                  fontSize: '0.75rem',
-                  fontWeight: 600,
-                  color: indicatorColor,
-                  backgroundColor: indicatorBackground,
-                  padding: status === 'positive' ? '0.15rem 0.45rem' : '0',
-                  borderRadius: '999px'
-                }}
-              >
-                {indicatorIcon}
-                <span>{indicatorText}</span>
-              </span>
-            ) : null}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
-export default function KeywordPerformanceSpotlight({ items, mapsApiKey = null }) {
-  const [activeKey, setActiveKey] = useState(() => items[0]?.key ?? null);
+export default function KeywordPerformanceSpotlight({ items, mapsApiKey }) {
+  const keywordItems = useMemo(() => items ?? [], [items]);
+  const [activeKey, setActiveKey] = useState(() => keywordItems[0]?.key ?? null);
 
   useEffect(() => {
-    if (!items.some((item) => item.key === activeKey)) {
-      setActiveKey(items[0]?.key ?? null);
+    if (!keywordItems.length) {
+      setActiveKey(null);
+      return;
     }
-  }, [items, activeKey]);
+
+    if (!keywordItems.some((item) => item.key === activeKey)) {
+      setActiveKey(keywordItems[0]?.key ?? null);
+    }
+  }, [keywordItems, activeKey]);
 
   const activeItem = useMemo(() => {
-    if (!items.length) {
+    if (!keywordItems.length) {
       return null;
     }
 
-    return items.find((item) => item.key === activeKey) ?? items[0];
-  }, [items, activeKey]);
+    return keywordItems.find((item) => item.key === activeKey) ?? keywordItems[0];
+  }, [keywordItems, activeKey]);
 
   if (!activeItem) {
     return null;
   }
 
-  const latestRunDescription =
-    activeItem.latestRunDate && activeItem.latestRunDate !== '—'
-      ? `Last scan: ${activeItem.latestRunDate}`
-      : null;
-  const statusLabel = activeItem.status?.label ?? null;
+  const tabs = keywordItems.map((item) => ({ key: item.key, title: item.keyword }));
+  const hasTabs = tabs.length > 1;
+
+  const solvTone = resolveTrendTone(activeItem.solvTrendIndicator);
+  const avgTone = resolveTrendTone(activeItem.avgTrendIndicator);
 
   return (
-    <div style={{ marginTop: '16px' }}>
-      <KeywordSwitcher items={items} activeKey={activeItem.key} onSelect={setActiveKey} />
-
-      <article
-        role="tabpanel"
-        style={{
-          border: '1px solid rgba(17, 24, 39, 0.08)',
-          borderRadius: '20px',
-          backgroundColor: '#ffffff',
-          padding: '1.4rem',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '1.4rem',
-          minHeight: '240px',
-          boxShadow: '0 24px 40px rgba(15, 23, 42, 0.06)'
-        }}
-      >
-        <header
-          style={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            justifyContent: 'space-between',
-            gap: '1rem'
-          }}
-        >
-          <div>
-            <h3
-              style={{
-                fontSize: '1.2rem',
-                fontWeight: 700,
-                marginBottom: '0rem',
-                color: '#111827'
-              }}
-            >
-              {activeItem.keyword}
-            </h3>
-            <p style={{ fontSize: '0.85rem', color: '#6b7280', marginTop: '0px' }}>
-              {latestRunDescription ? <> {latestRunDescription}</> : null}
-            </p>
+    <Card className="border border-content3/40 bg-content1/90 shadow-large">
+      <CardHeader className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div>
+          <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-foreground/50">
+            <Chip size="sm" variant="flat" color="secondary" className="font-semibold">
+              Keyword spotlight
+            </Chip>
+            <span>Runs analysed · {activeItem.runCount}</span>
           </div>
-          {statusLabel ? (
-            <span
-              style={{
-                alignSelf: 'flex-start',
-                backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                color: '#1d4ed8',
-                padding: '0.35rem 0.75rem',
-                borderRadius: '999px',
-                fontSize: '0.75rem',
-                fontWeight: 600,
-                letterSpacing: '0.02em',
-                textTransform: 'uppercase'
-              }}
-            >
-              {statusLabel}
-            </span>
-          ) : null}
-        </header>
+          <h3 className="text-2xl font-semibold text-foreground">{activeItem.keyword}</h3>
+          <p className="text-sm text-foreground/60">Latest run captured {activeItem.latestRunDate}</p>
+        </div>
+        {hasTabs ? (
+          <Tabs
+            aria-label="Keyword selector"
+            selectedKey={activeItem.key}
+            onSelectionChange={(key) => setActiveKey(key?.toString())}
+            color="secondary"
+            variant="bordered"
+            classNames={{ tabList: 'max-w-full overflow-x-auto' }}
+          >
+            {tabs.map((tab) => (
+              <Tab key={tab.key} title={tab.title} />
+            ))}
+          </Tabs>
+        ) : null}
+      </CardHeader>
+      <Divider />
+      <CardBody className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(280px,1fr)]">
+        <div className="space-y-4">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <MetricPanel
+              label="SoLV (Top 3)"
+              value={activeItem.solvLabel}
+              delta={activeItem.solvDeltaLabel}
+              indicator={activeItem.solvTrendIndicator}
+            />
+            <MetricPanel
+              label="Average position"
+              value={activeItem.avgLabel}
+              delta={activeItem.avgDeltaLabel}
+              indicator={activeItem.avgTrendIndicator}
+            />
+          </div>
 
-        <div
-          style={{
-            display: 'grid',
-            gap: '1rem',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))'
-          }}
-        >
-          <TrendMetric
-            heading="SoLV top 3"
-            valueLabel={activeItem.solvLabel}
-            indicator={activeItem.solvTrendIndicator}
-            deltaLabel={activeItem.solvDeltaLabel}
-          />
-          <TrendMetric
-            heading="Avg position"
-            valueLabel={activeItem.avgLabel}
-            indicator={activeItem.avgTrendIndicator}
-            deltaLabel={activeItem.avgDeltaLabel}
-          />
+          <Card radius="lg" variant="bordered" className="border-content3/40 bg-content2/70">
+            <CardBody className="space-y-2 text-sm text-foreground/70">
+              <p>
+                {activeItem.runCount} geo grid run{activeItem.runCount === 1 ? '' : 's'} have been captured for this
+                keyword in the last 30 days. The latest run tracked on {activeItem.latestRunDate} shows a
+                {` ${solvTone.text}`} SoLV trend and {` ${avgTone.text}`} average position change.
+              </p>
+              <p>
+                Use this insight to prioritise campaign adjustments, routing improvements, and keyword refreshes.
+              </p>
+            </CardBody>
+          </Card>
         </div>
 
-        {mapsApiKey ? (
-          activeItem.latestRunMap ? (
-            <div
-              style={{
-                marginTop: '0.5rem',
-                borderRadius: '16px',
-                overflow: 'hidden'
-              }}
-            >
-              <GeoGridMap
-                key={activeItem.latestRunId ?? activeItem.key}
-                apiKey={mapsApiKey}
-                center={activeItem.latestRunMap.center}
-                points={activeItem.latestRunMap.points}
-                interactive={false}
-                selectedPointId={null}
-                minHeight="clamp(220px, 45vw, 320px)"
-              />
+        <div className="min-h-[280px] rounded-2xl border border-content3/40 bg-content2/60">
+          {activeItem.latestRunMap && mapsApiKey ? (
+            <GeoGridMap
+              apiKey={mapsApiKey}
+              center={activeItem.latestRunMap.center}
+              points={activeItem.latestRunMap.points}
+              interactive={false}
+              minHeight="360px"
+            />
+          ) : (
+            <div className="flex h-full flex-col items-center justify-center gap-2 px-4 text-center">
+              <h4 className="text-lg font-semibold text-foreground">Map preview unavailable</h4>
+              <p className="text-sm text-foreground/60">
+                We need a recent geo grid run and Google Maps access to render keyword performance tiles.
+              </p>
             </div>
-          ) : activeItem.latestRunId ? (
-            <div
-              style={{
-                marginTop: '0.5rem',
-                fontSize: '0.78rem',
-                color: '#6b7280',
-                backgroundColor: '#f9fafb',
-                border: '1px solid rgba(148, 163, 184, 0.32)',
-                borderRadius: '12px',
-                padding: '0.85rem 1rem'
-              }}
-            >
-              Geo grid map preview unavailable for this run.
-            </div>
-          ) : null
-        ) : activeItem.latestRunId ? (
-          <div
-            style={{
-              marginTop: '0.5rem',
-              fontSize: '0.78rem',
-              color: '#6b7280',
-              backgroundColor: '#f9fafb',
-              border: '1px solid rgba(148, 163, 184, 0.32)',
-              borderRadius: '12px',
-              padding: '0.85rem 1rem'
-            }}
-          >
-            Add a Google Maps API key to preview the latest geo grid run.
-          </div>
-        ) : null}
-
+          )}
+        </div>
+      </CardBody>
+      <Divider />
+      <CardFooter className="flex flex-col gap-2 text-sm text-foreground/70 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-wrap items-center gap-3">
+          <Chip variant="flat" color={solvTone.color} size="sm">
+            SoLV trend {solvTone.text}
+          </Chip>
+          <Chip variant="flat" color={avgTone.color} size="sm">
+            Avg position trend {avgTone.text}
+          </Chip>
+        </div>
         {activeItem.latestRunHref ? (
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              flexWrap: 'wrap',
-              gap: '0.75rem'
-            }}
-          >
-            <div style={{ fontSize: '0.78rem', color: '#6b7280' }}>
-              Jump to the latest geo grid run to inspect detailed rankings.
-            </div>
-            <Link
-              className="cta-link"
-              href={activeItem.latestRunHref}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '0.35rem',
-                fontWeight: 600,
-                fontSize: '0.85rem'
-              }}
-            >
-              View run details ↗
-            </Link>
-          </div>
+          <Link className="font-semibold text-primary" href={activeItem.latestRunHref}>
+            Open latest run ↗
+          </Link>
         ) : null}
-      </article>
-    </div>
+      </CardFooter>
+    </Card>
   );
 }

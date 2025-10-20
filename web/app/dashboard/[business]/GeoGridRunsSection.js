@@ -1,7 +1,19 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
+import {
+  Card,
+  CardBody,
+  CardFooter,
+  CardHeader,
+  Chip,
+  Divider,
+  ScrollShadow,
+  Tab,
+  Tabs,
+  Tooltip
+} from '@heroui/react';
 
 const VIEW_OPTIONS = [
   { id: 'trend', label: 'Keyword trend' },
@@ -12,89 +24,71 @@ function normalizeView(value) {
   return value === 'list' ? 'list' : 'trend';
 }
 
-function formatValue(value, digits = 2, unit = '') {
-  if (value === null || value === undefined) {
-    return '—';
+function resolveTrendTone(indicator) {
+  if (!indicator || typeof indicator !== 'object') {
+    return { color: 'default', icon: '→', text: '—', title: 'No comparison' };
   }
 
-  const number = Number(value);
-
-  if (Number.isNaN(number)) {
-    return '—';
-  }
-
-  return `${number.toFixed(digits)}${unit}`;
-}
-
-function buildTrendIndicator(delta, { invert = false, unit = '', digits = 2 } = {}) {
-  if (delta === null || delta === undefined) {
-    return {
-      icon: '•',
-      className: 'trend-indicator--neutral',
-      text: '—',
-      description: 'No comparison available'
-    };
-  }
-
-  const value = Number(delta);
-
-  if (!Number.isFinite(value)) {
-    return {
-      icon: '•',
-      className: 'trend-indicator--neutral',
-      text: '—',
-      description: 'No comparison available'
-    };
-  }
-
-  const isImproving = invert ? value < 0 : value > 0;
-  const isDeclining = invert ? value > 0 : value < 0;
-
-  if (isImproving) {
-    return {
-      icon: invert ? '▼' : '▲',
-      className: 'trend-indicator--positive',
-      text: `${value > 0 ? '+' : ''}${value.toFixed(digits)}${unit}`,
-      description: 'Improving'
-    };
-  }
-
-  if (isDeclining) {
-    return {
-      icon: invert ? '▲' : '▼',
-      className: 'trend-indicator--negative',
-      text: `${value > 0 ? '+' : ''}${value.toFixed(digits)}${unit}`,
-      description: 'Declining'
-    };
-  }
+  const tone = indicator.className?.includes('--positive')
+    ? 'success'
+    : indicator.className?.includes('--negative')
+      ? 'danger'
+      : 'default';
 
   return {
-    icon: '→',
-    className: 'trend-indicator--neutral',
-    text: `0${unit}`,
-    description: 'No change'
+    color: tone,
+    icon: indicator.icon ?? '→',
+    text: indicator.text ?? '—',
+    title: indicator.title ?? indicator.description ?? 'Trend'
   };
 }
 
-function TrendMetric({ label, dataset, invert = false, unit = '', digits = 2 }) {
-  const indicator = buildTrendIndicator(dataset.delta, { invert, unit, digits });
-  const first = formatValue(dataset.first, digits, unit);
-  const latest = formatValue(dataset.latest, digits, unit);
-
+function MetricChip({ label, value, indicator, unit }) {
+  const trend = resolveTrendTone(indicator);
   return (
-    <div className="trend-stat trend-stat--compact">
-      <span className="trend-stat__label">{label}</span>
-      <div className="trend-stat__values">
-        <span>{first}</span>
-        <span className="trend-stat__arrow" aria-hidden="true">
-          →
-        </span>
-        <span>{latest}</span>
+    <div className="flex items-center gap-2 rounded-full bg-content2/80 px-3 py-1 text-sm font-medium text-foreground">
+      <span className="text-foreground/70">{label}</span>
+      <span className="font-semibold text-foreground">{value}{unit}</span>
+      <Tooltip content={trend.title} placement="top">
+        <Chip size="sm" color={trend.color} variant="flat" className="font-semibold">
+          <span className="flex items-center gap-1">
+            <span aria-hidden>{trend.icon}</span>
+            <span>{trend.text}</span>
+          </span>
+        </Chip>
+      </Tooltip>
+    </div>
+  );
+}
+
+function TrendSummary({ label, dataset, indicator, unit = '' }) {
+  const start = dataset?.first ?? '—';
+  const end = dataset?.latest ?? '—';
+  return (
+    <div className="flex flex-1 flex-col gap-2 rounded-xl border border-content3/40 bg-content2/70 p-3">
+      <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-foreground/60">
+        <span>{label}</span>
+        <span className="text-foreground/50">Last 30d</span>
       </div>
-      <span className={`trend-indicator ${indicator.className}`} title={indicator.description}>
-        <span aria-hidden="true">{indicator.icon}</span>
-        <span>{indicator.text}</span>
-      </span>
+      <div className="flex items-end justify-between gap-4">
+        <div className="flex flex-col">
+          <span className="text-xs text-foreground/50">First</span>
+          <span className="text-lg font-semibold text-foreground">{start}{unit}</span>
+        </div>
+        <div className="flex flex-col items-end">
+          <span className="text-xs text-foreground/50">Latest</span>
+          <span className="text-lg font-semibold text-foreground">{end}{unit}</span>
+        </div>
+      </div>
+      <div className="flex items-center justify-between text-sm text-foreground/70">
+        <span>Change</span>
+        <Chip color={resolveTrendTone(indicator).color} variant="flat" size="sm">
+          <span className="flex items-center gap-1 font-semibold">
+            <span aria-hidden>{resolveTrendTone(indicator).icon}</span>
+            <span>{resolveTrendTone(indicator).text}</span>
+          </span>
+        </Chip>
+      </div>
     </div>
   );
 }
@@ -102,9 +96,19 @@ function TrendMetric({ label, dataset, invert = false, unit = '', digits = 2 }) 
 export default function GeoGridRunsSection({ caption, defaultView = 'trend', trendItems, runItems }) {
   const [activeView, setActiveView] = useState(() => normalizeView(defaultView));
 
-  const handleSwitch = (id) => {
-    const nextView = normalizeView(id);
+  const tabs = useMemo(
+    () =>
+      VIEW_OPTIONS.map((option) => ({
+        key: option.id,
+        title: option.label
+      })),
+    []
+  );
+
+  const handleSelectionChange = (key) => {
+    const nextView = normalizeView(key?.toString());
     setActiveView(nextView);
+
     if (typeof window !== 'undefined') {
       const url = new URL(window.location.href);
       if (nextView === 'list') {
@@ -116,178 +120,165 @@ export default function GeoGridRunsSection({ caption, defaultView = 'trend', tre
     }
   };
 
-  return (
-    <div className="surface-card surface-card--muted">
-      <div className="section-header">
-        <h2 className="section-title">Geo grid runs</h2>
-        <p className="section-caption">{caption}</p>
-      </div>
+  const renderTrendView = () => {
+    if (!trendItems.length) {
+      return (
+        <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed border-content3/60 bg-content2/60 px-6 py-10 text-center">
+          <h3 className="text-lg font-semibold text-foreground">No keyword trends yet</h3>
+          <p className="max-w-md text-sm text-foreground/70">
+            Accumulate multiple runs per keyword to unlock trend comparisons and geographic visualizations.
+          </p>
+        </div>
+      );
+    }
 
-      <div className="view-switch" role="tablist" aria-label="Geo grid view mode">
-        {VIEW_OPTIONS.map((option) => {
-          const isActive = activeView === option.id;
-
-          return isActive ? (
-            <strong key={option.id} role="tab" aria-selected="true">
-              {option.label}
-            </strong>
-          ) : (
-            <button
-              key={option.id}
-              type="button"
-              role="tab"
-              aria-selected="false"
-              className="view-switch__button"
-              onClick={() => handleSwitch(option.id)}
-            >
-              {option.label}
-            </button>
+    return (
+      <ScrollShadow className="grid gap-4">
+        {trendItems.map((item) => {
+          const avgTrendRaw = item.avgTrendIndicator;
+          const solvTrendRaw = item.solvTrendIndicator;
+          const avgTrend = resolveTrendTone(avgTrendRaw);
+          const solvTrend = resolveTrendTone(solvTrendRaw);
+          return (
+            <Card key={item.key} radius="lg" className="border border-content3/40 bg-content1/80">
+              <CardHeader className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center gap-2">
+                    <Chip size="sm" color="secondary" variant="flat" className="font-semibold">
+                      {item.runCount} runs
+                    </Chip>
+                    <span className="text-xs uppercase tracking-wide text-foreground/50">
+                      {item.firstRunDate} → {item.latestRunDate}
+                    </span>
+                  </div>
+                  <h3 className="text-xl font-semibold text-foreground">{item.keyword}</h3>
+                </div>
+                <div className="flex flex-wrap items-center gap-3">
+                  <MetricChip
+                    label="SoLV"
+                    value={item.solv?.latest ?? '—'}
+                    unit="%"
+                    indicator={item.solvTrendIndicator}
+                  />
+                  <MetricChip
+                    label="Avg position"
+                    value={item.avg?.latest ?? '—'}
+                    indicator={item.avgTrendIndicator}
+                  />
+                </div>
+              </CardHeader>
+              <Divider />
+              <CardBody className="grid gap-4 md:grid-cols-2">
+                <TrendSummary label="Avg position" dataset={item.avg} indicator={avgTrendRaw} />
+                <TrendSummary label="SoLV (Top 3)" dataset={item.solv} indicator={solvTrendRaw} unit="%" />
+              </CardBody>
+              <CardFooter className="flex flex-wrap items-center justify-between gap-3 text-sm text-foreground/70">
+                <span>
+                  Latest run updated {item.latestRunDate ?? '—'}
+                  {item.latestRunHref ? (
+                    <>
+                      {' · '}
+                      <Link className="font-semibold text-primary" href={item.latestRunHref}>
+                        View run ↗
+                      </Link>
+                    </>
+                  ) : null}
+                </span>
+                <Chip variant="flat" color={avgTrend.color} size="sm" className="font-semibold">
+                  Avg trend {avgTrend.text}
+                </Chip>
+              </CardFooter>
+            </Card>
           );
         })}
-      </div>
+      </ScrollShadow>
+    );
+  };
 
-      {activeView === 'trend' ? (
-        trendItems.length === 0 ? (
-          <div className="empty-state" style={{ marginTop: '20px' }}>
-            <div>
-              <h3>No keyword trends yet</h3>
-              <p>Accumulate multiple runs per keyword to unlock trend comparisons.</p>
-            </div>
-          </div>
-        ) : (
-            <ul className="card-list" style={{ marginTop: '24px' }}>
-              {trendItems.map((item) => {
-                const avgLatest = formatValue(item.avg.latest, 2);
-                const solvLatest = formatValue(item.solv.latest, 1, '%');
-                const avgTrendIndicator = item.avgTrendIndicator ?? null;
-                const solvTrendIndicator = item.solvTrendIndicator ?? null;
+  const renderListView = () => {
+    if (!runItems.length) {
+      return (
+        <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed border-content3/60 bg-content2/60 px-6 py-10 text-center">
+          <h3 className="text-lg font-semibold text-foreground">No geo grid runs yet</h3>
+          <p className="max-w-md text-sm text-foreground/70">
+            Deploy a run to start mapping rankings across your coverage area and unlock keyword trend comparisons.
+          </p>
+        </div>
+      );
+    }
 
-                return (
-                  <li key={item.key}>
-                  <div className="list-card list-card--tight">
-                    <div className="list-card-header list-card-header--compact">
-                      <div>
-                        <h3 className="list-card-title">{item.keyword}</h3>
-                        <p className="list-card-subtitle">
-                          Runs tracked <strong>{item.runCount}</strong>
-                        </p>
-                      </div>
-                      <div className="list-card-header__metrics">
-                        <span className="metric-chip metric-chip--inline">
-                          <strong>{solvLatest}</strong> SoLV
-                          {solvTrendIndicator ? (
-                            <span
-                              className={`trend-indicator ${solvTrendIndicator.className}`}
-                              title={solvTrendIndicator.title}
-                            >
-                              <span aria-hidden="true">{solvTrendIndicator.icon}</span>
-                              <span>{solvTrendIndicator.text}</span>
-                            </span>
-                          ) : null}
-                        </span>
-                        <span className="metric-chip metric-chip--inline">
-                          <strong>{avgLatest}</strong> Avg position
-                          {avgTrendIndicator ? (
-                            <span
-                              className={`trend-indicator ${avgTrendIndicator.className}`}
-                              title={avgTrendIndicator.title}
-                            >
-                              <span aria-hidden="true">{avgTrendIndicator.icon}</span>
-                              <span>{avgTrendIndicator.text}</span>
-                            </span>
-                          ) : null}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="trend-meta">
-                      <span>First run: {item.firstRunDate ?? '—'}</span>
-                      <span>
-                        Latest run: {item.latestRunDate ?? '—'}
-                        {item.latestRunHref ? (
-                          <>
-                            {' · '}
-                            <Link href={item.latestRunHref}>View run ↗</Link>
-                          </>
-                        ) : null}
-                      </span>
-                    </div>
-
-                    <div className="trend-metrics">
-                      <TrendMetric label="Avg position" dataset={item.avg} invert digits={2} />
-                      <TrendMetric label="SoLV (Top 3)" dataset={item.solv} unit="%" digits={1} />
-                    </div>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        )
-          ) : runItems.length === 0 ? (
-            <div className="empty-state" style={{ marginTop: '20px' }}>
-              <div>
-                <h3>No geo grid runs yet</h3>
-                <p>Deploy a run to start mapping rankings across your coverage area.</p>
-              </div>
-            </div>
-          ) : (
-            <ul className="card-list" style={{ marginTop: '24px' }}>
-              {runItems.map((run) => (
-                <li key={run.id}>
-              <Link className="list-card list-card--interactive list-card--tight" href={run.href}>
-                <div className="list-card-header list-card-header--compact">
-                  <div>
-                    <h3 className="list-card-title">{run.keyword}</h3>
-                    <p className="list-card-subtitle">Run date {run.runDate}</p>
-                  </div>
-                  <div className="list-card-header__metrics">
-                    <span className="metric-chip metric-chip--inline">
-                      <strong>{run.solvTop3}</strong> SoLV
-                      {run.solvTrendIndicator ? (
-                        <span
-                          className={`trend-indicator ${run.solvTrendIndicator.className}`}
-                          title={run.solvTrendIndicator.title}
-                        >
-                          <span aria-hidden="true">{run.solvTrendIndicator.icon}</span>
-                          <span>{run.solvTrendIndicator.text}</span>
-                        </span>
-                      ) : null}
-                    </span>
-                    <span className="metric-chip metric-chip--inline">
-                      <strong>{run.avgPosition}</strong> Avg position
-                      {run.avgTrendIndicator ? (
-                        <span
-                          className={`trend-indicator ${run.avgTrendIndicator.className}`}
-                          title={run.avgTrendIndicator.title}
-                        >
-                          <span aria-hidden="true">{run.avgTrendIndicator.icon}</span>
-                          <span>{run.avgTrendIndicator.text}</span>
-                        </span>
-                      ) : null}
-                    </span>
-                  </div>
+    return (
+      <div className="grid gap-4">
+        {runItems.map((run) => {
+          const solvTrend = resolveTrendTone(run.solvTrendIndicator);
+          const avgTrend = resolveTrendTone(run.avgTrendIndicator);
+          return (
+            <Card
+              as={Link}
+              href={run.href}
+              key={run.id}
+              isPressable
+              radius="lg"
+              className="border border-content3/40 bg-content1/80 transition-transform hover:scale-[1.01]"
+            >
+              <CardHeader className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-foreground/60">{run.runDate}</p>
+                  <h3 className="text-xl font-semibold text-foreground">{run.keyword}</h3>
                 </div>
-
-                {run.gridDetails.length ? (
-                  <div className="list-row">
-                    {run.gridDetails.map((detail) => (
-                      <span key={detail}>{detail}</span>
-                    ))}
-                  </div>
-                ) : null}
-
-                <div className="list-card-footer">
+                <div className="flex flex-wrap items-center gap-3">
+                  <MetricChip label="SoLV" value={run.solvTop3} unit="" indicator={run.solvTrendIndicator} />
+                  <MetricChip label="Avg position" value={run.avgPosition} indicator={run.avgTrendIndicator} />
+                </div>
+              </CardHeader>
+              <Divider />
+              <CardBody className="flex flex-wrap gap-3 text-sm text-foreground/70">
+                {run.gridDetails.map((detail) => (
+                  <Chip key={detail} variant="flat" color="secondary" size="sm">
+                    {detail}
+                  </Chip>
+                ))}
+              </CardBody>
+              <CardFooter className="flex flex-col gap-2 text-xs text-foreground/60 sm:flex-row sm:justify-between sm:text-sm">
+                <div className="flex flex-wrap gap-x-3 gap-y-1">
                   {run.footerDetails.map((detail) => (
                     <span key={detail}>{detail}</span>
                   ))}
                 </div>
+                {run.notes ? (
+                  <span className="rounded-lg bg-warning/20 px-3 py-1 text-warning-600">Notes: {run.notes}</span>
+                ) : null}
+              </CardFooter>
+            </Card>
+          );
+        })}
+      </div>
+    );
+  };
 
-                {run.notes ? <p className="inline-note">Notes: {run.notes}</p> : null}
-              </Link>
-            </li>
+  return (
+    <Card className="border border-content3/40 bg-content1/90 shadow-large">
+      <CardHeader className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div>
+          <h2 className="text-2xl font-semibold text-foreground">Geo grid runs</h2>
+          <p className="text-sm text-foreground/60">{caption}</p>
+        </div>
+        <Tabs
+          aria-label="Geo grid view mode"
+          color="secondary"
+          selectedKey={activeView}
+          onSelectionChange={handleSelectionChange}
+          variant="bordered"
+        >
+          {tabs.map((tab) => (
+            <Tab key={tab.key} title={tab.title} />
           ))}
-        </ul>
-      )}
-    </div>
+        </Tabs>
+      </CardHeader>
+      <Divider />
+      <CardBody className="space-y-4">
+        {activeView === 'trend' ? renderTrendView() : renderListView()}
+      </CardBody>
+    </Card>
   );
 }

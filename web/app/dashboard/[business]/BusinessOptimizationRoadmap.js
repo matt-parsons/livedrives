@@ -1,4 +1,15 @@
 import Link from 'next/link';
+import {
+  Button,
+  Card,
+  CardBody,
+  CardFooter,
+  CardHeader,
+  Chip,
+  Divider,
+  Progress,
+  ScrollShadow
+} from '@heroui/react';
 
 function formatImpact(weight) {
   if (weight === null || weight === undefined) {
@@ -14,98 +25,88 @@ function formatImpact(weight) {
   return `${value}% impact`;
 }
 
+function resolveStatusColor(statusKey) {
+  if (!statusKey) return 'default';
+  const normalized = statusKey.toString().toLowerCase();
+  if (normalized.includes('complete') || normalized.includes('good') || normalized.includes('pass')) {
+    return 'success';
+  }
+  if (normalized.includes('progress')) {
+    return 'warning';
+  }
+  if (normalized.includes('risk') || normalized.includes('block') || normalized.includes('fail')) {
+    return 'danger';
+  }
+  return 'secondary';
+}
+
 function RoadmapTaskCard({ task }) {
   const impactLabel = formatImpact(task.weight);
+  const statusColor = resolveStatusColor(task.status?.key);
 
   return (
-    <li
-      key={task.id}
-      style={{
-        listStyle: 'none',
-        padding: '1rem 1.1rem',
-        borderRadius: '12px',
-        border: '1px solid rgba(94, 68, 38, 0.12)',
-        background: '#fff',
-        boxShadow: '0 6px 12px rgba(64, 44, 25, 0.05)',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '0.65rem'
-      }}
-    >
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'flex-start',
-          gap: '1rem'
-        }}
-      >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-          <strong style={{ fontSize: '1.02rem', color: '#2b1b0f' }}>{task.label}</strong>
-          {task.detail ? (
-            <p style={{ margin: 0, fontSize: '0.9rem', color: '#6b7280', lineHeight: 1.4 }}>{task.detail}</p>
-          ) : null}
+    <Card key={task.id} radius="lg" variant="bordered" className="border-content3/40 bg-content1/80">
+      <CardHeader className="flex items-start justify-between gap-4">
+        <div className="flex flex-col gap-1">
+          <h4 className="text-base font-semibold text-foreground">{task.label}</h4>
+          {task.detail ? <p className="text-sm text-foreground/60">{task.detail}</p> : null}
         </div>
-        <span className="status-pill" data-status={task.status.key}>
-          {task.status.label}
-        </span>
-      </div>
-
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          fontSize: '0.85rem',
-          color: '#6b7280'
-        }}
-      >
-        {task.auto ? (
-          <span>Automatically scored</span>
-        ) : (
-          <span>Manual follow-up</span>
-        )}
-        {impactLabel ? <strong style={{ color: '#5e4426' }}>{impactLabel}</strong> : null}
-      </div>
-    </li>
+        {task.status ? (
+          <Chip color={statusColor} variant="flat" className="font-semibold">
+            {task.status.label}
+          </Chip>
+        ) : null}
+      </CardHeader>
+      <Divider />
+      <CardBody className="flex flex-col gap-2 text-sm text-foreground/70">
+        <span>{task.auto ? 'Automatically scored' : 'Manual follow-up required'}</span>
+        {impactLabel ? (
+          <Chip color="secondary" variant="flat" size="sm" className="self-start font-semibold">
+            {impactLabel}
+          </Chip>
+        ) : null}
+      </CardBody>
+      <CardFooter className="text-xs text-foreground/50">
+        {task.category ? `Category: ${task.category}` : 'Optimization signal'}
+      </CardFooter>
+    </Card>
   );
 }
 
 export default function BusinessOptimizationRoadmap({ roadmap, error, placeId, editHref }) {
   if (!placeId) {
     return (
-      <div className="surface-card surface-card--muted surface-card--compact">
-        <div className="section-header">
+      <Card className="border border-dashed border-content3/50 bg-content2/70">
+        <CardHeader className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
           <div>
-            <h2 className="section-title">Optimization roadmap</h2>
-            <p className="section-caption">Connect a Google Place ID to unlock optimization guidance.</p>
+            <h2 className="text-xl font-semibold text-foreground">Optimization roadmap</h2>
+            <p className="text-sm text-foreground/70">Connect a Google Place ID to unlock optimization guidance.</p>
           </div>
-          <Link className="cta-link" href={editHref ?? 'edit'}>
+          <Button as={Link} href={editHref ?? 'edit'} color="primary" variant="flat">
             Add Google Place ID
-          </Link>
-        </div>
-        <p style={{ marginTop: '0.75rem', color: '#6b7280', fontSize: '0.9rem' }}>
-          This business is not linked to Google Places yet. Once a Place ID is connected we can evaluate the
-          profile’s completeness.
-        </p>
-      </div>
+          </Button>
+        </CardHeader>
+        <Divider />
+        <CardBody className="text-sm text-foreground/70">
+          This business isn’t linked to Google Places yet. Once a Place ID is connected we’ll evaluate the profile’s
+          completeness and highlight the quickest wins.
+        </CardBody>
+      </Card>
     );
   }
 
   if (error) {
     return (
-      <div className="surface-card surface-card--muted surface-card--compact">
-        <div className="section-header">
-          <div>
-            <h2 className="section-title">Optimization roadmap</h2>
-            <p className="section-caption">We hit an issue loading Google profile insights.</p>
-          </div>
-        </div>
-        <div className="inline-error" role="status">
-          <strong>Unable to contact Google Places</strong>
-          <span>{error}</span>
-        </div>
-      </div>
+      <Card className="border border-danger/40 bg-danger-50/30">
+        <CardHeader>
+          <h2 className="text-xl font-semibold text-danger-600">Optimization roadmap</h2>
+        </CardHeader>
+        <Divider />
+        <CardBody className="space-y-2 text-sm text-danger-700">
+          <p className="font-semibold">Unable to contact Google Places</p>
+          <p>{error}</p>
+        </CardBody>
+      </Card>
     );
   }
 
@@ -117,95 +118,82 @@ export default function BusinessOptimizationRoadmap({ roadmap, error, placeId, e
   const manualTasks = roadmap.tasks.filter((task) => !task.auto);
 
   return (
-    <div className="surface-card surface-card--muted">
-      <div className="section-header">
+    <Card className="border border-content3/40 bg-content1/90 shadow-large">
+      <CardHeader className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
-          <h2 className="section-title">Optimization roadmap</h2>
-          <p className="section-caption">
+          <h2 className="text-2xl font-semibold text-foreground">Optimization roadmap</h2>
+          <p className="text-sm text-foreground/60">
             We analyse Google Places data to prioritize the biggest profile wins.
           </p>
         </div>
         {roadmap.place?.googleMapsUri ? (
-          <a
-            className="cta-link"
+          <Button
+            as={Link}
             href={roadmap.place.googleMapsUri}
             target="_blank"
             rel="noopener noreferrer"
+            variant="bordered"
           >
-            View on Google Maps ↗
-          </a>
+            View on Google Maps
+          </Button>
         ) : null}
-      </div>
-
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '0.5rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-          <strong style={{ fontSize: '1.1rem', color: '#2b1b0f' }}>Optimization readiness</strong>
-          <span style={{ fontSize: '0.9rem', color: '#6b7280' }}>{roadmap.progressPercent}% complete</span>
-        </div>
-        <div
-          aria-hidden="true"
-          style={{
-            position: 'relative',
-            width: '100%',
-            height: '12px',
-            borderRadius: '999px',
-            background: 'rgba(94, 68, 38, 0.15)',
-            overflow: 'hidden'
-          }}
-        >
-          <div
-            style={{
-              width: `${Math.min(100, Math.max(0, roadmap.progressPercent))}%`,
-              height: '100%',
-              borderRadius: '999px',
-              background: 'linear-gradient(90deg, #c06d2f, #9d5423)'
-            }}
+      </CardHeader>
+      <Divider />
+      <CardBody className="space-y-6">
+        <div className="space-y-3">
+          <div className="flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-center">
+            <span className="text-sm font-semibold uppercase tracking-wide text-foreground/50">
+              Optimization readiness
+            </span>
+            <span className="text-sm font-semibold text-foreground/70">{roadmap.progressPercent}% complete</span>
+          </div>
+          <Progress
+            size="lg"
+            aria-label="Optimization readiness"
+            value={Math.min(100, Math.max(0, roadmap.progressPercent))}
+            color="secondary"
+            showValueLabel={false}
+            className="max-w-lg"
           />
-        </div>
-        <p style={{ margin: 0, fontSize: '0.85rem', color: '#6b7280' }}>
-          Automated checks cover {roadmap.automatedWeight}% of the roadmap. Manual follow-ups account for the
-          remaining {roadmap.manualWeight}%.
-        </p>
-      </div>
-
-      <div
-        style={{
-          marginTop: '1.25rem',
-          display: 'grid',
-          gap: '1rem',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))'
-        }}
-      >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-          <h3 style={{ margin: 0, fontSize: '1rem', color: '#2b1b0f' }}>Automated insights</h3>
-          {autoTasks.length ? (
-            <ul style={{ margin: 0, padding: 0, display: 'grid', gap: '0.75rem' }}>
-              {autoTasks.map((task) => (
-                <RoadmapTaskCard key={task.id} task={task} />
-              ))}
-            </ul>
-          ) : (
-            <p style={{ margin: 0, fontSize: '0.9rem', color: '#6b7280' }}>
-              No automated signals detected. Double-check that the Place ID is correct and try again.
-            </p>
-          )}
+          <p className="text-sm text-foreground/60">
+            Automated checks cover {roadmap.automatedWeight}% of the roadmap. Manual follow-ups account for the remaining
+            {` ${roadmap.manualWeight}%`}.
+          </p>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-          <h3 style={{ margin: 0, fontSize: '1rem', color: '#2b1b0f' }}>Manual priorities</h3>
-          {manualTasks.length ? (
-            <ul style={{ margin: 0, padding: 0, display: 'grid', gap: '0.75rem' }}>
-              {manualTasks.map((task) => (
-                <RoadmapTaskCard key={task.id} task={task} />
-              ))}
-            </ul>
-          ) : (
-            <p style={{ margin: 0, fontSize: '0.9rem', color: '#6b7280' }}>
-              Nothing to follow up manually right now.
-            </p>
-          )}
+        <div className="grid gap-6 lg:grid-cols-2">
+          <div className="space-y-3">
+            <h3 className="text-lg font-semibold text-foreground">Automated insights</h3>
+            {autoTasks.length ? (
+              <ScrollShadow className="grid gap-3">
+                {autoTasks.map((task) => (
+                  <RoadmapTaskCard key={task.id} task={task} />
+                ))}
+              </ScrollShadow>
+            ) : (
+              <p className="text-sm text-foreground/60">
+                No automated signals detected. Double-check that the Place ID is correct and try again.
+              </p>
+            )}
+          </div>
+
+          <div className="space-y-3">
+            <h3 className="text-lg font-semibold text-foreground">Manual priorities</h3>
+            {manualTasks.length ? (
+              <ScrollShadow className="grid gap-3">
+                {manualTasks.map((task) => (
+                  <RoadmapTaskCard key={task.id} task={task} />
+                ))}
+              </ScrollShadow>
+            ) : (
+              <p className="text-sm text-foreground/60">
+                No manual priorities queued yet. Review your Google profile and re-run the analysis for fresh
+                opportunities.
+              </p>
+            )}
+          </div>
         </div>
-      </div>
-    </div>
+      </CardBody>
+    </Card>
   );
 }
