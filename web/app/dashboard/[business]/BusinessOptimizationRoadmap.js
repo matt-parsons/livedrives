@@ -24,9 +24,9 @@ function RoadmapTaskCard({ task }) {
         listStyle: 'none',
         padding: '1rem 1.1rem',
         borderRadius: '12px',
-        border: '1px solid rgba(94, 68, 38, 0.12)',
+        border: '1px solid rgba(3, 60, 87, 0.12)',
         background: '#fff',
-        boxShadow: '0 6px 12px rgba(64, 44, 25, 0.05)',
+        boxShadow: '0 6px 12px rgba(3, 60, 87, 0.06)',
         display: 'flex',
         flexDirection: 'column',
         gap: '0.65rem'
@@ -41,9 +41,18 @@ function RoadmapTaskCard({ task }) {
         }}
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-          <strong style={{ fontSize: '1.02rem', color: '#2b1b0f' }}>{task.label}</strong>
+          <strong style={{ fontSize: '1.02rem', color: 'var(--color-heading)' }}>{task.label}</strong>
           {task.detail ? (
-            <p style={{ margin: 0, fontSize: '0.9rem', color: '#6b7280', lineHeight: 1.4 }}>{task.detail}</p>
+            <p
+              style={{
+                margin: 0,
+                fontSize: '0.9rem',
+                color: 'rgba(3, 60, 87, 0.66)',
+                lineHeight: 1.4
+              }}
+            >
+              {task.detail}
+            </p>
           ) : null}
         </div>
         <span className="status-pill" data-status={task.status.key}>
@@ -57,7 +66,7 @@ function RoadmapTaskCard({ task }) {
           justifyContent: 'space-between',
           alignItems: 'center',
           fontSize: '0.85rem',
-          color: '#6b7280'
+          color: 'rgba(3, 60, 87, 0.66)'
         }}
       >
         {task.auto ? (
@@ -65,7 +74,7 @@ function RoadmapTaskCard({ task }) {
         ) : (
           <span>Manual follow-up</span>
         )}
-        {impactLabel ? <strong style={{ color: '#5e4426' }}>{impactLabel}</strong> : null}
+        {impactLabel ? <strong style={{ color: 'var(--color-primary-strong)' }}>{impactLabel}</strong> : null}
       </div>
     </li>
   );
@@ -84,7 +93,7 @@ export default function BusinessOptimizationRoadmap({ roadmap, error, placeId, e
             Add Google Place ID
           </Link>
         </div>
-        <p style={{ marginTop: '0.75rem', color: '#6b7280', fontSize: '0.9rem' }}>
+        <p style={{ marginTop: '0.75rem', color: 'rgba(3, 60, 87, 0.66)', fontSize: '0.9rem' }}>
           This business is not linked to Google Places yet. Once a Place ID is connected we can evaluate the
           profile’s completeness.
         </p>
@@ -139,8 +148,8 @@ export default function BusinessOptimizationRoadmap({ roadmap, error, placeId, e
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '0.5rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-          <strong style={{ fontSize: '1.1rem', color: '#2b1b0f' }}>Optimization readiness</strong>
-          <span style={{ fontSize: '0.9rem', color: '#6b7280' }}>{roadmap.progressPercent}% complete</span>
+          <strong style={{ fontSize: '1.1rem', color: 'var(--color-heading)' }}>Optimization readiness</strong>
+          <span style={{ fontSize: '0.9rem', color: 'rgba(3, 60, 87, 0.6)' }}>{roadmap.progressPercent}% complete</span>
         </div>
         <div
           aria-hidden="true"
@@ -149,7 +158,7 @@ export default function BusinessOptimizationRoadmap({ roadmap, error, placeId, e
             width: '100%',
             height: '12px',
             borderRadius: '999px',
-            background: 'rgba(94, 68, 38, 0.15)',
+            background: 'rgba(3, 60, 87, 0.15)',
             overflow: 'hidden'
           }}
         >
@@ -158,11 +167,11 @@ export default function BusinessOptimizationRoadmap({ roadmap, error, placeId, e
               width: `${Math.min(100, Math.max(0, roadmap.progressPercent))}%`,
               height: '100%',
               borderRadius: '999px',
-              background: 'linear-gradient(90deg, #c06d2f, #9d5423)'
+              background: 'linear-gradient(90deg, #fe8833, #d06f29)'
             }}
           />
         </div>
-        <p style={{ margin: 0, fontSize: '0.85rem', color: '#6b7280' }}>
+        <p style={{ margin: 0, fontSize: '0.85rem', color: 'rgba(3, 60, 87, 0.66)' }}>
           Automated checks cover {roadmap.automatedWeight}% of the roadmap. Manual follow-ups account for the
           remaining {roadmap.manualWeight}%.
         </p>
@@ -177,7 +186,7 @@ export default function BusinessOptimizationRoadmap({ roadmap, error, placeId, e
         }}
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-          <h3 style={{ margin: 0, fontSize: '1rem', color: '#2b1b0f' }}>Automated insights</h3>
+          <h3 style={{ margin: 0, fontSize: '1rem', color: 'var(--color-heading)' }}>Automated insights</h3>
           {autoTasks.length ? (
             <ul style={{ margin: 0, padding: 0, display: 'grid', gap: '0.75rem' }}>
               {autoTasks.map((task) => (
@@ -185,14 +194,14 @@ export default function BusinessOptimizationRoadmap({ roadmap, error, placeId, e
               ))}
             </ul>
           ) : (
-            <p style={{ margin: 0, fontSize: '0.9rem', color: '#6b7280' }}>
+            <p style={{ margin: 0, fontSize: '0.9rem', color: 'rgba(3, 60, 87, 0.66)' }}>
               No automated signals detected. Double-check that the Place ID is correct and try again.
             </p>
           )}
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-          <h3 style={{ margin: 0, fontSize: '1rem', color: '#2b1b0f' }}>Manual priorities</h3>
+          <h3 style={{ margin: 0, fontSize: '1rem', color: 'var(--color-heading)' }}>Manual priorities</h3>
           {manualTasks.length ? (
             <ul style={{ margin: 0, padding: 0, display: 'grid', gap: '0.75rem' }}>
               {manualTasks.map((task) => (
@@ -200,7 +209,7 @@ export default function BusinessOptimizationRoadmap({ roadmap, error, placeId, e
               ))}
             </ul>
           ) : (
-            <p style={{ margin: 0, fontSize: '0.9rem', color: '#6b7280' }}>
+            <p style={{ margin: 0, fontSize: '0.9rem', color: 'rgba(3, 60, 87, 0.66)' }}>
               Nothing to follow up manually right now.
             </p>
           )}
