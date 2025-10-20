@@ -6,12 +6,11 @@ const runDrive     = require('./lib/core/drive');
 const { pickOrigin, pickOriginWithAddress }  = require('./lib/business/originGenerator');
 const { DateTime } = require('luxon');
 const { getZone, isOpenNow, nextOpenAt } = require('./lib/business/businessHours');
-const { getProfileRank } = require('./lib/core/rankTrack');
 
 const { startRun, finishRun, logResult } = require('./lib/db/logger');
 const { recordRankingSnapshot } = require('./lib/db/ranking_store');
 const { note } = require('./lib/utils/note');
-const { parseLocalResults } = require('./lib/google/counters');
+const { parseLocalBusinesses } = require('./lib/google/counters');
 
 function randomSessionId(length = 16) {
   const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -41,6 +40,12 @@ function addToRetryQueue(config) {
   fs.writeFileSync(retryPath, JSON.stringify(current, null, 2));
   console.log('→ Added to Retry Queue');
 }
+
+const normalizeName = (value) =>
+  typeof value === 'string' ? value.toLowerCase().replace(/\s+/g, ' ').trim() : '';
+
+const normalizeIdentifier = (value) =>
+  typeof value === 'string' ? value.trim().toLowerCase() : '';
 
 
 (async () => {
@@ -133,35 +138,78 @@ function addToRetryQueue(config) {
       console.log('');
 
       try {
-        config.soax.username = config.soax.res_username;
-        config.soax.password = config.soax.res_password;
+        const serpHtml = ctrResult?.serpHtmlBeforeClick ?? '';
+        serpPlaces = parseLocalBusinesses(serpHtml);
 
-        const acquisition = await getProfileRank({
-          runId,
-          pointId: 0,
-          keyword,
-          origin: { lat: origin.lat, lng: origin.lng },
-          config
-        });
+        const totalResults = Array.isArray(serpPlaces) ? serpPlaces.length : 0;
+        const targetName = normalizeName(config.business_name);
+        const targetMid = normalizeIdentifier(config.mid);
+        const targetPlaceId = normalizeIdentifier(config.place_id);
 
-        if (acquisition?.rawHtml) {
-          const parseResult = parseLocalResults(acquisition.rawHtml, config.business_name);
-          serpRank = Number.isFinite(parseResult.rank) ? parseResult.rank : null;
-          serpReason = parseResult.reason || 'unknown';
-          serpPlaces = Array.isArray(parseResult.places) ? parseResult.places : [];
-          serpMatched = parseResult.matched || null;
-          note(`→ [SERP] rank@${origin.lat.toFixed(5)},${origin.lng.toFixed(5)}: ${serpRank ?? 'not_found'} / ${parseResult.totalResults ?? serpPlaces.length} (${serpReason})`);
+        let matchedEntry = null;
+        let matchedSource = 'none';
+
+        for (const entry of serpPlaces) {
+          const entryPlaceId = normalizeIdentifier(entry.place_id || entry.raw_place_id);
+          const entryMid = normalizeIdentifier(entry.mid);
+          const entryName = normalizeName(entry.name);
+
+          if (targetPlaceId && entryPlaceId && entryPlaceId === targetPlaceId) {
+            matchedEntry = entry;
+            matchedSource = 'place_id';
+            break;
+          }
+          if (targetMid && entryMid && entryMid.includes(targetMid)) {
+            matchedEntry = entry;
+            matchedSource = 'mid';
+            break;
+          }
+          if (targetName && entryName && entryName.includes(targetName)) {
+            matchedEntry = entry;
+            matchedSource = 'name_addr';
+            break;
+          }
+        }
+
+        if (matchedEntry) {
+          serpRank = matchedEntry.position || (serpPlaces.indexOf(matchedEntry) + 1);
+          serpMatched = {
+            ...matchedEntry,
+            place_id_source: matchedSource
+          };
+          serpReason = 'captured';
         } else {
-          serpReason = acquisition?.reason || 'no_html_captured';
-          note(`→ [SERP] acquisition succeeded without HTML (${serpReason})`);
+          serpRank = null;
+          serpMatched = null;
+          serpReason = totalResults > 0 ? 'business_not_found' : 'no_results_captured';
+        }
+
+        if (serpRank != null) {
+          note(`→ [SERP] rank@${origin.lat.toFixed(5)},${origin.lng.toFixed(5)}: ${serpRank} / ${totalResults} (${serpReason})`);
+        } else {
+          note(`→ [SERP] rank@${origin.lat.toFixed(5)},${origin.lng.toFixed(5)}: not_found / ${totalResults} (${serpReason})`);
+        }
+
+        if (totalResults > 0) {
+          const visiblePreview = serpPlaces
+            .map(entry => entry.name)
+            .filter(Boolean)
+            .slice(0, 5);
+          if (visiblePreview.length) {
+            const suffix = serpPlaces.length > visiblePreview.length ? ', …' : '';
+            note(`→ [SERP] visible competitors: ${visiblePreview.join(', ')}${suffix}`);
+          }
         }
       } catch (err) {
-        serpReason = `acquisition_failed: ${err.message}`;
-        note(`→ [SERP] Acquisition failed: ${err.message}`);
+        serpPlaces = [];
+        serpMatched = null;
+        serpRank = null;
+        serpReason = `parse_failed: ${err.message}`;
+        note(`→ [SERP] Failed to parse captured HTML: ${err.message}`);
       }
 
       const matchedPlaceId = serpMatched?.raw_place_id || serpMatched?.place_id || null;
-      const matchedBySource = serpMatched?.place_id_source === 'place_id' ? 'place_id' : (serpMatched ? 'name_addr' : 'none');
+      const matchedBySource = serpMatched?.place_id_source || (serpMatched ? 'name_addr' : 'none');
       const targetPlaceId = config.place_id || (matchedBySource === 'place_id' ? matchedPlaceId : null);
       const matchedBy = config.place_id ? 'place_id' : matchedBySource;
 

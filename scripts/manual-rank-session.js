@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 
 /**
- * Lightweight copy of index.js that skips runCTR and goes straight to acquisition + parsing.
- * Useful for validating ranking_snapshots / ranking_queries insert flow when CTR is assumed successful.
+ * Manual ranking helper that runs a single CTR pass, captures the SERP HTML,
+ * and parses it using the same flow as index.js.
+ * Useful for validating parsing and snapshot logic without the drive stage.
  *
  * Examples:
  *   node scripts/manual-rank-session.js 123
@@ -15,10 +16,8 @@ const path = require('path');
 const { DateTime } = require('luxon');
 
 const { fetchConfigByBusinessId } = require('../lib/db/configLoader');
-const { getProfileRank } = require('../lib/core/rankTrack');
-const { parseRankFromString, parseRankFromPbData, parseLocalResults } = require('../lib/google/counters');
-const { recordRankingSnapshot } = require('../lib/db/ranking_store');
-const { startRun, finishRun, logResult } = require('../lib/db/logger');
+const runCTR = require('../lib/core/runCTR');
+const { parseLocalBusinesses } = require('../lib/google/counters');
 const { note } = require('../lib/utils/note');
 
 function parseArgs(argv) {
@@ -136,6 +135,12 @@ function randomSessionId(length = 16) {
   return id;
 }
 
+const normalizeName = (value) =>
+  typeof value === 'string' ? value.toLowerCase().replace(/\s+/g, ' ').trim() : '';
+
+const normalizeIdentifier = (value) =>
+  typeof value === 'string' ? value.trim().toLowerCase() : '';
+
 async function main() {
   const { options, positional } = parseArgs(process.argv.slice(2));
 
@@ -166,7 +171,6 @@ async function main() {
   const keyword = keywordOverride || pickKeyword(selectedZone.keywords) || config.brand_search || config.business_name;
 
   const sessionId = options.session || randomSessionId();
-  const now = DateTime.now().setZone(config.timezone || 'UTC');
 
   console.log('→ Manual ranking session start');
   console.log('Business:', config.business_name, `(#${config.business_id})`);
@@ -175,111 +179,92 @@ async function main() {
   console.log('Origin:', `${origin.lat}, ${origin.lng}`);
   console.log('Session:', sessionId);
 
-  let runId = null;
-
   try {
-    runId = 156486;
+    const runId = 156486;
 
-    const ctrResult = {
+    const run2CaptchaOption = options.run2captcha ?? options.run2Captcha ?? null;
+    const run2CaptchaEnabled = typeof run2CaptchaOption === 'string'
+      ? run2CaptchaOption.toLowerCase() === 'true' || run2CaptchaOption === '1'
+      : Boolean(run2CaptchaOption);
+
+    const ctrAcquisition = await runCTR({
       runId,
+      config,
+      origin,
+      keyword,
       sessionId,
-      businessId: config.business_id,
-      businessName: config.business_name,
-      keyword,
-      reason: 'success',
-      ctrIpAddress: 'manual-test',
-      origin: { zone: origin.zone, lat: origin.lat, lng: origin.lng },
-      location: { lat: origin.lat, lng: origin.lng },
-      device: 'manual-test',
-      events: [],
-      timestamp_utc: now.toUTC().toISO(),
-      rank: null
-    };
-
-    // we want residential proxy
-    config.soax.username = config.soax.res_username;
-    config.soax.password = config.soax.res_password;
-    console.log(config.soax);
-
-    const acquisition = await getProfileRank({
-      runId,
-      pointId: 0,
-      keyword,
-      origin: { lat: origin.lat, lng: origin.lng },
-      config
+      run2Captcha: run2CaptchaEnabled
     });
 
-    let serpRank = null;
-    let serpReason = 'no_html_captured';
-    let serpPlaces = [];
-    let serpMatched = null;
-
-    if (acquisition?.rawHtml) {
-      
-      const parseResult = parseLocalResults(acquisition.rawHtml, config.business_name);
-      if (parseResult.length > 0) {
-        console.log(`\n✅ Found ${parseResult.length} Businesses`);
-        parseResult.forEach((b, index) => {
-          const pid = b.placeId ? b.placeId.substring(0, 10) + '...' : 'N/A';
-          // console.log(`${index + 1}. ${b.name || 'Unnamed business'} (ID: ${pid})`);
-          console.log(b);
-        });
-      } else {
-        console.log(`\n❌ Could not extract any business names`, parseResult);
-      }
-
-      serpRank = Number.isFinite(parseResult.rank) ? parseResult.rank : null;
-      serpReason = parseResult.reason || 'unknown';
-      serpPlaces = Array.isArray(parseResult.places) ? parseResult.places : [];
-      serpMatched = parseResult.matched || null;
-      note(`→ [SERP] rank@${origin.lat.toFixed(5)},${origin.lng.toFixed(5)}: ${serpRank ?? 'not_found'} / ${parseResult.totalResults ?? serpPlaces.length} (${serpReason})`);
-    } else {
-      serpReason = acquisition?.reason || 'no_html';
-      note(`→ [SERP] acquisition without HTML (${serpReason})`);
+    if (ctrAcquisition.reason !== 'success') {
+      console.log('→ CTR did not complete successfully:', ctrAcquisition.reason);
+      console.log('→ No ranking analysis performed.');
+      return;
     }
 
-    const matchedPlaceId = serpMatched?.raw_place_id || serpMatched?.place_id || null;
-    const matchedBySource = serpMatched?.place_id_source === 'place_id' ? 'place_id' : (serpMatched ? 'name_addr' : 'none');
-    const targetPlaceId = config.place_id || (matchedBySource === 'place_id' ? matchedPlaceId : null);
-    const matchedBy = config.place_id ? 'place_id' : matchedBySource;
+    const serpHtml = ctrAcquisition?.serpHtmlBeforeClick || '';
+    if (!serpHtml) {
+      console.log('→ CTR completed but no SERP HTML was captured.');
+      return;
+    }
 
-    // await recordRankingSnapshot({
-    //   runId,
-    //   businessId: config.business_id,
-    //   keyword,
-    //   source: 'serp',
-    //   variant: 'text',
-    //   originZoneId: origin.zone_id,
-    //   originLat: origin.lat,
-    //   originLng: origin.lng,
-    //   radiusMi: origin.radius || 0,
-    //   sessionId,
-    //   requestId: 'manual-serp@' + Date.now(),
-    //   timestampUtc: new Date(),
-    //   places: serpPlaces,
-    //   targetPlaceId,
-    //   matchedBy,
-    //   matchedPlaceId,
-    //   matchedPosition: serpRank
-    // });
+    const serpPlaces = parseLocalBusinesses(serpHtml);
+    const totalResults = Array.isArray(serpPlaces) ? serpPlaces.length : 0;
+    const targetName = normalizeName(config.business_name);
+    const targetMid = normalizeIdentifier(config.mid);
+    const targetPlaceId = normalizeIdentifier(config.place_id);
 
-    // ctrResult.rank = serpRank;
-    // ctrResult.serpReason = serpReason;
-    // ctrResult.places = serpPlaces;
+    let serpRank = null;
+    let serpReason = totalResults > 0 ? 'business_not_found' : 'no_results_captured';
+    let serpMatched = null;
 
-    // await logResult({ ctrResult });
+    for (const entry of serpPlaces) {
+      const entryPlaceId = normalizeIdentifier(entry.place_id || entry.raw_place_id);
+      const entryMid = normalizeIdentifier(entry.mid);
+      const entryName = normalizeName(entry.name);
 
-    console.log('→ Ranking snapshot recorded');
-    console.log('Rank:', serpRank, '| Reason:', serpReason, '| Places:', serpPlaces.length);
+      if (targetPlaceId && entryPlaceId && entryPlaceId === targetPlaceId) {
+        serpRank = entry.position || serpPlaces.indexOf(entry) + 1;
+        serpMatched = { ...entry, place_id_source: 'place_id' };
+        serpReason = 'captured';
+        break;
+      }
+      if (targetMid && entryMid && entryMid.includes(targetMid)) {
+        serpRank = entry.position || serpPlaces.indexOf(entry) + 1;
+        serpMatched = { ...entry, place_id_source: 'mid' };
+        serpReason = 'captured';
+        break;
+      }
+      if (targetName && entryName && entryName.includes(targetName)) {
+        serpRank = entry.position || serpPlaces.indexOf(entry) + 1;
+        serpMatched = { ...entry, place_id_source: 'name_addr' };
+        serpReason = 'captured';
+        break;
+      }
+    }
+
+    note(`→ [SERP][MANUAL] rank@${origin.lat.toFixed(5)},${origin.lng.toFixed(5)}: ${serpRank ?? 'not_found'} / ${totalResults} (${serpReason})`);
+
+    console.log('');
+    console.log('→ Parsed SERP entries:');
+    if (totalResults === 0) {
+      console.log('   (none detected)');
+    } else {
+      serpPlaces.forEach((place) => {
+        const marker = serpMatched && serpMatched.raw_place_id === place.raw_place_id ? '★' : ' ';
+        console.log(`${marker} #${place.position} ${place.name || 'Unnamed'} | place_id=${place.place_id || 'n/a'} | mid=${place.mid || 'n/a'}`);
+      });
+    }
+
+    console.log('');
+    console.log('→ Ranking summary');
+    console.log('   Rank:', serpRank ?? 'not found');
+    console.log('   Reason:', serpReason);
+    console.log('   Matched entry:', serpMatched ? serpMatched.name : 'none');
+    console.log('   Total places:', totalResults);
   } catch (err) {
     console.error('Manual ranking session failed:', err);
-  } finally {
-    console.log('finally');
-    // if (runId != null) {
-    //   await finishRun(runId).catch(() => {});
-    // }
   }
 }
 
 main();
-
