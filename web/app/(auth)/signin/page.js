@@ -2,12 +2,12 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import {
-  signInWithEmailAndPassword,
-  GoogleAuthProvider,
-  signInWithPopup
-} from 'firebase/auth';
+import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { auth } from '@/lib/firebaseClient';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 
 const googleProvider = new GoogleAuthProvider();
 
@@ -89,72 +89,77 @@ export default function SignInPage() {
 
   return (
     <div className="page-shell">
-      <div className="auth-page">
-        <section className="auth-intro">
-          <h1>Operational control, beautifully streamlined.</h1>
-          <p>
+      <div className="mx-auto flex w-full max-w-5xl flex-col gap-10 lg:grid lg:grid-cols-2 lg:items-start">
+        <section className="space-y-4 rounded-xl border border-border/60 bg-card/80 p-8 shadow-sm backdrop-blur">
+          <h1 className="text-3xl font-semibold text-foreground">Operational control, beautifully streamlined.</h1>
+          <p className="text-base leading-relaxed text-muted-foreground">
             Step into a refined workspace crafted for clarity and focus. Coordinate your businesses,
             monitor runs in real time, and keep your teams aligned from a single command center.
           </p>
         </section>
 
-        <div className="auth-card">
-          <div>
-            <h2>Welcome back</h2>
-            <p className="auth-subheading">Sign in to orchestrate your Livedrives operations.</p>
-          </div>
+        <Card className="shadow-lg">
+          <CardHeader>
+            <CardTitle className="text-2xl">Welcome back</CardTitle>
+            <CardDescription>Sign in to orchestrate your Livedrives operations.</CardDescription>
+          </CardHeader>
 
-          <form className="form-grid" onSubmit={handleEmailPassword}>
-            <div className="input-field">
-              <label className="input-label" htmlFor="email">
-                Work email
-              </label>
-              <input
-                id="email"
-                className="text-input"
-                type="email"
-                autoComplete="email"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                required
-                disabled={loading}
-              />
+          <CardContent>
+            <form className="space-y-4" onSubmit={handleEmailPassword}>
+              <div className="space-y-2">
+                <Label htmlFor="email">Work email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  autoComplete="email"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  required
+                  disabled={loading}
+                  placeholder="you@company.com"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  required
+                  disabled={loading}
+                />
+              </div>
+
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? 'Signing you in…' : 'Sign in securely'}
+              </Button>
+            </form>
+          </CardContent>
+
+          <CardFooter className="flex flex-col gap-4">
+            <div className="flex items-center gap-3 text-sm text-muted-foreground">
+              <div className="h-px flex-1 bg-border" aria-hidden />
+              <span>or</span>
+              <div className="h-px flex-1 bg-border" aria-hidden />
             </div>
 
-            <div className="input-field">
-              <label className="input-label" htmlFor="password">
-                Password
-              </label>
-              <input
-                id="password"
-                className="text-input"
-                type="password"
-                autoComplete="current-password"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                required
-                disabled={loading}
-              />
-            </div>
+            <Button type="button" variant="secondary" className="w-full" onClick={handleGoogle} disabled={loading}>
+              {loading ? 'Preparing Google sign-in…' : 'Continue with Google'}
+            </Button>
 
-            <button className="primary-button" type="submit" disabled={loading}>
-              {loading ? 'Signing you in…' : 'Sign in securely'}
-            </button>
-          </form>
-
-          <div className="form-separator">or</div>
-
-          <button
-            type="button"
-            className="secondary-button"
-            onClick={handleGoogle}
-            disabled={loading}
-          >
-            {loading ? 'Preparing Google sign-in…' : 'Continue with Google'}
-          </button>
-
-          {error ? <div className="error-banner">{error}</div> : null}
-        </div>
+            {error ? (
+              <p
+                className="w-full rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+                role="alert"
+              >
+                {error}
+              </p>
+            ) : null}
+          </CardFooter>
+        </Card>
       </div>
     </div>
   );

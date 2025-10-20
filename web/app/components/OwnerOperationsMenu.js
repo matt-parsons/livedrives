@@ -1,5 +1,15 @@
 import Link from 'next/link';
+import { ChevronDown } from 'lucide-react';
 import { AuthError, requireAuth } from '@/lib/authServer';
+import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator
+} from '@/components/ui/dropdown-menu';
 
 const OWNER_OPERATION_LINKS = [
   {
@@ -42,25 +52,27 @@ export default async function OwnerOperationsMenu() {
   }
 
   return (
-    <nav className="owner-tools-menu" aria-label="Owner workspace controls">
-      <details className="owner-tools-menu__details">
-        <summary className="owner-tools-menu__summary">
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="secondary" className="gap-2">
           Owner tools
-          <span aria-hidden="true" className="owner-tools-menu__chevron">
-            ▾
-          </span>
-        </summary>
-        <ul className="owner-tools-menu__list">
-          {OWNER_OPERATION_LINKS.map((item) => (
-            <li key={item.href} className="owner-tools-menu__item">
-              <Link className="owner-tools-menu__link" href={item.href}>
-                <span className="owner-tools-menu__link-label">{item.label}</span>
-                <span className="owner-tools-menu__link-description">{item.description}</span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </details>
-    </nav>
+          <ChevronDown className="h-4 w-4 opacity-70" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-72">
+        <DropdownMenuLabel className="text-xs uppercase tracking-wide text-muted-foreground">
+          Owner workspace controls
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        {OWNER_OPERATION_LINKS.map((item) => (
+          <DropdownMenuItem key={item.href} asChild className="flex flex-col items-start gap-1">
+            <Link href={item.href}>
+              <span className="font-semibold leading-tight">{item.label}</span>
+              <span className="text-xs text-muted-foreground">{item.description}</span>
+            </Link>
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

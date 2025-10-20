@@ -2,6 +2,9 @@
 
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 function toInputString(value) {
   if (value === null || value === undefined) {
@@ -192,210 +195,199 @@ export default function BusinessForm({ mode = 'create', businessId = null, initi
   };
 
   return (
-    <form className="form-grid" onSubmit={handleSubmit}>
-      <div className="input-field">
-        <label className="input-label" htmlFor="places-query">Search Google Places</label>
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'stretch' }}>
-          <input
+    <form className="grid gap-6" onSubmit={handleSubmit}>
+      <div className="space-y-2">
+        <Label htmlFor="places-query">Search Google Places</Label>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <Input
             id="places-query"
-            className="text-input"
             type="text"
             value={placesQuery}
             onChange={handlePlacesQueryChange}
             disabled={submitting || placesLoading}
             placeholder="Search by business name or address"
             autoComplete="off"
+            className="sm:flex-1"
           />
-          <button
+          <Button
             type="button"
-            className="secondary-button"
+            variant="secondary"
             onClick={handlePlaceSearch}
             disabled={submitting || placesLoading}
-            style={{ width: 'auto', whiteSpace: 'nowrap' }}
           >
             {placesLoading ? 'Loading…' : 'Search'}
-          </button>
+          </Button>
         </div>
-        <p className="input-help">Select a result to automatically fill in the business details.</p>
-        {placesError ? <p className="error-text" role="alert">{placesError}</p> : null}
+        <p className="text-xs text-muted-foreground">Select a result to automatically fill in the business details.</p>
+        {placesError ? <p className="text-sm text-destructive" role="alert">{placesError}</p> : null}
       </div>
 
       {placesResults.length > 0 ? (
-        <div className="input-field">
-          <span className="input-label">Search results</span>
-          <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: '8px' }}>
+        <div className="space-y-3">
+          <span className="text-sm font-semibold text-muted-foreground">Search results</span>
+          <div className="grid gap-3">
             {placesResults.map((place) => (
-              <li key={place.placeId} style={{ border: '1px solid #ccc', borderRadius: '8px', padding: '12px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
+              <div key={place.placeId} className="rounded-lg border border-border bg-card/80 p-4 shadow-sm">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div>
-                    <div style={{ fontWeight: 600 }}>{place.name}</div>
+                    <p className="font-semibold text-foreground">{place.name}</p>
                     {place.formattedAddress ? (
-                      <div style={{ fontSize: '0.9rem', color: '#555' }}>{place.formattedAddress}</div>
+                      <p className="text-sm text-muted-foreground">{place.formattedAddress}</p>
                     ) : null}
                   </div>
-                  <button
+                  <Button
                     type="button"
-                    className="secondary-button"
+                    variant="secondary"
                     onClick={() => handleSelectPlace(place.placeId)}
                     disabled={submitting || placesLoading}
-                    style={{ width: 'auto', whiteSpace: 'nowrap' }}
                   >
                     Use this place
-                  </button>
+                  </Button>
                 </div>
-              </li>
+              </div>
             ))}
-          </ul>
+          </div>
         </div>
       ) : null}
 
-      <div className="input-field">
-        <label className="input-label" htmlFor="business-name">Business name</label>
-        <input
-          id="business-name"
-          className="text-input"
-          type="text"
-          value={formState.businessName}
-          onChange={handleChange('businessName')}
-          required
-          disabled={submitting}
-          autoComplete="organization"
-        />
+      <div className="grid gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="business-name">Business name</Label>
+          <Input
+            id="business-name"
+            type="text"
+            value={formState.businessName}
+            onChange={handleChange('businessName')}
+            required
+            disabled={submitting}
+            autoComplete="organization"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="business-slug">Slug (optional)</Label>
+          <Input
+            id="business-slug"
+            type="text"
+            value={formState.businessSlug}
+            onChange={handleChange('businessSlug')}
+            disabled={submitting}
+            placeholder="auto-generated from business name"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="brand-search">Brand search label (optional)</Label>
+          <Input
+            id="brand-search"
+            type="text"
+            value={formState.brandSearch}
+            onChange={handleChange('brandSearch')}
+            disabled={submitting}
+            placeholder="Used for search matching"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="mid">Google MID (optional)</Label>
+          <Input
+            id="mid"
+            type="text"
+            value={formState.mid}
+            onChange={handleChange('mid')}
+            disabled={submitting}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="gplace">Google Place ID (optional)</Label>
+          <Input
+            id="gplace"
+            type="text"
+            value={formState.gPlaceId}
+            onChange={handleChange('gPlaceId')}
+            disabled={submitting}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="destination-address">Destination address (optional)</Label>
+          <Input
+            id="destination-address"
+            type="text"
+            value={formState.destinationAddress}
+            onChange={handleChange('destinationAddress')}
+            disabled={submitting}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="destination-zip">Destination ZIP (optional)</Label>
+          <Input
+            id="destination-zip"
+            type="text"
+            value={formState.destinationZip}
+            onChange={handleChange('destinationZip')}
+            disabled={submitting}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="dest-lat">Destination latitude (optional)</Label>
+          <Input
+            id="dest-lat"
+            type="number"
+            inputMode="decimal"
+            step="0.0000001"
+            value={formState.destLat}
+            onChange={handleChange('destLat')}
+            disabled={submitting}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="dest-lng">Destination longitude (optional)</Label>
+          <Input
+            id="dest-lng"
+            type="number"
+            inputMode="decimal"
+            step="0.0000001"
+            value={formState.destLng}
+            onChange={handleChange('destLng')}
+            disabled={submitting}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="timezone">Timezone (optional)</Label>
+          <Input
+            id="timezone"
+            type="text"
+            value={formState.timezone}
+            onChange={handleChange('timezone')}
+            disabled={submitting}
+            placeholder="e.g. America/Phoenix"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="drives-per-day">Drives per day (optional)</Label>
+          <Input
+            id="drives-per-day"
+            type="number"
+            inputMode="numeric"
+            min="0"
+            step="1"
+            value={formState.drivesPerDay}
+            onChange={handleChange('drivesPerDay')}
+            disabled={submitting}
+          />
+        </div>
       </div>
 
-      <div className="input-field">
-        <label className="input-label" htmlFor="business-slug">Slug (optional)</label>
-        <input
-          id="business-slug"
-          className="text-input"
-          type="text"
-          value={formState.businessSlug}
-          onChange={handleChange('businessSlug')}
-          disabled={submitting}
-          placeholder="auto-generated from business name"
-        />
-      </div>
-
-      <div className="input-field">
-        <label className="input-label" htmlFor="brand-search">Brand search label (optional)</label>
-        <input
-          id="brand-search"
-          className="text-input"
-          type="text"
-          value={formState.brandSearch}
-          onChange={handleChange('brandSearch')}
-          disabled={submitting}
-          placeholder="Used for search matching"
-        />
-      </div>
-
-      <div className="input-field">
-        <label className="input-label" htmlFor="mid">Google MID (optional)</label>
-        <input
-          id="mid"
-          className="text-input"
-          type="text"
-          value={formState.mid}
-          onChange={handleChange('mid')}
-          disabled={submitting}
-        />
-      </div>
-
-      <div className="input-field">
-        <label className="input-label" htmlFor="gplace">Google Place ID (optional)</label>
-        <input
-          id="gplace"
-          className="text-input"
-          type="text"
-          value={formState.gPlaceId}
-          onChange={handleChange('gPlaceId')}
-          disabled={submitting}
-        />
-      </div>
-
-      <div className="input-field">
-        <label className="input-label" htmlFor="destination-address">Destination address (optional)</label>
-        <input
-          id="destination-address"
-          className="text-input"
-          type="text"
-          value={formState.destinationAddress}
-          onChange={handleChange('destinationAddress')}
-          disabled={submitting}
-        />
-      </div>
-
-      <div className="input-field">
-        <label className="input-label" htmlFor="destination-zip">Destination ZIP (optional)</label>
-        <input
-          id="destination-zip"
-          className="text-input"
-          type="text"
-          value={formState.destinationZip}
-          onChange={handleChange('destinationZip')}
-          disabled={submitting}
-        />
-      </div>
-
-      <div className="input-field">
-        <label className="input-label" htmlFor="dest-lat">Destination latitude (optional)</label>
-        <input
-          id="dest-lat"
-          className="text-input"
-          type="number"
-          inputMode="decimal"
-          step="0.0000001"
-          value={formState.destLat}
-          onChange={handleChange('destLat')}
-          disabled={submitting}
-        />
-      </div>
-
-      <div className="input-field">
-        <label className="input-label" htmlFor="dest-lng">Destination longitude (optional)</label>
-        <input
-          id="dest-lng"
-          className="text-input"
-          type="number"
-          inputMode="decimal"
-          step="0.0000001"
-          value={formState.destLng}
-          onChange={handleChange('destLng')}
-          disabled={submitting}
-        />
-      </div>
-
-      <div className="input-field">
-        <label className="input-label" htmlFor="timezone">Timezone (optional)</label>
-        <input
-          id="timezone"
-          className="text-input"
-          type="text"
-          value={formState.timezone}
-          onChange={handleChange('timezone')}
-          disabled={submitting}
-          placeholder="e.g. America/Phoenix"
-        />
-      </div>
-
-      <div className="input-field">
-        <label className="input-label" htmlFor="drives-per-day">Drives per day (optional)</label>
-        <input
-          id="drives-per-day"
-          className="text-input"
-          type="number"
-          inputMode="numeric"
-          min="0"
-          step="1"
-          value={formState.drivesPerDay}
-          onChange={handleChange('drivesPerDay')}
-          disabled={submitting}
-        />
-      </div>
-
-      <div className="input-field">
-        <span className="input-label">Activation</span>
-        <label style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+      <div className="space-y-2">
+        <span className="text-sm font-medium text-foreground">Activation</span>
+        <label className="inline-flex items-center gap-3 text-sm font-medium text-muted-foreground">
           <input
             type="checkbox"
             checked={formState.isActive}
@@ -406,11 +398,15 @@ export default function BusinessForm({ mode = 'create', businessId = null, initi
         </label>
       </div>
 
-      {error ? <div className="error-banner">{error}</div> : null}
+      {error ? (
+        <p className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive" role="alert">
+          {error}
+        </p>
+      ) : null}
 
-      <button className="primary-button" type="submit" disabled={submitting}>
+      <Button type="submit" disabled={submitting}>
         {submitting ? 'Saving...' : title}
-      </button>
+      </Button>
     </form>
   );
 }
