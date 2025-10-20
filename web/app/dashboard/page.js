@@ -2,6 +2,8 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { AuthError, requireAuth } from '@/lib/authServer';
 import { loadOrganizationBusinesses } from './[business]/helpers.js';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 
 function selectDefaultBusiness(session, businesses) {
   if (!Array.isArray(businesses) || businesses.length === 0) {
@@ -51,22 +53,25 @@ export default async function DashboardPage() {
           </p>
         </section>
 
-        <section className="section">
-          <div className="surface-card surface-card--muted surface-card--compact" role="status">
-            <p style={{ margin: 0 }}>
+        <Card role="status" className="max-w-2xl border-dashed border-border/70 bg-card/90 shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-xl">You're almost ready</CardTitle>
+            <CardDescription>
               There are no businesses linked to your organization yet.
-            </p>
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4">
             {isOwner ? (
-              <Link className="cta-link" href="/dashboard/businesses/new">
-                + New business
-              </Link>
+              <Button asChild>
+                <Link href="/dashboard/businesses/new">Create a business</Link>
+              </Button>
             ) : (
-              <p style={{ margin: '8px 0 0', color: 'rgba(40, 40, 40, 0.7)' }}>
+              <p className="text-sm text-muted-foreground">
                 Reach out to an owner or admin so they can create and assign a business to you.
               </p>
             )}
-          </div>
-        </section>
+          </CardContent>
+        </Card>
       </div>
     );
   }
