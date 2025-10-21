@@ -126,16 +126,13 @@ textarea {
   display: flex;
   flex-direction: column;
   gap: clamp(24px, 4vw, 48px);
-  padding-left: clamp(24px, 3vw, 56px);
-  padding-right: clamp(24px, 3vw, 56px);
   padding-bottom: clamp(24px, 3vw, 56px);
 }
 
 .app-header {
-  width: min(1240px, 100%);
+  width: 100%;
   margin: 0 auto;
   padding: clamp(14px, 2vw, 18px) clamp(18px, 3vw, 32px);
-  border-radius: var(--radius-lg);
   background: var(--color-heading);
   border: 1px solid rgba(3, 60, 87, 0.08);
   backdrop-filter: blur(14px);
