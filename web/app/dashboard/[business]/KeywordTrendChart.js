@@ -1,454 +1,253 @@
 'use client';
 
 import { useMemo } from 'react';
-import { ChartContainer, ChartLegend } from '@/components/ui/chart';
+import { Minus, TrendingDown, TrendingUp } from 'lucide-react';
+import {
+  CartesianGrid,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  XAxis,
+  YAxis
+} from 'recharts';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle
+} from '@/components/ui/card';
+import {
+  ChartContainer,
+  ChartLegend,
+  ChartTooltip,
+  ChartTooltipContent
+} from '@/components/ui/chart';
 
-const DATE_FORMATTER = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' });
-const AVG_FORMATTER = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-const SOLV_FORMATTER = new Intl.NumberFormat('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+const RANGE_LABEL_FORMATTER = new Intl.DateTimeFormat('en-US', {
+  month: 'short',
+  day: 'numeric'
+});
 
-function formatAvgValue(value) {
-  if (value === null || value === undefined) {
-    return '—';
-  }
+const TOOLTIP_LABEL_FORMATTER = new Intl.DateTimeFormat('en-US', {
+  month: 'long',
+  day: 'numeric',
+  year: 'numeric'
+});
 
+function coerceNumber(value) {
   const numeric = Number(value);
-
-  if (!Number.isFinite(numeric)) {
-    return '—';
-  }
-
-  return AVG_FORMATTER.format(numeric);
+  return Number.isFinite(numeric) ? numeric : null;
 }
 
-function formatSolvValue(value) {
-  if (value === null || value === undefined) {
-    return '—';
+const chartConfig = {
+  solvTop3: {
+    label: 'SoLV top 3',
+    color: 'hsl(var(--chart-1, 217 91% 60%))',
+    format: (value) => `${value.toFixed(1)}%`
+  },
+  avgPosition: {
+    label: 'Avg position',
+    color: 'hsl(var(--chart-2, 222 47% 11%))',
+    format: (value) => value.toFixed(2)
   }
+};
 
-  const numeric = Number(value);
-
-  if (!Number.isFinite(numeric)) {
-    return '—';
-  }
-
-  return `${SOLV_FORMATTER.format(numeric)}%`;
-}
-
-function buildDomain(values, { padding = 0.15, clampMin = null, clampMax = null } = {}) {
-  const filtered = values.filter((value) => Number.isFinite(value));
-
-  if (!filtered.length) {
-    return null;
-  }
-
-  let min = Math.min(...filtered);
-  let max = Math.max(...filtered);
-
-  if (min === max) {
-    const offset = Math.max(1, Math.abs(min) * 0.1);
-    min -= offset;
-    max += offset;
-  } else {
-    const range = max - min;
-    min -= range * padding;
-    max += range * padding;
-  }
-
-  if (clampMin !== null) {
-    min = Math.max(min, clampMin);
-  }
-
-  if (clampMax !== null) {
-    max = Math.min(max, clampMax);
-  }
-
-  if (!Number.isFinite(min) || !Number.isFinite(max)) {
-    return null;
-  }
-
-  return [min, max];
-}
-
-function generateTicks(domain, count = 4) {
-  if (!domain || domain.length !== 2) {
+function buildChartData(points) {
+  if (!Array.isArray(points)) {
     return [];
   }
 
-  const [min, max] = domain;
+  return points
+    .slice()
+    .sort((a, b) => {
+      const aTimestamp = Number(a?.timestamp ?? 0);
+      const bTimestamp = Number(b?.timestamp ?? 0);
+      return aTimestamp - bTimestamp;
+    })
+    .map((point) => {
+      const timestamp = coerceNumber(point?.timestamp);
+      const solvValue = coerceNumber(point?.solvTop3);
+      const avgValue = coerceNumber(point?.avgPosition);
 
-  if (!Number.isFinite(min) || !Number.isFinite(max)) {
-    return [];
-  }
+      const date = timestamp ? new Date(timestamp) : null;
+      const fallbackLabel = typeof point?.label === 'string' && point.label.trim() ? point.label.trim() : '—';
+      const axisLabel = date ? RANGE_LABEL_FORMATTER.format(date) : fallbackLabel;
+      const tooltipLabel = date ? TOOLTIP_LABEL_FORMATTER.format(date) : fallbackLabel;
 
-  if (count <= 1 || min === max) {
-    return [min];
-  }
-
-  const step = (max - min) / (count - 1);
-
-  return Array.from({ length: count }, (_, index) => min + step * index);
+      return {
+        axisLabel,
+        tooltipLabel,
+        solvTop3: solvValue !== null ? Number(solvValue.toFixed(1)) : null,
+        avgPosition: avgValue !== null ? Number(avgValue.toFixed(2)) : null
+      };
+    });
 }
 
-function scaleLinearFactory(domain, innerHeight, { invert = false, margin }) {
-  if (!domain || domain.length !== 2) {
-    const center = margin.top + innerHeight / 2;
-    return () => center;
+function resolveTrendMessage(chartData) {
+  if (!chartData.length) {
+    return {
+      icon: Minus,
+      message: 'Awaiting enough runs to calculate a trend.',
+      subtext: 'Hover over the chart to inspect run-by-run values.'
+    };
   }
 
-  const [domainMin, domainMax] = domain;
-  const safeRange = domainMax - domainMin || 1;
-  const top = margin.top;
-  const bottom = margin.top + innerHeight;
+  const latest = chartData[chartData.length - 1];
+  const previous = chartData[chartData.length - 2];
 
-  return (value) => {
-    if (value === null || value === undefined) {
-      return (top + bottom) / 2;
-    }
+  if (!previous) {
+    return {
+      icon: Minus,
+      message: 'Only one scan so far—collect more runs to see movement.',
+      subtext: 'Hover over the chart to inspect run-by-run values.'
+    };
+  }
 
-    const numeric = Number(value);
+  const solvDelta =
+    latest?.solvTop3 !== null && previous?.solvTop3 !== null
+      ? latest.solvTop3 - previous.solvTop3
+      : null;
+  const avgDelta =
+    latest?.avgPosition !== null && previous?.avgPosition !== null
+      ? latest.avgPosition - previous.avgPosition
+      : null;
 
-    if (!Number.isFinite(numeric)) {
-      return (top + bottom) / 2;
-    }
+  if (solvDelta !== null && Math.abs(solvDelta) >= 0.1) {
+    const isPositive = solvDelta > 0;
+    const Icon = isPositive ? TrendingUp : TrendingDown;
+    const changeLabel = `${Math.abs(solvDelta).toFixed(1)} pts`;
+    const directionLabel = isPositive ? 'up' : 'down';
 
-    let ratio = (numeric - domainMin) / safeRange;
+    return {
+      icon: Icon,
+      message: `SoLV moved ${directionLabel} ${changeLabel} since the last run.`,
+      subtext: 'Higher SoLV reflects stronger local visibility in the top 3 map pins.'
+    };
+  }
 
-    if (invert) {
-      ratio = 1 - ratio;
-    }
+  if (avgDelta !== null && Math.abs(avgDelta) >= 0.05) {
+    const isImproving = avgDelta < 0;
+    const Icon = isImproving ? TrendingUp : TrendingDown;
+    const changeLabel = `${Math.abs(avgDelta).toFixed(2)} ranks`;
+    const directionLabel = isImproving ? 'improved' : 'dropped';
 
-    const clamped = Math.max(0, Math.min(1, ratio));
+    return {
+      icon: Icon,
+      message: `Avg position ${directionLabel} by ${changeLabel} versus the previous run.`,
+      subtext: 'Lower average rank is better—keep tracking future scans for continued movement.'
+    };
+  }
 
-    return top + (1 - clamped) * innerHeight;
+  return {
+    icon: Minus,
+    message: 'Performance is holding steady compared to the last run.',
+    subtext: 'Hover over the chart to inspect run-by-run values.'
   };
-}
-
-function createLine(points, xPositions, accessor, scaleY) {
-  const coords = [];
-
-  points.forEach((entry, index) => {
-    const value = accessor(entry);
-
-    if (value === null || value === undefined) {
-      return;
-    }
-
-    const numeric = Number(value);
-
-    if (!Number.isFinite(numeric)) {
-      return;
-    }
-
-    const x = xPositions[index];
-    const y = scaleY(numeric);
-
-    coords.push({ x, y, value: numeric });
-  });
-
-  if (!coords.length) {
-    return { path: '', points: [] };
-  }
-
-  const path = coords
-    .map((point, index) => `${index === 0 ? 'M' : 'L'}${point.x} ${point.y}`)
-    .join(' ');
-
-  return { path, points: coords };
-}
-
-function shouldShowLabel(index, total, step) {
-  if (total <= 6) {
-    return true;
-  }
-
-  if (index === 0 || index === total - 1) {
-    return true;
-  }
-
-  return index % step === 0;
 }
 
 export default function KeywordTrendChart({ points }) {
-  const chartData = useMemo(() => {
-    if (!Array.isArray(points)) {
-      return [];
+  const chartData = useMemo(() => buildChartData(points), [points]);
+  const hasSolvData = chartData.some((entry) => entry.solvTop3 !== null);
+  const hasAvgData = chartData.some((entry) => entry.avgPosition !== null);
+  const activeChartConfig = useMemo(() => {
+    const config = {};
+
+    if (hasSolvData) {
+      config.solvTop3 = chartConfig.solvTop3;
     }
 
-    return points
-      .slice()
-      .sort((a, b) => {
-        const aValue = Number(a?.timestamp ?? 0);
-        const bValue = Number(b?.timestamp ?? 0);
-        return aValue - bValue;
-      })
-      .map((point) => {
-        const timestamp = Number(point?.timestamp);
-        const hasTimestamp = Number.isFinite(timestamp);
-        const label = typeof point?.label === 'string' && point.label.trim()
-          ? point.label
-          : hasTimestamp
-            ? DATE_FORMATTER.format(new Date(timestamp))
-            : '—';
-        const avgValue = Number(point?.avgPosition);
-        const solvValue = Number(point?.solvTop3);
+    if (hasAvgData) {
+      config.avgPosition = chartConfig.avgPosition;
+    }
 
-        return {
-          timestamp: hasTimestamp ? timestamp : null,
-          dateLabel: label,
-          avgPosition: Number.isFinite(avgValue) ? avgValue : null,
-          solvTop3: Number.isFinite(solvValue) ? solvValue : null
-        };
-      });
-  }, [points]);
+    return config;
+  }, [hasSolvData, hasAvgData]);
+  const hasAnyData = hasSolvData || hasAvgData;
 
-  const hasValues = chartData.some((entry) => entry.avgPosition !== null || entry.solvTop3 !== null);
+  const firstLabel = chartData[0]?.tooltipLabel ?? null;
+  const lastLabel = chartData[chartData.length - 1]?.tooltipLabel ?? null;
+  const rangeLabel = firstLabel && lastLabel ? `${firstLabel} – ${lastLabel}` : 'Last 30 days';
 
-  if (!chartData.length || !hasValues) {
+  if (!hasAnyData) {
     return (
-      <div
-        style={{
-          borderRadius: '16px',
-          border: '1px dashed rgba(148, 163, 184, 0.6)',
-          backgroundColor: '#f9fafb',
-          padding: '1.1rem 1.25rem',
-          fontSize: '0.85rem',
-          color: '#6b7280'
-        }}
-      >
-        Not enough data to chart keyword performance over the last 30 days.
-      </div>
+      <Card className="border border-dashed border-border/60 bg-muted/40 shadow-none">
+        <CardContent className="flex min-h-[220px] items-center justify-center text-sm text-muted-foreground">
+          Not enough data to chart keyword performance over the last 30 days.
+        </CardContent>
+      </Card>
     );
   }
 
-  const width = 720;
-  const height = 260;
-  const margin = { top: 24, right: 64, bottom: 40, left: 64 };
-  const innerWidth = width - margin.left - margin.right;
-  const innerHeight = height - margin.top - margin.bottom;
-  const xPositions = chartData.map((_, index) => {
-    if (chartData.length === 1) {
-      return margin.left + innerWidth / 2;
-    }
-
-    const ratio = index / (chartData.length - 1);
-    return margin.left + ratio * innerWidth;
-  });
-
-  const avgValues = chartData
-    .map((entry) => entry.avgPosition)
-    .filter((value) => value !== null);
-  const solvValues = chartData
-    .map((entry) => entry.solvTop3)
-    .filter((value) => value !== null);
-
-  const avgDomain = buildDomain(avgValues, { clampMin: 0 });
-  const solvDomain = buildDomain(solvValues, { clampMin: 0, clampMax: 100 });
-
-  const scaleAvg = scaleLinearFactory(avgDomain, innerHeight, { invert: true, margin });
-  const scaleSolv = scaleLinearFactory(solvDomain, innerHeight, { invert: false, margin });
-
-  const avgLine = createLine(chartData, xPositions, (entry) => entry.avgPosition, scaleAvg);
-  const solvLine = createLine(chartData, xPositions, (entry) => entry.solvTop3, scaleSolv);
-
-  const avgTicks = generateTicks(avgDomain);
-  const solvTicks = generateTicks(solvDomain);
-
-  const labelStep = chartData.length > 6 ? Math.ceil(chartData.length / 6) : 1;
-
-  const chartConfig = {
-    avgPosition: {
-      label: 'Avg position',
-      color: '#111827',
-      valueFormatter: formatAvgValue
-    },
-    solvTop3: {
-      label: 'SoLV (Top 3)',
-      color: '#2563eb',
-      valueFormatter: formatSolvValue
-    }
-  };
+  const { icon: TrendIcon, message: trendMessage, subtext: trendSubtext } = resolveTrendMessage(chartData);
 
   return (
-    <ChartContainer
-      config={chartConfig}
-      style={{
-        borderRadius: '16px',
-        border: '1px solid rgba(148, 163, 184, 0.35)',
-        backgroundColor: '#f9fafb',
-        padding: '1.25rem 1.5rem'
-      }}
-    >
-      <svg
-        viewBox={`0 0 ${width} ${height}`}
-        role="img"
-        aria-label="Line chart showing SoLV and average position over the last 30 days"
-        style={{ width: '100%', height: '100%' }}
-      >
-        <rect x="0" y="0" width={width} height={height} fill="#f9fafb" rx="14" ry="14" />
-
-        {avgTicks.map((value) => {
-          const y = scaleAvg(value);
-
-          return (
-            <g key={`avg-grid-${value}`}>
-              <line
-                x1={margin.left}
-                x2={width - margin.right}
-                y1={y}
-                y2={y}
-                stroke="rgba(148, 163, 184, 0.2)"
-                strokeWidth="1"
-              />
-              <line
-                x1={margin.left - 6}
-                x2={margin.left}
-                y1={y}
-                y2={y}
-                stroke="rgba(107, 114, 128, 0.6)"
-                strokeWidth="1"
-              />
-              <text
-                x={margin.left - 10}
-                y={y + 4}
-                textAnchor="end"
-                fontSize="11"
-                fill="#6b7280"
+    <Card className="shadow-sm">
+      <ChartContainer config={activeChartConfig} className="h-full">
+        <CardHeader className="space-y-3 p-6 pb-3">
+          <div>
+            <CardTitle className="text-base font-semibold">Performance trend</CardTitle>
+            <CardDescription>{rangeLabel}</CardDescription>
+          </div>
+          <ChartLegend className="pt-1" />
+        </CardHeader>
+        <CardContent className="p-6 pt-0">
+          <div className="h-[280px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart
+                accessibilityLayer
+                data={chartData}
+                margin={{ left: 12, right: 12, top: 12, bottom: 12 }}
               >
-                {formatAvgValue(value)}
-              </text>
-            </g>
-          );
-        })}
-
-        {solvTicks.map((value) => {
-          const y = scaleSolv(value);
-
-          return (
-            <g key={`solv-tick-${value}`}>
-              <line
-                x1={width - margin.right}
-                x2={width - margin.right + 6}
-                y1={y}
-                y2={y}
-                stroke="rgba(37, 99, 235, 0.4)"
-                strokeWidth="1"
-              />
-              <text
-                x={width - margin.right + 10}
-                y={y + 4}
-                fontSize="11"
-                fill="#3b82f6"
-              >
-                {formatSolvValue(value)}
-              </text>
-            </g>
-          );
-        })}
-
-        <line
-          x1={margin.left}
-          x2={width - margin.right}
-          y1={height - margin.bottom}
-          y2={height - margin.bottom}
-          stroke="rgba(148, 163, 184, 0.5)"
-          strokeWidth="1"
-        />
-
-        {chartData.map((entry, index) => {
-          if (!shouldShowLabel(index, chartData.length, labelStep)) {
-            return null;
-          }
-
-          const x = xPositions[index];
-
-          return (
-            <text
-              key={`label-${index}`}
-              x={x}
-              y={height - margin.bottom + 20}
-              textAnchor="middle"
-              fontSize="11"
-              fill="#4b5563"
-            >
-              {entry.dateLabel}
-            </text>
-          );
-        })}
-
-        {avgLine.path ? (
-          <path
-            d={avgLine.path}
-            fill="none"
-            stroke="var(--chart-avgPosition)"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        ) : null}
-
-        {solvLine.path ? (
-          <path
-            d={solvLine.path}
-            fill="none"
-            stroke="var(--chart-solvTop3)"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        ) : null}
-
-        {avgLine.points.map((point, index) => (
-          <circle
-            key={`avg-point-${index}`}
-            cx={point.x}
-            cy={point.y}
-            r="4.2"
-            fill="#ffffff"
-            stroke="var(--chart-avgPosition)"
-            strokeWidth="2"
-          >
-            <title>{`${chartConfig.avgPosition.label}: ${formatAvgValue(point.value)}`}</title>
-          </circle>
-        ))}
-
-        {solvLine.points.map((point, index) => (
-          <circle
-            key={`solv-point-${index}`}
-            cx={point.x}
-            cy={point.y}
-            r="4.2"
-            fill="#ffffff"
-            stroke="var(--chart-solvTop3)"
-            strokeWidth="2"
-          >
-            <title>{`${chartConfig.solvTop3.label}: ${formatSolvValue(point.value)}`}</title>
-          </circle>
-        ))}
-
-        <text
-          x={margin.left}
-          y={margin.top - 8}
-          fontSize="12"
-          fill="#111827"
-          fontWeight="600"
-        >
-          Avg position (lower is better)
-        </text>
-
-        <text
-          x={width - margin.right}
-          y={margin.top - 8}
-          fontSize="12"
-          fill="#1d4ed8"
-          fontWeight="600"
-          textAnchor="end"
-        >
-          SoLV (Top 3)
-        </text>
-      </svg>
-
-      <ChartLegend style={{ marginTop: '0.75rem' }} />
-    </ChartContainer>
+                <CartesianGrid vertical={false} strokeDasharray="3 3" />
+                <XAxis
+                  dataKey="axisLabel"
+                  tickLine={false}
+                  axisLine={false}
+                  tickMargin={8}
+                />
+                {hasSolvData ? <YAxis yAxisId="solv" domain={[0, 100]} hide /> : null}
+                {hasAvgData ? <YAxis yAxisId="avg" orientation="right" hide /> : null}
+                <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
+                {hasSolvData ? (
+                  <Line
+                    dataKey="solvTop3"
+                    yAxisId="solv"
+                    type="monotone"
+                    stroke="var(--color-solvTop3)"
+                    strokeWidth={2}
+                    dot={false}
+                    connectNulls
+                    isAnimationActive
+                  />
+                ) : null}
+                {hasAvgData ? (
+                  <Line
+                    dataKey="avgPosition"
+                    yAxisId="avg"
+                    type="monotone"
+                    stroke="var(--color-avgPosition)"
+                    strokeWidth={2}
+                    dot={false}
+                    connectNulls
+                    isAnimationActive
+                  />
+                ) : null}
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </CardContent>
+        <CardFooter className="flex items-start p-6 pt-0">
+          <div className="flex w-full flex-col gap-1 text-sm">
+            <div className="flex items-center gap-2 font-medium text-foreground">
+              <TrendIcon className="h-4 w-4" />
+              <span>{trendMessage}</span>
+            </div>
+            <p className="text-xs text-muted-foreground">{trendSubtext}</p>
+          </div>
+        </CardFooter>
+      </ChartContainer>
+    </Card>
   );
 }
