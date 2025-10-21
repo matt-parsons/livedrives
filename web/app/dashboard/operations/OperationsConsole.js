@@ -857,7 +857,7 @@ export default function OperationsConsole({ timezone: initialTimezone, initialTa
                   <div className="log-events-dialog__event-message">{event.message}</div>
                   {event.image ? (
                     <a
-                      href={event.image}
+                      href={"/drive-logs/" + event.image}
                       target="_blank"
                       rel="noreferrer"
                       className="log-events-dialog__event-link"
