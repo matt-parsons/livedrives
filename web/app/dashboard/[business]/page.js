@@ -203,6 +203,12 @@ export default async function BusinessDashboardPage({ params, searchParams }) {
       const solvDeltaLabel = solvDeltaAbs !== null
         ? `${solvDelta > 0 ? '+' : solvDelta < 0 ? '-' : ''}${solvDeltaAbs}%`
         : null;
+      const chartPoints = sorted.map(({ run, timestamp }) => ({
+        timestamp,
+        label: run.runDate ?? formatDate(run.runDateValue),
+        avgPosition: run.avgPositionValue ?? null,
+        solvTop3: run.solvTop3Value ?? null
+      }));
 
       return {
         key,
@@ -217,7 +223,8 @@ export default async function BusinessDashboardPage({ params, searchParams }) {
         solvLabel: latestRun.solvTop3 ? `${latestRun.solvTop3}%` : '—',
         solvTrendIndicator: buildRunTrendIndicator(solvDelta, { unit: '%', digits: 1 }),
         solvDeltaLabel,
-        latestTimestamp: latestEntry.timestamp
+        latestTimestamp: latestEntry.timestamp,
+        chartPoints
       };
     })
     .sort((a, b) => b.latestTimestamp - a.latestTimestamp)

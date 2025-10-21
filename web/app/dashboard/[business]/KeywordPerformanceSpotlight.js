@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import GeoGridMap from './runs/[runId]/GeoGridMap';
+import KeywordTrendChart from './KeywordTrendChart';
 
 function getTrendStatus(indicator) {
   if (!indicator || typeof indicator.className !== 'string') {
@@ -314,6 +315,8 @@ export default function KeywordPerformanceSpotlight({ items, mapsApiKey = null }
             </span>
           ) : null}
         </header>
+
+        <KeywordTrendChart points={activeItem.chartPoints} />
 
         <div
           style={{

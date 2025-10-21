@@ -2191,8 +2191,43 @@ async function showKeywordTrend(businessId, businessName, keyword, options = {})
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      interaction: { mode: 'nearest', intersect: false },
-      plugins: { legend: { display: true } },
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: true },
+        tooltip: {
+          mode: 'index',
+          intersect: false,
+          filter(ctx) {
+            const value = ctx.parsed?.y ?? ctx.parsed ?? ctx.raw;
+            return value !== null && value !== undefined && !Number.isNaN(value);
+          },
+          callbacks: {
+            label(ctx) {
+              const datasetLabel = ctx.dataset?.label ? `${ctx.dataset.label}: ` : '';
+              const axisId = ctx.dataset?.yAxisID;
+              const rawValue = ctx.parsed?.y ?? ctx.parsed ?? ctx.raw;
+
+              if (rawValue === null || rawValue === undefined || Number.isNaN(rawValue)) {
+                return `${datasetLabel}—`;
+              }
+
+              if (axisId === 'ySessions') {
+                return `${datasetLabel}${Math.round(rawValue)}`;
+              }
+
+              if (axisId === 'yPct') {
+                return `${datasetLabel}${Number(rawValue).toFixed(1)}%`;
+              }
+
+              if (axisId === 'yRank') {
+                return `${datasetLabel}${Number(rawValue).toFixed(2)}`;
+              }
+
+              return `${datasetLabel}${rawValue}`;
+            }
+          }
+        }
+      },
       scales: {
         yRank: { position: 'left', reverse: true, title: { display: true, text: 'Rank (↓ better)' } },
         yPct:  { position: 'right', min: 0, max: 100, grid: { drawOnChartArea: false }, title: { display: true, text: 'SoLV %' } },
