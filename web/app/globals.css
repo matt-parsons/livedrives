@@ -3,11 +3,11 @@
 @tailwind utilities;
 
 :root {
-  --background: rgb(246, 246, 246);
+  --background: 0 0% 96%;
   --foreground: 199 93% 18%;
-  --card: rgb(246, 246, 246);
+  --card: 0 0% 96%;
   --card-foreground: 199 93% 18%;
-  --popover: rgb(246, 246, 246);
+  --popover: 0 0% 96%;
   --popover-foreground: 199 93% 18%;
   --primary: 25 99% 60%;
   --primary-foreground: 199 93% 18%;
