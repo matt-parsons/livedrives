@@ -248,8 +248,9 @@ export async function loadCtrRunsWithSnapshots(businessId, startDate, endDate) {
   const runIds = runs.map((row) => row.runId);
 
   const [snapshots] = await pool.query(
-    `SELECT rq.run_id        AS runId,
-            rq.keyword       AS keyword,
+    `SELECT rq.run_id         AS runId,
+            rq.id             AS queryId,
+            rq.keyword        AS keyword,
             rs.origin_lat     AS originLat,
             rs.origin_lng     AS originLng,
             rs.matched_position AS matchedPosition,
