@@ -31,6 +31,11 @@ const OWNER_OPERATION_LINKS = [
     href: '/dashboard/operations?tab=launcher',
     label: 'Launch geo grid',
     description: 'Start a geo grid run for any managed business.'
+  },
+  {
+    href: '/dashboard/businesses/new',
+    label: 'Add new business',
+    description: 'Add a new business.'
   }
 ];
 
