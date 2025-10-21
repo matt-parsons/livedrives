@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import GeoGridLauncher from '../geo-grid-launcher/GeoGridLauncher';
 
 const LOG_SCOPE_OPTIONS = [
@@ -113,6 +114,7 @@ export default function OperationsConsole({ timezone: initialTimezone, initialTa
   const [scheduleLoading, setScheduleLoading] = useState(false);
   const [scheduleError, setScheduleError] = useState(null);
   const [scheduleData, setScheduleData] = useState({ timezone: fallbackTimezone, entries: [] });
+  const [activeEventsLog, setActiveEventsLog] = useState(null);
 
   const [geoRunsLoading, setGeoRunsLoading] = useState(false);
   const [geoRunsError, setGeoRunsError] = useState(null);
@@ -154,6 +156,9 @@ export default function OperationsConsole({ timezone: initialTimezone, initialTa
     : null;
   const geoLogLastUpdatedLabel = geoLogLastModified
     ? formatDateTime(geoLogLastModified, fallbackTimezone, { timeStyle: 'medium' })
+    : null;
+  const activeEventsTimestampLabel = activeEventsLog?.timestamp
+    ? formatDateTime(activeEventsLog.timestamp, activeLogsTimezone, { timeStyle: 'medium' })
     : null;
 
   const loadLogs = useCallback(
@@ -458,21 +463,22 @@ export default function OperationsConsole({ timezone: initialTimezone, initialTa
                         {events.length === 0 ? (
                           <span className="muted">No events</span>
                         ) : (
-                          <details>
-                            <summary>{events.length} event{events.length === 1 ? '' : 's'}</summary>
-                            <ul className="log-event-list">
-                              {events.map((event) => (
-                                <li key={event.id}>
-                                  <div>{event.message}</div>
-                                  {event.image ? (
-                                    <a href={event.image} target="_blank" rel="noreferrer">
-                                      View asset
-                                    </a>
-                                  ) : null}
-                                </li>
-                              ))}
-                            </ul>
-                          </details>
+                          <button
+                            type="button"
+                            className="log-events-button"
+                            onClick={() => {
+                              setActiveEventsLog({
+                                id: row.id,
+                                businessName: row.business_name ?? row.business_id ?? '—',
+                                keyword: row.keyword ?? null,
+                                status: status.label,
+                                timestamp: row.timestamp_utc || row.created_at,
+                                events
+                              });
+                            }}
+                          >
+                            View {events.length} event{events.length === 1 ? '' : 's'}
+                          </button>
                         )}
                       </td>
                       <td>
@@ -804,6 +810,67 @@ export default function OperationsConsole({ timezone: initialTimezone, initialTa
           <GeoGridLauncher showHeader={false} />
         </section>
       ) : null}
+
+      <Dialog
+        open={Boolean(activeEventsLog)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setActiveEventsLog(null);
+          }
+        }}
+      >
+        {activeEventsLog ? (
+          <DialogContent className="log-events-dialog__content">
+            <DialogHeader>
+              <DialogTitle>Run events</DialogTitle>
+              <DialogDescription>
+                Showing {activeEventsLog.events.length} event
+                {activeEventsLog.events.length === 1 ? '' : 's'} captured for this log entry.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="log-events-dialog__meta">
+              <span>
+                <strong>Business:</strong> {activeEventsLog.businessName ?? '—'}
+              </span>
+              {activeEventsLog.keyword ? (
+                <span>
+                  <strong>Keyword:</strong> {activeEventsLog.keyword}
+                </span>
+              ) : null}
+              {activeEventsLog.status ? (
+                <span>
+                  <strong>Status:</strong> {activeEventsLog.status}
+                </span>
+              ) : null}
+              {activeEventsTimestampLabel ? (
+                <span>
+                  <strong>Timestamp:</strong> {activeEventsTimestampLabel}
+                </span>
+              ) : null}
+            </div>
+
+            <div className="log-events-dialog__body" role="log" aria-live="polite">
+              {activeEventsLog.events.map((event, index) => (
+                <div key={event.id ?? index} className="log-events-dialog__event">
+                  <div className="log-events-dialog__event-index">Event {index + 1}</div>
+                  <div className="log-events-dialog__event-message">{event.message}</div>
+                  {event.image ? (
+                    <a
+                      href={event.image}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="log-events-dialog__event-link"
+                    >
+                      View asset
+                    </a>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+          </DialogContent>
+        ) : null}
+      </Dialog>
     </div>
   );
 }
