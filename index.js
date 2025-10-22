@@ -8,7 +8,7 @@ const { DateTime } = require('luxon');
 const { getZone, isOpenNow, nextOpenAt } = require('./lib/business/businessHours');
 
 const { startRun, finishRun, logResult } = require('./lib/db/logger');
-const { recordRankingSnapshot } = require('./lib/db/ranking_store');
+const { recordRankingSnapshot } = require('./lib/db/ctr_store');
 const { note } = require('./lib/utils/note');
 const { parseLocalBusinesses } = require('./lib/google/counters');
 
