@@ -13,9 +13,9 @@ if (isMainThread) {
     require('dotenv').config({ quiet: true }); 
 }
 
-let recordRankingSnapshot = null;
+let insertGeoGridPoint = null;
 if (isMainThread) {
-  ({ recordRankingSnapshot } = require('../lib/db/ranking_store'));
+  ({ insertGeoGridPoint } = require('../lib/db/geogrid_store'));
 }
 
 const workerConfig = {
@@ -205,9 +205,6 @@ if (!isMainThread) {
   
 } else { // Main Thread Code
 
-  let geoGridArtifactColumnsSupported = true;
-  let geoGridResultsColumnName = 'results_json';
-
   function toNonEmptyString(value) {
     if (typeof value === 'string') {
       const trimmed = value.trim();
@@ -337,14 +334,6 @@ if (!isMainThread) {
     return payload;
   }
 
-  function buildGeoGridUpdateSql(resultsColumn) {
-    return `
-      UPDATE geo_grid_points
-      SET rank_pos = ?, measured_at = NOW(), screenshot_path = ?, search_url = ?, landing_url = ?, ${resultsColumn} = ?
-      WHERE id = ?
-    `;
-  }
-
   // --- Database Interaction Functions ---
   async function getActiveRuns(conn) {
     const sql = `
@@ -366,7 +355,16 @@ if (!isMainThread) {
   }
 
   async function getUnrankedPoints(conn, runId) {
-    const sql = 'SELECT id AS pointId, lat, lng FROM geo_grid_points WHERE run_id = ? AND rank_pos IS NULL';
+    const sql = `
+      SELECT
+        id AS pointId,
+        row_idx AS rowIdx,
+        col_idx AS colIdx,
+        lat,
+        lng
+      FROM geo_grid_points
+      WHERE run_id = ? AND rank_pos IS NULL
+    `;
     const [rows] = await conn.execute(sql, [runId]);
     return rows;
   }
@@ -578,10 +576,19 @@ if (!isMainThread) {
                     const task = tasks.shift();
                     const latNum = task.lat != null ? Number(task.lat) : null;
                     const lngNum = task.lng != null ? Number(task.lng) : null;
-                    pointMeta.set(task.pointId, { lat: latNum, lng: lngNum });
+                    const rowIdxNum = task.rowIdx != null ? Number(task.rowIdx) : null;
+                    const colIdxNum = task.colIdx != null ? Number(task.colIdx) : null;
+                    const normalizedTask = {
+                        ...task,
+                        lat: latNum,
+                        lng: lngNum,
+                        rowIdx: rowIdxNum,
+                        colIdx: colIdxNum,
+                    };
+                    pointMeta.set(task.pointId, normalizedTask);
                     activeTaskCount++;
                     worker.postMessage({
-                        point: { ...task, lat: latNum, lng: lngNum },
+                        point: normalizedTask,
                         runId,
                         keyword,
                         businessId,
@@ -611,7 +618,7 @@ if (!isMainThread) {
                 } = message;
                 let messageStatus = status;
                 let dbErrorMessage = null;
-                const pointInfo = pointMeta.get(pointId) || { lat: null, lng: null };
+                const pointInfo = pointMeta.get(pointId) || { lat: null, lng: null, rowIdx: null, colIdx: null };
                 const placesArray = Array.isArray(places) ? places : [];
                 const totalReturned = typeof totalResults === 'number' ? totalResults : placesArray.length;
                 const resultsPayload = buildPointResultsPayload(placesArray, totalReturned, matched);
@@ -656,44 +663,22 @@ if (!isMainThread) {
                             const normalizedLandingUrl = typeof landingUrl === 'string' && landingUrl.trim().length
                                 ? landingUrl.trim()
                                 : normalizedSearchUrl;
-                            const newSql = buildGeoGridUpdateSql(geoGridResultsColumnName);
-                            const legacySql = 'UPDATE geo_grid_points SET rank_pos = ?, measured_at = NOW() WHERE id = ?';
+                            const matchedPlaceId = matched?.place_id || matched?.raw_place_id || null;
 
-                            try {
-                                if (geoGridArtifactColumnsSupported) {
-                                    const params = [
-                                        rankToSave,
-                                        normalizedScreenshotPath,
-                                        normalizedSearchUrl,
-                                        normalizedLandingUrl,
-                                        resultsJsonString,
-                                        pointId,
-                                    ];
-
-                                    try {
-                                        await pointConn.execute(newSql, params);
-                                    } catch (sqlError) {
-                                        if (sqlError && sqlError.code === 'ER_BAD_FIELD_ERROR' && geoGridResultsColumnName === 'results_json') {
-                                            console.warn('[WORKER] geo_grid_points missing results_json column; retrying with result_json.');
-                                            geoGridResultsColumnName = 'result_json';
-                                            const retrySql = buildGeoGridUpdateSql(geoGridResultsColumnName);
-                                            await pointConn.execute(retrySql, params);
-                                        } else {
-                                            throw sqlError;
-                                        }
-                                    }
-                                } else {
-                                    await pointConn.execute(legacySql, [rankToSave, pointId]);
-                                }
-                            } catch (sqlError) {
-                                if (geoGridArtifactColumnsSupported && sqlError && sqlError.code === 'ER_BAD_FIELD_ERROR') {
-                                    console.warn('[WORKER] geo_grid_points missing artifact columns; using legacy update.');
-                                    geoGridArtifactColumnsSupported = false;
-                                    await pointConn.execute(legacySql, [rankToSave, pointId]);
-                                } else {
-                                    throw sqlError;
-                                }
-                            }
+                            await insertGeoGridPoint({
+                                pointId,
+                                runId,
+                                rowIdx: pointInfo.rowIdx,
+                                colIdx: pointInfo.colIdx,
+                                lat: pointInfo.lat,
+                                lng: pointInfo.lng,
+                                rankPos: rankToSave,
+                                placeId: matchedPlaceId,
+                                resultJson: resultsJsonString ?? resultsPayload,
+                                screenshotPath: normalizedScreenshotPath,
+                                searchUrl: normalizedSearchUrl,
+                                landingUrl: normalizedLandingUrl,
+                            }, pointConn);
                         } catch (dbError) {
                             dbErrorMessage = dbError.message;
                             console.error(`- DB Save failed for point ${pointId}:`, dbError.message);
@@ -701,36 +686,6 @@ if (!isMainThread) {
                         } finally {
                             if (pointConn) {
                                 pointConn.release();
-                            }
-                        }
-
-                        if (
-                            messageStatus === 'done' &&
-                            recordRankingSnapshot &&
-                            placesArray.length &&
-                            Number.isFinite(pointInfo.lat) &&
-                            Number.isFinite(pointInfo.lng)
-                        ) {
-                            try {
-                                const matchedPlaceId = matched?.place_id || null;
-                                const matchedBy = matchedPlaceId ? 'place_id' : (matched ? 'name_addr' : 'none');
-                                await recordRankingSnapshot({
-                                    runId,
-                                    businessId,
-                                    keyword,
-                                    source: 'serp',
-                                    variant: 'text',
-                                    originLat: pointInfo.lat,
-                                    originLng: pointInfo.lng,
-                                    radiusMi: 0,
-                                    sessionId: null,
-                                    requestId: `serp@${runId}:${pointId}:${Date.now()}`,
-                                    places: placesArray,
-                                    targetPlaceId: matchedPlaceId,
-                                    matchedBy,
-                                });
-                            } catch (snapErr) {
-                                console.error(`[WORKER] Failed recording snapshot for point ${pointId}:`, snapErr.message);
                             }
                         }
                     }
