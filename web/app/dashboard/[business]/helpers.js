@@ -256,7 +256,7 @@ export async function loadCtrRunsWithSnapshots(businessId, startDate, endDate) {
             rs.matched_position AS matchedPosition,
             rs.created_at     AS createdAt
        FROM ranking_snapshots rs
-       JOIN ranking_queries rq ON rq.id = rs.run_id
+       JOIN ranking_queries rq ON rq.id = rs.query_id
       WHERE rq.run_id IN (?)
         AND rq.business_id = ?
       ORDER BY rq.run_id, rs.created_at`,
@@ -296,7 +296,7 @@ export async function loadCtrKeywordOverview(businessId, days = 30) {
         rq.timestamp_utc   AS timestampUtc,
         rs.results_json    AS resultsJson
      FROM ranking_queries rq
-     JOIN ranking_snapshots rs ON rs.run_id = rq.id
+     JOIN ranking_snapshots rs ON rs.query_id = rq.id
     WHERE rq.business_id = ?
       AND rq.timestamp_utc >= ?
       AND rq.timestamp_utc < ?
