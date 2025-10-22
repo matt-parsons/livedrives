@@ -218,6 +218,52 @@ export async function loadGeoGridRunWithPoints(businessId, runId) {
   };
 }
 
+function parseLatLng(rawValue) {
+  if (!rawValue) {
+    return null;
+  }
+
+  if (typeof rawValue === 'object') {
+    const lat = Number(rawValue.lat ?? rawValue.latitude ?? null);
+    const lng = Number(rawValue.lng ?? rawValue.longitude ?? null);
+    if (Number.isFinite(lat) && Number.isFinite(lng)) {
+      return { lat, lng };
+    }
+    return null;
+  }
+
+  const text = String(rawValue).trim();
+
+  if (!text) {
+    return null;
+  }
+
+  if (text.startsWith('{') || text.startsWith('[')) {
+    try {
+      const parsed = JSON.parse(text);
+      return parseLatLng(parsed);
+    } catch (error) {
+      console.warn('[parseLatLng] Failed to parse JSON value', error?.message ?? error);
+      return null;
+    }
+  }
+
+  const parts = text.split(',');
+
+  if (parts.length !== 2) {
+    return null;
+  }
+
+  const lat = Number.parseFloat(parts[0]);
+  const lng = Number.parseFloat(parts[1]);
+
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+    return null;
+  }
+
+  return { lat, lng };
+}
+
 export async function loadCtrRunsWithSnapshots(businessId, startDate, endDate) {
   const [runs] = await pool.query(
     `SELECT r.id                AS runId,
@@ -226,13 +272,17 @@ export async function loadCtrRunsWithSnapshots(businessId, startDate, endDate) {
             r.finished_at      AS finishedAt,
             DATE(r.started_at) AS runDate,
             COALESCE(
-              MAX(NULLIF(rq.keyword, '')),
               MAX(NULLIF(rl.keyword, '')),
+              MAX(NULLIF(rq.keyword, '')),
               '(no keyword)'
             ) AS keyword
        FROM runs r
-       LEFT JOIN run_logs rl ON rl.run_id = r.id
-       LEFT JOIN ranking_queries rq ON rq.run_id = r.id
+       LEFT JOIN run_logs rl
+              ON rl.run_id = r.id
+             AND rl.business_id = r.business_id
+       LEFT JOIN ranking_queries rq
+              ON rq.run_id = r.id
+             AND rq.business_id = r.business_id
       WHERE r.business_id = ?
         AND r.started_at >= ?
         AND r.started_at < ?
@@ -247,21 +297,193 @@ export async function loadCtrRunsWithSnapshots(businessId, startDate, endDate) {
 
   const runIds = runs.map((row) => row.runId);
 
-  const [snapshots] = await pool.query(
-    `SELECT rq.run_id         AS runId,
-            rq.id             AS queryId,
+  const runIdList = runIds;
+
+  const [runLogRows] = await pool.query(
+    `SELECT rl.id           AS logId,
+            rl.run_id      AS runId,
+            rl.query_id    AS queryId,
+            rl.keyword     AS keyword,
+            rl.origin      AS originCoords,
+            rl.rank        AS rank,
+            rl.timestamp_utc AS timestampUtc,
+            rl.created_at  AS createdAt,
+            rl.session_id  AS sessionId
+       FROM run_logs rl
+      WHERE rl.run_id IN (?)
+        AND rl.business_id = ?
+      ORDER BY rl.run_id, rl.timestamp_utc, rl.created_at, rl.id`,
+    [runIdList, businessId]
+  );
+
+  const [rankingQueryRows] = await pool.query(
+    `SELECT rq.id             AS queryId,
+            rq.run_id         AS runId,
             rq.keyword        AS keyword,
-            rs.origin_lat     AS originLat,
-            rs.origin_lng     AS originLng,
-            rs.matched_position AS matchedPosition,
-            rs.created_at     AS createdAt
-       FROM ranking_snapshots rs
-       JOIN ranking_queries rq ON rq.id = rs.query_id
+            rq.origin_lat     AS originLat,
+            rq.origin_lng     AS originLng,
+            rq.matched_position AS matchedPosition,
+            rq.timestamp_utc  AS timestampUtc,
+            rq.created_at     AS createdAt
+       FROM ranking_queries rq
       WHERE rq.run_id IN (?)
         AND rq.business_id = ?
-      ORDER BY rq.run_id, rs.created_at`,
-    [runIds, businessId]
+      ORDER BY rq.run_id, rq.timestamp_utc, rq.created_at, rq.id`,
+    [runIdList, businessId]
   );
+
+  const [rankingSnapshotRows] = await pool.query(
+    `SELECT rs.id            AS snapshotId,
+            rs.run_id        AS runId,
+            rs.origin_lat    AS originLat,
+            rs.origin_lng    AS originLng,
+            rs.matched_position AS matchedPosition,
+            rs.created_at    AS createdAt,
+            rs.matched_place_id AS matchedPlaceId,
+            rs.total_results AS totalResults
+       FROM ranking_snapshots rs
+      WHERE rs.run_id IN (?)
+        AND (rs.business_id IS NULL OR rs.business_id = ?)
+      ORDER BY rs.run_id, rs.created_at, rs.id`,
+    [runIdList, businessId]
+  );
+
+  const snapshotsByKey = new Map();
+  let insertionOrder = 0;
+
+  const keywordByRun = new Map();
+  for (const row of rankingQueryRows) {
+    const label = row.keyword?.trim();
+    if (label && !keywordByRun.has(row.runId)) {
+      keywordByRun.set(row.runId, label);
+    }
+  }
+
+  const ensureSnapshot = (key) => {
+    if (!snapshotsByKey.has(key)) {
+      snapshotsByKey.set(key, {
+        runId: null,
+        queryId: null,
+        keyword: null,
+        originLat: null,
+        originLng: null,
+        matchedPosition: null,
+        createdAt: null,
+        _order: insertionOrder++
+      });
+    }
+    return snapshotsByKey.get(key);
+  };
+
+  const assignIfMissing = (snapshot, updates) => {
+    if (updates.runId != null) {
+      snapshot.runId = updates.runId;
+    }
+    if (updates.queryId != null) {
+      snapshot.queryId = updates.queryId;
+    }
+    if (updates.keyword != null) {
+      const text = String(updates.keyword).trim();
+      if (text && !snapshot.keyword) {
+        snapshot.keyword = text;
+      }
+    }
+    if (updates.originLat != null && snapshot.originLat == null) {
+      const lat = Number(updates.originLat);
+      if (Number.isFinite(lat)) {
+        snapshot.originLat = lat;
+      }
+    }
+    if (updates.originLng != null && snapshot.originLng == null) {
+      const lng = Number(updates.originLng);
+      if (Number.isFinite(lng)) {
+        snapshot.originLng = lng;
+      }
+    }
+    if (updates.matchedPosition != null && snapshot.matchedPosition == null) {
+      const pos = Number(updates.matchedPosition);
+      if (Number.isFinite(pos) && pos > 0) {
+        snapshot.matchedPosition = pos;
+      }
+    }
+    if (updates.createdAt != null) {
+      const candidate = updates.createdAt;
+      if (!snapshot.createdAt) {
+        snapshot.createdAt = candidate;
+      } else {
+        const existingTime = new Date(snapshot.createdAt).getTime();
+        const candidateTime = new Date(candidate).getTime();
+        if (Number.isFinite(candidateTime) && (!Number.isFinite(existingTime) || candidateTime < existingTime)) {
+          snapshot.createdAt = candidate;
+        }
+      }
+    }
+  };
+
+  for (const row of runLogRows) {
+    const coords = parseLatLng(row.originCoords);
+    const key = row.queryId != null
+      ? `query:${row.queryId}`
+      : `runlog:${row.runId}:${row.sessionId ?? row.logId}`;
+    const snapshot = ensureSnapshot(key);
+    assignIfMissing(snapshot, {
+      runId: row.runId,
+      queryId: row.queryId ?? snapshot.queryId,
+      keyword: row.keyword,
+      originLat: coords?.lat,
+      originLng: coords?.lng,
+      matchedPosition: row.rank,
+      createdAt: row.timestampUtc ?? row.createdAt
+    });
+  }
+
+  for (const row of rankingQueryRows) {
+    const key = `query:${row.queryId}`;
+    const snapshot = ensureSnapshot(key);
+    assignIfMissing(snapshot, {
+      runId: row.runId,
+      queryId: row.queryId,
+      keyword: row.keyword ?? keywordByRun.get(row.runId) ?? null,
+      originLat: row.originLat,
+      originLng: row.originLng,
+      matchedPosition: row.matchedPosition,
+      createdAt: row.timestampUtc ?? row.createdAt
+    });
+  }
+
+  for (const row of rankingSnapshotRows) {
+    const key = row.runId != null && keywordByRun.has(row.runId)
+      ? `run:${row.runId}:snapshot:${row.snapshotId}`
+      : `snapshot:${row.snapshotId}`;
+    const snapshot = ensureSnapshot(key);
+    assignIfMissing(snapshot, {
+      runId: row.runId,
+      keyword: keywordByRun.get(row.runId) ?? null,
+      originLat: row.originLat,
+      originLng: row.originLng,
+      matchedPosition: row.matchedPosition,
+      createdAt: row.createdAt
+    });
+  }
+
+  const snapshots = Array.from(snapshotsByKey.values())
+    .filter((snapshot) => snapshot.runId != null && runIds.includes(snapshot.runId))
+    .map(({ _order, ...rest }) => rest)
+    .sort((a, b) => {
+      if (a.runId !== b.runId) {
+        return a.runId - b.runId;
+      }
+      const aTime = a.createdAt ? new Date(a.createdAt).getTime() : Number.POSITIVE_INFINITY;
+      const bTime = b.createdAt ? new Date(b.createdAt).getTime() : Number.POSITIVE_INFINITY;
+      if (Number.isFinite(aTime) && Number.isFinite(bTime)) {
+        if (aTime !== bTime) return aTime - bTime;
+      } else if (Number.isFinite(aTime)) {
+        return -1;
+      } else if (Number.isFinite(bTime)) {
+        return 1;
+      }
+      return 0;
+    });
 
   if (!snapshots.length) {
     return { runs: [], snapshots: [] };
@@ -272,7 +494,7 @@ export async function loadCtrRunsWithSnapshots(businessId, startDate, endDate) {
 
   return {
     runs: filteredRuns,
-    snapshots: snapshots.filter((snapshot) => runIdsWithSnapshots.has(snapshot.runId))
+    snapshots
   };
 }
 
@@ -290,13 +512,15 @@ export async function loadCtrKeywordOverview(businessId, days = 30) {
 
   const [rows] = await pool.query(
     `SELECT
-        rq.id              AS queryId,
-        rq.keyword         AS keyword,
+        rq.id               AS queryId,
+        rq.keyword          AS keyword,
         rq.matched_position AS matchedPosition,
-        rq.timestamp_utc   AS timestampUtc,
-        rs.results_json    AS resultsJson
+        rq.timestamp_utc    AS timestampUtc,
+        rs.results_json     AS resultsJson
      FROM ranking_queries rq
-     JOIN ranking_snapshots rs ON rs.query_id = rq.id
+     JOIN ranking_snapshots rs
+       ON rs.run_id = rq.run_id
+      AND (rs.business_id IS NULL OR rs.business_id = rq.business_id)
     WHERE rq.business_id = ?
       AND rq.timestamp_utc >= ?
       AND rq.timestamp_utc < ?
