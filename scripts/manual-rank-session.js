@@ -208,60 +208,49 @@ async function main() {
       return;
     }
 
-    const serpPlaces = parseLocalBusinesses(serpHtml);
+    const serpPlaces = await parseLocalBusinesses(serpHtml);
     const totalResults = Array.isArray(serpPlaces) ? serpPlaces.length : 0;
     const targetName = normalizeName(config.business_name);
-    const targetMid = normalizeIdentifier(config.mid);
-    const targetPlaceId = normalizeIdentifier(config.place_id);
-
-    let serpRank = null;
-    let serpReason = totalResults > 0 ? 'business_not_found' : 'no_results_captured';
-    let serpMatched = null;
-
+    let matchedEntry = null;
+    let matchedSource = 'none';
     for (const entry of serpPlaces) {
-      const entryPlaceId = normalizeIdentifier(entry.place_id || entry.raw_place_id);
-      const entryMid = normalizeIdentifier(entry.mid);
       const entryName = normalizeName(entry.name);
 
-      if (targetPlaceId && entryPlaceId && entryPlaceId === targetPlaceId) {
-        serpRank = entry.position || serpPlaces.indexOf(entry) + 1;
-        serpMatched = { ...entry, place_id_source: 'place_id' };
-        serpReason = 'captured';
-        break;
-      }
-      if (targetMid && entryMid && entryMid.includes(targetMid)) {
-        serpRank = entry.position || serpPlaces.indexOf(entry) + 1;
-        serpMatched = { ...entry, place_id_source: 'mid' };
-        serpReason = 'captured';
-        break;
-      }
       if (targetName && entryName && entryName.includes(targetName)) {
-        serpRank = entry.position || serpPlaces.indexOf(entry) + 1;
-        serpMatched = { ...entry, place_id_source: 'name_addr' };
-        serpReason = 'captured';
+        matchedEntry = entry;
+        matchedSource = 'name_addr';
         break;
       }
     }
-
-    note(`→ [SERP][MANUAL] rank@${origin.lat.toFixed(5)},${origin.lng.toFixed(5)}: ${serpRank ?? 'not_found'} / ${totalResults} (${serpReason})`);
-
-    console.log('');
-    console.log('→ Parsed SERP entries:');
-    if (totalResults === 0) {
-      console.log('   (none detected)');
+    if (matchedEntry) {
+      serpRank = matchedEntry.position || (serpPlaces.indexOf(matchedEntry) + 1);
+      serpMatched = {
+        ...matchedEntry,
+        place_id_source: matchedSource
+      };
+      serpReason = 'captured';
     } else {
-      serpPlaces.forEach((place) => {
-        const marker = serpMatched && serpMatched.raw_place_id === place.raw_place_id ? '★' : ' ';
-        console.log(`${marker} #${place.position} ${place.name || 'Unnamed'} | place_id=${place.place_id || 'n/a'} | mid=${place.mid || 'n/a'}`);
-      });
+      serpRank = null;
+      serpMatched = null;
+      serpReason = totalResults > 0 ? 'business_not_found' : 'no_results_captured';
     }
 
+    if (serpRank != null) {
+      note(`→ [SERP] rank@${origin.lat.toFixed(5)},${origin.lng.toFixed(5)}: ${serpRank} / ${totalResults} (${serpReason})`);
+    } else {
+      note(`→ [SERP] rank@${origin.lat.toFixed(5)},${origin.lng.toFixed(5)}: not_found / ${totalResults} (${serpReason})`);
+    }
+    if (totalResults > 0) {
+      const visiblePreview = serpPlaces
+        .map(entry => entry.name)
+        .filter(Boolean)
+        .slice(0, 5);
+      if (visiblePreview.length) {
+        const suffix = serpPlaces.length > visiblePreview.length ? ', …' : '';
+        note(`→ [SERP] visible competitors: ${visiblePreview.join(', ')}${suffix}`);
+      }
+    }
     console.log('');
-    console.log('→ Ranking summary');
-    console.log('   Rank:', serpRank ?? 'not found');
-    console.log('   Reason:', serpReason);
-    console.log('   Matched entry:', serpMatched ? serpMatched.name : 'none');
-    console.log('   Total places:', totalResults);
   } catch (err) {
     console.error('Manual ranking session failed:', err);
   }

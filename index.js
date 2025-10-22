@@ -137,81 +137,75 @@ const normalizeIdentifier = (value) =>
       console.log('→ CTR Success. Start Your Engines.');
       console.log('');
 
-      try {
-        const serpHtml = ctrResult?.serpHtmlBeforeClick ?? '';
-        serpPlaces = await parseLocalBusinesses(serpHtml);
+      // if it was found as a branded search we don't need rankings
+      if(!brandedFound) {
+        try {
+          const serpHtml = ctrResult?.serpHtmlBeforeClick ?? '';
+          serpPlaces = await parseLocalBusinesses(serpHtml);
 
-        const totalResults = Array.isArray(serpPlaces) ? serpPlaces.length : 0;
-        const targetName = normalizeName(config.business_name);
-        const targetMid = normalizeIdentifier(config.mid);
-        const targetPlaceId = normalizeIdentifier(config.place_id);
+          const totalResults = Array.isArray(serpPlaces) ? serpPlaces.length : 0;
+          const targetName = normalizeName(config.business_name);
 
-        let matchedEntry = null;
-        let matchedSource = 'none';
+          let matchedEntry = null;
+          let matchedSource = 'none';
 
-        for (const entry of serpPlaces) {
-          const entryPlaceId = normalizeIdentifier(entry.place_id || entry.raw_place_id);
-          const entryMid = normalizeIdentifier(entry.mid);
-          const entryName = normalizeName(entry.name);
+          for (const entry of serpPlaces) {
+            const entryName = normalizeName(entry.name);
 
-          if (targetPlaceId && entryPlaceId && entryPlaceId === targetPlaceId) {
-            matchedEntry = entry;
-            matchedSource = 'place_id';
-            break;
+            if (targetName && entryName && entryName.includes(targetName)) {
+              matchedEntry = entry;
+              matchedSource = 'name_addr';
+              break;
+            }
           }
-          if (targetMid && entryMid && entryMid.includes(targetMid)) {
-            matchedEntry = entry;
-            matchedSource = 'mid';
-            break;
-          }
-          if (targetName && entryName && entryName.includes(targetName)) {
-            matchedEntry = entry;
-            matchedSource = 'name_addr';
-            break;
-          }
-        }
 
-        if (matchedEntry) {
-          serpRank = matchedEntry.position || (serpPlaces.indexOf(matchedEntry) + 1);
-          serpMatched = {
-            ...matchedEntry,
-            place_id_source: matchedSource
-          };
-          serpReason = 'captured';
-        } else {
-          serpRank = null;
+          if (matchedEntry) {
+            serpRank = matchedEntry.position || (serpPlaces.indexOf(matchedEntry) + 1);
+            serpMatched = {
+              ...matchedEntry,
+              place_id_source: matchedSource
+            };
+            serpReason = 'captured';
+          } else {
+            serpRank = null;
+            serpMatched = null;
+            serpReason = totalResults > 0 ? 'business_not_found' : 'no_results_captured';
+          }
+
+          if (serpRank != null) {
+            note(`→ [SERP] rank@${origin.lat.toFixed(5)},${origin.lng.toFixed(5)}: ${serpRank} / ${totalResults} (${serpReason})`);
+          } else {
+            note(`→ [SERP] rank@${origin.lat.toFixed(5)},${origin.lng.toFixed(5)}: not_found / ${totalResults} (${serpReason})`);
+          }
+
+          if (totalResults > 0) {
+            const visiblePreview = serpPlaces
+              .map(entry => entry.name)
+              .filter(Boolean)
+              .slice(0, 5);
+            if (visiblePreview.length) {
+              const suffix = serpPlaces.length > visiblePreview.length ? ', …' : '';
+              note(`→ [SERP] visible competitors: ${visiblePreview.join(', ')}${suffix}`);
+            }
+          }
+        } catch (err) {
+          serpPlaces = [];
           serpMatched = null;
-          serpReason = totalResults > 0 ? 'business_not_found' : 'no_results_captured';
+          serpRank = null;
+          serpReason = `parse_failed: ${err.message}`;
+          note(`→ [SERP] Failed to parse captured HTML: ${err.message}`);
         }
-
-        if (serpRank != null) {
-          note(`→ [SERP] rank@${origin.lat.toFixed(5)},${origin.lng.toFixed(5)}: ${serpRank} / ${totalResults} (${serpReason})`);
-        } else {
-          note(`→ [SERP] rank@${origin.lat.toFixed(5)},${origin.lng.toFixed(5)}: not_found / ${totalResults} (${serpReason})`);
-        }
-
-        if (totalResults > 0) {
-          const visiblePreview = serpPlaces
-            .map(entry => entry.name)
-            .filter(Boolean)
-            .slice(0, 5);
-          if (visiblePreview.length) {
-            const suffix = serpPlaces.length > visiblePreview.length ? ', …' : '';
-            note(`→ [SERP] visible competitors: ${visiblePreview.join(', ')}${suffix}`);
-          }
-        }
-      } catch (err) {
-        serpPlaces = [];
-        serpMatched = null;
-        serpRank = null;
-        serpReason = `parse_failed: ${err.message}`;
-        note(`→ [SERP] Failed to parse captured HTML: ${err.message}`);
+        const matchedPlaceId = serpMatched?.raw_place_id || serpMatched?.place_id || null;
+        const matchedBySource = serpMatched?.place_id_source || (serpMatched ? 'name_addr' : 'none');
+        const targetPlaceId = config.place_id || (matchedBySource === 'place_id' ? matchedPlaceId : null);
+        const matchedBy = config.place_id ? 'place_id' : matchedBySource;
+      } else {
+        serpRank = 1;
+        const targetPlaceId = config.place_id;
+        const matchedBy = config.place_id;
       }
 
-      const matchedPlaceId = serpMatched?.raw_place_id || serpMatched?.place_id || null;
-      const matchedBySource = serpMatched?.place_id_source || (serpMatched ? 'name_addr' : 'none');
-      const targetPlaceId = config.place_id || (matchedBySource === 'place_id' ? matchedPlaceId : null);
-      const matchedBy = config.place_id ? 'place_id' : matchedBySource;
+
 
       await recordRankingSnapshot({
         runId,
