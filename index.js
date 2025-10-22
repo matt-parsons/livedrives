@@ -139,7 +139,7 @@ const normalizeIdentifier = (value) =>
 
       try {
         const serpHtml = ctrResult?.serpHtmlBeforeClick ?? '';
-        serpPlaces = parseLocalBusinesses(serpHtml);
+        serpPlaces = await parseLocalBusinesses(serpHtml);
 
         const totalResults = Array.isArray(serpPlaces) ? serpPlaces.length : 0;
         const targetName = normalizeName(config.business_name);

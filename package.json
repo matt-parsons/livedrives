@@ -9,7 +9,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "rank:test": "node scripts/test-get-profile-rank.js",
-    "rank:session": "node scripts/manual-rank-session.js"
+    "rank:session": "node scripts/manual-rank-session.js 3 --run2captcha=true"
   },
   "keywords": [],
   "author": "",
