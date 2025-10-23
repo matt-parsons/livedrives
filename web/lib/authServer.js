@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers';
 import pool from '@lib/db.js';
 import { adminAuth } from '@/lib/firebaseAdmin';
+import { getRolePreviewCookie, isRolePreviewSupported } from '@/lib/rolePreview';
 
 export const SESSION_COOKIE_NAME = '__session';
 export const SESSION_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
@@ -62,6 +63,11 @@ export async function requireAuth(request) {
     throw new AuthError(403, 'User is not linked to an organization');
   }
 
+  const actualRole = rows[0].role;
+  const previewRole = getRolePreviewCookie(request);
+  const isPreviewActive = isRolePreviewSupported(previewRole) && previewRole !== actualRole;
+  const effectiveRole = isPreviewActive ? previewRole : actualRole;
+
   return {
     userId: rows[0].userId,
     firebaseUid: rows[0].firebaseUid,
@@ -69,6 +75,8 @@ export async function requireAuth(request) {
     name: rows[0].name,
     defaultBusinessId: rows[0].defaultBusinessId,
     organizationId: rows[0].organizationId,
-    role: rows[0].role
+    role: effectiveRole,
+    actualRole,
+    previewRole: isPreviewActive ? previewRole : null
   };
 }

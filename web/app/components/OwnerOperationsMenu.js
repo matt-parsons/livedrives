@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { ChevronDown } from 'lucide-react';
 import { AuthError, requireAuth } from '@/lib/authServer';
 import { Button } from '@/components/ui/button';
+import RolePreviewMenuItem from '@/app/components/RolePreviewMenuItem';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -52,21 +53,26 @@ export default async function OwnerOperationsMenu() {
     throw error;
   }
 
-  if (session.role !== 'owner') {
+  const hasOwnerAccess = session.actualRole === 'owner';
+
+  if (!hasOwnerAccess) {
     return null;
   }
+
+  const isPreviewing = Boolean(session.previewRole);
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="secondary" className="gap-2">
-          Owner tools
+          {isPreviewing ? 'Member preview' : 'Owner tools'}
           <ChevronDown className="h-4 w-4 opacity-70" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-72">
         <DropdownMenuLabel className="text-xs uppercase tracking-wide text-muted-foreground">
           Owner workspace controls
+          {isPreviewing ? ' · preview mode' : ''}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         {OWNER_OPERATION_LINKS.map((item) => (
@@ -77,6 +83,8 @@ export default async function OwnerOperationsMenu() {
             </Link>
           </DropdownMenuItem>
         ))}
+        <DropdownMenuSeparator />
+        <RolePreviewMenuItem isPreviewing={isPreviewing} />
       </DropdownMenuContent>
     </DropdownMenu>
   );
