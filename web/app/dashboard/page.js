@@ -62,9 +62,14 @@ export default async function DashboardPage() {
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
             {isOwner ? (
-              <Button asChild>
-                <Link href="/dashboard/businesses/new">Create a business</Link>
-              </Button>
+              <div className="flex flex-wrap gap-3">
+                <Button asChild>
+                  <Link href="/dashboard/businesses/new">Create a business</Link>
+                </Button>
+                <Button asChild variant="outline">
+                  <Link href="/dashboard/member-journey">Start member journey</Link>
+                </Button>
+              </div>
             ) : (
               <p className="text-sm text-muted-foreground">
                 Reach out to an owner or admin so they can create and assign a business to you.

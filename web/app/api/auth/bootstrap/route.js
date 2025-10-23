@@ -57,6 +57,13 @@ export async function POST(request) {
           [userId, organizationId]
         );
 
+        await connection.query(
+          `INSERT INTO organization_trials (organization_id, trial_starts_at, trial_ends_at, status)
+             VALUES (?, NOW(), DATE_ADD(NOW(), INTERVAL 7 DAY), 'active')
+             ON DUPLICATE KEY UPDATE organization_id = organization_id`,
+          [organizationId]
+        );
+
         membership = { organizationId, role: 'owner' };
       }
 
