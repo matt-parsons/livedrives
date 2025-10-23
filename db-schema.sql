@@ -119,6 +119,22 @@ CREATE TABLE `organizations` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `organization_trials`
+--
+
+CREATE TABLE `organization_trials` (
+  `organization_id` bigint(20) UNSIGNED NOT NULL,
+  `trial_starts_at` datetime NOT NULL,
+  `trial_ends_at` datetime NOT NULL,
+  `status` enum('active','expired','cancelled') NOT NULL DEFAULT 'active',
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`organization_id`),
+  CONSTRAINT `organization_trials_org_fk` FOREIGN KEY (`organization_id`) REFERENCES `organizations` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `origin_zones`
 --
 
