@@ -10,6 +10,16 @@ const LOG_SCOPE_OPTIONS = [
   { id: 'all', label: 'All logs' }
 ];
 
+const SCHEDULE_SCOPE_OPTIONS = [
+  { id: 'today', label: "Today's sessions" },
+  { id: 'all', label: 'All sessions' }
+];
+
+const SCHEDULE_VIEW_OPTIONS = [
+  { id: 'grouped', label: 'Group by business' },
+  { id: 'list', label: 'List view' }
+];
+
 const TAB_OPTIONS = [
   { id: 'logs', label: 'Run logs' },
   { id: 'geosearch', label: 'GeoSearch log' },
@@ -48,6 +58,19 @@ function getDateKey(value, timezone) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return null;
   return new Intl.DateTimeFormat('en-CA', { timeZone: timezone }).format(date);
+}
+
+function getScheduleBusinessLabel(entry) {
+  if (!entry) return 'Unassigned business';
+  return (
+    entry.businessName ??
+    entry.companyId ??
+    entry.businessId ??
+    (entry.metadata && typeof entry.metadata === 'object'
+      ? entry.metadata.businessName ?? entry.metadata.business ?? null
+      : null) ??
+    'Unassigned business'
+  );
 }
 
 function getLogStatus(log) {
@@ -114,7 +137,10 @@ export default function OperationsConsole({ timezone: initialTimezone, initialTa
   const [scheduleLoading, setScheduleLoading] = useState(false);
   const [scheduleError, setScheduleError] = useState(null);
   const [scheduleData, setScheduleData] = useState({ timezone: fallbackTimezone, entries: [] });
+  const [scheduleScope, setScheduleScope] = useState('today');
+  const [scheduleView, setScheduleView] = useState('grouped');
   const [activeEventsLog, setActiveEventsLog] = useState(null);
+  const [activeScheduleGroup, setActiveScheduleGroup] = useState(null);
 
   const [geoRunsLoading, setGeoRunsLoading] = useState(false);
   const [geoRunsError, setGeoRunsError] = useState(null);
@@ -301,21 +327,62 @@ export default function OperationsConsole({ timezone: initialTimezone, initialTa
     }
   }, [activeTab, geoRunsInitialized, geoRunsLoading, loadGeoRuns]);
 
-  const scheduleEntries = useMemo(() => {
+  const allScheduleEntries = useMemo(() => {
     const entries = Array.isArray(scheduleData?.entries) ? scheduleData.entries : [];
-    const todayKey = getDateKey(new Date(), activeScheduleTimezone);
 
     return entries
-      .filter((entry) => {
-        const key = getDateKey(entry.runAt, activeScheduleTimezone);
-        return key === todayKey;
-      })
+      .filter((entry) => entry)
+      .map((entry) => ({ ...entry }))
       .sort((a, b) => {
         const aDate = new Date(a.runAt);
         const bDate = new Date(b.runAt);
+        if (Number.isNaN(aDate.getTime()) && Number.isNaN(bDate.getTime())) {
+          return 0;
+        }
+        if (Number.isNaN(aDate.getTime())) {
+          return 1;
+        }
+        if (Number.isNaN(bDate.getTime())) {
+          return -1;
+        }
         return aDate - bDate;
       });
-  }, [scheduleData, activeScheduleTimezone]);
+  }, [scheduleData]);
+
+  const scheduleEntries = useMemo(() => {
+    if (scheduleScope !== 'today') {
+      return allScheduleEntries;
+    }
+
+    const todayKey = getDateKey(new Date(), activeScheduleTimezone);
+    return allScheduleEntries.filter((entry) => getDateKey(entry.runAt, activeScheduleTimezone) === todayKey);
+  }, [allScheduleEntries, scheduleScope, activeScheduleTimezone]);
+
+  const scheduleGroups = useMemo(() => {
+    const map = new Map();
+
+    scheduleEntries.forEach((entry) => {
+      const key = entry.businessId ?? entry.companyId ?? getScheduleBusinessLabel(entry);
+      if (!map.has(key)) {
+        map.set(key, {
+          key,
+          businessName: getScheduleBusinessLabel(entry),
+          entries: []
+        });
+      }
+
+      map.get(key).entries.push(entry);
+    });
+
+    return Array.from(map.values())
+      .map((group) => ({
+        ...group,
+        entries: group.entries
+          .slice()
+          .sort((a, b) => new Date(a.runAt) - new Date(b.runAt))
+      }))
+      .sort((a, b) => a.businessName.localeCompare(b.businessName, 'en', { sensitivity: 'base' }));
+  }, [scheduleEntries]);
 
   const geoRuns = useMemo(() => {
     return Array.isArray(geoRunsData?.runs) ? geoRunsData.runs : [];
@@ -617,9 +684,47 @@ export default function OperationsConsole({ timezone: initialTimezone, initialTa
           <div className="logs-toolbar">
             <div className="logs-toolbar__meta">
               <span className="status-pill">
-                {scheduleLoading ? 'Loading…' : `${scheduleEntries.length} scheduled run${scheduleEntries.length === 1 ? '' : 's'}`}
+                {scheduleLoading
+                  ? 'Loading…'
+                  : `${scheduleEntries.length} scheduled session${scheduleEntries.length === 1 ? '' : 's'}`}
               </span>
               <span className="status-pill status-pill--muted">Timezone: {activeScheduleTimezone}</span>
+            </div>
+            <div className="logs-toolbar__actions">
+              <div className="log-scope-control" role="group" aria-label="Schedule scope">
+                {SCHEDULE_SCOPE_OPTIONS.map((option) => (
+                  <button
+                    key={option.id}
+                    type="button"
+                    className={
+                      option.id === scheduleScope
+                        ? 'segmented-button segmented-button--active'
+                        : 'segmented-button'
+                    }
+                    onClick={() => setScheduleScope(option.id)}
+                    disabled={scheduleLoading && option.id === scheduleScope}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+              <div className="log-scope-control" role="group" aria-label="Schedule view mode">
+                {SCHEDULE_VIEW_OPTIONS.map((option) => (
+                  <button
+                    key={option.id}
+                    type="button"
+                    className={
+                      option.id === scheduleView
+                        ? 'segmented-button segmented-button--active'
+                        : 'segmented-button'
+                    }
+                    onClick={() => setScheduleView(option.id)}
+                    disabled={scheduleLoading && option.id === scheduleView}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
@@ -630,52 +735,126 @@ export default function OperationsConsole({ timezone: initialTimezone, initialTa
             </div>
           ) : null}
 
-          <div className="table-scroll">
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th style={{ minWidth: 120 }}>Time</th>
-                  <th style={{ minWidth: 120 }}>Business</th>
-                  <th style={{ minWidth: 120 }}>Drive #</th>
-                  <th style={{ minWidth: 220 }}>Config</th>
-                  <th style={{ minWidth: 200 }}>Metadata</th>
-                </tr>
-              </thead>
-              <tbody>
-                {scheduleLoading && scheduleEntries.length === 0 ? (
+          {scheduleView === 'grouped' ? (
+            <div className="table-scroll">
+              <table className="data-table">
+                <thead>
                   <tr>
-                    <td colSpan={5} className="table-placeholder">
-                      Loading schedule…
-                    </td>
+                    <th style={{ minWidth: 200 }}>Business</th>
+                    <th style={{ minWidth: 120 }}>Sessions</th>
+                    <th style={{ minWidth: 160 }}>Next session</th>
+                    <th style={{ minWidth: 140 }} aria-label="Actions" />
                   </tr>
-                ) : null}
+                </thead>
+                <tbody>
+                  {scheduleLoading && scheduleGroups.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="table-placeholder">
+                        Loading schedule…
+                      </td>
+                    </tr>
+                  ) : null}
 
-                {!scheduleLoading && scheduleEntries.length === 0 ? (
+                  {!scheduleLoading && scheduleGroups.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="table-placeholder">
+                        {scheduleScope === 'all'
+                          ? 'No scheduled sessions were found in the log feed.'
+                          : 'No runs are scheduled for today.'}
+                      </td>
+                    </tr>
+                  ) : null}
+
+                  {scheduleGroups.map((group) => {
+                    const now = Date.now();
+                    const nextEntry = group.entries.find((entry) => {
+                      const timestamp = new Date(entry.runAt).getTime();
+                      return Number.isFinite(timestamp) && timestamp >= now;
+                    });
+                    const fallbackEntry = group.entries[0];
+                    const runForLabel = nextEntry ?? fallbackEntry;
+                    const nextRunLabel = runForLabel
+                      ? scheduleScope === 'today'
+                        ? formatTime(runForLabel.runAt, activeScheduleTimezone)
+                        : formatDateTime(runForLabel.runAt, activeScheduleTimezone)
+                      : '—';
+
+                    return (
+                      <tr key={group.key}>
+                        <td>{group.businessName}</td>
+                        <td>{group.entries.length}</td>
+                        <td>{nextRunLabel || '—'}</td>
+                        <td>
+                          <button
+                            type="button"
+                            className="log-events-button"
+                            onClick={() =>
+                              setActiveScheduleGroup({
+                                key: group.key,
+                                businessName: group.businessName,
+                                entries: group.entries
+                              })
+                            }
+                          >
+                            View schedule
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="table-scroll">
+              <table className="data-table">
+                <thead>
                   <tr>
-                    <td colSpan={5} className="table-placeholder">
-                      No runs are scheduled for today.
-                    </td>
+                    <th style={{ minWidth: 160 }}>Scheduled for</th>
+                    <th style={{ minWidth: 200 }}>Business</th>
+                    <th style={{ minWidth: 120 }}>Drive #</th>
+                    <th style={{ minWidth: 220 }}>Config</th>
+                    <th style={{ minWidth: 200 }}>Metadata</th>
                   </tr>
-                ) : null}
+                </thead>
+                <tbody>
+                  {scheduleLoading && scheduleEntries.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="table-placeholder">
+                        Loading schedule…
+                      </td>
+                    </tr>
+                  ) : null}
 
-                {scheduleEntries.map((entry, index) => (
-                  <tr key={`${entry.runAt ?? 'unknown'}-${index}`}>
-                    <td>{formatTime(entry.runAt, activeScheduleTimezone)}</td>
-                    <td>{entry.businessId ?? '—'}</td>
-                    <td>{entry.driveIndex != null ? entry.driveIndex : '—'}</td>
-                    <td>{entry.configPath ?? '—'}</td>
-                    <td>
-                      {entry.metadata ? (
-                        <code className="code-inline">{JSON.stringify(entry.metadata)}</code>
-                      ) : (
-                        <span className="muted">—</span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                  {!scheduleLoading && scheduleEntries.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="table-placeholder">
+                        {scheduleScope === 'all'
+                          ? 'No scheduled sessions were found in the log feed.'
+                          : 'No runs are scheduled for today.'}
+                      </td>
+                    </tr>
+                  ) : null}
+
+                  {scheduleEntries.map((entry, index) => (
+                    <tr key={`${entry.runAt ?? 'unknown'}-${index}`}>
+                      <td>{formatDateTime(entry.runAt, activeScheduleTimezone) || '—'}</td>
+                      <td>{getScheduleBusinessLabel(entry)}</td>
+                      <td>{entry.driveIndex != null ? entry.driveIndex : '—'}</td>
+                      <td>{entry.configPath ?? '—'}</td>
+                      <td>
+                        {entry.metadata ? (
+                          <code className="code-inline">{JSON.stringify(entry.metadata)}</code>
+                        ) : (
+                          <span className="muted">—</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
         </section>
       ) : null}
@@ -810,6 +989,69 @@ export default function OperationsConsole({ timezone: initialTimezone, initialTa
           <GeoGridLauncher showHeader={false} />
         </section>
       ) : null}
+
+      <Dialog
+        open={Boolean(activeScheduleGroup)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setActiveScheduleGroup(null);
+          }
+        }}
+      >
+        {activeScheduleGroup ? (
+          <DialogContent className="schedule-dialog__content">
+            <DialogHeader>
+              <DialogTitle>Scheduled sessions</DialogTitle>
+              <DialogDescription>
+                Showing {activeScheduleGroup.entries.length} scheduled session
+                {activeScheduleGroup.entries.length === 1 ? '' : 's'} for this business.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="schedule-dialog__meta">
+              <span>
+                <strong>Business:</strong> {activeScheduleGroup.businessName}
+              </span>
+              <span>
+                <strong>Timezone:</strong> {activeScheduleTimezone}
+              </span>
+            </div>
+
+            <div className="schedule-dialog__timeline" role="list">
+              {activeScheduleGroup.entries.map((entry, index) => {
+                const scheduledLabel = formatDateTime(entry.runAt, activeScheduleTimezone);
+                return (
+                  <div
+                    key={`${entry.runAt ?? 'unknown'}-${index}`}
+                    className="schedule-dialog__timeline-item"
+                    role="listitem"
+                  >
+                    <div className="schedule-dialog__timeline-time">
+                      {scheduledLabel || 'Unknown time'}
+                    </div>
+                    <div className="schedule-dialog__timeline-details">
+                      {entry.driveIndex != null ? (
+                        <span className="schedule-dialog__timeline-pill">Drive {entry.driveIndex}</span>
+                      ) : null}
+                      {entry.configPath ? (
+                        <span className="schedule-dialog__timeline-pill">{entry.configPath}</span>
+                      ) : null}
+                      {entry.source ? (
+                        <span className="schedule-dialog__timeline-pill">Source: {entry.source}</span>
+                      ) : null}
+                    </div>
+                    {entry.metadata ? (
+                      <div className="schedule-dialog__timeline-metadata">
+                        <code className="code-inline">{JSON.stringify(entry.metadata)}</code>
+                      </div>
+                    ) : null}
+                  </div>
+                );
+              })}
+            </div>
+          </DialogContent>
+        ) : null}
+      </Dialog>
 
       <Dialog
         open={Boolean(activeEventsLog)}
