@@ -32,12 +32,26 @@ async function readScheduleEntries(filePath) {
 
 function normalizeEntry(entry) {
   const runAt = entry.runAt || entry.run_at || entry.scheduled_for || null;
+  const businessId = entry.businessId ?? entry.business_id ?? null;
+  const companyId = entry.companyId ?? entry.company_id ?? null;
+  const businessName =
+    entry.businessName ??
+    entry.business_name ??
+    entry.companyName ??
+    entry.company_name ??
+    entry.company ??
+    entry.companyId ??
+    null;
+
   return {
     runAt,
-    businessId: entry.businessId ?? entry.companyId ?? null,
-    driveIndex: entry.driveIndex ?? null,
-    configPath: entry.configPath ?? null,
-    metadata: entry.metadata ?? null
+    businessId,
+    companyId,
+    businessName,
+    driveIndex: entry.driveIndex ?? entry.drive_index ?? null,
+    configPath: entry.configPath ?? entry.config_path ?? null,
+    metadata: entry.metadata ?? null,
+    source: entry.source ?? null
   };
 }
 
