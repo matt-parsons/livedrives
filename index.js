@@ -137,8 +137,14 @@ const normalizeIdentifier = (value) =>
       console.log('→ CTR Success. Start Your Engines.');
       console.log('');
 
+      let matchedPlaceId = null;
+      let matchedBySource = null;
+      let targetPlaceId = null;
+      let matchedBy = null;
+
+
       // if it was found as a branded search we don't need rankings
-      if(!brandedFound) {
+      if(!ctrResult?.brandedFound) {
         try {
           const serpHtml = ctrResult?.serpHtmlBeforeClick ?? '';
           serpPlaces = await parseLocalBusinesses(serpHtml);
@@ -195,14 +201,15 @@ const normalizeIdentifier = (value) =>
           serpReason = `parse_failed: ${err.message}`;
           note(`→ [SERP] Failed to parse captured HTML: ${err.message}`);
         }
-        const matchedPlaceId = serpMatched?.raw_place_id || serpMatched?.place_id || null;
-        const matchedBySource = serpMatched?.place_id_source || (serpMatched ? 'name_addr' : 'none');
-        const targetPlaceId = config.place_id || (matchedBySource === 'place_id' ? matchedPlaceId : null);
-        const matchedBy = config.place_id ? 'place_id' : matchedBySource;
+        matchedPlaceId = serpMatched?.raw_place_id || serpMatched?.place_id || null;
+        matchedBySource = serpMatched?.place_id_source || (serpMatched ? 'name_addr' : 'none');
+        targetPlaceId = config.place_id || (matchedBySource === 'place_id' ? matchedPlaceId : null);
+        matchedBy = config.place_id ? 'place_id' : matchedBySource;
       } else {
+        // branded result
         serpRank = 1;
-        const targetPlaceId = config.place_id;
-        const matchedBy = config.place_id;
+        targetPlaceId = config.place_id;
+        matchedBy = 'name_addr';
       }
 
 

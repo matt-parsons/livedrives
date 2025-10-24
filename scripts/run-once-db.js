@@ -1,9 +1,9 @@
 #!/usr/bin/env node
-
+// node run-once-db.js 3
 require('dotenv').config();
 const path = require('path');
 const { spawn } = require('child_process');
-const { fetchConfigByBusinessId } = require('./lib/db/configLoader');
+const { fetchConfigByBusinessId } = require('../lib/db/configLoader');
 
 async function main() {
   const input = process.argv[2] || process.env.BUSINESS_ID;
@@ -25,7 +25,7 @@ async function main() {
     process.exit(1);
   }
 
-  const indexScript = path.resolve(__dirname, 'index.js');
+  const indexScript = path.resolve(__dirname, '../index.js');
   const payload = JSON.stringify(config);
 
   console.log(`[run-once] Spawning index.js for business ${businessId}`);
