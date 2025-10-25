@@ -2,9 +2,8 @@ import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { AuthError, requireAuth } from '@/lib/authServer';
 import GeoGridRunsSection from './GeoGridRunsSection';
-import OriginZonesManager from './OriginZonesManager';
 import KeywordPerformanceSpotlight from './KeywordPerformanceSpotlight';
-import BusinessOptimizationRoadmap from './BusinessOptimizationRoadmap';
+import BusinessNavigation from './BusinessNavigation';
 import BusinessSwitcher from './BusinessSwitcher';
 import {
   formatDate,
@@ -18,8 +17,6 @@ import {
   loadCtrKeywordOverview,
   loadOrganizationBusinesses
 } from './helpers';
-import { buildOptimizationRoadmap } from './optimization';
-import { fetchPlaceDetails } from '@/lib/googlePlaces';
 import { buildMapPoints, resolveCenter } from './runs/formatters';
 
 function resolveMapsApiKey() {
@@ -114,18 +111,6 @@ export default async function BusinessDashboardPage({ params, searchParams }) {
 
   if (!business) {
     notFound();
-  }
-
-  let optimizationRoadmap = null;
-  let optimizationError = null;
-
-  if (business.gPlaceId) {
-    try {
-      const { place } = await fetchPlaceDetails(business.gPlaceId);
-      optimizationRoadmap = buildOptimizationRoadmap(place);
-    } catch (error) {
-      optimizationError = error?.message ?? 'Failed to load Google Places details.';
-    }
   }
 
   const originZones = await loadOriginZones(business.id);
@@ -419,6 +404,7 @@ export default async function BusinessDashboardPage({ params, searchParams }) {
   const businessStatus = business.isActive ? { key: 'active', label: 'Active' } : { key: 'inactive', label: 'Inactive' };
   const businessName = business.businessName || 'Business Dashboard';
   const currentBusinessOptionValue = business.businessSlug ?? String(business.id);
+  const navigationIdentifier = business.businessSlug ?? String(business.id);
   const destination = business.destinationAddress
     ? `${business.destinationAddress}${business.destinationZip ? `, ${business.destinationZip}` : ''}`
     : null;
@@ -563,10 +549,6 @@ export default async function BusinessDashboardPage({ params, searchParams }) {
       delta: item.solvDelta
     }
   }));
-  const originSectionCaption = originZones.length === 0
-    ? 'Define origin zones to balance coverage and routing priorities.'
-    : 'Targeted pickup regions shaping this business’s live operations.';
-
   const showBusinessSwitcher = isOwner && ownerBusinessOptions.length > 0;
 
   return (
@@ -585,30 +567,10 @@ export default async function BusinessDashboardPage({ params, searchParams }) {
         </p>
       </section>
 
-      <section className="section">
-        <div className="surface-card surface-card--muted surface-card--compact">
-          <div className="section-header">
-            <h2 className="section-title">Profile Performance</h2>
-            <p className="section-caption">Latest visibilty for your business over the past 30 days.</p>
-          </div>
-
-          {keywordPerformanceItems.length ? (
-            <KeywordPerformanceSpotlight items={keywordPerformanceItems} mapsApiKey={mapsApiKey} />
-          ) : (
-            <p style={{ marginTop: '1rem', color: '#6b7280' }}>
-              Not enough geo grid runs in the last 30 days to chart keyword movement.
-            </p>
-          )}
-        </div>
-      </section>
+      <BusinessNavigation businessIdentifier={navigationIdentifier} active="dashboard" />
 
       <section className="section">
-        <BusinessOptimizationRoadmap
-          roadmap={optimizationRoadmap}
-          error={optimizationError}
-          placeId={business.gPlaceId}
-          editHref={editHref}
-        />
+        <KeywordPerformanceSpotlight items={keywordPerformanceItems} mapsApiKey={mapsApiKey} />
       </section>
 
       {isOwner ? (
@@ -797,16 +759,6 @@ export default async function BusinessDashboardPage({ params, searchParams }) {
               </div>
             ) : null}
           </div>
-        </section>
-      ) : null}
-
-      {isOwner ? (
-        <section className="section">
-          <OriginZonesManager
-            businessId={business.id}
-            initialZones={originZones}
-            caption={originSectionCaption}
-          />
         </section>
       ) : null}
 
