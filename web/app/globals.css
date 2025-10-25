@@ -518,6 +518,41 @@ textarea {
   flex-wrap: wrap;
 }
 
+.page-subnav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.5rem auto 1.25rem;
+  width: min(1240px, 100%);
+}
+
+.page-subnav__item {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.45rem 0.85rem;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background-color: rgba(255, 255, 255, 0.92);
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #4b5563;
+  transition: background-color 160ms ease, color 160ms ease, border-color 160ms ease;
+}
+
+.page-subnav__item:hover,
+.page-subnav__item:focus-visible {
+  color: var(--color-primary);
+  border-color: rgba(254, 136, 51, 0.5);
+}
+
+.page-subnav__item--active {
+  background-color: #111827;
+  color: #ffffff;
+  border-color: #111827;
+}
+
 .back-link {
   display: inline-flex;
   align-items: center;
