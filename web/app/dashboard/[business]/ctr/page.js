@@ -201,12 +201,23 @@ export default async function CtrDashboardPage({ params, searchParams }) {
       finishedAt: row.finishedAt ?? null
     }));
 
-    const stats = runPointsRaw.reduce((acc, snap) => {
+    const rankedSnapshots = runPointsRaw.filter((snap) => {
       const rankValue = snap.matchedPosition === null || snap.matchedPosition === undefined
-        ? null
-        : Number(snap.matchedPosition);
+        ? snap.rankPosition
+        : snap.matchedPosition;
 
-      if (rankValue !== null && Number.isFinite(rankValue) && rankValue > 0) {
+      if (rankValue === null || rankValue === undefined) {
+        return false;
+      }
+
+      const numericRank = Number(rankValue);
+      return Number.isFinite(numericRank) && numericRank > 0;
+    });
+
+    const stats = rankedSnapshots.reduce((acc, snap) => {
+      const rankValue = Number(snap.matchedPosition ?? snap.rankPosition);
+
+      if (Number.isFinite(rankValue)) {
         acc.ranked += 1;
         if (rankValue <= 3) {
           acc.top3 += 1;
@@ -223,7 +234,7 @@ export default async function CtrDashboardPage({ params, searchParams }) {
     const avgPosition = avgPositionValue === null ? null : formatDecimal(avgPositionValue, 2);
     const solvValue = rankedCount > 0 ? (top3Count * 100) / rankedCount : null;
     const solvTop3 = solvValue === null ? null : formatDecimal(solvValue, 1);
-    const points = dedupePoints(runPointsRaw);
+    const points = dedupePoints(rankedSnapshots);
     const runCenter = computeCenter(points);
     const runDateValue = row.runDate ? new Date(row.runDate) : null;
     const runDateKey = runDateValue ? runDateValue.toISOString().slice(0, 10) : null;
@@ -250,7 +261,9 @@ export default async function CtrDashboardPage({ params, searchParams }) {
       center: runCenter
     });
 
-    if (runDateKey) {
+    const hasRankedPoints = rankedSnapshots.length > 0;
+
+    if (runDateKey && hasRankedPoints) {
       const dailyMetrics = entry.daily.get(runDateKey) ?? {
         avgSum: 0,
         avgCount: 0,
