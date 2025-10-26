@@ -555,44 +555,49 @@ export default async function BusinessDashboardPage({ params, searchParams }) {
 
   return (
     <div className="dashboard-shell">
-      <aside className="dashboard-shell__sidebar" aria-label="Workspace navigation">
-        <div className="dashboard-sidebar__brand">
-          <div className="dashboard-sidebar__badge" aria-hidden="true">
-            {sidebarInitial}
-          </div>
-          <div className="dashboard-sidebar__info">
-            <span className="dashboard-sidebar__name">{businessName}</span>
-            {locationLabel ? (
-              <span className="dashboard-sidebar__location">{locationLabel}</span>
+      <div className="dashboard-shell__header">
+        <div className="dashboard-shell__header-inner">
+          <header className="dashboard-header">
+            {showBusinessSwitcher ? (
+              <div className="dashboard-header__menu" aria-label="Select business">
+                <BusinessSwitcher businesses={ownerBusinessOptions} currentValue={currentBusinessOptionValue} />
+              </div>
             ) : null}
-          </div>
-        </div>
-        <div className="dashboard-sidebar__nav">
-          <BusinessNavigation businessIdentifier={navigationIdentifier} active="dashboard" />
-        </div>
-      </aside>
 
-      <div className="dashboard-shell__main">
-        <header className="dashboard-header">
-          {showBusinessSwitcher ? (
-            <div className="dashboard-header__menu" aria-label="Select business">
-              <BusinessSwitcher businesses={ownerBusinessOptions} currentValue={currentBusinessOptionValue} />
+            <div className="dashboard-header__content">
+              <h1 className="page-title">{businessName}</h1>
+              <p className="page-subtitle">
+                Operational intelligence for this business. Review configured zones, geo grid performance, and CTR
+                activity in one focused view.
+              </p>
             </div>
-          ) : null}
+          </header>
+        </div>
+      </div>
 
-          <div className="dashboard-header__content">
-            <h1 className="page-title">{businessName}</h1>
-            <p className="page-subtitle">
-              Operational intelligence for this business. Review configured zones, geo grid performance, and CTR
-              activity in one focused view.
-            </p>
+      <div className="dashboard-shell__layout">
+        <aside className="dashboard-shell__sidebar" aria-label="Workspace navigation">
+          <div className="dashboard-sidebar__brand">
+            <div className="dashboard-sidebar__badge" aria-hidden="true">
+              {sidebarInitial}
+            </div>
+            <div className="dashboard-sidebar__info">
+              <span className="dashboard-sidebar__name">{businessName}</span>
+              {locationLabel ? (
+                <span className="dashboard-sidebar__location">{locationLabel}</span>
+              ) : null}
+            </div>
           </div>
-        </header>
+          <div className="dashboard-sidebar__nav">
+            <BusinessNavigation businessIdentifier={navigationIdentifier} active="dashboard" />
+          </div>
+        </aside>
 
-        <div className="dashboard-shell__content">
-          <section className="section">
-            <KeywordPerformanceSpotlight items={keywordPerformanceItems} mapsApiKey={mapsApiKey} />
-          </section>
+        <main className="dashboard-shell__main">
+          <div className="dashboard-shell__content">
+            <section className="section">
+              <KeywordPerformanceSpotlight items={keywordPerformanceItems} mapsApiKey={mapsApiKey} />
+            </section>
 
           {isOwner ? (
             <section className="section">
@@ -782,7 +787,8 @@ export default async function BusinessDashboardPage({ params, searchParams }) {
               </div>
             </section>
           ) : null}
-        </div>
+          </div>
+        </main>
       </div>
     </div>
   );
