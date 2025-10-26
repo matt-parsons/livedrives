@@ -70,25 +70,31 @@ export default async function BusinessKeywordsPage({ params }) {
         </p>
       </section>
 
-      <BusinessNavigation businessIdentifier={businessIdentifier} active="keywords" />
+      <div className="page-shell__body">
+        <aside className="page-shell__sidebar">
+          <BusinessNavigation businessIdentifier={businessIdentifier} active="keywords" />
+        </aside>
 
-      {isOwner ? (
-        <section className="section">
-          <OriginZonesManager
-            businessId={business.id}
-            initialZones={originZones}
-            caption={originSectionCaption}
-          />
-        </section>
-      ) : (
-        <section className="section">
-          <div className="surface-card surface-card--muted surface-card--compact">
-            <p style={{ margin: 0, color: '#6b7280' }}>
-              Origin zone management is limited to workspace owners. Reach out to an owner if you need adjustments.
-            </p>
-          </div>
-        </section>
-      )}
+        <div className="page-shell__content">
+          {isOwner ? (
+            <section className="section">
+              <OriginZonesManager
+                businessId={business.id}
+                initialZones={originZones}
+                caption={originSectionCaption}
+              />
+            </section>
+          ) : (
+            <section className="section">
+              <div className="surface-card surface-card--muted surface-card--compact">
+                <p style={{ margin: 0, color: '#6b7280' }}>
+                  Origin zone management is limited to workspace owners. Reach out to an owner if you need adjustments.
+                </p>
+              </div>
+            </section>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

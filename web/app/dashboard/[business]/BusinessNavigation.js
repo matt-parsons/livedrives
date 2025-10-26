@@ -20,24 +20,26 @@ export default function BusinessNavigation({ businessIdentifier, active = 'dashb
 
   return (
     <nav className="page-subnav" aria-label="Business sections">
-      {NAV_ITEMS.map((item) => {
-        const href = item.buildHref(baseHref);
-        const isActive = item.id === active;
+      <ul className="page-subnav__list">
+        {NAV_ITEMS.map((item) => {
+          const href = item.buildHref(baseHref);
+          const isActive = item.id === active;
 
-        if (isActive) {
           return (
-            <strong key={item.id} aria-current="page" className="page-subnav__item page-subnav__item--active">
-              {item.label}
-            </strong>
+            <li key={item.id} className="page-subnav__list-item">
+              {isActive ? (
+                <span aria-current="page" className="page-subnav__item page-subnav__item--active">
+                  {item.label}
+                </span>
+              ) : (
+                <Link href={href} className="page-subnav__item">
+                  {item.label}
+                </Link>
+              )}
+            </li>
           );
-        }
-
-        return (
-          <Link key={item.id} href={href} className="page-subnav__item">
-            {item.label}
-          </Link>
-        );
-      })}
+        })}
+      </ul>
     </nav>
   );
 }

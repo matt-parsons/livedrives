@@ -82,16 +82,22 @@ export default async function BusinessOptimizationStepsPage({ params }) {
         </p>
       </section>
 
-      <BusinessNavigation businessIdentifier={businessIdentifier} active="optimization-steps" />
+      <div className="page-shell__body">
+        <aside className="page-shell__sidebar">
+          <BusinessNavigation businessIdentifier={businessIdentifier} active="optimization-steps" />
+        </aside>
 
-      <section className="section">
-        <BusinessOptimizationRoadmap
-          roadmap={optimizationRoadmap}
-          error={optimizationError}
-          placeId={business.gPlaceId}
-          editHref={editHref}
-        />
-      </section>
+        <div className="page-shell__content">
+          <section className="section">
+            <BusinessOptimizationRoadmap
+              roadmap={optimizationRoadmap}
+              error={optimizationError}
+              placeId={business.gPlaceId}
+              editHref={editHref}
+            />
+          </section>
+        </div>
+      </div>
     </div>
   );
 }
