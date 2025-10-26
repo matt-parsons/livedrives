@@ -2,9 +2,8 @@ import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { AuthError, requireAuth } from '@/lib/authServer';
 import GeoGridRunsSection from './GeoGridRunsSection';
-import OriginZonesManager from './OriginZonesManager';
 import KeywordPerformanceSpotlight from './KeywordPerformanceSpotlight';
-import BusinessOptimizationRoadmap from './BusinessOptimizationRoadmap';
+import BusinessNavigation from './BusinessNavigation';
 import BusinessSwitcher from './BusinessSwitcher';
 import {
   formatDate,
@@ -18,8 +17,6 @@ import {
   loadCtrKeywordOverview,
   loadOrganizationBusinesses
 } from './helpers';
-import { buildOptimizationRoadmap } from './optimization';
-import { fetchPlaceDetails } from '@/lib/googlePlaces';
 import { buildMapPoints, resolveCenter } from './runs/formatters';
 
 function resolveMapsApiKey() {
@@ -114,18 +111,6 @@ export default async function BusinessDashboardPage({ params, searchParams }) {
 
   if (!business) {
     notFound();
-  }
-
-  let optimizationRoadmap = null;
-  let optimizationError = null;
-
-  if (business.gPlaceId) {
-    try {
-      const { place } = await fetchPlaceDetails(business.gPlaceId);
-      optimizationRoadmap = buildOptimizationRoadmap(place);
-    } catch (error) {
-      optimizationError = error?.message ?? 'Failed to load Google Places details.';
-    }
   }
 
   const originZones = await loadOriginZones(business.id);
@@ -419,6 +404,7 @@ export default async function BusinessDashboardPage({ params, searchParams }) {
   const businessStatus = business.isActive ? { key: 'active', label: 'Active' } : { key: 'inactive', label: 'Inactive' };
   const businessName = business.businessName || 'Business Dashboard';
   const currentBusinessOptionValue = business.businessSlug ?? String(business.id);
+  const navigationIdentifier = business.businessSlug ?? String(business.id);
   const destination = business.destinationAddress
     ? `${business.destinationAddress}${business.destinationZip ? `, ${business.destinationZip}` : ''}`
     : null;
@@ -563,10 +549,6 @@ export default async function BusinessDashboardPage({ params, searchParams }) {
       delta: item.solvDelta
     }
   }));
-  const originSectionCaption = originZones.length === 0
-    ? 'Define origin zones to balance coverage and routing priorities.'
-    : 'Targeted pickup regions shaping this business’s live operations.';
-
   const showBusinessSwitcher = isOwner && ownerBusinessOptions.length > 0;
 
   return (
@@ -585,231 +567,206 @@ export default async function BusinessDashboardPage({ params, searchParams }) {
         </p>
       </section>
 
-      <section className="section">
-        <div className="surface-card surface-card--muted surface-card--compact">
-          <div className="section-header">
-            <h2 className="section-title">Profile Performance</h2>
-            <p className="section-caption">Latest visibilty for your business over the past 30 days.</p>
-          </div>
+      <div className="page-shell__body">
+        <aside className="page-shell__sidebar">
+          <BusinessNavigation businessIdentifier={navigationIdentifier} active="dashboard" />
+        </aside>
 
-          {keywordPerformanceItems.length ? (
+        <div className="page-shell__content">
+          <section className="section">
             <KeywordPerformanceSpotlight items={keywordPerformanceItems} mapsApiKey={mapsApiKey} />
-          ) : (
-            <p style={{ marginTop: '1rem', color: '#6b7280' }}>
-              Not enough geo grid runs in the last 30 days to chart keyword movement.
-            </p>
-          )}
-        </div>
-      </section>
+          </section>
 
-      <section className="section">
-        <BusinessOptimizationRoadmap
-          roadmap={optimizationRoadmap}
-          error={optimizationError}
-          placeId={business.gPlaceId}
-          editHref={editHref}
-        />
-      </section>
+          {isOwner ? (
+            <section className="section">
+              <div className="surface-card surface-card--muted surface-card--compact">
+                <div className="section-header">
+                  <h2 className="section-title">CTR sessions</h2>
+                  <p className="section-caption">Analyze click-through behaviors alongside geo performance.</p>
+                </div>
 
-      {isOwner ? (
-        <section className="section">
-          <div className="surface-card surface-card--muted surface-card--compact">
-            <div className="section-header">
-              <h2 className="section-title">CTR sessions</h2>
-              <p className="section-caption">Analyze click-through behaviors alongside geo performance.</p>
-            </div>
-
-            {ctrOverviewRows.length ? (
-              <div
-                className="ctr-overview-list"
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '0.75rem',
-                  marginTop: '1rem',
-                  marginBottom: '1rem'
-                }}
-              >
-                {ctrOverviewRows.map((item) => (
+                {ctrOverviewRows.length ? (
                   <div
-                    key={item.keyword}
+                    className="ctr-overview-list"
                     style={{
                       display: 'flex',
-                      flexWrap: 'wrap',
-                      alignItems: 'center',
-                      gap: '1rem',
-                      border: '1px solid rgba(17, 24, 39, 0.08)',
-                      borderRadius: '12px',
-                      padding: '0.85rem 1.1rem',
-                      backgroundColor: '#ffffff'
+                      flexDirection: 'column',
+                      gap: '0.75rem',
+                      marginTop: '1rem',
+                      marginBottom: '1rem'
                     }}
                   >
-                    <div style={{ flex: '1 1 200px' }}>
-                      <strong style={{ fontSize: '1rem' }}>{item.keyword}</strong>
-                      <div style={{ color: '#6b7280', fontSize: '0.85rem', marginTop: '0.2rem' }}>
-                        {item.sessions} session{item.sessions === 1 ? '' : 's'} (30 days)
-                      </div>
-                    </div>
+                    {ctrOverviewRows.map((item) => (
+                      <div
+                        key={item.keyword}
+                        style={{
+                          display: 'flex',
+                          flexWrap: 'wrap',
+                          alignItems: 'center',
+                          gap: '1rem',
+                          border: '1px solid rgba(17, 24, 39, 0.08)',
+                          borderRadius: '12px',
+                          padding: '0.85rem 1.1rem',
+                          backgroundColor: '#ffffff'
+                        }}
+                      >
+                        <div style={{ flex: '1 1 200px' }}>
+                          <strong style={{ fontSize: '1rem' }}>{item.keyword}</strong>
+                          <div style={{ color: '#6b7280', fontSize: '0.85rem', marginTop: '0.2rem' }}>
+                            {item.sessions} session{item.sessions === 1 ? '' : 's'} (30 days)
+                          </div>
+                        </div>
 
-                    <div
+                        <div
+                          style={{
+                            display: 'flex',
+                            flexWrap: 'wrap',
+                            gap: '1.25rem',
+                            flex: '1 1 240px'
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                            <span style={{ color: '#374151', fontSize: '0.9rem' }}>
+                              Avg position{' '}
+                              <strong style={{ fontSize: '1rem' }}>
+                                {item.avgLabel}
+                              </strong>
+                            </span>
+                            <span
+                              style={{
+                                ...item.avgPillStyle,
+                                padding: '0.3rem 0.75rem',
+                                borderRadius: '999px',
+                                fontSize: '0.8rem',
+                                fontWeight: 600
+                              }}
+                            >
+                              {item.avgTrendLabel}
+                              {item.avgDeltaLabel ? (
+                                <span style={{ fontWeight: 500, opacity: 0.8 }}>
+                                  {' '}({item.avgDeltaLabel})
+                                </span>
+                              ) : null}
+                            </span>
+                          </div>
+
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                            <span style={{ color: '#374151', fontSize: '0.9rem' }}>
+                              SoLV (Top 3){' '}
+                              <strong style={{ fontSize: '1rem' }}>
+                                {item.solvLabel}
+                              </strong>
+                            </span>
+                            <span
+                              style={{
+                                ...item.solvPillStyle,
+                                padding: '0.3rem 0.75rem',
+                                borderRadius: '999px',
+                                fontSize: '0.8rem',
+                                fontWeight: 600
+                              }}
+                            >
+                              {item.solvTrendLabel}
+                              {item.solvDeltaLabel ? (
+                                <span style={{ fontWeight: 500, opacity: 0.8 }}>
+                                  {' '}({item.solvDeltaLabel})
+                                </span>
+                              ) : null}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p style={{ marginTop: '1rem', color: '#6b7280' }}>
+                    No CTR sessions recorded in the last 30 days.
+                  </p>
+                )}
+
+                <Link className="cta-link" href={ctrHref}>
+                  Open CTR dashboard ↗
+                </Link>
+              </div>
+            </section>
+          ) : null}
+
+          <section className="section">
+            <GeoGridRunsSection
+              caption={geoSectionCaption}
+              defaultView={viewMode}
+              trendItems={geoGridTrendList}
+              runItems={geoGridRunsList}
+            />
+          </section>
+
+          {isOwner ? (
+            <section className="section">
+              <div className="surface-card surface-card--muted">
+                <div className="section-header">
+                  <div>
+                    <h2 className="section-title">Business overview</h2>
+                    <p className="section-caption">Current state and identifiers powering live operations.</p>
+                  </div>
+                  <Link className="cta-link" href={editHref}>
+                    Edit business
+                  </Link>
+                </div>
+
+                {businessOverviewItems.length ? (
+                  <div style={{ marginTop: '0.5rem', overflowX: 'auto' }}>
+                    <table
                       style={{
-                        display: 'flex',
-                        flexWrap: 'wrap',
-                        gap: '1.25rem',
-                        flex: '1 1 240px'
+                        width: '100%',
+                        minWidth: '640px',
+                        borderCollapse: 'separate',
+                        borderSpacing: '0 0.25rem',
+                        fontSize: '0.9rem',
+                        lineHeight: 1.4,
+                        textAlign: 'center',
+                        whiteSpace: 'nowrap'
                       }}
                     >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                        <span style={{ color: '#374151', fontSize: '0.9rem' }}>
-                          Avg position{' '}
-                          <strong style={{ fontSize: '1rem' }}>
-                            {item.avgLabel}
-                          </strong>
-                        </span>
-                        <span
-                          style={{
-                            ...item.avgPillStyle,
-                            padding: '0.3rem 0.75rem',
-                            borderRadius: '999px',
-                            fontSize: '0.8rem',
-                            fontWeight: 600
-                          }}
-                        >
-                          {item.avgTrendLabel}
-                          {item.avgDeltaLabel ? (
-                            <span style={{ fontWeight: 500, opacity: 0.8 }}>
-                              {' '}({item.avgDeltaLabel})
-                            </span>
-                          ) : null}
-                        </span>
-                      </div>
-
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                        <span style={{ color: '#374151', fontSize: '0.9rem' }}>
-                          SoLV (Top 3){' '}
-                          <strong style={{ fontSize: '1rem' }}>
-                            {item.solvLabel}
-                          </strong>
-                        </span>
-                        <span
-                          style={{
-                            ...item.solvPillStyle,
-                            padding: '0.3rem 0.75rem',
-                            borderRadius: '999px',
-                            fontSize: '0.8rem',
-                            fontWeight: 600
-                          }}
-                        >
-                          {item.solvTrendLabel}
-                          {item.solvDeltaLabel ? (
-                            <span style={{ fontWeight: 500, opacity: 0.8 }}>
-                              {' '}({item.solvDeltaLabel})
-                            </span>
-                          ) : null}
-                        </span>
-                      </div>
-                    </div>
+                      <thead>
+                        <tr>
+                          {businessOverviewItems.map((item) => (
+                            <th
+                              key={`${item.key}-header`}
+                              style={{
+                                padding: '0.35rem 0.5rem',
+                                color: '#6b7280',
+                                fontWeight: 600
+                              }}
+                              scope="col"
+                            >
+                              {item.label}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          {businessOverviewItems.map((item) => (
+                            <td key={`${item.key}-value`} style={{ padding: '0.35rem 0.5rem', color: '#111827' }}>
+                              {item.status ? (
+                                <span className="status-pill" data-status={item.status}>
+                                  {item.value}
+                                </span>
+                              ) : (
+                                item.value
+                              )}
+                            </td>
+                          ))}
+                        </tr>
+                      </tbody>
+                    </table>
                   </div>
-                ))}
+                ) : null}
               </div>
-            ) : (
-              <p style={{ marginTop: '1rem', color: '#6b7280' }}>
-                No CTR sessions recorded in the last 30 days.
-              </p>
-            )}
-
-            <Link className="cta-link" href={ctrHref}>
-              Open CTR dashboard ↗
-            </Link>
-          </div>
-        </section>
-      ) : null}
-
-      <section className="section">
-        <GeoGridRunsSection
-          caption={geoSectionCaption}
-          defaultView={viewMode}
-          trendItems={geoGridTrendList}
-          runItems={geoGridRunsList}
-        />
-      </section>
-
-      {isOwner ? (
-        <section className="section">
-          <div className="surface-card surface-card--muted">
-            <div className="section-header">
-              <div>
-                <h2 className="section-title">Business overview</h2>
-                <p className="section-caption">Current state and identifiers powering live operations.</p>
-              </div>
-              <Link className="cta-link" href={editHref}>
-                Edit business
-              </Link>
-            </div>
-
-            {businessOverviewItems.length ? (
-              <div style={{ marginTop: '0.5rem', overflowX: 'auto' }}>
-                <table
-                  style={{
-                    width: '100%',
-                    minWidth: '640px',
-                    borderCollapse: 'separate',
-                    borderSpacing: '0 0.25rem',
-                    fontSize: '0.9rem',
-                    lineHeight: 1.4,
-                    textAlign: 'center',
-                    whiteSpace: 'nowrap'
-                  }}
-                >
-                  <thead>
-                    <tr>
-                      {businessOverviewItems.map((item) => (
-                        <th
-                          key={`${item.key}-header`}
-                          style={{
-                            padding: '0.35rem 0.5rem',
-                            color: '#6b7280',
-                            fontWeight: 600
-                          }}
-                          scope="col"
-                        >
-                          {item.label}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      {businessOverviewItems.map((item) => (
-                        <td key={`${item.key}-value`} style={{ padding: '0.35rem 0.5rem', color: '#111827' }}>
-                          {item.status ? (
-                            <span className="status-pill" data-status={item.status}>
-                              {item.value}
-                            </span>
-                          ) : (
-                            item.value
-                          )}
-                        </td>
-                      ))}
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            ) : null}
-          </div>
-        </section>
-      ) : null}
-
-      {isOwner ? (
-        <section className="section">
-          <OriginZonesManager
-            businessId={business.id}
-            initialZones={originZones}
-            caption={originSectionCaption}
-          />
-        </section>
-      ) : null}
-
+            </section>
+          ) : null}
+        </div>
+      </div>
     </div>
   );
 }

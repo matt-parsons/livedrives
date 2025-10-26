@@ -210,6 +210,26 @@ textarea {
   gap: clamp(24px, 3vw, 40px);
 }
 
+.page-shell__body {
+  display: flex;
+  align-items: flex-start;
+  gap: clamp(20px, 3vw, 48px);
+}
+
+.page-shell__sidebar {
+  flex: 0 0 clamp(220px, 22vw, 260px);
+  position: sticky;
+  top: clamp(88px, 12vh, 120px);
+  align-self: flex-start;
+}
+
+.page-shell__content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(24px, 3vw, 40px);
+}
+
 .page-header {
   display: flex;
   flex-direction: column;
@@ -516,6 +536,78 @@ textarea {
   justify-content: space-between;
   gap: 16px;
   flex-wrap: wrap;
+}
+
+.page-subnav {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.page-subnav__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.page-subnav__list-item {
+  margin: 0;
+  padding: 0;
+}
+
+.page-subnav__item {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.6rem;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border-radius: 16px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: rgba(255, 255, 255, 0.9);
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: #1f2937;
+  transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+}
+
+.page-subnav__item:hover,
+.page-subnav__item:focus-visible {
+  transform: translateX(4px);
+  border-color: rgba(17, 24, 39, 0.28);
+  box-shadow: 0 14px 28px rgba(17, 24, 39, 0.08);
+}
+
+.page-subnav__item--active {
+  background-color: #111827;
+  color: #ffffff;
+  border-color: #111827;
+  box-shadow: 0 18px 34px rgba(17, 24, 39, 0.18);
+  cursor: default;
+  pointer-events: none;
+}
+
+@media (max-width: 960px) {
+  .page-shell__body {
+    flex-direction: column;
+  }
+
+  .page-shell__sidebar {
+    position: static;
+    width: 100%;
+  }
+
+  .page-subnav {
+    flex-direction: column;
+  }
+
+  .page-subnav__item:hover,
+  .page-subnav__item:focus-visible {
+    transform: none;
+  }
 }
 
 .back-link {
