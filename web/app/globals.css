@@ -125,7 +125,6 @@ textarea {
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
-  gap: clamp(24px, 4vw, 48px);
   padding-bottom: clamp(24px, 3vw, 56px);
 }
 
@@ -218,6 +217,7 @@ textarea {
 
 .dashboard-layout {
   min-height: 100vh;
+  width: 100%;
   background: #f8fafc;
   display: flex;
   flex-direction: column;
@@ -230,9 +230,9 @@ textarea {
 }
 
 .dashboard-layout__header-container {
-  width: min(1280px, 100%);
+  width: 100%;
   margin: 0 auto;
-  padding: clamp(18px, 3vw, 28px) clamp(20px, 4vw, 48px);
+  padding: 5px 20px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -251,10 +251,10 @@ textarea {
   width: clamp(240px, 24vw, 280px);
   background: #ffffff;
   border-right: 1px solid rgba(148, 163, 184, 0.22);
-  padding: clamp(24px, 3vw, 32px);
+  padding: 0;
   display: flex;
   flex-direction: column;
-  gap: clamp(24px, 3vw, 32px);
+  gap: 0;
 }
 
 .dashboard-sidebar__summary {
@@ -296,15 +296,14 @@ textarea {
 
 .dashboard-sidebar__menu {
   padding: 20px;
-  border-radius: 20px;
+  border-radius: 0;
   border: 1px solid rgba(148, 163, 184, 0.18);
   background: #ffffff;
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
 }
 
 .dashboard-layout__main {
   flex: 1;
-  padding: clamp(28px, 4vw, 48px);
+  padding: 0;
   display: flex;
   justify-content: center;
   overflow-x: hidden;
@@ -327,7 +326,6 @@ textarea {
 .dashboard-header__content {
   display: flex;
   flex-direction: column;
-  gap: 8px;
 }
 
 .dashboard-header__actions {
@@ -358,7 +356,7 @@ textarea {
 
 .page-title {
   margin: 0;
-  font-size: clamp(2rem, 4vw, 2.8rem);
+  font-size: 16px;
   font-weight: 700;
   color: var(--color-heading);
 }
@@ -707,7 +705,6 @@ textarea {
   color: #ffffff;
   cursor: default;
   pointer-events: none;
-  box-shadow: 0 16px 32px rgba(30, 64, 175, 0.28);
 }
 
 @media (max-width: 960px) {
@@ -786,8 +783,7 @@ textarea {
 .business-switcher {
   display: inline-flex;
   align-items: center;
-  gap: 12px;
-  padding: 10px 18px;
+  padding: 0px 10px;
   border-radius: 999px;
   background: rgba(109, 142, 160, 0.12);
   border: 1px solid rgba(109, 142, 160, 0.22);

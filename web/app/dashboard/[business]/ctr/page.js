@@ -5,8 +5,11 @@ import {
   formatDate,
   formatDecimal,
   loadBusiness,
-  loadCtrRunsWithSnapshots
+  loadCtrRunsWithSnapshots,
+  loadOrganizationBusinesses
 } from '../helpers';
+import BusinessNavigation from '../BusinessNavigation';
+import BusinessSwitcher from '../BusinessSwitcher';
 import CtrMap from './CtrMap';
 import TrendChart from './TrendChart';
 import SessionList from './SessionList';
@@ -327,55 +330,111 @@ export default async function CtrDashboardPage({ params, searchParams }) {
   const rangeLabel = formatRangeLabel(windowStart, windowEnd);
   const prevHref = `${baseHref}?offset=${offset + 1}`;
   const nextHref = offset > 0 ? `${baseHref}?offset=${offset - 1}` : null;
+  const organizationBusinesses = await loadOrganizationBusinesses(session.organizationId);
+
+  const businessOptions = organizationBusinesses.map((entry) => ({
+    id: entry.id,
+    value: entry.businessSlug ?? String(entry.id),
+    label: entry.businessName || `Business #${entry.id}`,
+    isActive: entry.isActive
+  }));
+
+  const businessIdentifier = business.businessSlug ?? String(business.id);
+  const currentBusinessOptionValue = businessIdentifier;
+  const showBusinessSwitcher = businessOptions.length > 0;
+  const destination = business.destinationAddress
+    ? `${business.destinationAddress}${business.destinationZip ? `, ${business.destinationZip}` : ''}`
+    : null;
+  const locationLabel = destination ?? null;
+  const businessName = business.businessName || business.brandSearch || 'Business';
 
   return (
-    <div className={styles.ctrDashboard}>
-      <nav>
-        <Link href={`/dashboard/${encodeURIComponent(identifier)}`}>Back to business</Link>
-      </nav>
+    <div className="dashboard-layout">
+      <header className="dashboard-layout__header">
+        <div className="dashboard-layout__header-container">
+          <div className="dashboard-header">
+            <div className="dashboard-header__content">
+              <h1 className="page-title">CTR sessions</h1>
+              <p className="page-subtitle">
+                Window: <strong>{rangeLabel}</strong>
+              </p>
+              {locationLabel ? <span className="dashboard-sidebar__location">{locationLabel}</span> : null}
+            </div>
+          </div>
 
-      <header className={styles.header}>
-        <h1>CTR Sessions</h1>
-        <p className={styles.range}>Window: <strong>{rangeLabel}</strong></p>
-        <div className={styles.headerRight}>
-          <span className={styles.sessionCount}>{totalSessions} session{totalSessions === 1 ? '' : 's'} tracked</span>
-          <div className={styles.navButtons}>
-            <Link href={prevHref}>Previous 30 days</Link>
-            {nextHref ? <Link href={nextHref}>Next 30 days</Link> : <span className={styles.navDisabled}>Next 30 days</span>}
+          <div className="dashboard-header__actions" aria-label="Page actions">
+            <div className={styles.headerRight}>
+              <span className={styles.sessionCount}>
+                {totalSessions} session{totalSessions === 1 ? '' : 's'} tracked
+              </span>
+              <div className={styles.navButtons}>
+                <Link href={prevHref}>Previous 30 days</Link>
+                {nextHref ? (
+                  <Link href={nextHref}>Next 30 days</Link>
+                ) : (
+                  <span className={styles.navDisabled}>Next 30 days</span>
+                )}
+              </div>
+            </div>
+            {showBusinessSwitcher ? (
+              <BusinessSwitcher businesses={businessOptions} currentValue={currentBusinessOptionValue} />
+            ) : null}
           </div>
         </div>
       </header>
 
-      {keywordSummaries.length === 0 ? (
-        <p>No CTR runs recorded during this window.</p>
-      ) : (
-        keywordSummaries.map((summary) => (
-          <section key={summary.keyword} className={styles.keywordSection}>
-            <div className={styles.keywordHeader}>
-              <h2>{summary.keyword}</h2>
-              <p>{summary.runs.length} session{summary.runs.length === 1 ? '' : 's'} tracked</p>
-            </div>
+      <div className="dashboard-layout__body">
+        <aside className="dashboard-layout__sidebar" aria-label="Workspace navigation">
+          <div className="dashboard-sidebar__menu">
+            <BusinessNavigation businessIdentifier={businessIdentifier} active={null} />
+          </div>
+        </aside>
 
-            <div className={styles.keywordGrid}>
-              <TrendChart data={summary.chartData} title={`${summary.keyword} trend`} />
-              {summary.mapPoints.length === 0 ? (
-                <div className={styles.mapPlaceholder}>
-                  <p>No location data captured.</p>
-                </div>
+        <main className="dashboard-layout__main">
+          <div className="dashboard-layout__content">
+            <div className={styles.ctrDashboard}>
+              <div className={styles.header}>
+                <span className={styles.range}>
+                  Current window: <strong>{rangeLabel}</strong>
+                </span>
+              </div>
+
+              {keywordSummaries.length === 0 ? (
+                <p>No CTR runs recorded during this window.</p>
               ) : (
-                <CtrMap
-                  apiKey={mapsApiKey}
-                  center={summary.center}
-                  points={summary.mapPoints}
-                  businessName={business.businessName || business.brandSearch || 'Business'}
-                />
+                keywordSummaries.map((summary) => (
+                  <section key={summary.keyword} className={styles.keywordSection}>
+                    <div className={styles.keywordHeader}>
+                      <h2>{summary.keyword}</h2>
+                      <p>
+                        {summary.runs.length} session{summary.runs.length === 1 ? '' : 's'} tracked
+                      </p>
+                    </div>
+
+                    <div className={styles.keywordGrid}>
+                      <TrendChart data={summary.chartData} title={`${summary.keyword} trend`} />
+                      {summary.mapPoints.length === 0 ? (
+                        <div className={styles.mapPlaceholder}>
+                          <p>No location data captured.</p>
+                        </div>
+                      ) : (
+                        <CtrMap
+                          apiKey={mapsApiKey}
+                          center={summary.center}
+                          points={summary.mapPoints}
+                          businessName={businessName}
+                        />
+                      )}
+                    </div>
+
+                    <SessionList runs={summary.runs} />
+                  </section>
+                ))
               )}
             </div>
-
-            <SessionList runs={summary.runs} />
-          </section>
-        ))
-      )}
+          </div>
+        </main>
+      </div>
     </div>
   );
 }

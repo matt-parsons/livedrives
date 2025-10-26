@@ -6,6 +6,7 @@ import {
   CartesianGrid,
   Line,
   LineChart,
+  Tooltip,
   ResponsiveContainer,
   XAxis,
   YAxis
@@ -203,21 +204,21 @@ export default function KeywordTrendChart({ points }) {
                 <CartesianGrid vertical={false} strokeDasharray="3 3" />
                 <XAxis
                   dataKey="axisLabel"
-                  tickLine={false}
-                  axisLine={false}
+                  tickLine={true}
+                  axisLine={true}
                   tickMargin={8}
                 />
                 {hasSolvData ? <YAxis yAxisId="solv" domain={[0, 100]} hide /> : null}
                 {hasAvgData ? <YAxis yAxisId="avg" orientation="right" hide /> : null}
-                <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
+                <Tooltip />
                 {hasSolvData ? (
                   <Line
                     dataKey="solvTop3"
                     yAxisId="solv"
                     type="monotone"
                     stroke="var(--color-solvTop3)"
-                    strokeWidth={2}
-                    dot={false}
+                    strokeWidth={4}
+                    dot={true}
                     connectNulls
                     isAnimationActive
                   />
@@ -228,8 +229,8 @@ export default function KeywordTrendChart({ points }) {
                     yAxisId="avg"
                     type="monotone"
                     stroke="var(--color-avgPosition)"
-                    strokeWidth={2}
-                    dot={false}
+                    strokeWidth={4}
+                    dot={true}
                     connectNulls
                     isAnimationActive
                   />

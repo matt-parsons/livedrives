@@ -11,6 +11,7 @@ const { startRun, finishRun, logResult } = require('./lib/db/logger');
 const { recordRankingSnapshot } = require('./lib/db/ctr_store');
 const { note } = require('./lib/utils/note');
 const { parseLocalBusinesses } = require('./lib/google/counters');
+const { fetchConfigByBusinessId } = require('./lib/db/configLoader');
 
 function randomSessionId(length = 16) {
   const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -49,25 +50,32 @@ const normalizeIdentifier = (value) =>
 
 
 (async () => {
-  if (!process.argv[2]) {
-    console.error('Usage: node index.js <path-to-config.json> or <raw-JSON-string>');
+  const arg = process.argv[2];
+  if (!arg) {
+    console.error('Usage: node index.js <business-id | path-to-config.json | raw-JSON-string>');
     process.exit(1);
   }
 
-  // let config;
-  // try {
-  //   const arg = process.argv[2];
-  //   config = arg.endsWith('.json')
-  //     ? require(path.resolve(arg))
-  //     : JSON.parse(arg);
-  // } catch (err) {
-  //   console.error('Failed to load config:', err.message);
-  //   process.exit(1);
-  // }
   let config = null;
   try {
-    const arg = process.argv[2];
-    config = arg && arg.trim().startsWith('{') ? JSON.parse(arg) : require(arg);
+    const trimmed = arg.trim();
+    if (/^\d+$/.test(trimmed)) {
+      const businessId = Number(trimmed);
+      console.log(`[index] Loading config for business ${businessId}...`);
+      config = await fetchConfigByBusinessId(businessId);
+      if (!config) {
+        console.error(`[index] No active config found for business_id ${businessId}.`);
+        process.exit(1);
+      }
+    } else if (trimmed.startsWith('{')) {
+      config = JSON.parse(trimmed);
+    } else {
+      const resolved = path.isAbsolute(trimmed)
+        ? trimmed
+        : path.resolve(process.cwd(), trimmed);
+      // eslint-disable-next-line global-require, import/no-dynamic-require
+      config = require(resolved);
+    }
   } catch (e) {
     console.error('[index] failed to load config arg:', e.message);
     process.exit(1);
@@ -147,8 +155,8 @@ const normalizeIdentifier = (value) =>
       if(!ctrResult?.brandedFound) {
         try {
           const serpHtml = ctrResult?.serpHtmlBeforeClick ?? '';
-          serpPlaces = await parseLocalBusinesses(serpHtml);
-
+          serpPlaces = await parseLocalBusinesses(serpHtml, config.business_id);
+          note(serpPlaces);
           const totalResults = Array.isArray(serpPlaces) ? serpPlaces.length : 0;
           const targetName = normalizeName(config.business_name);
 

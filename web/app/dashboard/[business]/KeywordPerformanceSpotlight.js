@@ -244,7 +244,7 @@ export default function KeywordPerformanceSpotlight({ items, mapsApiKey = null }
 
   return (
     <div
-      className="surface-card surface-card--muted"
+      className=""
       style={{
         display: 'flex',
         flexDirection: 'column',

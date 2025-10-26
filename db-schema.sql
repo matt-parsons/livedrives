@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Oct 22, 2025 at 05:16 AM
+-- Generation Time: Oct 26, 2025 at 04:00 PM
 -- Server version: 10.11.8-MariaDB-0ubuntu0.24.04.1
 -- PHP Version: 8.3.16
 
@@ -127,9 +127,7 @@ CREATE TABLE `organization_trials` (
   `trial_starts_at` datetime NOT NULL,
   `trial_ends_at` datetime NOT NULL,
   `status` enum('active','expired','cancelled') NOT NULL DEFAULT 'active',
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  PRIMARY KEY (`organization_id`),
-  CONSTRAINT `organization_trials_org_fk` FOREIGN KEY (`organization_id`) REFERENCES `organizations` (`id`) ON DELETE CASCADE
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -329,6 +327,12 @@ ALTER TABLE `organizations`
   ADD PRIMARY KEY (`id`);
 
 --
+-- Indexes for table `organization_trials`
+--
+ALTER TABLE `organization_trials`
+  ADD PRIMARY KEY (`organization_id`);
+
+--
 -- Indexes for table `origin_zones`
 --
 ALTER TABLE `origin_zones`
@@ -508,6 +512,12 @@ ALTER TABLE `geo_grid_points`
 --
 ALTER TABLE `geo_grid_runs`
   ADD CONSTRAINT `fk_geogridruns_business` FOREIGN KEY (`business_id`) REFERENCES `businesses` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Constraints for table `organization_trials`
+--
+ALTER TABLE `organization_trials`
+  ADD CONSTRAINT `organization_trials_org_fk` FOREIGN KEY (`organization_id`) REFERENCES `organizations` (`id`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `origin_zones`

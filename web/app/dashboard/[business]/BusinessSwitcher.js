@@ -35,9 +35,6 @@ export default function BusinessSwitcher({ businesses, currentValue }) {
 
   return (
     <div className="business-switcher" data-pending={isPending ? 'true' : 'false'}>
-      <Label className="business-switcher__label" htmlFor="business-switcher-select">
-        {hasMultipleOptions ? 'Switch business' : 'Business'}
-      </Label>
       <Select value={effectiveCurrentValue} onValueChange={handleChange} disabled={isPending}>
         <SelectTrigger id="business-switcher-select" aria-live="polite" className="business-switcher__select">
           <SelectValue />

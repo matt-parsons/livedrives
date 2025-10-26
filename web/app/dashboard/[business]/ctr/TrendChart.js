@@ -1,188 +1,158 @@
 'use client';
 
-function computeScale(values, fallbackMin, fallbackMax) {
-  const filtered = values.filter((value) => typeof value === 'number' && Number.isFinite(value));
+import { useMemo } from 'react';
+import { CartesianGrid, Line, LineChart, Tooltip, ResponsiveContainer, XAxis, YAxis } from 'recharts';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle
+} from '@/components/ui/card';
+import {
+  ChartContainer,
+  ChartLegend,
+  ChartTooltip,
+  ChartTooltipContent
+} from '@/components/ui/chart';
 
-  if (!filtered.length) {
-    return [fallbackMin, fallbackMax];
-  }
-
-  let min = Math.min(...filtered);
-  let max = Math.max(...filtered);
-
-  if (min === max) {
-    const delta = min === 0 ? 1 : Math.abs(min) * 0.1;
-    min -= delta;
-    max += delta;
-  }
-
-  return [min, max];
+function coerceNumber(value) {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? numeric : null;
 }
 
-function buildPathPoints(data, accessor, scale, invert, width, height, padding) {
-  const step = data.length > 1 ? (width - padding * 2) / (data.length - 1) : 0;
-  const [min, max] = scale;
-  const range = max - min || 1;
-  const points = [];
-  const circles = [];
+const chartConfig = {
+  solvTop3: {
+    label: 'SoLV top 3',
+    color: 'hsl(var(--chart-1, 217 91% 60%))',
+    format: (value) => `${value.toFixed(1)}%`
+  },
+  avgPosition: {
+    label: 'Avg position',
+    color: 'hsl(var(--chart-2, 222 47% 11%))',
+    format: (value) => value.toFixed(2)
+  }
+};
 
-  data.forEach((entry, index) => {
-    const value = accessor(entry);
+function buildChartData(points) {
+  if (!Array.isArray(points)) {
+    return [];
+  }
 
-    if (typeof value !== 'number' || Number.isNaN(value)) {
-      points.push(null);
-      return;
+  return points.reduce((acc, entry) => {
+    const solvValue = coerceNumber(entry?.solvTop3Value);
+    const avgValue = coerceNumber(entry?.avgPositionValue);
+    const hasSolvValue = solvValue !== null && solvValue !== 0;
+    const hasAvgValue = avgValue !== null && avgValue !== 0;
+
+    if (!hasSolvValue && !hasAvgValue) {
+      return acc;
     }
 
-    const progress = (value - min) / range;
-    const normalized = invert ? 1 - progress : progress;
-    const x = padding + step * index;
-    const y = padding + (height - padding * 2) * normalized;
+    const label =
+      typeof entry?.label === 'string' && entry.label.trim() ? entry.label.trim() : '—';
 
-    points.push({ x, y });
-    circles.push({ x, y, value });
-  });
+    acc.push({
+      axisLabel: label,
+      tooltipLabel: label,
+      solvTop3: hasSolvValue ? Number(solvValue.toFixed(1)) : null,
+      avgPosition: hasAvgValue ? Number(avgValue.toFixed(2)) : null
+    });
 
-  let path = '';
-  let active = false;
-
-  points.forEach((point) => {
-    if (!point) {
-      active = false;
-      return;
-    }
-
-    if (!active) {
-      path += `M ${point.x} ${point.y}`;
-      active = true;
-    } else {
-      path += ` L ${point.x} ${point.y}`;
-    }
-  });
-
-  return { path, circles };
+    return acc;
+  }, []);
 }
 
 export default function TrendChart({ data, title }) {
-  const width = 480;
-  const height = 220;
-  const padding = 36;
+  const chartData = useMemo(() => buildChartData(data), [data]);
+  const hasSolvData = chartData.some((entry) => entry.solvTop3 !== null);
+  const hasAvgData = chartData.some((entry) => entry.avgPosition !== null);
+  const activeChartConfig = useMemo(() => {
+    const config = {};
 
-  const avgScale = computeScale(
-    data.map((item) => item.avgPositionValue ?? null),
-    1,
-    20
-  );
+    if (hasSolvData) {
+      config.solvTop3 = chartConfig.solvTop3;
+    }
 
-  const solvScale = computeScale(
-    data.map((item) => item.solvTop3Value ?? null),
-    0,
-    100
-  );
+    if (hasAvgData) {
+      config.avgPosition = chartConfig.avgPosition;
+    }
 
-  const avgLine = buildPathPoints(
-    data,
-    (item) => item.avgPositionValue ?? null,
-    avgScale,
-    true,
-    width,
-    height,
-    padding
-  );
+    return config;
+  }, [hasSolvData, hasAvgData]);
+  const hasAnyData = hasSolvData || hasAvgData;
 
-  const solvLine = buildPathPoints(
-    data,
-    (item) => item.solvTop3Value ?? null,
-    solvScale,
-    false,
-    width,
-    height,
-    padding
-  );
+  const firstLabel = chartData[0]?.tooltipLabel ?? null;
+  const lastLabel = chartData[chartData.length - 1]?.tooltipLabel ?? null;
+  const hasDistinctRange = firstLabel && lastLabel && firstLabel !== lastLabel;
+  const rangeLabel = hasDistinctRange
+    ? `${firstLabel} – ${lastLabel}`
+    : firstLabel ?? 'Last 30 days';
 
-  const baselineY = height - padding;
-  const xStep = data.length > 1 ? (width - padding * 2) / (data.length - 1) : 0;
+  if (!hasAnyData) {
+    return (
+      <Card className="border border-dashed border-border/60 bg-muted/40 shadow-none">
+        <CardContent className="flex min-h-[220px] items-center justify-center text-sm text-muted-foreground">
+          Not enough data to chart CTR performance for this keyword.
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
-    <div className="ctr-trend-chart">
-      <header>
-        <h3>{title}</h3>
-        <div className="legend">
-          <span className="legend-item legend-item--avg">Avg position</span>
-          <span className="legend-item legend-item--solv">SoLV %</span>
-        </div>
-      </header>
-      <svg width={width} height={height} role="img" aria-label={`${title} trend`}>
-        <line x1={padding} y1={baselineY} x2={width - padding} y2={baselineY} stroke="#d9d9d9" strokeWidth="1" />
-        {avgLine.path ? (
-          <path d={avgLine.path} fill="none" stroke="#4c9f4c" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-        ) : null}
-        {solvLine.path ? (
-          <path d={solvLine.path} fill="none" stroke="#f07b3f" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-        ) : null}
-        {avgLine.circles.map((circle, index) => (
-          <circle key={`avg-${index}`} cx={circle.x} cy={circle.y} r={4} fill="#1a7431" stroke="#ffffff" strokeWidth="1.5" />
-        ))}
-        {solvLine.circles.map((circle, index) => (
-          <circle key={`solv-${index}`} cx={circle.x} cy={circle.y} r={4} fill="#f5a623" stroke="#ffffff" strokeWidth="1.5" />
-        ))}
-        {data.map((item, index) => {
-          const x = padding + xStep * index;
-          return (
-            <text key={`label-${item.label}-${index}`} x={x} y={height - padding + 18} textAnchor="middle" fontSize="12" fill="#555">
-              {item.label}
-            </text>
-          );
-        })}
-      </svg>
-      <style jsx>{`
-        .ctr-trend-chart {
-          border: 1px solid #d9d9d9;
-          border-radius: 8px;
-          padding: 1rem;
-          background-color: #ffffff;
-        }
-
-        header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 0.5rem;
-        }
-
-        h3 {
-          margin: 0;
-          font-size: 1rem;
-        }
-
-        svg {
-          width: 100%;
-        }
-
-        .legend {
-          display: flex;
-          gap: 1rem;
-          font-size: 0.85rem;
-          align-items: center;
-        }
-
-        .legend-item {
-          display: inline-flex;
-          align-items: center;
-          gap: 0.4rem;
-        }
-
-        .legend-item::before {
-          content: '';
-          display: inline-block;
-          width: 12px;
-          height: 12px;
-          border-radius: 6px;
-        }
-
-        .legend-item--avg::before { background-color: #1a7431; }
-        .legend-item--solv::before { background-color: #f5a623; }
-      `}</style>
-    </div>
+    <Card className="shadow-sm">
+      <ChartContainer config={activeChartConfig} className="h-full">
+        <CardHeader className="space-y-3 p-6 pb-3">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <CardTitle className="text-base font-semibold">{title}</CardTitle>
+              {rangeLabel ? <CardDescription>{rangeLabel}</CardDescription> : null}
+            </div>
+            <ChartLegend className="pt-1" />
+          </div>
+        </CardHeader>
+        <CardContent className="p-6 pt-0">
+          <div className="h-[280px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart
+                accessibilityLayer
+                data={chartData}
+                margin={{ left: 12, right: 12, top: 12, bottom: 12 }}
+              >
+                <CartesianGrid vertical={false} strokeDasharray="3 3" />
+                <XAxis dataKey="axisLabel" tickLine axisLine tickMargin={8} />
+                {hasSolvData ? <YAxis yAxisId="solv" domain={[0, 100]} hide /> : null}
+                {hasAvgData ? <YAxis yAxisId="avg" orientation="right" hide /> : null}
+                <Tooltip />
+                {hasSolvData ? (
+                  <Line
+                    dataKey="solvTop3"
+                    yAxisId="solv"
+                    type="monotone"
+                    stroke="var(--color-solvTop3)"
+                    strokeWidth={4}
+                    dot
+                    connectNulls
+                    isAnimationActive
+                  />
+                ) : null}
+                {hasAvgData ? (
+                  <Line
+                    dataKey="avgPosition"
+                    yAxisId="avg"
+                    type="monotone"
+                    stroke="var(--color-avgPosition)"
+                    strokeWidth={4}
+                    dot
+                    connectNulls
+                    isAnimationActive
+                  />
+                ) : null}
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </CardContent>
+      </ChartContainer>
+    </Card>
   );
 }

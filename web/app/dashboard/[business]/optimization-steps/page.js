@@ -34,24 +34,24 @@ export default async function BusinessOptimizationStepsPage({ params }) {
 
   const isOwner = session.role === 'owner';
 
-  let ownerBusinessOptions = [];
+  const organizationBusinesses = await loadOrganizationBusinesses(session.organizationId);
 
-  if (isOwner) {
-    const organizationBusinesses = await loadOrganizationBusinesses(session.organizationId);
-
-    ownerBusinessOptions = organizationBusinesses.map((entry) => ({
-      id: entry.id,
-      value: entry.businessSlug ?? String(entry.id),
-      label: entry.businessName || `Business #${entry.id}`,
-      isActive: entry.isActive
-    }));
-  }
+  const businessOptions = organizationBusinesses.map((entry) => ({
+    id: entry.id,
+    value: entry.businessSlug ?? String(entry.id),
+    label: entry.businessName || `Business #${entry.id}`,
+    isActive: entry.isActive
+  }));
 
   const businessIdentifier = business.businessSlug ?? String(business.id);
   const currentBusinessOptionValue = businessIdentifier;
   const baseHref = `/dashboard/${encodeURIComponent(businessIdentifier)}`;
   const editHref = `${baseHref}/edit`;
   const businessName = business.businessName || 'this business';
+  const destination = business.destinationAddress
+    ? `${business.destinationAddress}${business.destinationZip ? `, ${business.destinationZip}` : ''}`
+    : null;
+  const locationLabel = destination ?? null;
 
   let optimizationRoadmap = null;
   let optimizationError = null;
@@ -65,38 +65,46 @@ export default async function BusinessOptimizationStepsPage({ params }) {
     }
   }
 
-  const showBusinessSwitcher = isOwner && ownerBusinessOptions.length > 0;
+  const showBusinessSwitcher = businessOptions.length > 0;
 
   return (
-    <div className="page-shell">
-      {showBusinessSwitcher ? (
-        <nav className="page-nav" aria-label="Business selection">
-          <BusinessSwitcher businesses={ownerBusinessOptions} currentValue={currentBusinessOptionValue} />
-        </nav>
-      ) : null}
+    <div className="dashboard-layout">
+      <header className="dashboard-layout__header">
+        <div className="dashboard-layout__header-container">
+          <div className="dashboard-header">
+            <div className="dashboard-header__content">
+              <h1 className="page-title">Optimization steps</h1>
+              {locationLabel ? <span className="dashboard-sidebar__location">{locationLabel}</span> : null}
+            </div>
+          </div>
 
-      <section className="page-header">
-        <h1 className="page-title">Optimization steps</h1>
-        <p className="page-subtitle">
-          Automated Google Business Profile roadmap tailored to {businessName}.
-        </p>
-      </section>
+          {showBusinessSwitcher ? (
+            <div className="dashboard-header__actions" aria-label="Select business">
+              <BusinessSwitcher businesses={businessOptions} currentValue={currentBusinessOptionValue} />
+            </div>
+          ) : null}
+        </div>
+      </header>
 
-      <div className="page-shell__body">
-        <aside className="page-shell__sidebar">
-          <BusinessNavigation businessIdentifier={businessIdentifier} active="optimization-steps" />
+      <div className="dashboard-layout__body">
+        <aside className="dashboard-layout__sidebar" aria-label="Workspace navigation">
+          <div className="dashboard-sidebar__menu">
+            <BusinessNavigation businessIdentifier={businessIdentifier} active="optimization-steps" />
+          </div>
         </aside>
 
-        <div className="page-shell__content">
-          <section className="section">
-            <BusinessOptimizationRoadmap
-              roadmap={optimizationRoadmap}
-              error={optimizationError}
-              placeId={business.gPlaceId}
-              editHref={editHref}
-            />
-          </section>
-        </div>
+        <main className="dashboard-layout__main">
+          <div className="dashboard-layout__content">
+            <section className="section">
+              <BusinessOptimizationRoadmap
+                roadmap={optimizationRoadmap}
+                error={optimizationError}
+                placeId={business.gPlaceId}
+                editHref={editHref}
+              />
+            </section>
+          </div>
+        </main>
       </div>
     </div>
   );

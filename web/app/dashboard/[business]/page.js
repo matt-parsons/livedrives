@@ -96,18 +96,14 @@ export default async function BusinessDashboardPage({ params, searchParams }) {
   const business = await loadBusiness(session.organizationId, identifier);
   const isOwner = session.role === 'owner';
 
-  let ownerBusinessOptions = [];
+  const organizationBusinesses = await loadOrganizationBusinesses(session.organizationId);
 
-  if (isOwner) {
-    const organizationBusinesses = await loadOrganizationBusinesses(session.organizationId);
-
-    ownerBusinessOptions = organizationBusinesses.map((entry) => ({
-      id: entry.id,
-      value: entry.businessSlug ?? String(entry.id),
-      label: entry.businessName || `Business #${entry.id}`,
-      isActive: entry.isActive
-    }));
-  }
+  const businessOptions = organizationBusinesses.map((entry) => ({
+    id: entry.id,
+    value: entry.businessSlug ?? String(entry.id),
+    label: entry.businessName || `Business #${entry.id}`,
+    isActive: entry.isActive
+  }));
 
   if (!business) {
     notFound();
@@ -549,7 +545,7 @@ export default async function BusinessDashboardPage({ params, searchParams }) {
       delta: item.solvDelta
     }
   }));
-  const showBusinessSwitcher = isOwner && ownerBusinessOptions.length > 0;
+  const showBusinessSwitcher = businessOptions.length > 0;
   const locationLabel = destination ?? null;
   const sidebarInitial = businessName ? businessName.trim().charAt(0).toUpperCase() : 'B';
 
@@ -560,16 +556,14 @@ export default async function BusinessDashboardPage({ params, searchParams }) {
           <div className="dashboard-header">
             <div className="dashboard-header__content">
               <h1 className="page-title">{businessName}</h1>
-              <p className="page-subtitle">
-                Operational intelligence for this business. Review configured zones, geo grid performance, and CTR
-                activity in one focused view.
-              </p>
+              {locationLabel ? <span className="dashboard-sidebar__location">{locationLabel}</span> : null}
             </div>
+
           </div>
 
           {showBusinessSwitcher ? (
             <div className="dashboard-header__actions" aria-label="Select business">
-              <BusinessSwitcher businesses={ownerBusinessOptions} currentValue={currentBusinessOptionValue} />
+              <BusinessSwitcher businesses={businessOptions} currentValue={currentBusinessOptionValue} />
             </div>
           ) : null}
         </div>
@@ -577,16 +571,6 @@ export default async function BusinessDashboardPage({ params, searchParams }) {
 
       <div className="dashboard-layout__body">
         <aside className="dashboard-layout__sidebar" aria-label="Workspace navigation">
-          <div className="dashboard-sidebar__summary">
-            <div className="dashboard-sidebar__badge" aria-hidden="true">
-              {sidebarInitial}
-            </div>
-            <div className="dashboard-sidebar__info">
-              <span className="dashboard-sidebar__name">{businessName}</span>
-              {locationLabel ? <span className="dashboard-sidebar__location">{locationLabel}</span> : null}
-            </div>
-          </div>
-
           <div className="dashboard-sidebar__menu">
             <BusinessNavigation businessIdentifier={navigationIdentifier} active="dashboard" />
           </div>
