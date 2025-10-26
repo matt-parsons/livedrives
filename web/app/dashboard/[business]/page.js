@@ -593,7 +593,7 @@ export default async function BusinessDashboardPage({ params, searchParams }) {
           </div>
         </aside>
 
-        <main className="dashboard-shell__main">
+        <div className="dashboard-shell__main">
           <div className="dashboard-shell__content">
             <section className="section">
               <KeywordPerformanceSpotlight items={keywordPerformanceItems} mapsApiKey={mapsApiKey} />
@@ -788,7 +788,7 @@ export default async function BusinessDashboardPage({ params, searchParams }) {
             </section>
           ) : null}
           </div>
-        </main>
+        </div>
       </div>
     </div>
   );
