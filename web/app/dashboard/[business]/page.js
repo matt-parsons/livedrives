@@ -554,235 +554,240 @@ export default async function BusinessDashboardPage({ params, searchParams }) {
   const sidebarInitial = businessName ? businessName.trim().charAt(0).toUpperCase() : 'B';
 
   return (
-    <div className="dashboard-shell">
-      <aside className="dashboard-shell__sidebar" aria-label="Workspace navigation">
-        <div className="dashboard-sidebar__brand">
-          <div className="dashboard-sidebar__badge" aria-hidden="true">
-            {sidebarInitial}
+    <div className="dashboard-layout">
+      <header className="dashboard-layout__header">
+        <div className="dashboard-layout__header-container">
+          <div className="dashboard-header">
+            <div className="dashboard-header__content">
+              <h1 className="page-title">{businessName}</h1>
+              <p className="page-subtitle">
+                Operational intelligence for this business. Review configured zones, geo grid performance, and CTR
+                activity in one focused view.
+              </p>
+            </div>
           </div>
-          <div className="dashboard-sidebar__info">
-            <span className="dashboard-sidebar__name">{businessName}</span>
-            {locationLabel ? (
-              <span className="dashboard-sidebar__location">{locationLabel}</span>
-            ) : null}
-          </div>
-        </div>
-        <div className="dashboard-sidebar__nav">
-          <BusinessNavigation businessIdentifier={navigationIdentifier} active="dashboard" />
-        </div>
-      </aside>
 
-      <div className="dashboard-shell__main">
-        <header className="dashboard-header">
           {showBusinessSwitcher ? (
-            <div className="dashboard-header__menu" aria-label="Select business">
+            <div className="dashboard-header__actions" aria-label="Select business">
               <BusinessSwitcher businesses={ownerBusinessOptions} currentValue={currentBusinessOptionValue} />
             </div>
           ) : null}
+        </div>
+      </header>
 
-          <div className="dashboard-header__content">
-            <h1 className="page-title">{businessName}</h1>
-            <p className="page-subtitle">
-              Operational intelligence for this business. Review configured zones, geo grid performance, and CTR
-              activity in one focused view.
-            </p>
+      <div className="dashboard-layout__body">
+        <aside className="dashboard-layout__sidebar" aria-label="Workspace navigation">
+          <div className="dashboard-sidebar__summary">
+            <div className="dashboard-sidebar__badge" aria-hidden="true">
+              {sidebarInitial}
+            </div>
+            <div className="dashboard-sidebar__info">
+              <span className="dashboard-sidebar__name">{businessName}</span>
+              {locationLabel ? <span className="dashboard-sidebar__location">{locationLabel}</span> : null}
+            </div>
           </div>
-        </header>
 
-        <div className="dashboard-shell__content">
-          <section className="section">
-            <KeywordPerformanceSpotlight items={keywordPerformanceItems} mapsApiKey={mapsApiKey} />
-          </section>
+          <div className="dashboard-sidebar__menu">
+            <BusinessNavigation businessIdentifier={navigationIdentifier} active="dashboard" />
+          </div>
+        </aside>
 
-          {isOwner ? (
+        <main className="dashboard-layout__main">
+          <div className="dashboard-layout__content">
             <section className="section">
-              <div className="surface-card surface-card--muted surface-card--compact">
-                <div className="section-header">
-                  <h2 className="section-title">CTR sessions</h2>
-                  <p className="section-caption">Analyze click-through behaviors alongside geo performance.</p>
-                </div>
+              <KeywordPerformanceSpotlight items={keywordPerformanceItems} mapsApiKey={mapsApiKey} />
+            </section>
 
-                {ctrOverviewRows.length ? (
-                  <div
-                    className="ctr-overview-list"
-                    style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '0.75rem',
-                      marginTop: '1rem',
-                      marginBottom: '1rem'
-                    }}
-                  >
-                    {ctrOverviewRows.map((item) => (
-                      <div
-                        key={item.keyword}
-                        style={{
-                          display: 'flex',
-                          flexWrap: 'wrap',
-                          alignItems: 'center',
-                          gap: '1rem',
-                          border: '1px solid rgba(17, 24, 39, 0.08)',
-                          borderRadius: '12px',
-                          padding: '0.85rem 1.1rem',
-                          backgroundColor: '#ffffff'
-                        }}
-                      >
-                        <div style={{ flex: '1 1 200px' }}>
-                          <strong style={{ fontSize: '1rem' }}>{item.keyword}</strong>
-                          <div style={{ color: '#6b7280', fontSize: '0.85rem', marginTop: '0.2rem' }}>
-                            {item.sessions} session{item.sessions === 1 ? '' : 's'} (30 days)
-                          </div>
-                        </div>
+            {isOwner ? (
+              <section className="section">
+                <div className="surface-card surface-card--muted surface-card--compact">
+                  <div className="section-header">
+                    <h2 className="section-title">CTR sessions</h2>
+                    <p className="section-caption">Analyze click-through behaviors alongside geo performance.</p>
+                  </div>
 
+                  {ctrOverviewRows.length ? (
+                    <div
+                      className="ctr-overview-list"
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '0.75rem',
+                        marginTop: '1rem',
+                        marginBottom: '1rem'
+                      }}
+                    >
+                      {ctrOverviewRows.map((item) => (
                         <div
+                          key={item.keyword}
                           style={{
                             display: 'flex',
                             flexWrap: 'wrap',
-                            gap: '1.25rem',
-                            flex: '1 1 240px'
+                            alignItems: 'center',
+                            gap: '1rem',
+                            border: '1px solid rgba(17, 24, 39, 0.08)',
+                            borderRadius: '12px',
+                            padding: '0.85rem 1.1rem',
+                            backgroundColor: '#ffffff'
                           }}
                         >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                            <span style={{ color: '#374151', fontSize: '0.9rem' }}>
-                              Avg position{' '}
-                              <strong style={{ fontSize: '1rem' }}>
-                                {item.avgLabel}
-                              </strong>
-                            </span>
-                            <span
-                              style={{
-                                ...item.avgPillStyle,
-                                padding: '0.3rem 0.75rem',
-                                borderRadius: '999px',
-                                fontSize: '0.8rem',
-                                fontWeight: 600
-                              }}
-                            >
-                              {item.avgTrendLabel}
-                              {item.avgDeltaLabel ? (
-                                <span style={{ fontWeight: 500, opacity: 0.8 }}>
-                                  {' '}({item.avgDeltaLabel})
-                                </span>
-                              ) : null}
-                            </span>
+                          <div style={{ flex: '1 1 200px' }}>
+                            <strong style={{ fontSize: '1rem' }}>{item.keyword}</strong>
+                            <div style={{ color: '#6b7280', fontSize: '0.85rem', marginTop: '0.2rem' }}>
+                              {item.sessions} session{item.sessions === 1 ? '' : 's'} (30 days)
+                            </div>
                           </div>
 
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                            <span style={{ color: '#374151', fontSize: '0.9rem' }}>
-                              SoLV (Top 3){' '}
-                              <strong style={{ fontSize: '1rem' }}>
-                                {item.solvLabel}
-                              </strong>
-                            </span>
-                            <span
-                              style={{
-                                ...item.solvPillStyle,
-                                padding: '0.3rem 0.75rem',
-                                borderRadius: '999px',
-                                fontSize: '0.8rem',
-                                fontWeight: 600
-                              }}
-                            >
-                              {item.solvTrendLabel}
-                              {item.solvDeltaLabel ? (
-                                <span style={{ fontWeight: 500, opacity: 0.8 }}>
-                                  {' '}({item.solvDeltaLabel})
-                                </span>
-                              ) : null}
-                            </span>
+                          <div
+                            style={{
+                              display: 'flex',
+                              flexWrap: 'wrap',
+                              gap: '1.25rem',
+                              flex: '1 1 240px'
+                            }}
+                          >
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                              <span style={{ color: '#374151', fontSize: '0.9rem' }}>
+                                Avg position{' '}
+                                <strong style={{ fontSize: '1rem' }}>
+                                  {item.avgLabel}
+                                </strong>
+                              </span>
+                              <span
+                                style={{
+                                  ...item.avgPillStyle,
+                                  padding: '0.3rem 0.75rem',
+                                  borderRadius: '999px',
+                                  fontSize: '0.8rem',
+                                  fontWeight: 600
+                                }}
+                              >
+                                {item.avgTrendLabel}
+                                {item.avgDeltaLabel ? (
+                                  <span style={{ fontWeight: 500, opacity: 0.8 }}>
+                                    {' '}({item.avgDeltaLabel})
+                                  </span>
+                                ) : null}
+                              </span>
+                            </div>
+
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                              <span style={{ color: '#374151', fontSize: '0.9rem' }}>
+                                SoLV (Top 3){' '}
+                                <strong style={{ fontSize: '1rem' }}>
+                                  {item.solvLabel}
+                                </strong>
+                              </span>
+                              <span
+                                style={{
+                                  ...item.solvPillStyle,
+                                  padding: '0.3rem 0.75rem',
+                                  borderRadius: '999px',
+                                  fontSize: '0.8rem',
+                                  fontWeight: 600
+                                }}
+                              >
+                                {item.solvTrendLabel}
+                                {item.solvDeltaLabel ? (
+                                  <span style={{ fontWeight: 500, opacity: 0.8 }}>
+                                    {' '}({item.solvDeltaLabel})
+                                  </span>
+                                ) : null}
+                              </span>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p style={{ marginTop: '1rem', color: '#6b7280' }}>
-                    No CTR sessions recorded in the last 30 days.
-                  </p>
-                )}
+                      ))}
+                    </div>
+                  ) : (
+                    <p style={{ marginTop: '1rem', color: '#6b7280' }}>
+                      No CTR sessions recorded in the last 30 days.
+                    </p>
+                  )}
 
-                <Link className="cta-link" href={ctrHref}>
-                  Open CTR dashboard ↗
-                </Link>
-              </div>
-            </section>
-          ) : null}
-
-          <section className="section">
-            <GeoGridRunsSection
-              caption={geoSectionCaption}
-              defaultView={viewMode}
-              trendItems={geoGridTrendList}
-              runItems={geoGridRunsList}
-            />
-          </section>
-
-          {isOwner ? (
-            <section className="section">
-              <div className="surface-card surface-card--muted">
-                <div className="section-header">
-                  <div>
-                    <h2 className="section-title">Business overview</h2>
-                    <p className="section-caption">Current state and identifiers powering live operations.</p>
-                  </div>
-                  <Link className="cta-link" href={editHref}>
-                    Edit business
+                  <Link className="cta-link" href={ctrHref}>
+                    Open CTR dashboard ↗
                   </Link>
                 </div>
+              </section>
+            ) : null}
 
-                {businessOverviewItems.length ? (
-                  <div style={{ marginTop: '0.5rem', overflowX: 'auto' }}>
-                    <table
-                      style={{
-                        width: '100%',
-                        minWidth: '640px',
-                        borderCollapse: 'separate',
-                        borderSpacing: '0 0.25rem',
-                        fontSize: '0.9rem',
-                        lineHeight: 1.4,
-                        textAlign: 'center',
-                        whiteSpace: 'nowrap'
-                      }}
-                    >
-                      <thead>
-                        <tr>
-                          {businessOverviewItems.map((item) => (
-                            <th
-                              key={`${item.key}-header`}
-                              style={{
-                                padding: '0.35rem 0.5rem',
-                                color: '#6b7280',
-                                fontWeight: 600
-                              }}
-                              scope="col"
-                            >
-                              {item.label}
-                            </th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr>
-                          {businessOverviewItems.map((item) => (
-                            <td key={`${item.key}-value`} style={{ padding: '0.35rem 0.5rem', color: '#111827' }}>
-                              {item.status ? (
-                                <span className="status-pill" data-status={item.status}>
-                                  {item.value}
-                                </span>
-                              ) : (
-                                item.value
-                              )}
-                            </td>
-                          ))}
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                ) : null}
-              </div>
+            <section className="section">
+              <GeoGridRunsSection
+                caption={geoSectionCaption}
+                defaultView={viewMode}
+                trendItems={geoGridTrendList}
+                runItems={geoGridRunsList}
+              />
             </section>
-          ) : null}
-        </div>
+
+            {isOwner ? (
+              <section className="section">
+                <div className="surface-card surface-card--muted">
+                  <div className="section-header">
+                    <div>
+                      <h2 className="section-title">Business overview</h2>
+                      <p className="section-caption">Current state and identifiers powering live operations.</p>
+                    </div>
+                    <Link className="cta-link" href={editHref}>
+                      Edit business
+                    </Link>
+                  </div>
+
+                  {businessOverviewItems.length ? (
+                    <div style={{ marginTop: '0.5rem', overflowX: 'auto' }}>
+                      <table
+                        style={{
+                          width: '100%',
+                          minWidth: '640px',
+                          borderCollapse: 'separate',
+                          borderSpacing: '0 0.25rem',
+                          fontSize: '0.9rem',
+                          lineHeight: 1.4,
+                          textAlign: 'center',
+                          whiteSpace: 'nowrap'
+                        }}
+                      >
+                        <thead>
+                          <tr>
+                            {businessOverviewItems.map((item) => (
+                              <th
+                                key={`${item.key}-header`}
+                                style={{
+                                  padding: '0.35rem 0.5rem',
+                                  color: '#6b7280',
+                                  fontWeight: 600
+                                }}
+                                scope="col"
+                              >
+                                {item.label}
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            {businessOverviewItems.map((item) => (
+                              <td key={`${item.key}-value`} style={{ padding: '0.35rem 0.5rem', color: '#111827' }}>
+                                {item.status ? (
+                                  <span className="status-pill" data-status={item.status}>
+                                    {item.value}
+                                  </span>
+                                ) : (
+                                  item.value
+                                )}
+                              </td>
+                            ))}
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : null}
+                </div>
+              </section>
+            ) : null}
+          </div>
+        </main>
       </div>
     </div>
   );
