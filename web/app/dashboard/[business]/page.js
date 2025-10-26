@@ -550,29 +550,46 @@ export default async function BusinessDashboardPage({ params, searchParams }) {
     }
   }));
   const showBusinessSwitcher = isOwner && ownerBusinessOptions.length > 0;
+  const locationLabel = destination ?? null;
+  const sidebarInitial = businessName ? businessName.trim().charAt(0).toUpperCase() : 'B';
 
   return (
-    <div className="page-shell">
-      {showBusinessSwitcher ? (
-        <nav className="page-nav" aria-label="Business selection">
-          <BusinessSwitcher businesses={ownerBusinessOptions} currentValue={currentBusinessOptionValue} />
-        </nav>
-      ) : null}
-
-      <section className="page-header">
-        <h1 className="page-title">{businessName}</h1>
-        <p className="page-subtitle">
-          Operational intelligence for this business. Review configured zones, geo grid performance, and CTR
-          activity in one focused view.
-        </p>
-      </section>
-
-      <div className="page-shell__body">
-        <aside className="page-shell__sidebar">
+    <div className="dashboard-shell">
+      <aside className="dashboard-shell__sidebar" aria-label="Workspace navigation">
+        <div className="dashboard-sidebar__brand">
+          <div className="dashboard-sidebar__badge" aria-hidden="true">
+            {sidebarInitial}
+          </div>
+          <div className="dashboard-sidebar__info">
+            <span className="dashboard-sidebar__name">{businessName}</span>
+            {locationLabel ? (
+              <span className="dashboard-sidebar__location">{locationLabel}</span>
+            ) : null}
+          </div>
+        </div>
+        <div className="dashboard-sidebar__nav">
           <BusinessNavigation businessIdentifier={navigationIdentifier} active="dashboard" />
-        </aside>
+        </div>
+      </aside>
 
-        <div className="page-shell__content">
+      <div className="dashboard-shell__main">
+        <header className="dashboard-header">
+          {showBusinessSwitcher ? (
+            <div className="dashboard-header__menu" aria-label="Select business">
+              <BusinessSwitcher businesses={ownerBusinessOptions} currentValue={currentBusinessOptionValue} />
+            </div>
+          ) : null}
+
+          <div className="dashboard-header__content">
+            <h1 className="page-title">{businessName}</h1>
+            <p className="page-subtitle">
+              Operational intelligence for this business. Review configured zones, geo grid performance, and CTR
+              activity in one focused view.
+            </p>
+          </div>
+        </header>
+
+        <div className="dashboard-shell__content">
           <section className="section">
             <KeywordPerformanceSpotlight items={keywordPerformanceItems} mapsApiKey={mapsApiKey} />
           </section>
