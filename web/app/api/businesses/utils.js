@@ -13,6 +13,18 @@ const FIELD_MAP = {
   gPlaceId: 'g_place_id'
 };
 
+export const BUSINESS_HOURS_KEYS = [
+  'monday',
+  'tuesday',
+  'wednesday',
+  'thursday',
+  'friday',
+  'saturday',
+  'sunday'
+];
+
+const HOURS_SEGMENT_PATTERN = /^([01]\d|2[0-3]):[0-5]\d-([01]\d|2[0-3]):[0-5]\d$/;
+
 function hasOwn(obj, key) {
   return Object.prototype.hasOwnProperty.call(obj, key);
 }
@@ -211,6 +223,123 @@ export function normalizeBusinessPayload(input, { partial = false } = {}) {
 
   if (hasOwn(input, 'gPlaceId')) {
     values.gPlaceId = toNullableString(input.gPlaceId);
+  }
+
+  return { errors, values };
+}
+
+function toHourSegments(value) {
+  if (Array.isArray(value)) {
+    return value;
+  }
+
+  if (value === null || value === undefined) {
+    return [];
+  }
+
+  if (typeof value === 'string') {
+    return value
+      .split(/[;,\n]+/)
+      .map((segment) => segment.trim())
+      .filter(Boolean);
+  }
+
+  if (typeof value === 'object') {
+    const open = typeof value.open === 'string' ? value.open.trim() : '';
+    const close = typeof value.close === 'string' ? value.close.trim() : '';
+    return open && close ? [`${open}-${close}`] : [];
+  }
+
+  return [];
+}
+
+export function normalizeBusinessHoursPayload(input) {
+  if (!input || typeof input !== 'object') {
+    return { errors: ['Request body must be a JSON object.'], values: {} };
+  }
+
+  const rawHours = input.hours;
+
+  if (!rawHours || typeof rawHours !== 'object') {
+    return { errors: ['hours must be provided as an object.'], values: {} };
+  }
+
+  const errors = [];
+  const values = {};
+
+  for (const day of BUSINESS_HOURS_KEYS) {
+    const segments = toHourSegments(rawHours[day]);
+    const normalized = [];
+
+    segmentLoop: for (const rawSegment of segments) {
+      if (rawSegment === null || rawSegment === undefined) {
+        continue;
+      }
+
+      let segment;
+
+      if (typeof rawSegment === 'string') {
+        segment = rawSegment.trim();
+      } else if (typeof rawSegment === 'object') {
+        const open = typeof rawSegment.open === 'string' ? rawSegment.open.trim() : '';
+        const close = typeof rawSegment.close === 'string' ? rawSegment.close.trim() : '';
+        segment = open && close ? `${open}-${close}` : '';
+      } else {
+        segment = String(rawSegment).trim();
+      }
+
+      if (!segment) {
+        continue;
+      }
+
+      const lowered = segment.toLowerCase();
+      if (lowered === 'closed' || lowered === 'none') {
+        normalized.length = 0;
+        break segmentLoop;
+      }
+
+      if (!HOURS_SEGMENT_PATTERN.test(segment)) {
+        errors.push(`Invalid hours segment '${segment}' for ${day}. Use HH:MM-HH:MM in 24-hour time.`);
+        continue;
+      }
+
+      normalized.push(segment);
+    }
+
+    values[day] = normalized;
+  }
+
+  return { errors, values };
+}
+
+export function normalizeSoaxConfigPayload(input) {
+  if (!input || typeof input !== 'object') {
+    return { errors: ['Request body must be a JSON object.'], values: {} };
+  }
+
+  const errors = [];
+  const values = {};
+
+  const endpointProvided = hasOwn(input, 'endpoint');
+  const usernameProvided = hasOwn(input, 'username');
+  const resUsernameProvided = hasOwn(input, 'resUsername');
+
+  if (!endpointProvided || !usernameProvided || !resUsernameProvided) {
+    errors.push('endpoint, username, and resUsername must be provided.');
+    return { errors, values: {} };
+  }
+
+  const endpoint = toNullableString(input.endpoint);
+  values.endpoint = endpoint ?? '';
+
+  const username = toNullableString(input.username);
+  values.username = username ?? '';
+
+  const resUsername = toNullableString(input.resUsername);
+  values.resUsername = resUsername ?? '';
+
+  if (values.endpoint && !values.endpoint.includes(':')) {
+    errors.push('endpoint must include both host and port (e.g., proxy.soax.com:5000).');
   }
 
   return { errors, values };

@@ -16,6 +16,7 @@ import {
 import { buildPointListingIndex } from '../listings';
 import BusinessNavigation from '../../BusinessNavigation';
 import BusinessSwitcher from '../../BusinessSwitcher';
+import BusinessSettingsShortcut from '../../BusinessSettingsShortcut';
 import GeoGridRunViewer from './GeoGridRunViewer';
 
 function resolveMapsApiKey() {
@@ -98,6 +99,7 @@ export default async function GeoGridRunPage({ params }) {
 
   const businessIdentifier = business.businessSlug ?? String(business.id);
   const currentBusinessOptionValue = businessIdentifier;
+  const canManageSettings = session.role === 'owner' || session.role === 'admin';
   const showBusinessSwitcher = businessOptions.length > 0;
   const destination = business.destinationAddress
     ? `${business.destinationAddress}${business.destinationZip ? `, ${business.destinationZip}` : ''}`
@@ -122,6 +124,9 @@ export default async function GeoGridRunPage({ params }) {
           </div>
 
           <div className="dashboard-header__actions" aria-label="Page actions">
+            {canManageSettings ? (
+              <BusinessSettingsShortcut businessIdentifier={businessIdentifier} />
+            ) : null}
             <Link className="cta-link" href={backHref}>
               ← Back to {businessName}
             </Link>
