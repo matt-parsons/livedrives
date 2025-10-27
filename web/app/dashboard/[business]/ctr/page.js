@@ -10,6 +10,7 @@ import {
 } from '../helpers';
 import BusinessNavigation from '../BusinessNavigation';
 import BusinessSwitcher from '../BusinessSwitcher';
+import BusinessSettingsShortcut from '../BusinessSettingsShortcut';
 import CtrMap from './CtrMap';
 import TrendChart from './TrendChart';
 import SessionList from './SessionList';
@@ -150,6 +151,8 @@ export default async function CtrDashboardPage({ params, searchParams }) {
   if (!business) {
     notFound();
   }
+
+  const canManageSettings = session.role === 'owner' || session.role === 'admin';
 
   if (session.role !== 'owner') {
     redirect(`/dashboard/${encodeURIComponent(identifier)}`);
@@ -363,6 +366,9 @@ export default async function CtrDashboardPage({ params, searchParams }) {
           </div>
 
           <div className="dashboard-header__actions" aria-label="Page actions">
+            {canManageSettings ? (
+              <BusinessSettingsShortcut businessIdentifier={businessIdentifier} />
+            ) : null}
             <div className={styles.headerRight}>
               <span className={styles.sessionCount}>
                 {totalSessions} session{totalSessions === 1 ? '' : 's'} tracked

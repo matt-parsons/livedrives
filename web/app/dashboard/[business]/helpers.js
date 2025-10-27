@@ -119,6 +119,124 @@ export async function loadOrganizationBusinesses(organizationId) {
   }));
 }
 
+export const BUSINESS_HOUR_KEYS = [
+  'monday',
+  'tuesday',
+  'wednesday',
+  'thursday',
+  'friday',
+  'saturday',
+  'sunday'
+];
+
+function createEmptyBusinessHours() {
+  return BUSINESS_HOUR_KEYS.reduce((acc, key) => {
+    acc[key] = [];
+    return acc;
+  }, {});
+}
+
+function normalizeHourSegments(value) {
+  if (!Array.isArray(value) || value.length === 0) {
+    return [];
+  }
+
+  const segments = [];
+
+  for (const entry of value) {
+    if (!entry) {
+      continue;
+    }
+
+    if (typeof entry === 'string') {
+      const trimmed = entry.trim();
+      if (trimmed) {
+        segments.push(trimmed);
+      }
+      continue;
+    }
+
+    if (typeof entry === 'object') {
+      const open = typeof entry.open === 'string' ? entry.open.trim() : null;
+      const close = typeof entry.close === 'string' ? entry.close.trim() : null;
+
+      if (open && close) {
+        segments.push(`${open}-${close}`);
+      }
+    }
+  }
+
+  return segments;
+}
+
+export async function loadBusinessHours(businessId) {
+  const [rows] = await pool.query(
+    `SELECT windows_json AS windowsJson
+       FROM business_hours
+      WHERE business_id = ?
+      LIMIT 1`,
+    [businessId]
+  );
+
+  const fallback = createEmptyBusinessHours();
+
+  if (!rows.length) {
+    return fallback;
+  }
+
+  const record = rows[0];
+
+  if (!record.windowsJson) {
+    return fallback;
+  }
+
+  let parsed = {};
+
+  try {
+    parsed = typeof record.windowsJson === 'string' ? JSON.parse(record.windowsJson) : record.windowsJson;
+  } catch (error) {
+    console.warn(`Failed to parse business hours for business ${businessId}`, error);
+    return fallback;
+  }
+
+  const normalized = createEmptyBusinessHours();
+
+  for (const key of BUSINESS_HOUR_KEYS) {
+    const value = parsed && typeof parsed === 'object' ? parsed[key] : null;
+    normalized[key] = normalizeHourSegments(value);
+  }
+
+  return normalized;
+}
+
+export async function loadSoaxConfig(businessId) {
+  const [rows] = await pool.query(
+    `SELECT endpoint,
+            username,
+            res_username AS resUsername
+       FROM soax_configs
+      WHERE business_id = ?
+      LIMIT 1`,
+    [businessId]
+  );
+
+  if (!rows.length) {
+    return {
+      endpoint: '',
+      username: '',
+      resUsername: ''
+    };
+  }
+
+  const row = rows[0];
+
+  return {
+    endpoint: row.endpoint ?? '',
+    username: row.username ?? '',
+    resUsername: row.resUsername ?? ''
+  };
+}
+
 export async function loadOriginZones(businessId) {
   const [rows] = await pool.query(
     `SELECT ${ORIGIN_ZONE_FIELDS}

@@ -3,6 +3,7 @@ import { AuthError, requireAuth } from '@/lib/authServer';
 import BusinessNavigation from '../BusinessNavigation';
 import BusinessSwitcher from '../BusinessSwitcher';
 import OriginZonesManager from '../OriginZonesManager';
+import BusinessSettingsShortcut from '../BusinessSettingsShortcut';
 import { loadBusiness, loadOriginZones, loadOrganizationBusinesses } from '../helpers';
 
 export const metadata = {
@@ -31,6 +32,7 @@ export default async function BusinessKeywordsPage({ params }) {
   }
 
   const isOwner = session.role === 'owner';
+  const canManageSettings = session.role === 'owner' || session.role === 'admin';
 
   const organizationBusinesses = await loadOrganizationBusinesses(session.organizationId);
 
@@ -49,6 +51,7 @@ export default async function BusinessKeywordsPage({ params }) {
   const businessIdentifier = business.businessSlug ?? String(business.id);
   const currentBusinessOptionValue = businessIdentifier;
   const showBusinessSwitcher = businessOptions.length > 0;
+  const showHeaderActions = canManageSettings || showBusinessSwitcher;
   const businessName = business.businessName || 'this business';
   const destination = business.destinationAddress
     ? `${business.destinationAddress}${business.destinationZip ? `, ${business.destinationZip}` : ''}`
@@ -66,9 +69,14 @@ export default async function BusinessKeywordsPage({ params }) {
             </div>
           </div>
 
-          {showBusinessSwitcher ? (
-            <div className="dashboard-header__actions" aria-label="Select business">
-              <BusinessSwitcher businesses={businessOptions} currentValue={currentBusinessOptionValue} />
+          {showHeaderActions ? (
+            <div className="dashboard-header__actions" aria-label="Business shortcuts">
+              {canManageSettings ? (
+                <BusinessSettingsShortcut businessIdentifier={businessIdentifier} />
+              ) : null}
+              {showBusinessSwitcher ? (
+                <BusinessSwitcher businesses={businessOptions} currentValue={currentBusinessOptionValue} />
+              ) : null}
             </div>
           ) : null}
         </div>

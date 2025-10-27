@@ -3,6 +3,7 @@ import { AuthError, requireAuth } from '@/lib/authServer';
 import BusinessOptimizationRoadmap from '../BusinessOptimizationRoadmap';
 import BusinessSwitcher from '../BusinessSwitcher';
 import BusinessNavigation from '../BusinessNavigation';
+import BusinessSettingsShortcut from '../BusinessSettingsShortcut';
 import { loadBusiness, loadOrganizationBusinesses } from '../helpers';
 import { buildOptimizationRoadmap } from '../optimization';
 import { fetchPlaceDetails } from '@/lib/googlePlaces';
@@ -32,7 +33,7 @@ export default async function BusinessOptimizationStepsPage({ params }) {
     notFound();
   }
 
-  const isOwner = session.role === 'owner';
+  const canManageSettings = session.role === 'owner' || session.role === 'admin';
 
   const organizationBusinesses = await loadOrganizationBusinesses(session.organizationId);
 
@@ -66,6 +67,7 @@ export default async function BusinessOptimizationStepsPage({ params }) {
   }
 
   const showBusinessSwitcher = businessOptions.length > 0;
+  const showHeaderActions = canManageSettings || showBusinessSwitcher;
 
   return (
     <div className="dashboard-layout">
@@ -78,9 +80,14 @@ export default async function BusinessOptimizationStepsPage({ params }) {
             </div>
           </div>
 
-          {showBusinessSwitcher ? (
-            <div className="dashboard-header__actions" aria-label="Select business">
-              <BusinessSwitcher businesses={businessOptions} currentValue={currentBusinessOptionValue} />
+          {showHeaderActions ? (
+            <div className="dashboard-header__actions" aria-label="Business shortcuts">
+              {canManageSettings ? (
+                <BusinessSettingsShortcut businessIdentifier={businessIdentifier} />
+              ) : null}
+              {showBusinessSwitcher ? (
+                <BusinessSwitcher businesses={businessOptions} currentValue={currentBusinessOptionValue} />
+              ) : null}
             </div>
           ) : null}
         </div>

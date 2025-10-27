@@ -5,6 +5,7 @@ import GeoGridRunsSection from './GeoGridRunsSection';
 import KeywordPerformanceSpotlight from './KeywordPerformanceSpotlight';
 import BusinessNavigation from './BusinessNavigation';
 import BusinessSwitcher from './BusinessSwitcher';
+import BusinessSettingsShortcut from './BusinessSettingsShortcut';
 import {
   formatDate,
   formatDecimal,
@@ -95,6 +96,7 @@ export default async function BusinessDashboardPage({ params, searchParams }) {
 
   const business = await loadBusiness(session.organizationId, identifier);
   const isOwner = session.role === 'owner';
+  const canManageSettings = session.role === 'owner' || session.role === 'admin';
 
   const organizationBusinesses = await loadOrganizationBusinesses(session.organizationId);
 
@@ -546,6 +548,7 @@ export default async function BusinessDashboardPage({ params, searchParams }) {
     }
   }));
   const showBusinessSwitcher = businessOptions.length > 0;
+  const showHeaderActions = canManageSettings || showBusinessSwitcher;
   const locationLabel = destination ?? null;
   const sidebarInitial = businessName ? businessName.trim().charAt(0).toUpperCase() : 'B';
 
@@ -561,9 +564,14 @@ export default async function BusinessDashboardPage({ params, searchParams }) {
 
           </div>
 
-          {showBusinessSwitcher ? (
-            <div className="dashboard-header__actions" aria-label="Select business">
-              <BusinessSwitcher businesses={businessOptions} currentValue={currentBusinessOptionValue} />
+          {showHeaderActions ? (
+            <div className="dashboard-header__actions" aria-label="Business shortcuts">
+              {canManageSettings ? (
+                <BusinessSettingsShortcut businessIdentifier={businessIdentifier} />
+              ) : null}
+              {showBusinessSwitcher ? (
+                <BusinessSwitcher businesses={businessOptions} currentValue={currentBusinessOptionValue} />
+              ) : null}
             </div>
           ) : null}
         </div>
