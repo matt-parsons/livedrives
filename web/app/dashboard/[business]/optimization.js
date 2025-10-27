@@ -216,8 +216,67 @@ const STATUS_SCORES = {
   completed: 1,
   in_progress: 0.5,
   pending: 0,
-  unknown: 0
+  unknown: null
 };
+
+function resolveLetterGrade(percent) {
+  if (percent === null || percent === undefined) {
+    return '—';
+  }
+
+  const value = Number(percent);
+
+  if (!Number.isFinite(value)) {
+    return '—';
+  }
+
+  if (value >= 97) return 'A+';
+  if (value >= 93) return 'A';
+  if (value >= 90) return 'A-';
+  if (value >= 87) return 'B+';
+  if (value >= 83) return 'B';
+  if (value >= 80) return 'B-';
+  if (value >= 77) return 'C+';
+  if (value >= 73) return 'C';
+  if (value >= 70) return 'C-';
+  if (value >= 67) return 'D+';
+  if (value >= 63) return 'D';
+  if (value >= 60) return 'D-';
+  return 'F';
+}
+
+const SECTION_DEFINITIONS = [
+  {
+    id: 'profile-completeness',
+    title: 'Profile Completeness',
+    description: 'Make sure customers see the most accurate business basics.',
+    taskIds: ['claim-profile', 'hours', 'phone-number', 'website']
+  },
+  {
+    id: 'visual-presence',
+    title: 'Visual Presence',
+    description: 'Keep the listing visually fresh with current media.',
+    taskIds: ['photos']
+  },
+  {
+    id: 'customer-engagement',
+    title: 'Customer Engagement',
+    description: 'Respond to customers and share updates to build trust.',
+    taskIds: ['reviews', 'update-posts']
+  },
+  {
+    id: 'local-seo-optimization',
+    title: 'Local SEO Optimization',
+    description: 'Improve keyword coverage and service clarity for local search.',
+    taskIds: ['description', 'categories', 'services', 'service-descriptions']
+  },
+  {
+    id: 'competitive-analysis',
+    title: 'Competitive Analysis',
+    description: 'Track how nearby competitors attract attention.',
+    taskIds: ['competitive-benchmark', 'competitive-keywords']
+  }
+];
 
 export function buildOptimizationRoadmap(place) {
   if (!place) {
@@ -265,7 +324,7 @@ export function buildOptimizationRoadmap(place) {
       label: 'Add service descriptions',
       weight: 8,
       auto: false,
-      status: normalizeStatus('unknown'),
+      status: normalizeStatus('pending'),
       detail: 'Google Places does not expose service descriptions. Confirm each service has on-brand copy inside GBP.'
     },
     {
@@ -273,7 +332,7 @@ export function buildOptimizationRoadmap(place) {
       label: 'Post weekly updates',
       weight: 7,
       auto: false,
-      status: normalizeStatus('unknown'),
+      status: normalizeStatus('pending'),
       detail: 'Google Places does not surface post frequency. Maintain a weekly cadence manually.'
     },
     {
@@ -303,6 +362,23 @@ export function buildOptimizationRoadmap(place) {
       weight: 2,
       auto: true,
       ...computeReviewStatus(place.reviewCount)
+    },
+    {
+      id: 'competitive-benchmark',
+      label: 'Monitor top local competitors',
+      weight: 5,
+      auto: false,
+      status: normalizeStatus('pending'),
+      detail:
+        'Identify the top three profiles ranking for your priority keywords and track how often they earn new reviews or posts.'
+    },
+    {
+      id: 'competitive-keywords',
+      label: 'Compare keyword positioning',
+      weight: 4,
+      auto: false,
+      status: normalizeStatus('pending'),
+      detail: 'Use geo grid runs to spot keywords where competitors outrank you and plan follow-up actions.'
     }
   ];
 
@@ -317,9 +393,53 @@ export function buildOptimizationRoadmap(place) {
   const progressPercent =
     automatedWeight > 0 ? Math.round((completedWeight / automatedWeight) * 100) : 0;
 
+  const taskMap = new Map(tasks.map((task) => [task.id, task]));
+
+  const sections = SECTION_DEFINITIONS.map((section) => {
+    const sectionTasks = section.taskIds
+      .map((taskId) => taskMap.get(taskId))
+      .filter(Boolean)
+      .map((task) => ({ ...task }));
+
+    const weightedScores = sectionTasks.reduce(
+      (acc, task) => {
+        const weight = Number.isFinite(Number(task.weight)) ? Number(task.weight) : 0;
+        const score = STATUS_SCORES[task.status.key];
+
+        if (typeof score !== 'number') {
+          return {
+            completed: acc.completed,
+            available: acc.available,
+            total: acc.total + weight
+          };
+        }
+
+        return {
+          completed: acc.completed + score * weight,
+          available: acc.available + weight,
+          total: acc.total + weight
+        };
+      },
+      { completed: 0, available: 0, total: 0 }
+    );
+
+    const completion = weightedScores.available > 0 ? Math.round((weightedScores.completed / weightedScores.available) * 100) : null;
+
+    return {
+      id: section.id,
+      title: section.title,
+      description: section.description,
+      grade: resolveLetterGrade(completion),
+      completion,
+      weight: weightedScores.total,
+      tasks: sectionTasks
+    };
+  });
+
   return {
     place,
     tasks,
+    sections,
     automatedWeight,
     manualWeight,
     completedWeight,

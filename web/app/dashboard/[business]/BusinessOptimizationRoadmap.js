@@ -122,8 +122,7 @@ export default function BusinessOptimizationRoadmap({ roadmap, error, placeId, e
     return null;
   }
 
-  const autoTasks = roadmap.tasks.filter((task) => task.auto);
-  const manualTasks = roadmap.tasks.filter((task) => !task.auto);
+  const sections = Array.isArray(roadmap.sections) ? roadmap.sections : [];
 
   return (
     <div className="surface-card surface-card--muted">
@@ -146,7 +145,56 @@ export default function BusinessOptimizationRoadmap({ roadmap, error, placeId, e
         ) : null}
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '0.5rem' }}>
+      {sections.length ? (
+        <div
+          style={{
+            marginTop: '0.75rem',
+            display: 'grid',
+            gap: '0.75rem',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))'
+          }}
+        >
+          {sections.map((section) => (
+            <div
+              key={section.id}
+              style={{
+                border: '1px solid rgba(3, 60, 87, 0.12)',
+                borderRadius: '12px',
+                padding: '0.9rem 1rem',
+                background: '#fff',
+                boxShadow: '0 4px 8px rgba(3, 60, 87, 0.05)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.35rem'
+              }}
+            >
+              <span
+                style={{
+                  fontSize: '0.8rem',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  color: 'rgba(3, 60, 87, 0.55)'
+                }}
+              >
+                {section.title}
+              </span>
+              <strong style={{ fontSize: '1.6rem', color: 'var(--color-heading)' }}>{section.grade ?? '—'}</strong>
+              <span style={{ fontSize: '0.85rem', color: 'rgba(3, 60, 87, 0.66)' }}>
+                {section.completion === null ? 'No score yet' : `${section.completion}% complete`}
+              </span>
+            </div>
+          ))}
+        </div>
+      ) : null}
+
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '0.75rem',
+          marginTop: sections.length ? '1.25rem' : '0.5rem'
+        }}
+      >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
           <strong style={{ fontSize: '1.1rem', color: 'var(--color-heading)' }}>Optimization readiness</strong>
           <span style={{ fontSize: '0.9rem', color: 'rgba(3, 60, 87, 0.6)' }}>{roadmap.progressPercent}% complete</span>
@@ -177,43 +225,58 @@ export default function BusinessOptimizationRoadmap({ roadmap, error, placeId, e
         </p>
       </div>
 
-      <div
-        style={{
-          marginTop: '1.25rem',
-          display: 'grid',
-          gap: '1rem',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))'
-        }}
-      >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-          <h3 style={{ margin: 0, fontSize: '1rem', color: 'var(--color-heading)' }}>Automated insights</h3>
-          {autoTasks.length ? (
-            <ul style={{ margin: 0, padding: 0, display: 'grid', gap: '0.75rem' }}>
-              {autoTasks.map((task) => (
-                <RoadmapTaskCard key={task.id} task={task} />
-              ))}
-            </ul>
-          ) : (
-            <p style={{ margin: 0, fontSize: '0.9rem', color: 'rgba(3, 60, 87, 0.66)' }}>
-              No automated signals detected. Double-check that the Place ID is correct and try again.
-            </p>
-          )}
-        </div>
+      <div style={{ marginTop: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        {sections.map((section) => (
+          <section
+            key={section.id}
+            style={{
+              border: '1px solid rgba(3, 60, 87, 0.12)',
+              borderRadius: '14px',
+              padding: '1.1rem 1.25rem',
+              background: '#fff',
+              boxShadow: '0 6px 12px rgba(3, 60, 87, 0.06)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.85rem'
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'flex-start',
+                gap: '1rem'
+              }}
+            >
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                <h3 style={{ margin: 0, fontSize: '1.05rem', color: 'var(--color-heading)' }}>{section.title}</h3>
+                {section.description ? (
+                  <p style={{ margin: 0, fontSize: '0.88rem', color: 'rgba(3, 60, 87, 0.66)', lineHeight: 1.5 }}>
+                    {section.description}
+                  </p>
+                ) : null}
+              </div>
+              <div style={{ textAlign: 'right', minWidth: '72px' }}>
+                <strong style={{ fontSize: '1.4rem', color: 'var(--color-heading)' }}>{section.grade ?? '—'}</strong>
+                <div style={{ fontSize: '0.82rem', color: 'rgba(3, 60, 87, 0.6)' }}>
+                  {section.completion === null ? 'No score yet' : `${section.completion}% complete`}
+                </div>
+              </div>
+            </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-          <h3 style={{ margin: 0, fontSize: '1rem', color: 'var(--color-heading)' }}>Manual priorities</h3>
-          {manualTasks.length ? (
-            <ul style={{ margin: 0, padding: 0, display: 'grid', gap: '0.75rem' }}>
-              {manualTasks.map((task) => (
-                <RoadmapTaskCard key={task.id} task={task} />
-              ))}
-            </ul>
-          ) : (
-            <p style={{ margin: 0, fontSize: '0.9rem', color: 'rgba(3, 60, 87, 0.66)' }}>
-              Nothing to follow up manually right now.
-            </p>
-          )}
-        </div>
+            {section.tasks.length ? (
+              <ul style={{ margin: 0, padding: 0, display: 'grid', gap: '0.75rem' }}>
+                {section.tasks.map((task) => (
+                  <RoadmapTaskCard key={task.id} task={task} />
+                ))}
+              </ul>
+            ) : (
+              <p style={{ margin: 0, fontSize: '0.9rem', color: 'rgba(3, 60, 87, 0.66)' }}>
+                No tasks mapped to this section yet.
+              </p>
+            )}
+          </section>
+        ))}
       </div>
     </div>
   );
