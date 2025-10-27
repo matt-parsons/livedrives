@@ -567,7 +567,7 @@ export default async function BusinessDashboardPage({ params, searchParams }) {
           {showHeaderActions ? (
             <div className="dashboard-header__actions" aria-label="Business shortcuts">
               {canManageSettings ? (
-                <BusinessSettingsShortcut businessIdentifier={businessIdentifier} />
+                <BusinessSettingsShortcut businessIdentifier={navigationIdentifier} />
               ) : null}
               {showBusinessSwitcher ? (
                 <BusinessSwitcher businesses={businessOptions} currentValue={currentBusinessOptionValue} />
