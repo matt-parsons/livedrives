@@ -13,6 +13,7 @@ These guidelines apply to the entire repository.
 
 ## Documentation
 - Update or create documentation when behavior changes.
+- Ignore any files inside the `_bu/` directory when making or reviewing changes.
 
 ## Pull Requests
 - Provide concise, actionable summaries describing the changes and tests executed.
