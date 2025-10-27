@@ -1,5 +1,6 @@
 import pool from '@lib/db.js';
 import { adminAuth } from '@/lib/firebaseAdmin';
+import { sendFirebaseVerificationEmail } from '@/lib/firebaseVerification';
 
 export const runtime = 'nodejs';
 
@@ -55,6 +56,18 @@ export async function POST(request) {
         });
       } else {
         throw error;
+      }
+    }
+
+    if (!userRecord.emailVerified) {
+      try {
+        await sendFirebaseVerificationEmail(userRecord.uid);
+      } catch (error) {
+        console.error('Failed to send Firebase verification email', error);
+        return Response.json(
+          { error: 'Unable to send verification email. Please try again later.' },
+          { status: 502 }
+        );
       }
     }
 
