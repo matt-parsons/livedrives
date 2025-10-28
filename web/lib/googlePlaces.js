@@ -1,4 +1,12 @@
+import { load as loadHtml } from 'cheerio';
+
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '';
+
+const DEFAULT_BROWSER_HEADERS = {
+  'User-Agent':
+    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
+  'Accept-Language': 'en-US,en;q=0.9'
+};
 
 class PlacesError extends Error {
   constructor(message, { status = 500 } = {}) {
@@ -85,6 +93,57 @@ function extractServiceCapabilities(result) {
   }).map((field) => field.label);
 }
 
+function escapeAttributeValue(value) {
+  if (typeof value !== 'string') {
+    return null;
+  }
+
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  return trimmed.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+}
+
+function selectBusinessSidebar($, businessName) {
+  const safeValue = escapeAttributeValue(businessName);
+  if (!safeValue) {
+    return null;
+  }
+
+  const selector = `[aria-label="${safeValue}"]`;
+  const container = $(selector).first();
+  return container.length ? container : null;
+}
+
+function extractLatestPostDate($, context) {
+  const scope = context ?? $.root();
+  const postsTrigger = scope.find('[aria-label="See local posts"]').first();
+  if (!postsTrigger.length) {
+    return null;
+  }
+
+  const candidates = [
+    postsTrigger.find('.lqMB').first(),
+    postsTrigger.parent().find('.lqMB').first(),
+    postsTrigger.closest('[role="button"]').find('.lqMB').first(),
+    postsTrigger.closest('div').find('.lqMB').first(),
+    scope.find('[aria-label="See local posts"] .lqMB').first()
+  ];
+
+  for (const candidate of candidates) {
+    if (candidate && candidate.length) {
+      const text = candidate.text().trim();
+      if (text) {
+        return text;
+      }
+    }
+  }
+
+  return null;
+}
+
 async function fetchTimezone(location, { signal } = {}) {
   if (!location || location.lat === undefined || location.lng === undefined) {
     return null;
@@ -112,7 +171,39 @@ async function fetchTimezone(location, { signal } = {}) {
   return null;
 }
 
-function buildPlacePayload(result, { fallbackPlaceId, timezone = null } = {}) {
+async function fetchPlaceSidebarData(placeId, { businessName, signal } = {}) {
+  if (!placeId) {
+    return {};
+  }
+
+  try {
+    const mapsUrl = new URL('https://www.google.com/maps/place/');
+    mapsUrl.searchParams.set('q', `place_id:${placeId}`);
+
+    const response = await fetch(mapsUrl, {
+      cache: 'no-store',
+      headers: DEFAULT_BROWSER_HEADERS,
+      signal
+    });
+
+    if (!response.ok) {
+      return {};
+    }
+
+    const html = await response.text();
+    const $ = loadHtml(html);
+    const sidebar = selectBusinessSidebar($, businessName);
+    const latestPostDate = extractLatestPostDate($, sidebar ?? undefined);
+
+    return { latestPostDate };
+  } catch (error) {
+    console.error('Failed to fetch Google Maps sidebar data', error);
+  }
+
+  return {};
+}
+
+function buildPlacePayload(result, { fallbackPlaceId, timezone = null, sidebarData = {} } = {}) {
   const location = result.geometry?.location ?? null;
   const openingHours = result.current_opening_hours ?? result.opening_hours ?? null;
   const weekdayText = Array.isArray(openingHours?.weekday_text) ? openingHours.weekday_text : [];
@@ -123,6 +214,7 @@ function buildPlacePayload(result, { fallbackPlaceId, timezone = null } = {}) {
     result.editorial_summary?.description ??
     result.editorial_summary?.tagline ??
     null;
+  const latestPostDate = sidebarData?.latestPostDate ?? null;
 
   const reviewCountRaw = result.user_ratings_total ?? result.userRatingsTotal ?? null;
   const reviewCountNumeric = Number(reviewCountRaw);
@@ -149,6 +241,7 @@ function buildPlacePayload(result, { fallbackPlaceId, timezone = null } = {}) {
     openingHours,
     weekdayText,
     description,
+    latestPostDate,
     serviceCapabilities,
     fetchedAt: new Date().toISOString()
   };
@@ -211,8 +304,16 @@ export async function fetchPlaceDetails(placeId, { signal } = {}) {
     }
 
     const result = detailsData.result ?? {};
-    const timezone = await fetchTimezone(result.geometry?.location ?? null, { signal });
-    const place = buildPlacePayload(result, { fallbackPlaceId: placeId, timezone });
+    const resolvedPlaceId = result.place_id ?? placeId;
+    const [timezone, sidebarData] = await Promise.all([
+      fetchTimezone(result.geometry?.location ?? null, { signal }),
+      fetchPlaceSidebarData(resolvedPlaceId, { businessName: result.name ?? null, signal })
+    ]);
+    const place = buildPlacePayload(result, {
+      fallbackPlaceId: placeId,
+      timezone,
+      sidebarData
+    });
 
     return { place, raw: result };
   } catch (error) {
