@@ -757,17 +757,11 @@ textarea {
 
   .dashboard-layout__sidebar {
     width: 100%;
-    border-right: none;
-    border-bottom: 1px solid rgba(148, 163, 184, 0.22);
-    padding: 20px 18px;
+    border: none;
   }
 
   .dashboard-sidebar__menu {
     padding: 18px 16px;
-  }
-
-  .dashboard-layout__main {
-    padding: 24px 18px 32px;
   }
 
   .page-shell__body {
@@ -2367,9 +2361,6 @@ textarea {
 }
 
 @media (max-width: 720px) {
-  .app-wrapper {
-    padding: 20px;
-  }
 
   .app-header {
     padding: 14px 18px;

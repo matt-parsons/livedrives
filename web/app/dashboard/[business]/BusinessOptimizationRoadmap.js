@@ -230,11 +230,6 @@ export default function BusinessOptimizationRoadmap({ roadmap, error, placeId, e
           <section
             key={section.id}
             style={{
-              border: '1px solid rgba(3, 60, 87, 0.12)',
-              borderRadius: '14px',
-              padding: '1.1rem 1.25rem',
-              background: '#fff',
-              boxShadow: '0 6px 12px rgba(3, 60, 87, 0.06)',
               display: 'flex',
               flexDirection: 'column',
               gap: '0.85rem'

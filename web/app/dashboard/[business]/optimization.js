@@ -52,7 +52,7 @@ function computeDescriptionStatus(description) {
   if (length >= 160) {
     return {
       status: normalizeStatus('completed'),
-      detail: 'Description length looks healthy (160+ characters).'
+      detail: `Description length looks healthy (160+ characters).<br> ${description}`
     };
   }
 
@@ -279,6 +279,7 @@ const SECTION_DEFINITIONS = [
 ];
 
 export function buildOptimizationRoadmap(place) {
+  console.log(place);
   if (!place) {
     return null;
   }
