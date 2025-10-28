@@ -383,6 +383,40 @@ function parseLatLng(rawValue) {
 }
 
 export async function loadCtrRunsWithSnapshots(businessId, startDate, endDate) {
+  const [candidateRuns] = await pool.query(
+    `SELECT DISTINCT run_id AS runId
+       FROM (
+              SELECT rq.run_id,
+                     COALESCE(rq.timestamp_utc, rq.created_at) AS recorded_at
+                FROM ranking_queries rq
+               WHERE rq.business_id = ?
+                 AND COALESCE(rq.timestamp_utc, rq.created_at) >= ?
+                 AND COALESCE(rq.timestamp_utc, rq.created_at) < ?
+                 AND rq.run_id IS NOT NULL
+              UNION ALL
+              SELECT rl.run_id,
+                     COALESCE(rl.timestamp_utc, rl.created_at) AS recorded_at
+                FROM run_logs rl
+               WHERE rl.business_id = ?
+                 AND COALESCE(rl.timestamp_utc, rl.created_at) >= ?
+                 AND COALESCE(rl.timestamp_utc, rl.created_at) < ?
+                 AND rl.run_id IS NOT NULL
+            ) recent_runs`,
+    [businessId, startDate, endDate, businessId, startDate, endDate]
+  );
+
+  const candidateRunIds = Array.from(
+    new Set(
+      candidateRuns
+        .map((row) => Number(row.runId))
+        .filter((runId) => Number.isFinite(runId))
+    )
+  );
+
+  if (!candidateRunIds.length) {
+    return { runs: [], snapshots: [] };
+  }
+
   const [runs] = await pool.query(
     `SELECT r.id                AS runId,
             r.business_id      AS businessId,
@@ -402,18 +436,19 @@ export async function loadCtrRunsWithSnapshots(businessId, startDate, endDate) {
               ON rq.run_id = r.id
              AND rq.business_id = r.business_id
       WHERE r.business_id = ?
-        AND r.started_at >= ?
-        AND r.started_at < ?
+        AND r.id IN (?)
       GROUP BY r.id
       ORDER BY r.started_at DESC`,
-    [businessId, startDate, endDate]
+    [businessId, candidateRunIds]
   );
 
   if (!runs.length) {
     return { runs: [], snapshots: [] };
   }
 
-  const runIds = runs.map((row) => row.runId);
+  const runIds = runs
+    .map((row) => Number(row.runId))
+    .filter((value) => Number.isFinite(value));
 
   const runIdList = runIds;
 
@@ -476,6 +511,14 @@ export async function loadCtrRunsWithSnapshots(businessId, startDate, endDate) {
       keywordByRun.set(row.runId, label);
     }
   }
+
+  const runsWithKeywords = runs.map((row) => {
+    const keywordOverride = keywordByRun.get(row.runId);
+    if (typeof keywordOverride === 'string' && keywordOverride.trim()) {
+      return { ...row, keyword: keywordOverride.trim() };
+    }
+    return row;
+  });
 
   const ensureSnapshot = (key) => {
     if (!snapshotsByKey.has(key)) {
@@ -584,8 +627,13 @@ export async function loadCtrRunsWithSnapshots(businessId, startDate, endDate) {
     });
   }
 
+  const runIdsSet = new Set(runIds);
+
   const snapshots = Array.from(snapshotsByKey.values())
-    .filter((snapshot) => snapshot.runId != null && runIds.includes(snapshot.runId))
+    .filter((snapshot) => {
+      const runId = Number(snapshot.runId);
+      return Number.isFinite(runId) && runIdsSet.has(runId);
+    })
     .map(({ _order, ...rest }) => rest)
     .sort((a, b) => {
       if (a.runId !== b.runId) {
@@ -607,8 +655,12 @@ export async function loadCtrRunsWithSnapshots(businessId, startDate, endDate) {
     return { runs: [], snapshots: [] };
   }
 
-  const runIdsWithSnapshots = new Set(snapshots.map((snapshot) => snapshot.runId));
-  const filteredRuns = runs.filter((row) => runIdsWithSnapshots.has(row.runId));
+  const runIdsWithSnapshots = new Set(
+    snapshots
+      .map((snapshot) => Number(snapshot.runId))
+      .filter((value) => Number.isFinite(value))
+  );
+  const filteredRuns = runsWithKeywords.filter((row) => runIdsWithSnapshots.has(Number(row.runId)));
 
   return {
     runs: filteredRuns,
