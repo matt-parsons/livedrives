@@ -537,9 +537,6 @@ export default function IndexPage() {
           <section className="space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-semibold text-foreground">Top opportunities</h2>
-              <Button variant="ghost" size="sm" onClick={resetFlow}>
-                Search another profile
-              </Button>
             </div>
             {topOpportunities.length ? (
               <ul className="grid gap-4 lg:grid-cols-3">

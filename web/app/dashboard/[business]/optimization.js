@@ -332,7 +332,7 @@ export function buildOptimizationRoadmap(place) {
       id: 'update-posts',
       label: 'Post weekly updates',
       weight: 7,
-      auto: false,
+      auto: true,
       status: normalizeStatus('pending'),
       detail: 'Google Places does not surface post frequency. Maintain a weekly cadence manually.'
     },
