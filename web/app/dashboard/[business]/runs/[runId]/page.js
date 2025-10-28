@@ -54,6 +54,12 @@ export default async function GeoGridRunPage({ params }) {
     notFound();
   }
 
+  const businessIdentifier = business.businessSlug ?? String(business.id);
+
+  if (session.role !== 'owner') {
+    redirect(`/dashboard/${encodeURIComponent(businessIdentifier)}/keywords`);
+  }
+
   const runData = await loadGeoGridRunWithPoints(business.id, runId);
 
   if (!runData) {
@@ -96,8 +102,6 @@ export default async function GeoGridRunPage({ params }) {
     label: entry.businessName || `Business #${entry.id}`,
     isActive: entry.isActive
   }));
-
-  const businessIdentifier = business.businessSlug ?? String(business.id);
   const currentBusinessOptionValue = businessIdentifier;
   const canManageSettings = session.role === 'owner' || session.role === 'admin';
   const showBusinessSwitcher = businessOptions.length > 0;

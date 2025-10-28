@@ -219,7 +219,7 @@ const STATUS_SCORES = {
   unknown: null
 };
 
-function resolveLetterGrade(percent) {
+export function resolveLetterGrade(percent) {
   if (percent === null || percent === undefined) {
     return '—';
   }

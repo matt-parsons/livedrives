@@ -1,28 +1,19 @@
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { AuthError, requireAuth } from '@/lib/authServer';
-import GeoGridRunsSection from './GeoGridRunsSection';
-import KeywordPerformanceSpotlight from './KeywordPerformanceSpotlight';
 import BusinessNavigation from './BusinessNavigation';
 import BusinessSwitcher from './BusinessSwitcher';
 import BusinessSettingsShortcut from './BusinessSettingsShortcut';
 import {
   formatDate,
   formatDecimal,
-  formatTrend,
   toTimestamp,
   loadBusiness,
-  loadOriginZones,
   loadGeoGridRunSummaries,
-  loadGeoGridRunWithPoints,
-  loadCtrKeywordOverview,
   loadOrganizationBusinesses
 } from './helpers';
-import { buildMapPoints, resolveCenter } from './runs/formatters';
-
-function resolveMapsApiKey() {
-  return process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? process.env.GOOGLE_API_KEY ?? null;
-}
+import { buildOptimizationRoadmap, resolveLetterGrade } from './optimization';
+import { fetchPlaceDetails } from '@/lib/googlePlaces';
 
 function resolveStatus(status) {
   if (!status) {
@@ -51,39 +42,91 @@ function resolveStatus(status) {
   return { key: 'unknown', label: value.replace(/_/g, ' ') };
 }
 
-function formatCoordinate(value, digits = 5) {
-  if (value === null || value === undefined) {
+function mapRunRecord(run) {
+  const rankedPoints = Number(run.rankedPoints ?? 0);
+  const top3Points = Number(run.top3Points ?? 0);
+  const avgPositionValue =
+    run.avgRank === null || run.avgRank === undefined ? null : Number(run.avgRank);
+  const avgPosition = avgPositionValue === null ? null : formatDecimal(avgPositionValue, 2);
+  const solvValue = rankedPoints > 0 ? (top3Points * 100) / rankedPoints : null;
+  const solvTop3 = solvValue === null ? null : formatDecimal(solvValue, 1);
+  const runDateValue = run.finishedAt ?? run.lastMeasuredAt ?? run.createdAt;
+  const lastMeasuredAtValue = run.lastMeasuredAt ?? null;
+  const finishedAtValue = run.finishedAt ?? null;
+  const createdAtValue = run.createdAt ?? null;
+
+  return {
+    ...run,
+    rankedPoints,
+    top3Points,
+    avgPositionValue,
+    avgPosition,
+    solvTop3Value: solvValue,
+    solvTop3,
+    runDateValue,
+    runDate: formatDate(runDateValue),
+    lastMeasuredAtValue,
+    lastMeasuredAt: formatDate(lastMeasuredAtValue),
+    finishedAtValue,
+    finishedAt: formatDate(finishedAtValue),
+    createdAtValue,
+    createdAt: formatDate(createdAtValue)
+  };
+}
+
+function summarizeLatestRun(runs, baseHref) {
+  if (!Array.isArray(runs) || runs.length === 0) {
     return null;
   }
 
-  const numericValue = Number(value);
+  const sorted = runs
+    .slice()
+    .sort((a, b) => toTimestamp(b.runDateValue) - toTimestamp(a.runDateValue));
+  const latest = sorted[0];
 
-  if (!Number.isFinite(numericValue)) {
-    return String(value);
-  }
+  const status = resolveStatus(latest.status);
+  const solvLabel =
+    latest.solvTop3Value === null || latest.solvTop3Value === undefined
+      ? '—'
+      : `${formatDecimal(latest.solvTop3Value, 1)}%`;
+  const avgLabel =
+    latest.avgPositionValue === null || latest.avgPositionValue === undefined
+      ? '—'
+      : formatDecimal(latest.avgPositionValue, 2);
 
-  return formatDecimal(numericValue, digits);
+  return {
+    id: latest.id ?? null,
+    keyword: latest.keyword || '(no keyword)',
+    runDate: latest.runDate ?? '—',
+    status,
+    totalPoints: latest.totalPoints ?? 0,
+    top3Points: latest.top3Points ?? 0,
+    solvLabel,
+    avgLabel,
+    href: latest.id ? `${baseHref}/runs/${latest.id}` : null
+  };
 }
 
-function buildCoordinatePair(lat, lng, digits = 5) {
-  const latFormatted = formatCoordinate(lat, digits);
-  const lngFormatted = formatCoordinate(lng, digits);
-
-  if (!latFormatted || !lngFormatted) {
-    return null;
+function selectNextOptimizationSteps(roadmap, limit = 3) {
+  if (!roadmap || !Array.isArray(roadmap.tasks)) {
+    return [];
   }
 
-  return `${latFormatted}, ${lngFormatted}`;
+  return roadmap.tasks
+    .filter((task) => task.status && task.status.key !== 'completed')
+    .sort((a, b) => (b.weight ?? 0) - (a.weight ?? 0))
+    .slice(0, limit);
 }
 
-export default async function BusinessDashboardPage({ params, searchParams }) {
+export default async function BusinessDashboardPage({ params }) {
   const identifier = params.business;
-  const viewMode = searchParams?.view === 'list' ? 'list' : 'trend';
   const baseHref = `/dashboard/${encodeURIComponent(identifier)}`;
-  const ctrHref = `${baseHref}/ctr`;
+  const keywordsHref = `${baseHref}/keywords`;
+  const optimizationHref = `${baseHref}/optimization-steps`;
   const editHref = `${baseHref}/edit`;
 
   let session;
+
   try {
     session = await requireAuth();
   } catch (error) {
@@ -95,6 +138,11 @@ export default async function BusinessDashboardPage({ params, searchParams }) {
   }
 
   const business = await loadBusiness(session.organizationId, identifier);
+
+  if (!business) {
+    notFound();
+  }
+
   const isOwner = session.role === 'owner';
   const canManageSettings = session.role === 'owner' || session.role === 'admin';
 
@@ -107,450 +155,36 @@ export default async function BusinessDashboardPage({ params, searchParams }) {
     isActive: entry.isActive
   }));
 
-  if (!business) {
-    notFound();
-  }
-
-  const originZones = await loadOriginZones(business.id);
-  const ctrOverview = await loadCtrKeywordOverview(business.id, 30);
   const geoGridRunsRaw = await loadGeoGridRunSummaries(business.id);
-  const geoGridRuns = geoGridRunsRaw.map((run) => {
-    const rankedPoints = Number(run.rankedPoints ?? 0);
-    const top3Points = Number(run.top3Points ?? 0);
-    const avgPositionValue = run.avgRank === null || run.avgRank === undefined ? null : Number(run.avgRank);
-    const avgPosition = avgPositionValue === null ? null : formatDecimal(avgPositionValue, 2);
-    const solvValue = rankedPoints > 0 ? (top3Points * 100) / rankedPoints : null;
-    const solvTop3 = solvValue === null ? null : formatDecimal(solvValue, 1);
-    const runDateValue = run.finishedAt ?? run.lastMeasuredAt ?? run.createdAt;
-    const lastMeasuredAtValue = run.lastMeasuredAt ?? null;
-    const finishedAtValue = run.finishedAt ?? null;
-    const createdAtValue = run.createdAt ?? null;
+  const geoGridRuns = geoGridRunsRaw.map(mapRunRecord);
+  const latestRunSummary = summarizeLatestRun(geoGridRuns, baseHref);
 
-    return {
-      ...run,
-      rankedPoints,
-      top3Points,
-      avgPositionValue,
-      avgPosition,
-      solvTop3Value: solvValue,
-      solvTop3,
-      runDateValue,
-      runDate: formatDate(runDateValue),
-      lastMeasuredAtValue,
-      lastMeasuredAt: formatDate(lastMeasuredAtValue),
-      finishedAtValue,
-      finishedAt: formatDate(finishedAtValue),
-      createdAtValue,
-      createdAt: formatDate(createdAtValue)
-    };
-  });
-  const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
-  const nowTimestamp = Date.now();
-  const recentKeywordRuns = new Map();
+  let optimizationRoadmap = null;
+  let optimizationError = null;
 
-  for (const run of geoGridRuns) {
-    const timestamp = toTimestamp(run.runDateValue);
-
-    if (!timestamp || nowTimestamp - timestamp > THIRTY_DAYS_MS) {
-      continue;
+  if (business.gPlaceId) {
+    try {
+      const { place } = await fetchPlaceDetails(business.gPlaceId);
+      optimizationRoadmap = buildOptimizationRoadmap(place);
+    } catch (error) {
+      optimizationError = error?.message ?? 'Failed to load Google Places details.';
     }
-
-    const keywordLabel = run.keyword ?? '(no keyword)';
-    const key = keywordLabel.trim().toLowerCase() || '__no_keyword__';
-
-    if (!recentKeywordRuns.has(key)) {
-      recentKeywordRuns.set(key, []);
-    }
-
-    recentKeywordRuns.get(key).push({ run, timestamp });
   }
 
-  const keywordPerformance30d = Array.from(recentKeywordRuns.entries())
-    .map(([key, entries]) => {
-      const sorted = entries.slice().sort((a, b) => a.timestamp - b.timestamp);
-      const firstEntry = sorted[0];
-      const latestEntry = sorted[sorted.length - 1];
-      const firstRun = firstEntry.run;
-      const latestRun = latestEntry.run;
-      const firstAvg = firstRun.avgPositionValue ?? null;
-      const latestAvg = latestRun.avgPositionValue ?? null;
-      const firstSolv = firstRun.solvTop3Value ?? null;
-      const latestSolv = latestRun.solvTop3Value ?? null;
-      const avgDelta = firstAvg !== null && latestAvg !== null ? latestAvg - firstAvg : null;
-      const solvDelta = firstSolv !== null && latestSolv !== null ? latestSolv - firstSolv : null;
-      const avgDeltaAbs = avgDelta !== null ? formatDecimal(Math.abs(avgDelta), 2) : null;
-      const avgDeltaLabel = avgDeltaAbs !== null
-        ? `${avgDelta > 0 ? '+' : avgDelta < 0 ? '-' : ''}${avgDeltaAbs}`
-        : null;
-      const solvDeltaAbs = solvDelta !== null ? formatDecimal(Math.abs(solvDelta), 1) : null;
-      const solvDeltaLabel = solvDeltaAbs !== null
-        ? `${solvDelta > 0 ? '+' : solvDelta < 0 ? '-' : ''}${solvDeltaAbs}%`
-        : null;
-      const chartPoints = sorted.map(({ run, timestamp }) => ({
-        timestamp,
-        label: run.runDate ?? formatDate(run.runDateValue),
-        avgPosition: run.avgPositionValue ?? null,
-        solvTop3: run.solvTop3Value ?? null
-      }));
+  const optimizationGrade = optimizationRoadmap
+    ? resolveLetterGrade(optimizationRoadmap.progressPercent)
+    : null;
+  const optimizationSteps = selectNextOptimizationSteps(optimizationRoadmap);
 
-      return {
-        key,
-        keyword: latestRun.keyword || '(no keyword)',
-        runCount: sorted.length,
-        latestRunDate: latestRun.runDate ?? '—',
-        latestRunId: latestRun.id ?? null,
-        latestRunHref: latestRun.id ? `${baseHref}/runs/${latestRun.id}` : null,
-        avgLabel: latestRun.avgPosition ?? '—',
-        avgTrendIndicator: buildRunTrendIndicator(avgDelta, { invert: true, digits: 2 }),
-        avgDeltaLabel,
-        solvLabel: latestRun.solvTop3 ? `${latestRun.solvTop3}%` : '—',
-        solvTrendIndicator: buildRunTrendIndicator(solvDelta, { unit: '%', digits: 1 }),
-        solvDeltaLabel,
-        latestTimestamp: latestEntry.timestamp,
-        chartPoints
-      };
-    })
-    .sort((a, b) => b.latestTimestamp - a.latestTimestamp)
-    .map(({ latestTimestamp, ...rest }) => rest);
-
-  const mapsApiKey = resolveMapsApiKey();
-  const keywordPerformanceItems = keywordPerformance30d.length
-    ? await Promise.all(
-        keywordPerformance30d.map(async (item) => {
-          if (!item.latestRunId || !mapsApiKey) {
-            return { ...item, latestRunMap: null };
-          }
-
-          try {
-            const runData = await loadGeoGridRunWithPoints(business.id, item.latestRunId);
-
-            if (!runData) {
-              return { ...item, latestRunMap: null };
-            }
-
-            const mapPoints = buildMapPoints(runData.points);
-            const center = resolveCenter(runData.run, mapPoints);
-
-            if (!center) {
-              return { ...item, latestRunMap: null };
-            }
-
-            return {
-              ...item,
-              latestRunMap: {
-                center,
-                points: mapPoints
-              }
-            };
-          } catch (error) {
-            return { ...item, latestRunMap: null };
-          }
-        })
-      )
-    : [];
-  function buildRunTrendIndicator(delta, { invert = false, unit = '', digits = 1 } = {}) {
-    if (delta === null || delta === undefined) {
-      return null;
-    }
-
-    const value = Number(delta);
-
-    if (!Number.isFinite(value)) {
-      return null;
-    }
-
-    const magnitudeStr = formatDecimal(Math.abs(value), digits);
-
-    if (magnitudeStr === null) {
-      return null;
-    }
-
-    const magnitudeNumeric = Number(magnitudeStr);
-
-    if (Number.isNaN(magnitudeNumeric)) {
-      return null;
-    }
-
-    const isImproving = invert ? value < 0 : value > 0;
-    const isDeclining = invert ? value > 0 : value < 0;
-
-    if (magnitudeNumeric === 0) {
-      return {
-        className: 'trend-indicator--neutral',
-        icon: '→',
-        text: `0${unit}`,
-        title: 'No change'
-      };
-    }
-
-    let className = 'trend-indicator--neutral';
-    let icon = '→';
-    let title = 'No change';
-
-    if (isImproving) {
-      className = 'trend-indicator--positive';
-      icon = invert ? '▼' : '▲';
-      title = 'Improving';
-    } else if (isDeclining) {
-      className = 'trend-indicator--negative';
-      icon = invert ? '▲' : '▼';
-      title = 'Declining';
-    }
-
-    const prefix = value > 0 ? '+' : '-';
-    const text = `${prefix}${magnitudeStr}${unit}`;
-
-    return { className, icon, text, title };
-  }
-  const runTrendComparisons = new Map();
-  const geoGridTrend = (() => {
-    if (!geoGridRuns.length) {
-      return [];
-    }
-
-    const grouped = new Map();
-
-    for (const run of geoGridRuns) {
-      const keywordLabel = run.keyword ?? '(no keyword)';
-      const key = keywordLabel.trim().toLowerCase() || '__no_keyword__';
-
-      if (!grouped.has(key)) {
-        grouped.set(key, { key, label: keywordLabel, runs: [] });
-      }
-
-      grouped.get(key).runs.push(run);
-    }
-
-    const entries = Array.from(grouped.values()).map((entry) => {
-      const runs = entry.runs.slice().sort((a, b) => toTimestamp(a.runDateValue) - toTimestamp(b.runDateValue));
-      let previous = null;
-
-      for (const run of runs) {
-        let avgDeltaToPrevious = null;
-        let solvDeltaToPrevious = null;
-
-        if (previous) {
-          if (
-            run.avgPositionValue !== null &&
-            run.avgPositionValue !== undefined &&
-            previous.avgPositionValue !== null &&
-            previous.avgPositionValue !== undefined
-          ) {
-            avgDeltaToPrevious = run.avgPositionValue - previous.avgPositionValue;
-          }
-
-          if (
-            run.solvTop3Value !== null &&
-            run.solvTop3Value !== undefined &&
-            previous.solvTop3Value !== null &&
-            previous.solvTop3Value !== undefined
-          ) {
-            solvDeltaToPrevious = run.solvTop3Value - previous.solvTop3Value;
-          }
-        }
-
-        runTrendComparisons.set(run.id, {
-          avgDelta: avgDeltaToPrevious,
-          solvDelta: solvDeltaToPrevious
-        });
-
-        previous = run;
-      }
-
-      const first = runs[0];
-      const latest = runs[runs.length - 1];
-      const firstRunDateValue = first?.runDateValue ?? null;
-      const latestRunDateValue = latest?.runDateValue ?? null;
-      const firstAvg = first?.avgPositionValue ?? null;
-      const latestAvg = latest?.avgPositionValue ?? null;
-      const firstSolv = first?.solvTop3Value ?? null;
-      const latestSolv = latest?.solvTop3Value ?? null;
-      const avgDelta = firstAvg !== null && latestAvg !== null ? latestAvg - firstAvg : null;
-      const solvDelta = firstSolv !== null && latestSolv !== null ? latestSolv - firstSolv : null;
-      const avgTrendIndicator = buildRunTrendIndicator(avgDelta, { invert: true, digits: 2 });
-      const solvTrendIndicator = buildRunTrendIndicator(solvDelta, { unit: '%', digits: 1 });
-
-      return {
-        key: entry.key,
-        keyword: entry.label,
-        runCount: runs.length,
-        firstRunDate: formatDate(firstRunDateValue),
-        latestRunDate: formatDate(latestRunDateValue),
-        firstRunDateValue,
-        latestRunDateValue,
-        latestRunId: latest?.id ?? null,
-        avgTrend: formatTrend(firstAvg, latestAvg, 2),
-        avgFirst: firstAvg,
-        avgLatest: latestAvg,
-        avgDelta,
-        solvTrend: formatTrend(firstSolv, latestSolv, 1, '%'),
-        solvFirst: firstSolv,
-        solvLatest: latestSolv,
-        solvDelta,
-        avgTrendIndicator,
-        solvTrendIndicator,
-        latestStatus: latest?.status ?? 'unknown'
-      };
-    });
-
-    entries.sort((a, b) => toTimestamp(b.latestRunDateValue) - toTimestamp(a.latestRunDateValue));
-
-    return entries.map(({ firstRunDateValue, latestRunDateValue, ...rest }) => rest);
-  })();
-  const createdAt = formatDate(business.createdAt);
-  const updatedAt = formatDate(business.updatedAt);
-  const businessStatus = business.isActive ? { key: 'active', label: 'Active' } : { key: 'inactive', label: 'Inactive' };
-  const businessName = business.businessName || 'Business Dashboard';
-  const currentBusinessOptionValue = business.businessSlug ?? String(business.id);
-  const navigationIdentifier = business.businessSlug ?? String(business.id);
+  const businessIdentifier = business.businessSlug ?? String(business.id);
+  const currentBusinessOptionValue = businessIdentifier;
+  const showBusinessSwitcher = businessOptions.length > 0;
+  const showHeaderActions = canManageSettings || showBusinessSwitcher;
+  const businessName = business.businessName || 'Business dashboard';
   const destination = business.destinationAddress
     ? `${business.destinationAddress}${business.destinationZip ? `, ${business.destinationZip}` : ''}`
     : null;
-  const destinationCoordinates = buildCoordinatePair(business.destLat, business.destLng);
-  const highlightTiles = [
-    { label: 'Geo Grid Runs', value: geoGridRuns.length },
-    { label: 'Origin Zones', value: originZones.length },
-    { label: 'Business Status', value: businessStatus.label, status: businessStatus.key }
-  ];
-
-  if (business.drivesPerDay !== null && business.drivesPerDay !== undefined) {
-    highlightTiles.push({ label: 'Drives / day', value: business.drivesPerDay });
-  }
-
-  const infoBlocks = [
-    { label: 'Business ID', value: business.id },
-    business.businessSlug ? { label: 'Slug', value: business.businessSlug } : null,
-    business.mid ? { label: 'MID', value: business.mid } : null,
-    business.timezone ? { label: 'Timezone', value: business.timezone } : null,
-    destination ? { label: 'Destination', value: destination } : null,
-    destinationCoordinates ? { label: 'Destination coordinates', value: destinationCoordinates } : null,
-    createdAt ? { label: 'Created', value: createdAt } : null,
-    updatedAt ? { label: 'Updated', value: updatedAt } : null
-  ].filter(Boolean);
-  const businessOverviewItems = [
-    ...highlightTiles.map((tile) => ({
-      key: tile.label,
-      label: tile.label,
-      value: tile.value,
-      status: tile.status ?? null
-    })),
-    ...infoBlocks.map((item) => ({
-      key: item.label,
-      label: item.label,
-      value: item.value,
-      status: null
-    }))
-  ];
-  const geoSectionCaption = geoGridRuns.length === 0
-    ? 'Launch your first geo grid run to start mapping local rankings.'
-    : 'Switch between detailed runs and keyword trend arcs to track performance.';
-  const trendMeta = {
-    positive: { label: 'Improving', fg: '#1a7431', bg: 'rgba(26, 116, 49, 0.12)' },
-    negative: { label: 'Declining', fg: '#b91c1c', bg: 'rgba(185, 28, 28, 0.12)' },
-    neutral: { label: 'Stable', fg: '#4b5563', bg: 'rgba(75, 85, 99, 0.12)' }
-  };
-  const ctrOverviewRows = ctrOverview.map((item) => {
-    const avgLabel = item.avgPosition != null ? formatDecimal(item.avgPosition, 2) : '—';
-    const solvLabel = item.solvTop3 != null ? `${formatDecimal(item.solvTop3, 1)}%` : '—';
-
-    const avgTrendConfig = trendMeta[item.avgTrend] ?? trendMeta.neutral;
-    const avgDeltaLabel = item.avgDelta != null
-      ? `${item.avgDelta > 0 ? '+' : item.avgDelta < 0 ? '-' : ''}${formatDecimal(Math.abs(item.avgDelta), 2)}`
-      : null;
-    const avgPillStyle = {
-      backgroundColor: avgTrendConfig.bg,
-      color: avgTrendConfig.fg
-    };
-
-    const solvTrendConfig = trendMeta[item.solvTrend] ?? trendMeta.neutral;
-    const solvDeltaLabel = item.solvDelta != null
-      ? `${item.solvDelta > 0 ? '+' : item.solvDelta < 0 ? '-' : ''}${formatDecimal(Math.abs(item.solvDelta), 1)}%`
-      : null;
-    const solvPillStyle = {
-      backgroundColor: solvTrendConfig.bg,
-      color: solvTrendConfig.fg
-    };
-
-    return {
-      keyword: item.keyword,
-      sessions: item.sessions,
-      avgLabel,
-      avgTrendLabel: avgTrendConfig.label,
-      avgDeltaLabel,
-      avgPillStyle,
-      solvLabel,
-      solvTrendLabel: solvTrendConfig.label,
-      solvDeltaLabel,
-      solvPillStyle
-    };
-  });
-  const geoGridRunsList = geoGridRuns.map((run) => {
-    const status = resolveStatus(run.status);
-    const solvTop3 = run.solvTop3 ? `${run.solvTop3}%` : '—';
-    const avgPosition = run.avgPosition ?? '—';
-    const runDate = run.runDate ?? '—';
-    const lastMeasured = run.lastMeasuredAt ? `Last point ${run.lastMeasuredAt}` : null;
-    const gridDetails = [
-      `Grid: ${run.gridRows ?? '—'} × ${run.gridCols ?? '—'}`,
-      run.spacingMiles !== null && run.spacingMiles !== undefined
-        ? `Spacing: ${formatDecimal(run.spacingMiles, 2) ?? run.spacingMiles} mi`
-        : null,
-      run.radiusMiles !== null && run.radiusMiles !== undefined
-        ? `Radius: ${formatDecimal(run.radiusMiles, 2) ?? run.radiusMiles} mi`
-        : null
-    ].filter(Boolean);
-    const footerDetails = [
-      `Run ID: ${run.id}`,
-      lastMeasured,
-      run.originLat !== null && run.originLng !== null
-        ? `Origin: ${buildCoordinatePair(run.originLat, run.originLng)}`
-        : null,
-      `Ranked points: ${run.rankedPoints ?? 0} of ${run.totalPoints ?? 0}`
-    ].filter(Boolean);
-    const trends = runTrendComparisons.get(run.id) ?? { avgDelta: null, solvDelta: null };
-    const solvTrendIndicator = buildRunTrendIndicator(trends.solvDelta, { unit: '%', digits: 1 });
-    const avgTrendIndicator = buildRunTrendIndicator(trends.avgDelta, { invert: true, digits: 2 });
-
-    return {
-      id: run.id,
-      keyword: run.keyword || 'Untitled grid run',
-      href: `${baseHref}/runs/${run.id}`,
-      runDate,
-      status,
-      solvTop3,
-      solvTrendIndicator,
-      avgPosition,
-      avgTrendIndicator,
-      gridDetails,
-      footerDetails,
-      notes: run.notes || null
-    };
-  });
-  const geoGridTrendList = geoGridTrend.map((item) => ({
-    key: item.key,
-    keyword: item.keyword,
-    runCount: item.runCount,
-    firstRunDate: item.firstRunDate,
-    latestRunDate: item.latestRunDate,
-    latestRunHref: item.latestRunId ? `${baseHref}/runs/${item.latestRunId}` : null,
-    status: resolveStatus(item.latestStatus),
-    avgTrendIndicator: item.avgTrendIndicator,
-    solvTrendIndicator: item.solvTrendIndicator,
-    avg: {
-      first: item.avgFirst,
-      latest: item.avgLatest,
-      delta: item.avgDelta
-    },
-    solv: {
-      first: item.solvFirst,
-      latest: item.solvLatest,
-      delta: item.solvDelta
-    }
-  }));
-  const showBusinessSwitcher = businessOptions.length > 0;
-  const showHeaderActions = canManageSettings || showBusinessSwitcher;
   const locationLabel = destination ?? null;
-  const sidebarInitial = businessName ? businessName.trim().charAt(0).toUpperCase() : 'B';
 
   return (
     <div className="dashboard-layout">
@@ -561,13 +195,12 @@ export default async function BusinessDashboardPage({ params, searchParams }) {
               <h1 className="page-title">{businessName}</h1>
               {locationLabel ? <span className="dashboard-sidebar__location">{locationLabel}</span> : null}
             </div>
-
           </div>
 
           {showHeaderActions ? (
             <div className="dashboard-header__actions" aria-label="Business shortcuts">
               {canManageSettings ? (
-                <BusinessSettingsShortcut businessIdentifier={navigationIdentifier} />
+                <BusinessSettingsShortcut businessIdentifier={businessIdentifier} />
               ) : null}
               {showBusinessSwitcher ? (
                 <BusinessSwitcher businesses={businessOptions} currentValue={currentBusinessOptionValue} />
@@ -580,204 +213,251 @@ export default async function BusinessDashboardPage({ params, searchParams }) {
       <div className="dashboard-layout__body">
         <aside className="dashboard-layout__sidebar" aria-label="Workspace navigation">
           <div className="dashboard-sidebar__menu">
-            <BusinessNavigation businessIdentifier={navigationIdentifier} active="dashboard" />
+            <BusinessNavigation businessIdentifier={businessIdentifier} active="dashboard" />
           </div>
         </aside>
 
         <main className="dashboard-layout__main">
           <div className="dashboard-layout__content">
             <section className="section">
-              <KeywordPerformanceSpotlight items={keywordPerformanceItems} mapsApiKey={mapsApiKey} />
-            </section>
-
-            {isOwner ? (
-              <section className="section">
-                <div className="surface-card surface-card--muted surface-card--compact">
-                  <div className="section-header">
-                    <h2 className="section-title">CTR sessions</h2>
-                    <p className="section-caption">Analyze click-through behaviors alongside geo performance.</p>
+              <div className="surface-card surface-card--muted">
+                <div className="section-header">
+                  <div>
+                    <h2 className="section-title">Latest geo grid run</h2>
+                    <p className="section-caption">
+                      Review your freshest keyword coverage snapshot across the map.
+                    </p>
                   </div>
+                  <Link className="cta-link" href={keywordsHref}>
+                    View keyword insights ↗
+                  </Link>
+                </div>
 
-                  {ctrOverviewRows.length ? (
+                {isOwner ? (
+                  latestRunSummary ? (
                     <div
-                      className="ctr-overview-list"
                       style={{
                         display: 'flex',
                         flexDirection: 'column',
-                        gap: '0.75rem',
-                        marginTop: '1rem',
-                        marginBottom: '1rem'
+                        gap: '0.85rem',
+                        marginTop: '0.75rem'
                       }}
                     >
-                      {ctrOverviewRows.map((item) => (
-                        <div
-                          key={item.keyword}
-                          style={{
-                            display: 'flex',
-                            flexWrap: 'wrap',
-                            alignItems: 'center',
-                            gap: '1rem',
-                            border: '1px solid rgba(17, 24, 39, 0.08)',
-                            borderRadius: '12px',
-                            padding: '0.85rem 1.1rem',
-                            backgroundColor: '#ffffff'
-                          }}
-                        >
-                          <div style={{ flex: '1 1 200px' }}>
-                            <strong style={{ fontSize: '1rem' }}>{item.keyword}</strong>
-                            <div style={{ color: '#6b7280', fontSize: '0.85rem', marginTop: '0.2rem' }}>
-                              {item.sessions} session{item.sessions === 1 ? '' : 's'} (30 days)
-                            </div>
-                          </div>
-
-                          <div
-                            style={{
-                              display: 'flex',
-                              flexWrap: 'wrap',
-                              gap: '1.25rem',
-                              flex: '1 1 240px'
-                            }}
-                          >
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                              <span style={{ color: '#374151', fontSize: '0.9rem' }}>
-                                Avg position{' '}
-                                <strong style={{ fontSize: '1rem' }}>
-                                  {item.avgLabel}
-                                </strong>
-                              </span>
-                              <span
-                                style={{
-                                  ...item.avgPillStyle,
-                                  padding: '0.3rem 0.75rem',
-                                  borderRadius: '999px',
-                                  fontSize: '0.8rem',
-                                  fontWeight: 600
-                                }}
-                              >
-                                {item.avgTrendLabel}
-                                {item.avgDeltaLabel ? (
-                                  <span style={{ fontWeight: 500, opacity: 0.8 }}>
-                                    {' '}({item.avgDeltaLabel})
-                                  </span>
-                                ) : null}
-                              </span>
-                            </div>
-
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                              <span style={{ color: '#374151', fontSize: '0.9rem' }}>
-                                SoLV (Top 3){' '}
-                                <strong style={{ fontSize: '1rem' }}>
-                                  {item.solvLabel}
-                                </strong>
-                              </span>
-                              <span
-                                style={{
-                                  ...item.solvPillStyle,
-                                  padding: '0.3rem 0.75rem',
-                                  borderRadius: '999px',
-                                  fontSize: '0.8rem',
-                                  fontWeight: 600
-                                }}
-                              >
-                                {item.solvTrendLabel}
-                                {item.solvDeltaLabel ? (
-                                  <span style={{ fontWeight: 500, opacity: 0.8 }}>
-                                    {' '}({item.solvDeltaLabel})
-                                  </span>
-                                ) : null}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p style={{ marginTop: '1rem', color: '#6b7280' }}>
-                      No CTR sessions recorded in the last 30 days.
-                    </p>
-                  )}
-
-                  <Link className="cta-link" href={ctrHref}>
-                    Open CTR dashboard ↗
-                  </Link>
-                </div>
-              </section>
-            ) : null}
-
-            <section className="section">
-              <GeoGridRunsSection
-                caption={geoSectionCaption}
-                defaultView={viewMode}
-                trendItems={geoGridTrendList}
-                runItems={geoGridRunsList}
-              />
-            </section>
-
-            {isOwner ? (
-              <section className="section">
-                <div className="surface-card surface-card--muted">
-                  <div className="section-header">
-                    <div>
-                      <h2 className="section-title">Business overview</h2>
-                      <p className="section-caption">Current state and identifiers powering live operations.</p>
-                    </div>
-                    <Link className="cta-link" href={editHref}>
-                      Edit business
-                    </Link>
-                  </div>
-
-                  {businessOverviewItems.length ? (
-                    <div style={{ marginTop: '0.5rem', overflowX: 'auto' }}>
-                      <table
+                      <div
                         style={{
-                          width: '100%',
-                          minWidth: '640px',
-                          borderCollapse: 'separate',
-                          borderSpacing: '0 0.25rem',
-                          fontSize: '0.9rem',
-                          lineHeight: 1.4,
-                          textAlign: 'center',
-                          whiteSpace: 'nowrap'
+                          display: 'flex',
+                          flexWrap: 'wrap',
+                          gap: '0.75rem',
+                          justifyContent: 'space-between',
+                          alignItems: 'baseline'
                         }}
                       >
-                        <thead>
-                          <tr>
-                            {businessOverviewItems.map((item) => (
-                              <th
-                                key={`${item.key}-header`}
-                                style={{
-                                  padding: '0.35rem 0.5rem',
-                                  color: '#6b7280',
-                                  fontWeight: 600
-                                }}
-                                scope="col"
-                              >
-                                {item.label}
-                              </th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr>
-                            {businessOverviewItems.map((item) => (
-                              <td key={`${item.key}-value`} style={{ padding: '0.35rem 0.5rem', color: '#111827' }}>
-                                {item.status ? (
-                                  <span className="status-pill" data-status={item.status}>
-                                    {item.value}
-                                  </span>
-                                ) : (
-                                  item.value
-                                )}
-                              </td>
-                            ))}
-                          </tr>
-                        </tbody>
-                      </table>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                          <strong style={{ fontSize: '1.1rem' }}>{latestRunSummary.keyword}</strong>
+                          <span style={{ color: '#6b7280', fontSize: '0.9rem' }}>Run on {latestRunSummary.runDate}</span>
+                        </div>
+                        <span className="status-pill" data-status={latestRunSummary.status.key}>
+                          {latestRunSummary.status.label}
+                        </span>
+                      </div>
+
+                      <div
+                        style={{
+                          display: 'grid',
+                          gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
+                          gap: '0.85rem'
+                        }}
+                      >
+                        <div className="metric-chip">
+                          <span style={{ color: '#6b7280', fontSize: '0.8rem' }}>SoLV (Top 3)</span>
+                          <strong style={{ fontSize: '1.4rem' }}>{latestRunSummary.solvLabel}</strong>
+                        </div>
+                        <div className="metric-chip">
+                          <span style={{ color: '#6b7280', fontSize: '0.8rem' }}>Avg. position</span>
+                          <strong style={{ fontSize: '1.4rem' }}>{latestRunSummary.avgLabel}</strong>
+                        </div>
+                        <div className="metric-chip">
+                          <span style={{ color: '#6b7280', fontSize: '0.8rem' }}>Points ranked</span>
+                          <strong style={{ fontSize: '1.4rem' }}>
+                            {latestRunSummary.top3Points}/{latestRunSummary.totalPoints}
+                          </strong>
+                        </div>
+                      </div>
+
+                      {latestRunSummary.href ? (
+                        <div>
+                          <Link className="cta-link" href={latestRunSummary.href}>
+                            Open run details ↗
+                          </Link>
+                        </div>
+                      ) : null}
                     </div>
-                  ) : null}
+                  ) : (
+                    <p style={{ marginTop: '0.75rem', color: '#6b7280' }}>
+                      No geo grid runs captured yet. Launch your first run from the keywords workspace.
+                    </p>
+                  )
+                ) : (
+                  <p style={{ marginTop: '0.75rem', color: '#6b7280' }}>
+                    Geo grid insights are limited to workspace owners. Ask an owner to share the latest results.
+                  </p>
+                )}
+              </div>
+            </section>
+
+            <section className="section">
+              <div className="surface-card surface-card--muted">
+                <div className="section-header">
+                  <div>
+                    <h2 className="section-title">GBP optimization</h2>
+                    <p className="section-caption">
+                      Gauge how complete your Google Business Profile looks today.
+                    </p>
+                  </div>
+                  <Link className="cta-link" href={optimizationHref}>
+                    View full checklist ↗
+                  </Link>
                 </div>
-              </section>
-            ) : null}
+
+                {business.gPlaceId ? (
+                  optimizationError ? (
+                    <div className="inline-error" role="status" style={{ marginTop: '0.75rem' }}>
+                      <strong>Unable to contact Google Places</strong>
+                      <span>{optimizationError}</span>
+                    </div>
+                  ) : optimizationRoadmap ? (
+                    <div
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '0.85rem',
+                        marginTop: '0.75rem'
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: 'flex',
+                          flexWrap: 'wrap',
+                          gap: '1.5rem',
+                          alignItems: 'center'
+                        }}
+                      >
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                          <span style={{ color: '#6b7280', fontSize: '0.85rem' }}>Overall grade</span>
+                          <strong style={{ fontSize: '2rem', color: 'var(--color-heading)' }}>
+                            {optimizationGrade ?? '—'}
+                          </strong>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                          <span style={{ color: '#6b7280', fontSize: '0.85rem' }}>Automated readiness</span>
+                          <strong style={{ fontSize: '1.4rem', color: 'var(--color-heading)' }}>
+                            {optimizationRoadmap.progressPercent}% complete
+                          </strong>
+                        </div>
+                        <div style={{ color: '#6b7280', fontSize: '0.9rem' }}>
+                          Automated checks cover {optimizationRoadmap.automatedWeight}% of tasks. Manual follow-ups
+                          account for {optimizationRoadmap.manualWeight}%.
+                        </div>
+                      </div>
+
+                      <div
+                        style={{
+                          height: '0.65rem',
+                          borderRadius: '999px',
+                          background: 'rgba(3, 60, 87, 0.12)',
+                          overflow: 'hidden'
+                        }}
+                        role="presentation"
+                      >
+                        <div
+                          style={{
+                            width: `${Math.min(100, Math.max(0, optimizationRoadmap.progressPercent))}%`,
+                            background: 'var(--color-primary)',
+                            height: '100%'
+                          }}
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <p style={{ marginTop: '0.75rem', color: '#6b7280' }}>
+                      We could not compute optimization insights for this profile yet.
+                    </p>
+                  )
+                ) : (
+                  <div style={{ marginTop: '0.75rem' }}>
+                    <p style={{ color: '#6b7280', marginBottom: '0.75rem' }}>
+                      Connect a Google Place ID to unlock automated profile scoring and guidance.
+                    </p>
+                    {canManageSettings ? (
+                      <Link className="cta-link" href={editHref}>
+                        Add Google Place ID ↗
+                      </Link>
+                    ) : null}
+                  </div>
+                )}
+              </div>
+            </section>
+
+            <section className="section">
+              <div className="surface-card surface-card--muted surface-card--compact">
+                <div className="section-header">
+                  <div>
+                    <h2 className="section-title">Next steps to optimize</h2>
+                    <p className="section-caption">
+                      Focus on these tasks to strengthen your local visibility.
+                    </p>
+                  </div>
+                  <Link className="cta-link" href={optimizationHref}>
+                    Explore full roadmap ↗
+                  </Link>
+                </div>
+
+                {business.gPlaceId && optimizationRoadmap ? (
+                  optimizationSteps.length ? (
+                    <ul
+                      style={{
+                        listStyle: 'none',
+                        display: 'grid',
+                        gap: '0.75rem',
+                        margin: '0.75rem 0 0',
+                        padding: 0
+                      }}
+                    >
+                      {optimizationSteps.map((task) => (
+                        <li
+                          key={task.id}
+                          style={{
+                            border: '1px solid rgba(3, 60, 87, 0.12)',
+                            borderRadius: '12px',
+                            padding: '0.85rem 1rem',
+                            background: '#fff',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '0.4rem'
+                          }}
+                        >
+                          <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.75rem' }}>
+                            <strong style={{ fontSize: '1.05rem', color: 'var(--color-heading)' }}>{task.label}</strong>
+                            <span className="status-pill" data-status={task.status.key}>
+                              {task.status.label}
+                            </span>
+                          </div>
+                          <p style={{ margin: 0, color: 'rgba(3, 60, 87, 0.66)', fontSize: '0.9rem' }}>{task.detail}</p>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p style={{ marginTop: '0.75rem', color: '#6b7280' }}>
+                      Great work! Automated checks did not surface additional actions right now.
+                    </p>
+                  )
+                ) : (
+                  <p style={{ marginTop: '0.75rem', color: '#6b7280' }}>
+                    Connect your Google Business Profile to unlock personalized recommendations.
+                  </p>
+                )}
+              </div>
+            </section>
           </div>
         </main>
       </div>
