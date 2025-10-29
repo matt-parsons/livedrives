@@ -18,44 +18,11 @@ function RoadmapTaskCard({ task }) {
   const impactLabel = formatImpact(task.weight);
 
   return (
-    <li
-      key={task.id}
-      style={{
-        listStyle: 'none',
-        padding: '1rem 1.1rem',
-        borderRadius: '12px',
-        border: '1px solid rgba(3, 60, 87, 0.12)',
-        background: '#fff',
-        boxShadow: '0 6px 12px rgba(3, 60, 87, 0.06)',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '0.65rem',
-        width: '48%'
-      }}
-    >
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'flex-start',
-          flexDirection: 'column',
-          gap: '1rem'
-        }}
-      >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-          <strong style={{ fontSize: '1.02rem', color: 'var(--color-heading)' }}>{task.label}</strong>
-          {task.detail ? (
-            <p
-              style={{
-                margin: 0,
-                fontSize: '0.9rem',
-                color: 'rgba(3, 60, 87, 0.66)',
-                lineHeight: 1.4
-              }}
-            >
-              {task.detail}
-            </p>
-          ) : null}
+    <li key={task.id} className="business-optimization-roadmap__task-card">
+      <div className="business-optimization-roadmap__task-card-header">
+        <div className="business-optimization-roadmap__task-info">
+          <strong className="business-optimization-roadmap__task-title">{task.label}</strong>
+          {task.detail ? <p className="business-optimization-roadmap__task-detail">{task.detail}</p> : null}
         </div>
         <span className="status-pill" data-status={task.status.key}>
           {task.status.label}
@@ -78,7 +45,7 @@ export default function BusinessOptimizationRoadmap({ roadmap, error, placeId, e
             Add Google Place ID
           </Link>
         </div>
-        <p style={{ marginTop: '0.75rem', color: 'rgba(3, 60, 87, 0.66)', fontSize: '0.9rem' }}>
+        <p className="business-optimization-roadmap__connect-message">
           This business is not linked to Google Places yet. Once a Place ID is connected we can evaluate the
           profile’s completeness.
         </p>
@@ -131,41 +98,14 @@ export default function BusinessOptimizationRoadmap({ roadmap, error, placeId, e
       </div>
 
       {sections.length ? (
-        <div
-          style={{
-            marginTop: '0.75rem',
-            display: 'grid',
-            gap: '0.75rem',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))'
-          }}
-        >
+        <div className="business-optimization-roadmap__section-summary-grid">
           {sections.map((section) => (
-            <div
-              key={section.id}
-              style={{
-                border: '1px solid rgba(3, 60, 87, 0.12)',
-                borderRadius: '12px',
-                padding: '0.9rem 1rem',
-                background: '#fff',
-                boxShadow: '0 4px 8px rgba(3, 60, 87, 0.05)',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '0.35rem',
-                justifyContent: 'space-between'
-              }}
-            >
-              <span
-                style={{
-                  fontSize: '0.8rem',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
-                  color: 'rgba(3, 60, 87, 0.55)'
-                }}
-              >
+            <div key={section.id} className="business-optimization-roadmap__section-summary-card">
+              <span className="business-optimization-roadmap__section-summary-card-title">
                 {section.title}
               </span>
-              <strong style={{ fontSize: '1.6rem', color: 'var(--color-heading)' }}>{section.grade ?? '—'}</strong>
-              <span style={{ fontSize: '0.85rem', color: 'rgba(3, 60, 87, 0.66)' }}>
+              <strong className="business-optimization-roadmap__section-summary-card-grade">{section.grade ?? '—'}</strong>
+              <span className="business-optimization-roadmap__section-summary-card-completion">
                 {section.completion === null ? 'No score yet' : `${section.completion}% complete`}
               </span>
             </div>
@@ -174,81 +114,53 @@ export default function BusinessOptimizationRoadmap({ roadmap, error, placeId, e
       ) : null}
 
       <div
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '0.75rem',
-          marginTop: sections.length ? '1.25rem' : '0.5rem'
-        }}
+        className={`business-optimization-roadmap__sections-summary ${
+          sections.length
+            ? 'business-optimization-roadmap__sections-summary--with-sections'
+            : 'business-optimization-roadmap__sections-summary--without-sections'
+        }`}
       >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-          <strong style={{ fontSize: '1.1rem', color: 'var(--color-heading)' }}>Optimization readiness</strong>
-          <span style={{ fontSize: '0.9rem', color: 'rgba(3, 60, 87, 0.6)' }}>{roadmap.progressPercent}% complete</span>
+        <div className="business-optimization-roadmap__summary-header">
+          <strong className="business-optimization-roadmap__summary-heading">Optimization readiness</strong>
+          <span className="business-optimization-roadmap__summary-progress">{roadmap.progressPercent}% complete</span>
         </div>
         <div
           aria-hidden="true"
-          style={{
-            position: 'relative',
-            width: '100%',
-            height: '12px',
-            borderRadius: '999px',
-            background: 'rgba(3, 60, 87, 0.15)',
-            overflow: 'hidden'
-          }}
+          className="business-optimization-roadmap__progress-track"
         >
           <div
-            style={{
-              width: `${Math.min(100, Math.max(0, roadmap.progressPercent))}%`,
-              height: '100%',
-              borderRadius: '999px',
-              background: 'linear-gradient(90deg, #fe8833, #d06f29)'
-            }}
+            className="business-optimization-roadmap__progress-fill"
+            style={{ width: `${Math.min(100, Math.max(0, roadmap.progressPercent))}%` }}
           />
         </div>
       </div>
 
-      <div style={{ marginTop: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+      <div className="business-optimization-roadmap__section-list-wrapper">
         {sections.map((section) => (
-          <section
-            key={section.id}
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '0.85rem'
-            }}
-          >
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'flex-start',
-                gap: '1rem'
-              }}
-            >
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                <h3 style={{ margin: 0, fontSize: '1.05rem', color: 'var(--color-heading)' }}>{section.title}</h3>
+          <section key={section.id} className="business-optimization-roadmap__section-item">
+            <div className="business-optimization-roadmap__section-header">
+              <div className="business-optimization-roadmap__section-info">
+                <h3 className="business-optimization-roadmap__section-heading">{section.title}</h3>
                 {section.description ? (
-                  <p style={{ margin: 0, fontSize: '0.88rem', color: 'rgba(3, 60, 87, 0.66)', lineHeight: 1.5 }}>
-                    {section.description}
-                  </p>
+                  <p className="business-optimization-roadmap__section-description">{section.description}</p>
                 ) : null}
               </div>
-              <div style={{ textAlign: 'right', minWidth: '72px' }}>
-                <strong style={{ fontSize: '1.4rem', color: 'var(--color-heading)' }}>{section.grade ?? '—'}</strong>
-                <div style={{ fontSize: '0.82rem', color: 'rgba(3, 60, 87, 0.6)' }}>
+              <div className="business-optimization-roadmap__section-score">
+                <strong className="business-optimization-roadmap__section-score-value">{section.grade ?? '—'}</strong>
+                <div className="business-optimization-roadmap__section-completion">
                   {section.completion === null ? 'No score yet' : `${section.completion}% complete`}
                 </div>
               </div>
             </div>
 
             {section.tasks.length ? (
-              <ul style={{ margin: 0, padding: 0, display: 'flex', flexWrap: 'wrap', gap: '0.75rem' }}>
+              <ul className="business-optimization-roadmap__section-task-list">
                 {section.tasks.map((task) => (
                   <RoadmapTaskCard key={task.id} task={task} />
                 ))}
               </ul>
             ) : (
-              <p style={{ margin: 0, fontSize: '0.9rem', color: 'rgba(3, 60, 87, 0.66)' }}>
+              <p className="business-optimization-roadmap__section-empty-message">
                 No tasks mapped to this section yet.
               </p>
             )}
