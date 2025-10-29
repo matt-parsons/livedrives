@@ -1,4 +1,4 @@
-import pool from '@lib/db.js';
+import pool from '@lib/db/db.js';
 import geoGridSchedules from '@lib/db/geoGridSchedules.js';
 import { formatDate, formatDecimal, toTimestamp } from './runs/formatters.js';
 

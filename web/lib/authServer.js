@@ -1,5 +1,5 @@
 import { cookies } from 'next/headers';
-import pool from '@lib/db.js';
+import pool from '@lib/db/db.js';
 import { adminAuth } from '@/lib/firebaseAdmin';
 import { getRolePreviewCookie, isRolePreviewSupported } from '@/lib/rolePreview';
 

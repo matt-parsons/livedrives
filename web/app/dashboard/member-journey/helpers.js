@@ -1,4 +1,4 @@
-import pool from '@lib/db.js';
+import pool from '@lib/db/db.js';
 import { loadBusiness, loadOriginZones, loadOrganizationBusinesses } from '../[business]/helpers.js';
 
 function toDate(value) {

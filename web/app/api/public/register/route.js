@@ -1,4 +1,4 @@
-import pool from '@lib/db.js';
+import pool from '@lib/db/db.js';
 import { adminAuth } from '@/lib/firebaseAdmin';
 import { sendFirebaseVerificationEmail } from '@/lib/firebaseVerification';
 

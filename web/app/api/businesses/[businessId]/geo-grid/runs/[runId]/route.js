@@ -1,4 +1,4 @@
-import pool from '@lib/db.js';
+import pool from '@lib/db/db.js';
 import { launchGeoGridWorker } from '@/lib/geoGridWorker';
 import { AuthError, requireAuth } from '@/lib/authServer';
 import {

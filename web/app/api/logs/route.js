@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import pool from '@lib/db.js';
+import pool from '@lib/db/db.js';
 import { requireAuth } from '@/lib/authServer';
 
 const DEFAULT_TIMEZONE = process.env.LOGS_TIMEZONE || 'America/Phoenix';

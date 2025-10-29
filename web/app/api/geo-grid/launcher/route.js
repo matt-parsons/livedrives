@@ -1,4 +1,4 @@
-import pool from '@lib/db.js';
+import pool from '@lib/db/db.js';
 import { AuthError, requireAuth } from '@/lib/authServer';
 import { GEO_GRID_PRESETS, GEO_RADIUS_PRESETS } from '@/lib/geoGrid';
 

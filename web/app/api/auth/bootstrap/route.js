@@ -1,4 +1,4 @@
-import pool from '@lib/db.js';
+import pool from '@lib/db/db.js';
 import { AuthError, verifySession } from '@/lib/authServer';
 
 export const runtime = 'nodejs';
