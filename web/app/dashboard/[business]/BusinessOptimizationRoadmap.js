@@ -1,7 +1,5 @@
 import Link from 'next/link';
 
-import styles from './BusinessOptimizationRoadmap.module.css';
-
 function formatImpact(weight) {
   if (weight === null || weight === undefined) {
     return null;
@@ -20,11 +18,11 @@ function RoadmapTaskCard({ task }) {
   const impactLabel = formatImpact(task.weight);
 
   return (
-    <li key={task.id} className={styles.taskCard}>
-      <div className={styles.taskCardHeader}>
-        <div className={styles.taskInfo}>
-          <strong className={styles.taskTitle}>{task.label}</strong>
-          {task.detail ? <p className={styles.taskDetail}>{task.detail}</p> : null}
+    <li key={task.id} className="business-optimization-roadmap__task-card">
+      <div className="business-optimization-roadmap__task-card-header">
+        <div className="business-optimization-roadmap__task-info">
+          <strong className="business-optimization-roadmap__task-title">{task.label}</strong>
+          {task.detail ? <p className="business-optimization-roadmap__task-detail">{task.detail}</p> : null}
         </div>
         <span className="status-pill" data-status={task.status.key}>
           {task.status.label}
@@ -47,7 +45,7 @@ export default function BusinessOptimizationRoadmap({ roadmap, error, placeId, e
             Add Google Place ID
           </Link>
         </div>
-        <p className={styles.connectMessage}>
+        <p className="business-optimization-roadmap__connect-message">
           This business is not linked to Google Places yet. Once a Place ID is connected we can evaluate the
           profile’s completeness.
         </p>
@@ -100,14 +98,14 @@ export default function BusinessOptimizationRoadmap({ roadmap, error, placeId, e
       </div>
 
       {sections.length ? (
-        <div className={styles.sectionSummaryGrid}>
+        <div className="business-optimization-roadmap__section-summary-grid">
           {sections.map((section) => (
-            <div key={section.id} className={styles.sectionSummaryCard}>
-              <span className={styles.sectionSummaryCardTitle}>
+            <div key={section.id} className="business-optimization-roadmap__section-summary-card">
+              <span className="business-optimization-roadmap__section-summary-card-title">
                 {section.title}
               </span>
-              <strong className={styles.sectionSummaryCardGrade}>{section.grade ?? '—'}</strong>
-              <span className={styles.sectionSummaryCardCompletion}>
+              <strong className="business-optimization-roadmap__section-summary-card-grade">{section.grade ?? '—'}</strong>
+              <span className="business-optimization-roadmap__section-summary-card-completion">
                 {section.completion === null ? 'No score yet' : `${section.completion}% complete`}
               </span>
             </div>
@@ -116,51 +114,53 @@ export default function BusinessOptimizationRoadmap({ roadmap, error, placeId, e
       ) : null}
 
       <div
-        className={`${styles.sectionsSummary} ${
-          sections.length ? styles.sectionsSummaryWithSections : styles.sectionsSummaryWithoutSections
+        className={`business-optimization-roadmap__sections-summary ${
+          sections.length
+            ? 'business-optimization-roadmap__sections-summary--with-sections'
+            : 'business-optimization-roadmap__sections-summary--without-sections'
         }`}
       >
-        <div className={styles.summaryHeader}>
-          <strong className={styles.summaryHeading}>Optimization readiness</strong>
-          <span className={styles.summaryProgress}>{roadmap.progressPercent}% complete</span>
+        <div className="business-optimization-roadmap__summary-header">
+          <strong className="business-optimization-roadmap__summary-heading">Optimization readiness</strong>
+          <span className="business-optimization-roadmap__summary-progress">{roadmap.progressPercent}% complete</span>
         </div>
         <div
           aria-hidden="true"
-          className={styles.progressTrack}
+          className="business-optimization-roadmap__progress-track"
         >
           <div
-            className={styles.progressFill}
+            className="business-optimization-roadmap__progress-fill"
             style={{ width: `${Math.min(100, Math.max(0, roadmap.progressPercent))}%` }}
           />
         </div>
       </div>
 
-      <div className={styles.sectionListWrapper}>
+      <div className="business-optimization-roadmap__section-list-wrapper">
         {sections.map((section) => (
-          <section key={section.id} className={styles.sectionItem}>
-            <div className={styles.sectionHeader}>
-              <div className={styles.sectionInfo}>
-                <h3 className={styles.sectionHeading}>{section.title}</h3>
+          <section key={section.id} className="business-optimization-roadmap__section-item">
+            <div className="business-optimization-roadmap__section-header">
+              <div className="business-optimization-roadmap__section-info">
+                <h3 className="business-optimization-roadmap__section-heading">{section.title}</h3>
                 {section.description ? (
-                  <p className={styles.sectionDescription}>{section.description}</p>
+                  <p className="business-optimization-roadmap__section-description">{section.description}</p>
                 ) : null}
               </div>
-              <div className={styles.sectionScore}>
-                <strong className={styles.sectionScoreValue}>{section.grade ?? '—'}</strong>
-                <div className={styles.sectionCompletion}>
+              <div className="business-optimization-roadmap__section-score">
+                <strong className="business-optimization-roadmap__section-score-value">{section.grade ?? '—'}</strong>
+                <div className="business-optimization-roadmap__section-completion">
                   {section.completion === null ? 'No score yet' : `${section.completion}% complete`}
                 </div>
               </div>
             </div>
 
             {section.tasks.length ? (
-              <ul className={styles.sectionTaskList}>
+              <ul className="business-optimization-roadmap__section-task-list">
                 {section.tasks.map((task) => (
                   <RoadmapTaskCard key={task.id} task={task} />
                 ))}
               </ul>
             ) : (
-              <p className={styles.sectionEmptyMessage}>
+              <p className="business-optimization-roadmap__section-empty-message">
                 No tasks mapped to this section yet.
               </p>
             )}
