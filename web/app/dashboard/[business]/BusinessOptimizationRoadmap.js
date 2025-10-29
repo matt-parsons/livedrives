@@ -29,7 +29,8 @@ function RoadmapTaskCard({ task }) {
         boxShadow: '0 6px 12px rgba(3, 60, 87, 0.06)',
         display: 'flex',
         flexDirection: 'column',
-        gap: '0.65rem'
+        gap: '0.65rem',
+        width: '48%'
       }}
     >
       <div
@@ -37,6 +38,7 @@ function RoadmapTaskCard({ task }) {
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'flex-start',
+          flexDirection: 'column',
           gap: '1rem'
         }}
       >
@@ -58,23 +60,6 @@ function RoadmapTaskCard({ task }) {
         <span className="status-pill" data-status={task.status.key}>
           {task.status.label}
         </span>
-      </div>
-
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          fontSize: '0.85rem',
-          color: 'rgba(3, 60, 87, 0.66)'
-        }}
-      >
-        {task.auto ? (
-          <span>Automatically scored</span>
-        ) : (
-          <span>Manual follow-up</span>
-        )}
-        {impactLabel ? <strong style={{ color: 'var(--color-primary-strong)' }}>{impactLabel}</strong> : null}
       </div>
     </li>
   );
@@ -165,7 +150,8 @@ export default function BusinessOptimizationRoadmap({ roadmap, error, placeId, e
                 boxShadow: '0 4px 8px rgba(3, 60, 87, 0.05)',
                 display: 'flex',
                 flexDirection: 'column',
-                gap: '0.35rem'
+                gap: '0.35rem',
+                justifyContent: 'space-between'
               }}
             >
               <span
@@ -219,10 +205,6 @@ export default function BusinessOptimizationRoadmap({ roadmap, error, placeId, e
             }}
           />
         </div>
-        <p style={{ margin: 0, fontSize: '0.85rem', color: 'rgba(3, 60, 87, 0.66)' }}>
-          Automated checks cover {roadmap.automatedWeight}% of the roadmap. Manual follow-ups account for the
-          remaining {roadmap.manualWeight}%.
-        </p>
       </div>
 
       <div style={{ marginTop: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -260,7 +242,7 @@ export default function BusinessOptimizationRoadmap({ roadmap, error, placeId, e
             </div>
 
             {section.tasks.length ? (
-              <ul style={{ margin: 0, padding: 0, display: 'grid', gap: '0.75rem' }}>
+              <ul style={{ margin: 0, padding: 0, display: 'flex', flexWrap: 'wrap', gap: '0.75rem' }}>
                 {section.tasks.map((task) => (
                   <RoadmapTaskCard key={task.id} task={task} />
                 ))}

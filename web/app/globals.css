@@ -2335,8 +2335,9 @@ textarea {
 }
 
 .status-pill[data-status='pending'] {
-  background: rgba(109, 142, 160, 0.24);
-  color: #546e73;
+  background: rgba(3, 60, 87, 0.08);
+  color: #e93d23;
+  border: 1px solid #e93d23;
 }
 
 .status-pill[data-status='failed'] {

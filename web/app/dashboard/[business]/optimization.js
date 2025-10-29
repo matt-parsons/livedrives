@@ -72,17 +72,17 @@ function computeDescriptionStatus(description) {
 function computePhotoStatus(photoCount) {
   const count = Number.isFinite(Number(photoCount)) ? Number(photoCount) : 0;
 
-  if (count >= 5) {
+  if (count >= 10) {
     return {
       status: normalizeStatus('completed'),
-      detail: `${count} photos detected.`
+      detail: `At least ${count} photos detected. Make sure you're adding new photos every month.`
     };
   }
 
-  if (count > 0) {
+  if (count > 0 && count <= 9) {
     return {
       status: normalizeStatus('in_progress'),
-      detail: `${count} photo${count === 1 ? '' : 's'} detected. Add at least 5 high-quality photos.`
+      detail: `${count} photo${count === 1 ? '' : 's'} detected. Add at least 10 high-quality photos.`
     };
   }
 
@@ -94,18 +94,19 @@ function computePhotoStatus(photoCount) {
 
 function computeCategoryStatus(categories) {
   const list = Array.isArray(categories) ? categories.filter(Boolean) : [];
+  const text = list.join(', ');
 
   if (list.length >= 2) {
     return {
       status: normalizeStatus('completed'),
-      detail: `${list.length} categories detected.`
+      detail: `${list.length} categories detected: ${text}`
     };
   }
 
   if (list.length === 1) {
     return {
       status: normalizeStatus('in_progress'),
-      detail: 'Only one category detected. Add secondary categories to improve visibility.'
+      detail: `Only one category detected. ${text}. Add secondary categories to improve visibility.`
     };
   }
 
@@ -140,11 +141,13 @@ function computeServicesStatus(serviceCapabilities) {
 
 function computeHoursStatus(weekdayText) {
   const entries = Array.isArray(weekdayText) ? weekdayText.filter(Boolean) : [];
+  const hoursText = entries.join(' ');
+
 
   if (entries.length >= 5) {
     return {
       status: normalizeStatus('completed'),
-      detail: 'Weekly hours detected in Google.'
+      detail: `Weekly hours detected in Google: ${hoursText}`
     };
   }
 
@@ -161,11 +164,35 @@ function computeHoursStatus(weekdayText) {
   };
 }
 
+function computeLastUpdate(latestPostDate) {
+  console.log('computeLastUpdate', latestPostDate);
+  const lastUpdate = latestPostDate;
+
+  if (lastUpdate) {
+    return {
+      status: normalizeStatus('completed'),
+      detail: 'Your last update was: ', lastUpdate
+    };
+  }
+
+  if (lastUpdate === '') {
+    return {
+      status: normalizeStatus('in_progress'),
+      detail: 'You should post an update at least once a week:', lastUpdate
+    };
+  }
+
+  return {
+    status: normalizeStatus('pending'),
+    detail: 'You should post an update at least once a week:', lastUpdate
+  };
+}
+
 function computePhoneStatus(phoneNumber) {
   if (phoneNumber) {
     return {
       status: normalizeStatus('completed'),
-      detail: 'Business phone number detected.'
+      detail: `Business phone number detected: ${phoneNumber}`
     };
   }
 
@@ -179,7 +206,7 @@ function computeWebsiteStatus(website) {
   if (website) {
     return {
       status: normalizeStatus('completed'),
-      detail: 'Website link detected.'
+      detail: `Website link detected: ${website}`
     };
   }
 
@@ -189,28 +216,72 @@ function computeWebsiteStatus(website) {
   };
 }
 
-function computeReviewStatus(reviewCount) {
+function computeReviewStatus(reviewCount, latestReview) {
   const count = Number.isFinite(Number(reviewCount)) ? Number(reviewCount) : 0;
+  if (!latestReview) {
+    return {
+      status: normalizeStatus('pending'),
+      freshness: 'dormant',
+      detail: 'No reviews detected yet. Encourage customers to share feedback.'
+    };
+  }
 
+  const reviewDate = new Date(latestReview.time * 1000);
+  const formattedDate = reviewDate.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric"
+  });
+
+  // calculate days since last review
+  const daysAgo = Math.floor((Date.now() - reviewDate.getTime()) / (1000 * 60 * 60 * 24));
+
+  // relative text for humans
+  let relative;
+  if (daysAgo < 1) relative = "today";
+  else if (daysAgo === 1) relative = "yesterday";
+  else if (daysAgo < 7) relative = `${daysAgo} days ago`;
+  else if (daysAgo < 60) {
+    const weeks = Math.floor(daysAgo / 7);
+    relative = `${weeks} week${weeks === 1 ? '' : 's'} ago`;
+  } else if (daysAgo < 365) {
+    const months = Math.floor(daysAgo / 30);
+    relative = `${months} month${months === 1 ? '' : 's'} ago`;
+  } else {
+    const years = Math.floor(daysAgo / 365);
+    relative = `${years} year${years === 1 ? '' : 's'} ago`;
+  }
+
+  // freshness classification
+  let freshness;
+  if (daysAgo <= 30) freshness = 'active';
+  else if (daysAgo <= 90) freshness = 'stale';
+  else freshness = 'dormant';
+
+  // decide status block
   if (count >= 25) {
     return {
       status: normalizeStatus('completed'),
-      detail: `${count} reviews detected. Great momentum!`
+      freshness,
+      detail: `${count} reviews detected. Great momentum! Last review on ${formattedDate} (${relative}).`
     };
   }
 
   if (count > 0) {
     return {
       status: normalizeStatus('in_progress'),
-      detail: `${count} review${count === 1 ? '' : 's'} detected. Aim for 25+ recent reviews.`
+      freshness,
+      detail: `${count} review${count === 1 ? '' : 's'} detected. Last review on ${formattedDate} (${relative}). Aim for 25+ recent reviews.`
     };
   }
 
   return {
     status: normalizeStatus('pending'),
+    freshness: 'dormant',
     detail: 'No reviews detected yet. Encourage customers to share feedback.'
   };
 }
+
 
 const STATUS_SCORES = {
   completed: 1,
@@ -279,7 +350,7 @@ const SECTION_DEFINITIONS = [
 ];
 
 export function buildOptimizationRoadmap(place) {
-  console.log(place);
+  console.log('buildOptimizationRoadmap', place.name);
   if (!place) {
     return null;
   }
@@ -333,8 +404,7 @@ export function buildOptimizationRoadmap(place) {
       label: 'Post weekly updates',
       weight: 7,
       auto: true,
-      status: normalizeStatus('pending'),
-      detail: 'Google Places does not surface post frequency. Maintain a weekly cadence manually.'
+      ...computeLastUpdate(place.latestPostDate)
     },
     {
       id: 'hours',
@@ -362,7 +432,7 @@ export function buildOptimizationRoadmap(place) {
       label: 'Build review velocity',
       weight: 2,
       auto: true,
-      ...computeReviewStatus(place.reviewCount)
+      ...computeReviewStatus(place.reviewCount, place.latestReview)
     },
     {
       id: 'competitive-benchmark',

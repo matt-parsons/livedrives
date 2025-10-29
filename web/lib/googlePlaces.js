@@ -180,6 +180,8 @@ async function fetchPlaceSidebarData(placeId, { businessName, signal } = {}) {
     const mapsUrl = new URL('https://www.google.com/maps/place/');
     mapsUrl.searchParams.set('q', `place_id:${placeId}`);
 
+    console.log('fetchPlaceSidebarData');
+
     const response = await fetch(mapsUrl, {
       cache: 'no-store',
       headers: DEFAULT_BROWSER_HEADERS,
@@ -191,8 +193,10 @@ async function fetchPlaceSidebarData(placeId, { businessName, signal } = {}) {
     }
 
     const html = await response.text();
+    // console.log(html)
     const $ = loadHtml(html);
     const sidebar = selectBusinessSidebar($, businessName);
+
     const latestPostDate = extractLatestPostDate($, sidebar ?? undefined);
 
     return { latestPostDate };
@@ -222,6 +226,8 @@ function buildPlacePayload(result, { fallbackPlaceId, timezone = null, sidebarDa
   const ratingNumeric = Number(result.rating);
   const rating = Number.isFinite(ratingNumeric) ? ratingNumeric : null;
 
+  const latestReview = result.reviews.sort((a, b) => b.time - a.time)[0];
+
   return {
     placeId: result.place_id ?? fallbackPlaceId ?? null,
     name: result.name ?? '',
@@ -235,6 +241,7 @@ function buildPlacePayload(result, { fallbackPlaceId, timezone = null, sidebarDa
     businessStatus: result.business_status ?? null,
     rating,
     reviewCount,
+    latestReview,
     categories,
     primaryCategory: categories[0] ?? null,
     photoCount: Array.isArray(result.photos) ? result.photos.length : 0,
@@ -277,6 +284,7 @@ export async function fetchPlaceDetails(placeId, { signal } = {}) {
       'current_opening_hours',
       'user_ratings_total',
       'rating',
+      'reviews',
       'url',
       'delivery',
       'takeout',

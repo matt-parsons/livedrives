@@ -129,8 +129,7 @@ function OpportunityItem({ task }) {
           {task.status.label}
         </span>
       </div>
-      <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground">
-        <span>{task.auto ? 'Automatically scored' : 'Manual follow-up'}</span>
+      <div className="mt-3 flex items-center justify-end text-xs text-muted-foreground">
         {Number.isFinite(Number(task.weight)) ? (
           <span>{Number(task.weight)}% impact</span>
         ) : null}
@@ -456,10 +455,6 @@ export default function IndexPage() {
             <StatusList currentStep={loadingStep} />
           </CardContent>
         </Card>
-
-        <Button variant="ghost" onClick={resetFlow} className="self-start">
-          Start over
-        </Button>
       </div>
     </div>
   );

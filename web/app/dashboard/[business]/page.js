@@ -354,10 +354,6 @@ export default async function BusinessDashboardPage({ params }) {
                             {optimizationRoadmap.progressPercent}% complete
                           </strong>
                         </div>
-                        <div style={{ color: '#6b7280', fontSize: '0.9rem' }}>
-                          Automated checks cover {optimizationRoadmap.automatedWeight}% of tasks. Manual follow-ups
-                          account for {optimizationRoadmap.manualWeight}%.
-                        </div>
                       </div>
 
                       <div
