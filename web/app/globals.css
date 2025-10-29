@@ -239,6 +239,32 @@ textarea {
   gap: clamp(16px, 3vw, 32px);
 }
 
+.dashboard-page-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: clamp(16px, 2vw, 24px);
+  margin-bottom: clamp(16px, 2vw, 28px);
+}
+
+.dashboard-page-header__intro {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dashboard-page-header__actions {
+  display: flex;
+  align-items: center;
+  gap: clamp(12px, 2vw, 16px);
+}
+
+.dashboard-page-header__meta {
+  display: flex;
+  align-items: center;
+}
+
 .dashboard-layout__body {
   flex: 1;
   display: flex;

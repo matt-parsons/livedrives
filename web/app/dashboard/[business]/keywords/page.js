@@ -4,9 +4,7 @@ import { AuthError, requireAuth } from '@/lib/authServer';
 import GeoGridRunsSection from '../GeoGridRunsSection';
 import KeywordPerformanceSpotlight from '../KeywordPerformanceSpotlight';
 import BusinessNavigation from '../BusinessNavigation';
-import BusinessSwitcher from '../BusinessSwitcher';
 import OriginZonesManager from '../OriginZonesManager';
-import BusinessSettingsShortcut from '../BusinessSettingsShortcut';
 import {
   formatDate,
   formatDecimal,
@@ -16,8 +14,7 @@ import {
   loadOriginZones,
   loadGeoGridRunSummaries,
   loadGeoGridRunWithPoints,
-  loadCtrKeywordOverview,
-  loadOrganizationBusinesses
+  loadCtrKeywordOverview
 } from '../helpers';
 import { buildMapPoints, resolveCenter } from '../runs/formatters';
 
@@ -163,15 +160,6 @@ export default async function BusinessKeywordsPage({ params, searchParams }) {
 
   const isOwner = session.role === 'owner';
   const canManageSettings = session.role === 'owner' || session.role === 'admin';
-
-  const organizationBusinesses = await loadOrganizationBusinesses(session.organizationId);
-
-  const businessOptions = organizationBusinesses.map((entry) => ({
-    id: entry.id,
-    value: entry.businessSlug ?? String(entry.id),
-    label: entry.businessName || `Business #${entry.id}`,
-    isActive: entry.isActive
-  }));
 
   const originZones = await loadOriginZones(business.id);
   const ctrOverview = await loadCtrKeywordOverview(business.id, 30);
@@ -412,7 +400,6 @@ export default async function BusinessKeywordsPage({ params, searchParams }) {
   const businessStatus = business.isActive ? { key: 'active', label: 'Active' } : { key: 'inactive', label: 'Inactive' };
   const businessName = business.businessName || 'Business dashboard';
   const businessIdentifier = business.businessSlug ?? String(business.id);
-  const currentBusinessOptionValue = businessIdentifier;
   const destination = business.destinationAddress
     ? `${business.destinationAddress}${business.destinationZip ? `, ${business.destinationZip}` : ''}`
     : null;
@@ -566,38 +553,13 @@ export default async function BusinessKeywordsPage({ params, searchParams }) {
     }
   }));
 
-  const showBusinessSwitcher = businessOptions.length > 0;
-  const showHeaderActions = canManageSettings || showBusinessSwitcher;
   const locationLabel = destination ?? null;
   const originSectionCaption = originZones.length === 0
     ? 'Define origin zones to balance coverage and routing priorities.'
     : 'Targeted pickup regions shaping this business’s live operations.';
 
   return (
-    <div className="dashboard-layout">
-      <header className="dashboard-layout__header">
-        <div className="dashboard-layout__header-container">
-          <div className="dashboard-header">
-            <div className="dashboard-header__content">
-              <h1 className="page-title">{businessName}</h1>
-              {locationLabel ? <span className="dashboard-sidebar__location">{locationLabel}</span> : null}
-            </div>
-          </div>
-
-          {showHeaderActions ? (
-            <div className="dashboard-header__actions" aria-label="Business shortcuts">
-              {canManageSettings ? (
-                <BusinessSettingsShortcut businessIdentifier={businessIdentifier} />
-              ) : null}
-              {showBusinessSwitcher ? (
-                <BusinessSwitcher businesses={businessOptions} currentValue={currentBusinessOptionValue} />
-              ) : null}
-            </div>
-          ) : null}
-        </div>
-      </header>
-
-      <div className="dashboard-layout__body">
+    <div className="dashboard-layout__body">
         <aside className="dashboard-layout__sidebar" aria-label="Workspace navigation">
           <div className="dashboard-sidebar__menu">
             <BusinessNavigation businessIdentifier={businessIdentifier} active="keywords" />
@@ -606,6 +568,20 @@ export default async function BusinessKeywordsPage({ params, searchParams }) {
 
         <main className="dashboard-layout__main">
           <div className="dashboard-layout__content">
+            <header className="dashboard-page-header">
+              <div className="dashboard-page-header__intro">
+                <h2 className="page-title">Keyword insights</h2>
+                <p className="page-subtitle">
+                  Track geo grid performance, CTR sessions, and operational readiness for {businessName}.
+                </p>
+              </div>
+              {locationLabel ? (
+                <div className="dashboard-page-header__meta">
+                  <span className="dashboard-sidebar__location">{locationLabel}</span>
+                </div>
+              ) : null}
+            </header>
+
             <section className="section">
               {isOwner ? (
                 <KeywordPerformanceSpotlight items={keywordPerformanceItems} mapsApiKey={mapsApiKey} />

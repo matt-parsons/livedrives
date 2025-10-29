@@ -5,12 +5,9 @@ import {
   formatDate,
   formatDecimal,
   loadBusiness,
-  loadCtrRunsWithSnapshots,
-  loadOrganizationBusinesses
+  loadCtrRunsWithSnapshots
 } from '../helpers';
 import BusinessNavigation from '../BusinessNavigation';
-import BusinessSwitcher from '../BusinessSwitcher';
-import BusinessSettingsShortcut from '../BusinessSettingsShortcut';
 import CtrMap from './CtrMap';
 import TrendChart from './TrendChart';
 import SessionList from './SessionList';
@@ -152,7 +149,6 @@ export default async function CtrDashboardPage({ params, searchParams }) {
     notFound();
   }
 
-  const canManageSettings = session.role === 'owner' || session.role === 'admin';
 
   if (session.role !== 'owner') {
     redirect(`/dashboard/${encodeURIComponent(identifier)}`);
@@ -333,18 +329,7 @@ export default async function CtrDashboardPage({ params, searchParams }) {
   const rangeLabel = formatRangeLabel(windowStart, windowEnd);
   const prevHref = `${baseHref}?offset=${offset + 1}`;
   const nextHref = offset > 0 ? `${baseHref}?offset=${offset - 1}` : null;
-  const organizationBusinesses = await loadOrganizationBusinesses(session.organizationId);
-
-  const businessOptions = organizationBusinesses.map((entry) => ({
-    id: entry.id,
-    value: entry.businessSlug ?? String(entry.id),
-    label: entry.businessName || `Business #${entry.id}`,
-    isActive: entry.isActive
-  }));
-
   const businessIdentifier = business.businessSlug ?? String(business.id);
-  const currentBusinessOptionValue = businessIdentifier;
-  const showBusinessSwitcher = businessOptions.length > 0;
   const destination = business.destinationAddress
     ? `${business.destinationAddress}${business.destinationZip ? `, ${business.destinationZip}` : ''}`
     : null;
@@ -352,44 +337,7 @@ export default async function CtrDashboardPage({ params, searchParams }) {
   const businessName = business.businessName || business.brandSearch || 'Business';
 
   return (
-    <div className="dashboard-layout">
-      <header className="dashboard-layout__header">
-        <div className="dashboard-layout__header-container">
-          <div className="dashboard-header">
-            <div className="dashboard-header__content">
-              <h1 className="page-title">CTR sessions</h1>
-              <p className="page-subtitle">
-                Window: <strong>{rangeLabel}</strong>
-              </p>
-              {locationLabel ? <span className="dashboard-sidebar__location">{locationLabel}</span> : null}
-            </div>
-          </div>
-
-          <div className="dashboard-header__actions" aria-label="Page actions">
-            {canManageSettings ? (
-              <BusinessSettingsShortcut businessIdentifier={businessIdentifier} />
-            ) : null}
-            <div className={styles.headerRight}>
-              <span className={styles.sessionCount}>
-                {totalSessions} session{totalSessions === 1 ? '' : 's'} tracked
-              </span>
-              <div className={styles.navButtons}>
-                <Link href={prevHref}>Previous 30 days</Link>
-                {nextHref ? (
-                  <Link href={nextHref}>Next 30 days</Link>
-                ) : (
-                  <span className={styles.navDisabled}>Next 30 days</span>
-                )}
-              </div>
-            </div>
-            {showBusinessSwitcher ? (
-              <BusinessSwitcher businesses={businessOptions} currentValue={currentBusinessOptionValue} />
-            ) : null}
-          </div>
-        </div>
-      </header>
-
-      <div className="dashboard-layout__body">
+    <div className="dashboard-layout__body">
         <aside className="dashboard-layout__sidebar" aria-label="Workspace navigation">
           <div className="dashboard-sidebar__menu">
             <BusinessNavigation businessIdentifier={businessIdentifier} active={null} />
@@ -398,6 +346,31 @@ export default async function CtrDashboardPage({ params, searchParams }) {
 
         <main className="dashboard-layout__main">
           <div className="dashboard-layout__content">
+            <header className="dashboard-page-header">
+              <div className="dashboard-page-header__intro">
+                <h2 className="page-title">CTR sessions</h2>
+                <p className="page-subtitle">
+                  Window: <strong>{rangeLabel}</strong>
+                </p>
+                {locationLabel ? <span className="dashboard-sidebar__location">{locationLabel}</span> : null}
+              </div>
+              <div className="dashboard-page-header__actions">
+                <div className={styles.headerRight}>
+                  <span className={styles.sessionCount}>
+                    {totalSessions} session{totalSessions === 1 ? '' : 's'} tracked
+                  </span>
+                  <div className={styles.navButtons}>
+                    <Link href={prevHref}>Previous 30 days</Link>
+                    {nextHref ? (
+                      <Link href={nextHref}>Next 30 days</Link>
+                    ) : (
+                      <span className={styles.navDisabled}>Next 30 days</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </header>
+
             <div className={styles.ctrDashboard}>
               <div className={styles.header}>
                 <span className={styles.range}>
