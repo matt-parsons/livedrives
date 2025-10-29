@@ -6,12 +6,14 @@ import BusinessForm from '../../businesses/BusinessForm';
 import BusinessHoursForm from '../BusinessHoursForm';
 import OriginZonesManager from '../OriginZonesManager';
 import SoaxConfigForm from '../SoaxConfigForm';
+import GeoGridScheduleCard from '../GeoGridScheduleCard';
 import {
   loadBusiness,
   loadBusinessHours,
   loadOriginZones,
   loadOrganizationBusinesses,
-  loadSoaxConfig
+  loadSoaxConfig,
+  loadGeoGridSchedule
 } from '../helpers';
 
 export const metadata = {
@@ -45,11 +47,12 @@ export default async function BusinessSettingsPage({ params }) {
     redirect(`/dashboard/${encodeURIComponent(identifier)}`);
   }
 
-  const [organizationBusinesses, businessHours, originZones, soaxConfig] = await Promise.all([
+  const [organizationBusinesses, businessHours, originZones, soaxConfig, geoGridSchedule] = await Promise.all([
     loadOrganizationBusinesses(session.organizationId),
     loadBusinessHours(business.id),
     loadOriginZones(business.id),
-    loadSoaxConfig(business.id)
+    loadSoaxConfig(business.id),
+    loadGeoGridSchedule(business.id)
   ]);
 
   const businessOptions = organizationBusinesses.map((entry) => ({
@@ -132,6 +135,16 @@ export default async function BusinessSettingsPage({ params }) {
               <div className="surface-card surface-card--muted">
                 <BusinessHoursForm businessId={business.id} initialHours={businessHours} />
               </div>
+            </section>
+
+            <section className="section">
+              <GeoGridScheduleCard
+                businessId={business.id}
+                schedule={geoGridSchedule}
+                timezone={business.timezone}
+                isBusinessActive={business.isActive === true || business.isActive === 1}
+                canEdit={session.role === 'owner'}
+              />
             </section>
 
             <section className="section">

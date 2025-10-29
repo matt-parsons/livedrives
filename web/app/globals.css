@@ -599,6 +599,70 @@ textarea {
   margin-top: 6px;
 }
 
+.geo-schedule-card {
+  display: block;
+}
+
+.geo-schedule-card__status {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 16px;
+}
+
+.geo-schedule-card__alert {
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  border-radius: var(--radius-md);
+  font-size: 0.95rem;
+  border: 1px solid transparent;
+}
+
+.geo-schedule-card__alert--success {
+  background: rgba(20, 164, 79, 0.12);
+  border-color: rgba(20, 164, 79, 0.22);
+  color: #0f5132;
+}
+
+.geo-schedule-card__alert--danger {
+  background: rgba(224, 49, 49, 0.12);
+  border-color: rgba(224, 49, 49, 0.24);
+  color: #842029;
+}
+
+.geo-schedule-card__alert--muted {
+  background: rgba(34, 174, 209, 0.12);
+  border-color: rgba(34, 174, 209, 0.22);
+  color: var(--color-body);
+}
+
+.geo-schedule-card__form {
+  display: grid;
+  gap: 16px;
+  max-width: 360px;
+}
+
+.geo-schedule-card__field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.geo-schedule-card__value {
+  font-weight: 600;
+  color: var(--color-heading);
+}
+
+.geo-schedule-card__hint {
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+.geo-schedule-card__actions {
+  display: flex;
+  gap: 12px;
+}
+
 .detail-tile--contrast {
   background: rgba(34, 174, 209, 0.12);
   color: var(--color-heading);

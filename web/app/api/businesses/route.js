@@ -1,4 +1,5 @@
 import pool from '@lib/db.js';
+import geoGridSchedules from '@lib/db/geoGridSchedules.js';
 import { AuthError, requireAuth } from '@/lib/authServer';
 import { mapToDbColumns, normalizeBusinessPayload, wasProvided } from './utils.js';
 
@@ -66,6 +67,13 @@ export async function POST(request) {
 
     const sql = `INSERT INTO businesses (${columns.join(', ')}) VALUES (${placeholders.join(', ')})`;
     const [result] = await pool.query(sql, params);
+    const businessId = result.insertId;
+
+    try {
+      await geoGridSchedules.initializeGeoGridSchedule(businessId);
+    } catch (scheduleError) {
+      console.error('Failed to initialize geo grid schedule', scheduleError);
+    }
 
     const [rows] = await pool.query(
       `SELECT id,
@@ -75,7 +83,7 @@ export async function POST(request) {
         WHERE id = ?
           AND organization_id = ?
         LIMIT 1`,
-      [result.insertId, session.organizationId]
+      [businessId, session.organizationId]
     );
 
     return Response.json({ business: rows[0] }, { status: 201 });

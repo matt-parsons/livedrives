@@ -107,6 +107,28 @@ CREATE TABLE `geo_grid_runs` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `geo_grid_schedules`
+--
+
+CREATE TABLE `geo_grid_schedules` (
+  `business_id` bigint(20) UNSIGNED NOT NULL,
+  `run_day_of_week` tinyint(2) NOT NULL,
+  `run_time_local` time NOT NULL,
+  `lead_minutes` int(10) UNSIGNED NOT NULL DEFAULT 120,
+  `next_run_at` datetime DEFAULT NULL,
+  `last_run_at` datetime DEFAULT NULL,
+  `locked_at` datetime DEFAULT NULL,
+  `is_active` tinyint(1) NOT NULL DEFAULT 1,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`business_id`),
+  KEY `idx_geo_grid_schedules_next_run` (`next_run_at`),
+  KEY `idx_geo_grid_schedules_active` (`is_active`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `organizations`
 --
 
@@ -321,6 +343,14 @@ ALTER TABLE `geo_grid_runs`
   ADD KEY `idx_business_date` (`business_id`,`created_at`);
 
 --
+-- Indexes for table `geo_grid_schedules`
+--
+ALTER TABLE `geo_grid_schedules`
+  ADD PRIMARY KEY (`business_id`),
+  ADD KEY `idx_geo_grid_schedules_next_run` (`next_run_at`),
+  ADD KEY `idx_geo_grid_schedules_active` (`is_active`);
+
+--
 -- Indexes for table `organizations`
 --
 ALTER TABLE `organizations`
@@ -512,6 +542,12 @@ ALTER TABLE `geo_grid_points`
 --
 ALTER TABLE `geo_grid_runs`
   ADD CONSTRAINT `fk_geogridruns_business` FOREIGN KEY (`business_id`) REFERENCES `businesses` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Constraints for table `geo_grid_schedules`
+--
+ALTER TABLE `geo_grid_schedules`
+  ADD CONSTRAINT `fk_geo_grid_schedule_business` FOREIGN KEY (`business_id`) REFERENCES `businesses` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
 -- Constraints for table `organization_trials`
