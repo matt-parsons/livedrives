@@ -1,7 +1,6 @@
 import { notFound, redirect } from 'next/navigation';
 import { AuthError, requireAuth } from '@/lib/authServer';
 import BusinessNavigation from '../BusinessNavigation';
-import BusinessSwitcher from '../BusinessSwitcher';
 import BusinessForm from '../../businesses/BusinessForm';
 import BusinessHoursForm from '../BusinessHoursForm';
 import OriginZonesManager from '../OriginZonesManager';
@@ -11,7 +10,6 @@ import {
   loadBusiness,
   loadBusinessHours,
   loadOriginZones,
-  loadOrganizationBusinesses,
   loadSoaxConfig,
   loadGeoGridSchedule
 } from '../helpers';
@@ -47,20 +45,12 @@ export default async function BusinessSettingsPage({ params }) {
     redirect(`/dashboard/${encodeURIComponent(identifier)}`);
   }
 
-  const [organizationBusinesses, businessHours, originZones, soaxConfig, geoGridSchedule] = await Promise.all([
-    loadOrganizationBusinesses(session.organizationId),
+  const [businessHours, originZones, soaxConfig, geoGridSchedule] = await Promise.all([
     loadBusinessHours(business.id),
     loadOriginZones(business.id),
     loadSoaxConfig(business.id),
     loadGeoGridSchedule(business.id)
   ]);
-
-  const businessOptions = organizationBusinesses.map((entry) => ({
-    id: entry.id,
-    value: entry.businessSlug ?? String(entry.id),
-    label: entry.businessName || `Business #${entry.id}`,
-    isActive: entry.isActive
-  }));
 
   const initialValues = {
     ...business,
@@ -70,41 +60,14 @@ export default async function BusinessSettingsPage({ params }) {
   };
 
   const businessIdentifier = business.businessSlug ?? String(business.id);
-  const currentBusinessOptionValue = businessIdentifier;
-  const showBusinessSwitcher = businessOptions.length > 0;
   const businessName = business.businessName || 'Business';
-  const destination = business.destinationAddress
-    ? `${business.destinationAddress}${business.destinationZip ? `, ${business.destinationZip}` : ''}`
-    : null;
-  const locationLabel = destination ?? null;
 
   const originZonesCaption = originZones.length === 0
     ? 'Define origin zones to balance coverage and routing priorities.'
     : 'Targeted pickup regions shaping this business’s live operations.';
 
   return (
-    <div className="dashboard-layout">
-      <header className="dashboard-layout__header">
-        <div className="dashboard-layout__header-container">
-          <div className="dashboard-header">
-            <div className="dashboard-header__content">
-              <h1 className="page-title">Business settings</h1>
-              <p className="page-subtitle">
-                Manage contact details, service availability, origin zones, and SOAX proxy credentials for {businessName}.
-              </p>
-              {locationLabel ? <span className="dashboard-sidebar__location">{locationLabel}</span> : null}
-            </div>
-          </div>
-
-          {showBusinessSwitcher ? (
-            <div className="dashboard-header__actions" aria-label="Select business">
-              <BusinessSwitcher businesses={businessOptions} currentValue={currentBusinessOptionValue} />
-            </div>
-          ) : null}
-        </div>
-      </header>
-
-      <div className="dashboard-layout__body">
+    <div className="dashboard-layout__body">
         <aside className="dashboard-layout__sidebar" aria-label="Workspace navigation">
           <div className="dashboard-sidebar__menu">
             <BusinessNavigation businessIdentifier={businessIdentifier} active="settings" />
@@ -113,6 +76,15 @@ export default async function BusinessSettingsPage({ params }) {
 
         <main className="dashboard-layout__main">
           <div className="dashboard-layout__content">
+            <header className="dashboard-page-header">
+              <div className="dashboard-page-header__intro">
+                <h2 className="page-title">Business settings</h2>
+                <p className="page-subtitle">
+                  Manage contact details, service availability, origin zones, and SOAX proxy credentials for {businessName}.
+                </p>
+              </div>
+            </header>
+
             <section className="section">
               <div className="section-header">
                 <h2 className="section-title">Business profile</h2>

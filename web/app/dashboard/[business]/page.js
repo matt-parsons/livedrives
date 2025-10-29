@@ -2,15 +2,12 @@ import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { AuthError, requireAuth } from '@/lib/authServer';
 import BusinessNavigation from './BusinessNavigation';
-import BusinessSwitcher from './BusinessSwitcher';
-import BusinessSettingsShortcut from './BusinessSettingsShortcut';
 import {
   formatDate,
   formatDecimal,
   toTimestamp,
   loadBusiness,
-  loadGeoGridRunSummaries,
-  loadOrganizationBusinesses
+  loadGeoGridRunSummaries
 } from './helpers';
 import { buildOptimizationRoadmap, resolveLetterGrade } from './optimization';
 import { fetchPlaceDetails } from '@/lib/googlePlaces';
@@ -146,15 +143,6 @@ export default async function BusinessDashboardPage({ params }) {
   const isOwner = session.role === 'owner';
   const canManageSettings = session.role === 'owner' || session.role === 'admin';
 
-  const organizationBusinesses = await loadOrganizationBusinesses(session.organizationId);
-
-  const businessOptions = organizationBusinesses.map((entry) => ({
-    id: entry.id,
-    value: entry.businessSlug ?? String(entry.id),
-    label: entry.businessName || `Business #${entry.id}`,
-    isActive: entry.isActive
-  }));
-
   const geoGridRunsRaw = await loadGeoGridRunSummaries(business.id);
   const geoGridRuns = geoGridRunsRaw.map(mapRunRecord);
   const latestRunSummary = summarizeLatestRun(geoGridRuns, baseHref);
@@ -177,40 +165,8 @@ export default async function BusinessDashboardPage({ params }) {
   const optimizationSteps = selectNextOptimizationSteps(optimizationRoadmap);
 
   const businessIdentifier = business.businessSlug ?? String(business.id);
-  const currentBusinessOptionValue = businessIdentifier;
-  const showBusinessSwitcher = businessOptions.length > 0;
-  const showHeaderActions = canManageSettings || showBusinessSwitcher;
-  const businessName = business.businessName || 'Business dashboard';
-  const destination = business.destinationAddress
-    ? `${business.destinationAddress}${business.destinationZip ? `, ${business.destinationZip}` : ''}`
-    : null;
-  const locationLabel = destination ?? null;
-
   return (
-    <div className="dashboard-layout">
-      <header className="dashboard-layout__header">
-        <div className="dashboard-layout__header-container">
-          <div className="dashboard-header">
-            <div className="dashboard-header__content">
-              <h1 className="page-title">{businessName}</h1>
-              {locationLabel ? <span className="dashboard-sidebar__location">{locationLabel}</span> : null}
-            </div>
-          </div>
-
-          {showHeaderActions ? (
-            <div className="dashboard-header__actions" aria-label="Business shortcuts">
-              {canManageSettings ? (
-                <BusinessSettingsShortcut businessIdentifier={businessIdentifier} />
-              ) : null}
-              {showBusinessSwitcher ? (
-                <BusinessSwitcher businesses={businessOptions} currentValue={currentBusinessOptionValue} />
-              ) : null}
-            </div>
-          ) : null}
-        </div>
-      </header>
-
-      <div className="dashboard-layout__body">
+    <div className="dashboard-layout__body">
         <aside className="dashboard-layout__sidebar" aria-label="Workspace navigation">
           <div className="dashboard-sidebar__menu">
             <BusinessNavigation businessIdentifier={businessIdentifier} active="dashboard" />

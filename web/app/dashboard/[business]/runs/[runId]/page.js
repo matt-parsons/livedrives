@@ -5,8 +5,7 @@ import {
   formatDate,
   loadBusiness,
   loadGeoGridRunWithPoints,
-  loadGeoGridRunsForKeyword,
-  loadOrganizationBusinesses
+  loadGeoGridRunsForKeyword
 } from '../../helpers';
 import {
   buildMapPoints,
@@ -15,8 +14,6 @@ import {
 } from '../formatters';
 import { buildPointListingIndex } from '../listings';
 import BusinessNavigation from '../../BusinessNavigation';
-import BusinessSwitcher from '../../BusinessSwitcher';
-import BusinessSettingsShortcut from '../../BusinessSettingsShortcut';
 import GeoGridRunViewer from './GeoGridRunViewer';
 
 function resolveMapsApiKey() {
@@ -94,21 +91,7 @@ export default async function GeoGridRunPage({ params }) {
     };
   });
 
-  const organizationBusinesses = await loadOrganizationBusinesses(session.organizationId);
-
-  const businessOptions = organizationBusinesses.map((entry) => ({
-    id: entry.id,
-    value: entry.businessSlug ?? String(entry.id),
-    label: entry.businessName || `Business #${entry.id}`,
-    isActive: entry.isActive
-  }));
-  const currentBusinessOptionValue = businessIdentifier;
-  const canManageSettings = session.role === 'owner' || session.role === 'admin';
-  const showBusinessSwitcher = businessOptions.length > 0;
-  const destination = business.destinationAddress
-    ? `${business.destinationAddress}${business.destinationZip ? `, ${business.destinationZip}` : ''}`
-    : null;
-  const locationLabel = destination ?? null;
+  const canRerun = session.role === 'owner';
   const keywordLabel = runSummary.keyword ?? '(no keyword)';
   const runDateLabel = runSummary.runDate ?? null;
   const runSubtitle = [keywordLabel, runDateLabel].filter(Boolean).join(' • ');
@@ -116,32 +99,7 @@ export default async function GeoGridRunPage({ params }) {
   const businessName = business.businessName || 'Business dashboard';
 
   return (
-    <div className="dashboard-layout">
-      <header className="dashboard-layout__header">
-        <div className="dashboard-layout__header-container">
-          <div className="dashboard-header">
-            <div className="dashboard-header__content">
-              <h1 className="page-title">Geo grid run</h1>
-              {runSubtitle ? <p className="page-subtitle">{runSubtitle}</p> : null}
-              {locationLabel ? <span className="dashboard-sidebar__location">{locationLabel}</span> : null}
-            </div>
-          </div>
-
-          <div className="dashboard-header__actions" aria-label="Page actions">
-            {canManageSettings ? (
-              <BusinessSettingsShortcut businessIdentifier={businessIdentifier} />
-            ) : null}
-            <Link className="cta-link" href={backHref}>
-              ← Back to {businessName}
-            </Link>
-            {showBusinessSwitcher ? (
-              <BusinessSwitcher businesses={businessOptions} currentValue={currentBusinessOptionValue} />
-            ) : null}
-          </div>
-        </div>
-      </header>
-
-      <div className="dashboard-layout__body">
+    <div className="dashboard-layout__body">
         <aside className="dashboard-layout__sidebar" aria-label="Workspace navigation">
           <div className="dashboard-sidebar__menu">
             <BusinessNavigation businessIdentifier={businessIdentifier} active={null} />
@@ -150,6 +108,18 @@ export default async function GeoGridRunPage({ params }) {
 
         <main className="dashboard-layout__main">
           <div className="dashboard-layout__content" style={{ width: 'min(1240px, 100%)' }}>
+            <header className="dashboard-page-header">
+              <div className="dashboard-page-header__intro">
+                <h2 className="page-title">Geo grid run</h2>
+                {runSubtitle ? <p className="page-subtitle">{runSubtitle}</p> : null}
+              </div>
+              <div className="dashboard-page-header__actions">
+                <Link className="cta-link" href={backHref}>
+                  ← Back to {businessName}
+                </Link>
+              </div>
+            </header>
+
             <GeoGridRunViewer
               apiKey={mapsApiKey}
               businessId={business.id}
@@ -160,7 +130,7 @@ export default async function GeoGridRunPage({ params }) {
               initialSummary={runSummary}
               initialPointListings={pointListings}
               runOptions={runOptions}
-              canRerun={session.role === 'owner'}
+              canRerun={canRerun}
             />
           </div>
         </main>
