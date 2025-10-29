@@ -82,6 +82,5 @@ export default async function EditBusinessPage({ params }) {
           </div>
         </main>
       </div>
-    </div>
   );
 }

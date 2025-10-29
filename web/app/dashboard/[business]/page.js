@@ -175,87 +175,64 @@ export default async function BusinessDashboardPage({ params }) {
 
         <main className="dashboard-layout__main">
           <div className="dashboard-layout__content">
+
+
             <section className="section">
-              <div className="surface-card surface-card--muted">
+              <div className="surface-card surface-card--muted surface-card--compact">
                 <div className="section-header">
                   <div>
-                    <h2 className="section-title">Latest geo grid run</h2>
+                    <h2 className="section-title">Next steps to optimize</h2>
                     <p className="section-caption">
-                      Review your freshest keyword coverage snapshot across the map.
+                      Focus on these tasks to strengthen your local visibility.
                     </p>
                   </div>
-                  <Link className="cta-link" href={keywordsHref}>
-                    View keyword insights ↗
+                  <Link className="cta-link" href={optimizationHref}>
+                    Explore full roadmap ↗
                   </Link>
                 </div>
 
-                {isOwner ? (
-                  latestRunSummary ? (
-                    <div
+                {business.gPlaceId && optimizationRoadmap ? (
+                  optimizationSteps.length ? (
+                    <ul
                       style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '0.85rem',
-                        marginTop: '0.75rem'
+                        listStyle: 'none',
+                        display: 'grid',
+                        gap: '0.75rem',
+                        margin: '0.75rem 0 0',
+                        padding: 0
                       }}
                     >
-                      <div
-                        style={{
-                          display: 'flex',
-                          flexWrap: 'wrap',
-                          gap: '0.75rem',
-                          justifyContent: 'space-between',
-                          alignItems: 'baseline'
-                        }}
-                      >
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
-                          <strong style={{ fontSize: '1.1rem' }}>{latestRunSummary.keyword}</strong>
-                          <span style={{ color: '#6b7280', fontSize: '0.9rem' }}>Run on {latestRunSummary.runDate}</span>
-                        </div>
-                        <span className="status-pill" data-status={latestRunSummary.status.key}>
-                          {latestRunSummary.status.label}
-                        </span>
-                      </div>
-
-                      <div
-                        style={{
-                          display: 'grid',
-                          gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
-                          gap: '0.85rem'
-                        }}
-                      >
-                        <div className="metric-chip">
-                          <span style={{ color: '#6b7280', fontSize: '0.8rem' }}>SoLV (Top 3)</span>
-                          <strong style={{ fontSize: '1.4rem' }}>{latestRunSummary.solvLabel}</strong>
-                        </div>
-                        <div className="metric-chip">
-                          <span style={{ color: '#6b7280', fontSize: '0.8rem' }}>Avg. position</span>
-                          <strong style={{ fontSize: '1.4rem' }}>{latestRunSummary.avgLabel}</strong>
-                        </div>
-                        <div className="metric-chip">
-                          <span style={{ color: '#6b7280', fontSize: '0.8rem' }}>Points ranked</span>
-                          <strong style={{ fontSize: '1.4rem' }}>
-                            {latestRunSummary.top3Points}/{latestRunSummary.totalPoints}
-                          </strong>
-                        </div>
-                      </div>
-
-                      {latestRunSummary.href ? (
-                        <div>
-                          <Link className="cta-link" href={latestRunSummary.href}>
-                            Open run details ↗
-                          </Link>
-                        </div>
-                      ) : null}
-                    </div>
+                      {optimizationSteps.map((task) => (
+                        <li
+                          key={task.id}
+                          style={{
+                            border: '1px solid rgba(3, 60, 87, 0.12)',
+                            borderRadius: '12px',
+                            padding: '0.85rem 1rem',
+                            background: '#fff',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '0.4rem'
+                          }}
+                        >
+                          <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.75rem' }}>
+                            <strong style={{ fontSize: '1.05rem', color: 'var(--color-heading)' }}>{task.label}</strong>
+                            <span className="status-pill" data-status={task.status.key}>
+                              {task.status.label}
+                            </span>
+                          </div>
+                          <p style={{ margin: 0, color: 'rgba(3, 60, 87, 0.66)', fontSize: '0.9rem' }}>{task.detail}</p>
+                        </li>
+                      ))}
+                    </ul>
                   ) : (
                     <p style={{ marginTop: '0.75rem', color: '#6b7280' }}>
-                      No geo grid runs captured yet. Launch your first run from the keywords workspace.
+                      Great work! Automated checks did not surface additional actions right now.
                     </p>
                   )
                 ) : (
                   <p style={{ marginTop: '0.75rem', color: '#6b7280' }}>
-                    Geo grid insights are limited to workspace owners. Ask an owner to share the latest results.
+                    Connect your Google Business Profile to unlock personalized recommendations.
                   </p>
                 )}
               </div>
@@ -350,69 +327,90 @@ export default async function BusinessDashboardPage({ params }) {
               </div>
             </section>
 
+
+
             <section className="section">
-              <div className="surface-card surface-card--muted surface-card--compact">
+              <div className="surface-card surface-card--muted">
                 <div className="section-header">
                   <div>
-                    <h2 className="section-title">Next steps to optimize</h2>
+                    <h2 className="section-title">Latest geo grid run</h2>
                     <p className="section-caption">
-                      Focus on these tasks to strengthen your local visibility.
+                      Review your freshest keyword coverage snapshot across the map.
                     </p>
                   </div>
-                  <Link className="cta-link" href={optimizationHref}>
-                    Explore full roadmap ↗
+                  <Link className="cta-link" href={keywordsHref}>
+                    View keyword insights ↗
                   </Link>
                 </div>
 
-                {business.gPlaceId && optimizationRoadmap ? (
-                  optimizationSteps.length ? (
-                    <ul
+                {latestRunSummary ? (
+                    <div
                       style={{
-                        listStyle: 'none',
-                        display: 'grid',
-                        gap: '0.75rem',
-                        margin: '0.75rem 0 0',
-                        padding: 0
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '0.85rem',
+                        marginTop: '0.75rem'
                       }}
                     >
-                      {optimizationSteps.map((task) => (
-                        <li
-                          key={task.id}
-                          style={{
-                            border: '1px solid rgba(3, 60, 87, 0.12)',
-                            borderRadius: '12px',
-                            padding: '0.85rem 1rem',
-                            background: '#fff',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: '0.4rem'
-                          }}
-                        >
-                          <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.75rem' }}>
-                            <strong style={{ fontSize: '1.05rem', color: 'var(--color-heading)' }}>{task.label}</strong>
-                            <span className="status-pill" data-status={task.status.key}>
-                              {task.status.label}
-                            </span>
-                          </div>
-                          <p style={{ margin: 0, color: 'rgba(3, 60, 87, 0.66)', fontSize: '0.9rem' }}>{task.detail}</p>
-                        </li>
-                      ))}
-                    </ul>
+                      <div
+                        style={{
+                          display: 'flex',
+                          flexWrap: 'wrap',
+                          gap: '0.75rem',
+                          justifyContent: 'space-between',
+                          alignItems: 'baseline'
+                        }}
+                      >
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                          <strong style={{ fontSize: '1.1rem' }}>{latestRunSummary.keyword}</strong>
+                          <span style={{ color: '#6b7280', fontSize: '0.9rem' }}>Run on {latestRunSummary.runDate}</span>
+                        </div>
+                        <span className="status-pill" data-status={latestRunSummary.status.key}>
+                          {latestRunSummary.status.label}
+                        </span>
+                      </div>
+
+                      <div
+                        style={{
+                          display: 'grid',
+                          gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
+                          gap: '0.85rem'
+                        }}
+                      >
+                        <div className="metric-chip">
+                          <span style={{ color: '#6b7280', fontSize: '0.8rem' }}>SoLV (Top 3)</span>
+                          <strong style={{ fontSize: '1.4rem' }}>{latestRunSummary.solvLabel}</strong>
+                        </div>
+                        <div className="metric-chip">
+                          <span style={{ color: '#6b7280', fontSize: '0.8rem' }}>Avg. position</span>
+                          <strong style={{ fontSize: '1.4rem' }}>{latestRunSummary.avgLabel}</strong>
+                        </div>
+                        <div className="metric-chip">
+                          <span style={{ color: '#6b7280', fontSize: '0.8rem' }}>Points ranked</span>
+                          <strong style={{ fontSize: '1.4rem' }}>
+                            {latestRunSummary.top3Points}/{latestRunSummary.totalPoints}
+                          </strong>
+                        </div>
+                      </div>
+
+                      {latestRunSummary.href ? (
+                        <div>
+                          <Link className="cta-link" href={latestRunSummary.href}>
+                            Open run details ↗
+                          </Link>
+                        </div>
+                      ) : null}
+                    </div>
                   ) : (
                     <p style={{ marginTop: '0.75rem', color: '#6b7280' }}>
-                      Great work! Automated checks did not surface additional actions right now.
+                      No geo grid runs captured yet. Launch your first run from the keywords workspace.
                     </p>
-                  )
-                ) : (
-                  <p style={{ marginTop: '0.75rem', color: '#6b7280' }}>
-                    Connect your Google Business Profile to unlock personalized recommendations.
-                  </p>
-                )}
+                  )}
               </div>
             </section>
+
           </div>
         </main>
       </div>
-    </div>
   );
 }

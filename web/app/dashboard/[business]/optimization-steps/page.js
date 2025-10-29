@@ -78,6 +78,5 @@ export default async function BusinessOptimizationStepsPage({ params }) {
           </div>
         </main>
       </div>
-    </div>
   );
 }

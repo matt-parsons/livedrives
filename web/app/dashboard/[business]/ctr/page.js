@@ -414,6 +414,5 @@ export default async function CtrDashboardPage({ params, searchParams }) {
           </div>
         </main>
       </div>
-    </div>
   );
 }

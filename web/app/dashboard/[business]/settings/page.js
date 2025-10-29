@@ -138,6 +138,5 @@ export default async function BusinessSettingsPage({ params }) {
           </div>
         </main>
       </div>
-    </div>
   );
 }

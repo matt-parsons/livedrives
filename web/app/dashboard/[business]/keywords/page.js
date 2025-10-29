@@ -583,15 +583,16 @@ export default async function BusinessKeywordsPage({ params, searchParams }) {
             </header>
 
             <section className="section">
-              {isOwner ? (
                 <KeywordPerformanceSpotlight items={keywordPerformanceItems} mapsApiKey={mapsApiKey} />
-              ) : (
-                <div className="surface-card surface-card--muted surface-card--compact">
-                  <p style={{ margin: 0, color: '#6b7280' }}>
-                    Geo grid keyword insights are reserved for workspace owners. Ask an owner for the latest summary.
-                  </p>
-                </div>
-              )}
+            </section>
+
+            <section className="section">
+                <GeoGridRunsSection
+                  caption={geoSectionCaption}
+                  defaultView={viewMode}
+                  trendItems={geoGridTrendList}
+                  runItems={geoGridRunsList}
+                />
             </section>
 
             {isOwner ? (
@@ -704,24 +705,6 @@ export default async function BusinessKeywordsPage({ params, searchParams }) {
               </section>
             ) : null}
 
-            <section className="section">
-              {isOwner ? (
-                <GeoGridRunsSection
-                  caption={geoSectionCaption}
-                  defaultView={viewMode}
-                  trendItems={geoGridTrendList}
-                  runItems={geoGridRunsList}
-                />
-              ) : (
-                <div className="surface-card surface-card--muted surface-card--compact">
-                  <p style={{ margin: 0, color: '#6b7280' }}>
-                    Geo grid run history is limited to workspace owners. Request access from an owner if you need to
-                    audit recent activity.
-                  </p>
-                </div>
-              )}
-            </section>
-
             {isOwner ? (
               <section className="section">
                 <div className="surface-card surface-card--muted">
@@ -796,17 +779,11 @@ export default async function BusinessKeywordsPage({ params, searchParams }) {
                   caption={originSectionCaption}
                 />
               ) : (
-                <div className="surface-card surface-card--muted surface-card--compact">
-                  <p style={{ margin: 0, color: '#6b7280' }}>
-                    Origin zone management is limited to workspace owners. Reach out to an owner if you need
-                    adjustments.
-                  </p>
-                </div>
+                <div></div>
               )}
             </section>
           </div>
         </main>
       </div>
-    </div>
   );
 }

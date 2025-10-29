@@ -135,6 +135,5 @@ export default async function GeoGridRunPage({ params }) {
           </div>
         </main>
       </div>
-    </div>
   );
 }
