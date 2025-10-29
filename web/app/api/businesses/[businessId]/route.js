@@ -1,4 +1,5 @@
 import pool from '@lib/db.js';
+import geoGridSchedules from '@lib/db/geoGridSchedules.js';
 import { AuthError, requireAuth } from '@/lib/authServer';
 import { mapToDbColumns, normalizeBusinessPayload } from '../utils.js';
 
@@ -53,6 +54,14 @@ export async function PATCH(request, { params }) {
 
     if (result.affectedRows === 0) {
       return Response.json({ error: 'Business not found.' }, { status: 404 });
+    }
+
+    if (Object.prototype.hasOwnProperty.call(values, 'isActive')) {
+      try {
+        await geoGridSchedules.setScheduleActiveState(businessId, values.isActive === 1);
+      } catch (scheduleError) {
+        console.error(`Failed to update geo grid schedule activation for business ${rawId}`, scheduleError);
+      }
     }
 
     const [rows] = await pool.query(

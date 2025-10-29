@@ -1,4 +1,5 @@
 import pool from '@lib/db.js';
+import geoGridSchedules from '@lib/db/geoGridSchedules.js';
 import { formatDate, formatDecimal, toTimestamp } from './runs/formatters.js';
 
 export { formatDate, formatDecimal, toTimestamp };
@@ -296,6 +297,60 @@ export async function loadGeoGridRunsForKeyword(businessId, keyword) {
   const [rows] = await pool.query(sql, params);
 
   return rows;
+}
+
+export async function loadGeoGridSchedule(businessId) {
+  const context = await geoGridSchedules.loadScheduleContext(businessId);
+
+  if (!context) {
+    return null;
+  }
+
+  let schedule = context.schedule;
+
+  if (!schedule) {
+    schedule = await geoGridSchedules.initializeGeoGridSchedule(businessId);
+  }
+
+  if (!schedule) {
+    return null;
+  }
+
+  const pad = (value, fallback = 0, max = 59) => {
+    const numeric = Number(value);
+    const bounded = Number.isFinite(numeric)
+      ? Math.min(Math.max(numeric, 0), max)
+      : fallback;
+    return String(bounded).padStart(2, '0');
+  };
+
+  const toIso = (value) => {
+    if (!value) {
+      return null;
+    }
+
+    if (typeof value.toISO === 'function') {
+      return value.toISO({ suppressMilliseconds: true });
+    }
+
+    if (value instanceof Date) {
+      return value.toISOString();
+    }
+
+    return null;
+  };
+
+  const leadMinutesRaw = schedule.minLeadMinutes ?? schedule.leadMinutes;
+  const leadMinutes = Number.isFinite(leadMinutesRaw) ? leadMinutesRaw : 120;
+
+  return {
+    dayOfWeek: Number(schedule.dayOfWeek ?? 0),
+    startTimeLocal: `${pad(schedule.hour, 15, 23)}:${pad(schedule.minute, 0)}`,
+    leadMinutes,
+    nextRunAt: toIso(schedule.nextRunAt),
+    lastRunAt: toIso(schedule.lastRunAt),
+    isActive: Boolean(schedule.isActive)
+  };
 }
 
 export async function loadGeoGridRunWithPoints(businessId, runId) {
