@@ -147,41 +147,81 @@ function buildPlacePayload(result, { fallbackPlaceId, timezone = null, sidebarDa
     result.editorial_summary?.description ??
     result.editorial_summary?.tagline ??
     null;
-  const latestPostDate = sidebarData?.latestPostDate ?? null;
 
+  const latestPostDate = sidebarData?.latestPostDate ?? null;
   const reviewCountRaw = result.user_ratings_total ?? result.userRatingsTotal ?? null;
   const reviewCountNumeric = Number(reviewCountRaw);
   const reviewCount = Number.isFinite(reviewCountNumeric) ? reviewCountNumeric : null;
   const ratingNumeric = Number(result.rating);
   const rating = Number.isFinite(ratingNumeric) ? ratingNumeric : null;
 
-  const latestReview = result.reviews.sort((a, b) => b.time - a.time)[0];
+  const latestReview = Array.isArray(result.reviews)
+    ? result.reviews.sort((a, b) => b.time - a.time)[0]
+    : null;
+
+  // --- New sidebar data fields ---
+  const {
+    cid = null,
+    coords = null,
+    phone = null,
+    address = null,
+    coverPhoto = null,
+    photos = [],
+    posts = [],
+    reviews = [],
+    qna = [],
+    competitors = [],
+    categories: sidebarCategories = []
+  } = sidebarData;
+
+  const mergedCategories = [
+    ...new Set([...categories, ...(sidebarCategories ?? [])])
+  ].filter(Boolean);
 
   return {
-    placeId: result.place_id ?? fallbackPlaceId ?? null,
-    name: result.name ?? '',
-    formattedAddress: result.formatted_address ?? '',
-    location,
+    // --- Core Google Places fields ---
+    placeId: result.place_id ?? fallbackPlaceId ?? sidebarData?.placeId ?? null,
+    cid,
+    name: result.name ?? sidebarData?.name ?? '',
+    formattedAddress: result.formatted_address ?? address ?? '',
+    location: coords ?? location,
     postalCode: extractPostalCode(result.address_components),
     timezone,
-    phoneNumber: result.formatted_phone_number ?? result.international_phone_number ?? null,
-    website: result.website ?? null,
+    phoneNumber:
+      result.formatted_phone_number ??
+      result.international_phone_number ??
+      phone ??
+      null,
+    website: result.website ?? sidebarData?.website ?? null,
     googleMapsUri: result.url ?? result.googleMapsUri ?? null,
     businessStatus: result.business_status ?? null,
     rating,
     reviewCount,
     latestReview,
-    categories,
-    primaryCategory: categories[0] ?? null,
-    photoCount: Array.isArray(result.photos) ? result.photos.length : 0,
+    categories: mergedCategories,
+    primaryCategory: mergedCategories[0] ?? null,
+    photoCount: Array.isArray(result.photos)
+      ? result.photos.length
+      : sidebarData?.photos?.length ?? 0,
     openingHours,
     weekdayText,
     description,
     latestPostDate,
     serviceCapabilities,
-    fetchedAt: new Date().toISOString()
+    fetchedAt: new Date().toISOString(),
+
+    // --- Extended fields from sidebar scraper ---
+    sidebar: {
+      coverPhoto,
+      photos,
+      posts,
+      reviews,
+      qna,
+      competitors
+    }
   };
 }
+
 
 export async function fetchPlaceDetails(placeId, { signal } = {}) {
   if (!GOOGLE_API_KEY) {

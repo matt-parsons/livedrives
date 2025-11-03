@@ -350,7 +350,7 @@ const SECTION_DEFINITIONS = [
 ];
 
 export function buildOptimizationRoadmap(place) {
-  console.log('buildOptimizationRoadmap', place.name);
+  console.log('buildOptimizationRoadmap', place);
   if (!place) {
     return null;
   }
