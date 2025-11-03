@@ -14,6 +14,138 @@ function formatImpact(weight) {
   return `${value}% impact`;
 }
 
+function sanitizeTelephone(number) {
+  if (typeof number !== 'string') {
+    return null;
+  }
+
+  const trimmed = number.trim();
+
+  if (!trimmed) {
+    return null;
+  }
+
+  const digits = trimmed.replace(/[^+\d]/g, '');
+
+  return digits ? digits : null;
+}
+
+function ProfilePreview({ preview }) {
+  if (!preview) {
+    return null;
+  }
+
+  const thumbnails = Array.isArray(preview.photos)
+    ? preview.photos.filter((url) => url !== preview.coverPhoto).slice(0, 4)
+    : [];
+
+  const hasRating = Number.isFinite(preview.rating);
+  const hasReviewCount = Number.isFinite(preview.reviewCount);
+  const telHref = sanitizeTelephone(preview.phoneNumber);
+
+  return (
+    <div className="business-optimization-roadmap__profile-preview">
+      <div className="business-optimization-roadmap__profile-media">
+        <div className="business-optimization-roadmap__profile-cover">
+          {preview.coverPhoto ? (
+            <img
+              src={preview.coverPhoto}
+              alt={`${preview.name ?? 'Business'} cover photo`}
+              loading="lazy"
+            />
+          ) : (
+            <div className="business-optimization-roadmap__profile-cover-placeholder">
+              <span>No photos yet</span>
+            </div>
+          )}
+        </div>
+        {thumbnails.length ? (
+          <div className="business-optimization-roadmap__profile-thumbnails" role="list">
+            {thumbnails.map((url, index) => (
+              <div
+                key={`${url}-${index}`}
+                className="business-optimization-roadmap__profile-thumbnail"
+                role="listitem"
+              >
+                <img
+                  src={url}
+                  alt={`${preview.name ?? 'Business'} photo ${index + 2}`}
+                  loading="lazy"
+                />
+              </div>
+            ))}
+          </div>
+        ) : null}
+      </div>
+
+      <div className="business-optimization-roadmap__profile-details">
+        <div className="business-optimization-roadmap__profile-header">
+          <h3 className="business-optimization-roadmap__profile-name">
+            {preview.name ?? 'Google Business Profile'}
+          </h3>
+          {preview.primaryCategory ? (
+            <span className="business-optimization-roadmap__profile-category">{preview.primaryCategory}</span>
+          ) : null}
+        </div>
+
+        {hasRating || hasReviewCount ? (
+          <div className="business-optimization-roadmap__profile-rating" aria-label="Google rating">
+            {hasRating ? (
+              <span className="business-optimization-roadmap__profile-rating-value">
+                ★ {preview.rating % 1 === 0 ? preview.rating.toFixed(0) : preview.rating.toFixed(1)}
+              </span>
+            ) : null}
+            {hasReviewCount ? (
+              <span className="business-optimization-roadmap__profile-review-count">
+                {preview.reviewCount} review{preview.reviewCount === 1 ? '' : 's'}
+              </span>
+            ) : null}
+          </div>
+        ) : null}
+
+        <p
+          className={`business-optimization-roadmap__profile-description${
+            preview.description ? '' : ' business-optimization-roadmap__profile-description--muted'
+          }`}
+        >
+          {preview.description ?? 'No description published yet.'}
+        </p>
+
+        <dl className="business-optimization-roadmap__profile-meta">
+          {preview.address ? (
+            <div className="business-optimization-roadmap__profile-meta-item">
+              <dt>Address</dt>
+              <dd>{preview.address}</dd>
+            </div>
+          ) : null}
+          {preview.phoneNumber ? (
+            <div className="business-optimization-roadmap__profile-meta-item">
+              <dt>Phone</dt>
+              <dd>
+                {telHref ? (
+                  <a href={`tel:${telHref}`}>{preview.phoneNumber}</a>
+                ) : (
+                  preview.phoneNumber
+                )}
+              </dd>
+            </div>
+          ) : null}
+          {preview.website ? (
+            <div className="business-optimization-roadmap__profile-meta-item">
+              <dt>Website</dt>
+              <dd>
+                <a href={preview.website} target="_blank" rel="noopener noreferrer">
+                  {preview.website}
+                </a>
+              </dd>
+            </div>
+          ) : null}
+        </dl>
+      </div>
+    </div>
+  );
+}
+
 function RoadmapTaskCard({ task }) {
   const impactLabel = formatImpact(task.weight);
 
@@ -96,6 +228,8 @@ export default function BusinessOptimizationRoadmap({ roadmap, error, placeId, e
           </a>
         ) : null}
       </div>
+
+      <ProfilePreview preview={roadmap.profilePreview} />
 
       {sections.length ? (
         <div className="business-optimization-roadmap__section-summary-grid">
