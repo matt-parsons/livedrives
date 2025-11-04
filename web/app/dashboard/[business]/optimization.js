@@ -1,3 +1,82 @@
+function parseDateInput(value) {
+  if (!value) {
+    return null;
+  }
+
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? null : value;
+  }
+
+  if (typeof value === 'number') {
+    if (!Number.isFinite(value)) {
+      return null;
+    }
+
+    const milliseconds = value > 1e12 ? value : value * 1000;
+    const date = new Date(milliseconds);
+    return Number.isNaN(date.getTime()) ? null : date;
+  }
+
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+
+    if (!trimmed) {
+      return null;
+    }
+
+    const numeric = Number(trimmed);
+
+    if (Number.isFinite(numeric)) {
+      return parseDateInput(numeric);
+    }
+
+    const parsed = Date.parse(trimmed);
+
+    if (!Number.isNaN(parsed)) {
+      return new Date(parsed);
+    }
+  }
+
+  return null;
+}
+
+function describeRecency(date) {
+  if (!date || Number.isNaN(date.getTime())) {
+    return { formatted: null, relative: null, daysAgo: null };
+  }
+
+  const now = Date.now();
+  const diffMs = now - date.getTime();
+  const daysAgo = diffMs < 0 ? 0 : Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+  let relative;
+
+  if (daysAgo === 0) {
+    relative = 'today';
+  } else if (daysAgo === 1) {
+    relative = 'yesterday';
+  } else if (daysAgo < 7) {
+    relative = `${daysAgo} days ago`;
+  } else if (daysAgo < 60) {
+    const weeks = Math.floor(daysAgo / 7);
+    relative = `${weeks} week${weeks === 1 ? '' : 's'} ago`;
+  } else if (daysAgo < 365) {
+    const months = Math.floor(daysAgo / 30);
+    relative = `${months} month${months === 1 ? '' : 's'} ago`;
+  } else {
+    const years = Math.floor(daysAgo / 365);
+    relative = `${years} year${years === 1 ? '' : 's'} ago`;
+  }
+
+  const formatted = date.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+
+  return { formatted, relative, daysAgo };
+}
+
 function normalizeStatus(key) {
   const mapping = {
     completed: { key: 'completed', label: 'Completed' },
@@ -125,8 +204,79 @@ function buildProfilePreview(place, sidebarPhotosArg) {
 
   const rating = Number.isFinite(Number(place.rating)) ? Number(place.rating) : null;
   const reviewCount = Number.isFinite(Number(place.reviewCount)) ? Number(place.reviewCount) : null;
+  const categories = Array.isArray(place.categories)
+    ? place.categories.map((value) => (typeof value === 'string' ? value.trim() : '')).filter(Boolean)
+    : [];
+  const serviceCapabilities = Array.isArray(place.serviceCapabilities)
+    ? place.serviceCapabilities.map((value) => (typeof value === 'string' ? value.trim() : '')).filter(Boolean)
+    : [];
+  const weekdayText = Array.isArray(place.weekdayText)
+    ? place.weekdayText.map((value) => (typeof value === 'string' ? value.trim() : '')).filter(Boolean)
+    : [];
+  const timezone =
+    typeof place.timezone === 'string' && place.timezone.trim().length ? place.timezone.trim() : null;
+  const businessStatus =
+    typeof place.businessStatus === 'string' && place.businessStatus.trim().length
+      ? place.businessStatus
+          .toString()
+          .split('_')
+          .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1).toLowerCase())
+          .join(' ')
+      : null;
+
+  const reviewSource = place.latestReview ?? null;
+  let latestReview = null;
+
+  if (reviewSource) {
+    const reviewDate = parseDateInput(
+      reviewSource.time ?? reviewSource.timestamp ?? reviewSource.date ?? reviewSource.time_ms
+    );
+    const { formatted, relative } = describeRecency(reviewDate);
+    const ratingValue = Number(reviewSource.rating);
+
+    latestReview = {
+      authorName: reviewSource.author_name ?? null,
+      authorUrl: reviewSource.author_url ?? null,
+      profilePhotoUrl: reviewSource.profile_photo_url ?? null,
+      rating: Number.isFinite(ratingValue) ? ratingValue : null,
+      text: reviewSource.text ?? null,
+      relativeTimeDescription:
+        reviewSource.relative_time_description ?? reviewSource.relativeTimeDescription ?? relative ?? null,
+      postedAt: formatted ?? null,
+      postedAtIso: reviewDate ? reviewDate.toISOString() : null,
+      language: reviewSource.language ?? null,
+      originalLanguage: reviewSource.original_language ?? null,
+      translated: Boolean(reviewSource.translated)
+    };
+  }
+
+  const latestPostDate = parseDateInput(place.latestPostDate);
+  const latestPost = latestPostDate
+    ? {
+        iso: latestPostDate.toISOString(),
+        formatted: latestPostDate.toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        }),
+        relative: describeRecency(latestPostDate).relative
+      }
+    : null;
+
+  const reviewSnippets = Array.isArray(place.sidebar?.reviews)
+    ? place.sidebar.reviews
+        .map((value) => (typeof value === 'string' ? value.trim() : ''))
+        .filter((value) => value.length > 0)
+    : [];
+  const postLinks = Array.isArray(place.sidebar?.posts)
+    ? place.sidebar.posts
+        .map((value) => (typeof value === 'string' ? value.trim() : ''))
+        .filter((value) => value.length > 0)
+    : [];
 
   return {
+    placeId: typeof place.placeId === 'string' && place.placeId.trim().length ? place.placeId.trim() : null,
+    cid: typeof place.cid === 'string' && place.cid.trim().length ? place.cid.trim() : null,
     name: place.name ?? null,
     rating,
     reviewCount,
@@ -152,7 +302,16 @@ function buildProfilePreview(place, sidebarPhotosArg) {
     primaryCategory:
       typeof place.primaryCategory === 'string' && place.primaryCategory.trim().length
         ? place.primaryCategory.trim()
-        : null
+        : null,
+    categories,
+    serviceCapabilities,
+    weekdayText,
+    timezone,
+    businessStatus,
+    latestReview,
+    latestPost,
+    reviewSnippets,
+    posts: postLinks
   };
 }
 
@@ -229,26 +388,33 @@ function computeHoursStatus(weekdayText) {
 }
 
 function computeLastUpdate(latestPostDate) {
-  console.log('computeLastUpdate', latestPostDate);
-  const lastUpdate = latestPostDate;
+  const postDate = parseDateInput(latestPostDate);
 
-  if (lastUpdate) {
+  if (!postDate) {
     return {
-      status: normalizeStatus('completed'),
-      detail: 'Your last update was: ', lastUpdate
+      status: normalizeStatus('pending'),
+      detail: 'No Google posts detected yet. Share updates weekly to stay fresh.'
     };
   }
 
-  if (lastUpdate === '') {
-    return {
-      status: normalizeStatus('in_progress'),
-      detail: 'You should post an update at least once a week:', lastUpdate
-    };
+  const { formatted, relative, daysAgo } = describeRecency(postDate);
+  const label = formatted ? `${formatted}${relative ? ` (${relative})` : ''}` : relative ?? 'recently';
+
+  let statusKey = 'in_progress';
+
+  if (typeof daysAgo === 'number') {
+    if (daysAgo <= 14) {
+      statusKey = 'completed';
+    } else if (daysAgo <= 45) {
+      statusKey = 'in_progress';
+    } else {
+      statusKey = 'pending';
+    }
   }
 
   return {
-    status: normalizeStatus('pending'),
-    detail: 'You should post an update at least once a week:', lastUpdate
+    status: normalizeStatus(statusKey),
+    detail: `Last Google post detected on ${label}.`
   };
 }
 
@@ -282,6 +448,7 @@ function computeWebsiteStatus(website) {
 
 function computeReviewStatus(reviewCount, latestReview) {
   const count = Number.isFinite(Number(reviewCount)) ? Number(reviewCount) : 0;
+
   if (!latestReview) {
     return {
       status: normalizeStatus('pending'),
@@ -290,44 +457,29 @@ function computeReviewStatus(reviewCount, latestReview) {
     };
   }
 
-  const reviewDate = new Date(latestReview.time * 1000);
-  const formattedDate = reviewDate.toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "long",
-    day: "numeric"
-  });
+  const reviewDate = parseDateInput(
+    latestReview.time ?? latestReview.timestamp ?? latestReview.date ?? latestReview.time_ms
+  );
+  const { formatted, relative, daysAgo } = describeRecency(reviewDate);
+  const relativeDescription =
+    latestReview.relative_time_description ?? latestReview.relativeTimeDescription ?? relative ?? 'recently';
+  const label = formatted ? `${formatted}${relativeDescription ? ` (${relativeDescription})` : ''}` : relativeDescription;
 
-  // calculate days since last review
-  const daysAgo = Math.floor((Date.now() - reviewDate.getTime()) / (1000 * 60 * 60 * 24));
+  let freshness = 'dormant';
 
-  // relative text for humans
-  let relative;
-  if (daysAgo < 1) relative = "today";
-  else if (daysAgo === 1) relative = "yesterday";
-  else if (daysAgo < 7) relative = `${daysAgo} days ago`;
-  else if (daysAgo < 60) {
-    const weeks = Math.floor(daysAgo / 7);
-    relative = `${weeks} week${weeks === 1 ? '' : 's'} ago`;
-  } else if (daysAgo < 365) {
-    const months = Math.floor(daysAgo / 30);
-    relative = `${months} month${months === 1 ? '' : 's'} ago`;
-  } else {
-    const years = Math.floor(daysAgo / 365);
-    relative = `${years} year${years === 1 ? '' : 's'} ago`;
+  if (typeof daysAgo === 'number') {
+    if (daysAgo <= 30) {
+      freshness = 'active';
+    } else if (daysAgo <= 90) {
+      freshness = 'stale';
+    }
   }
 
-  // freshness classification
-  let freshness;
-  if (daysAgo <= 30) freshness = 'active';
-  else if (daysAgo <= 90) freshness = 'stale';
-  else freshness = 'dormant';
-
-  // decide status block
   if (count >= 25) {
     return {
       status: normalizeStatus('completed'),
       freshness,
-      detail: `${count} reviews detected. Great momentum! Last review on ${formattedDate} (${relative}).`
+      detail: `${count} reviews detected. Great momentum! Last review on ${label}.`
     };
   }
 
@@ -335,7 +487,7 @@ function computeReviewStatus(reviewCount, latestReview) {
     return {
       status: normalizeStatus('in_progress'),
       freshness,
-      detail: `${count} review${count === 1 ? '' : 's'} detected. Last review on ${formattedDate} (${relative}). Aim for 25+ recent reviews.`
+      detail: `${count} review${count === 1 ? '' : 's'} detected. Last review on ${label}. Aim for 25+ recent reviews.`
     };
   }
 
