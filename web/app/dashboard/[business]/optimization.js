@@ -69,8 +69,26 @@ function computeDescriptionStatus(description) {
   };
 }
 
-function computePhotoStatus(photoCount) {
-  const count = Number.isFinite(Number(photoCount)) ? Number(photoCount) : 0;
+function normalizeSidebarPhotos(sidebar) {
+  if (!sidebar || typeof sidebar !== 'object') {
+    return [];
+  }
+
+  const photos = Array.isArray(sidebar.photos) ? sidebar.photos : [];
+
+  return Array.from(
+    new Set(
+      photos
+        .map((url) => (typeof url === 'string' ? url.trim() : ''))
+        .filter((url) => url.length > 0)
+    )
+  );
+}
+
+function computePhotoStatus(photoCount, sidebarPhotos) {
+  const apiCount = Number.isFinite(Number(photoCount)) ? Number(photoCount) : 0;
+  const sidebarCount = Array.isArray(sidebarPhotos) ? sidebarPhotos.length : 0;
+  const count = Math.max(apiCount, sidebarCount);
 
   if (count >= 10) {
     return {
@@ -88,7 +106,53 @@ function computePhotoStatus(photoCount) {
 
   return {
     status: normalizeStatus('pending'),
-    detail: 'No photos detected from the Places API.'
+    detail: 'No photos detected from Google. Add high-quality images to make a strong first impression.'
+  };
+}
+
+function buildProfilePreview(place, sidebarPhotosArg) {
+  if (!place) {
+    return null;
+  }
+
+  const sidebarPhotos = Array.isArray(sidebarPhotosArg)
+    ? sidebarPhotosArg
+    : normalizeSidebarPhotos(place.sidebar);
+  const coverPhoto =
+    (place.sidebar && typeof place.sidebar.coverPhoto === 'string' && place.sidebar.coverPhoto.trim().length
+      ? place.sidebar.coverPhoto.trim()
+      : null) || sidebarPhotos[0] || null;
+
+  const rating = Number.isFinite(Number(place.rating)) ? Number(place.rating) : null;
+  const reviewCount = Number.isFinite(Number(place.reviewCount)) ? Number(place.reviewCount) : null;
+
+  return {
+    name: place.name ?? null,
+    rating,
+    reviewCount,
+    description: typeof place.description === 'string' && place.description.trim().length
+      ? place.description.trim()
+      : null,
+    address:
+      typeof place.formattedAddress === 'string' && place.formattedAddress.trim().length
+        ? place.formattedAddress.trim()
+        : null,
+    phoneNumber:
+      typeof place.phoneNumber === 'string' && place.phoneNumber.trim().length
+        ? place.phoneNumber.trim()
+        : null,
+    website:
+      typeof place.website === 'string' && place.website.trim().length ? place.website.trim() : null,
+    googleMapsUri:
+      typeof place.googleMapsUri === 'string' && place.googleMapsUri.trim().length
+        ? place.googleMapsUri.trim()
+        : null,
+    photos: sidebarPhotos,
+    coverPhoto,
+    primaryCategory:
+      typeof place.primaryCategory === 'string' && place.primaryCategory.trim().length
+        ? place.primaryCategory.trim()
+        : null
   };
 }
 
@@ -350,10 +414,11 @@ const SECTION_DEFINITIONS = [
 ];
 
 export function buildOptimizationRoadmap(place) {
-  console.log('buildOptimizationRoadmap', place);
   if (!place) {
     return null;
   }
+
+  const sidebarPhotos = normalizeSidebarPhotos(place.sidebar);
 
   const tasks = [
     {
@@ -375,7 +440,7 @@ export function buildOptimizationRoadmap(place) {
       label: 'Upload high-quality photos',
       weight: 15,
       auto: true,
-      ...computePhotoStatus(place.photoCount)
+      ...computePhotoStatus(place.photoCount, sidebarPhotos)
     },
     {
       id: 'categories',
@@ -509,6 +574,7 @@ export function buildOptimizationRoadmap(place) {
 
   return {
     place,
+    profilePreview: buildProfilePreview(place, sidebarPhotos),
     tasks,
     sections,
     automatedWeight,

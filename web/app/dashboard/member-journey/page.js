@@ -3,8 +3,7 @@ import { redirect } from 'next/navigation';
 import { AuthError, requireAuth } from '@/lib/authServer';
 import BusinessForm from '../businesses/BusinessForm';
 import BusinessOptimizationRoadmap from '../[business]/BusinessOptimizationRoadmap';
-import { buildOptimizationRoadmap } from '../[business]/optimization';
-import { fetchPlaceDetails } from '@/lib/googlePlaces';
+import { loadOptimizationData } from '@/lib/optimizationData';
 import { loadJourneyBusinessContext, loadTrialStatus } from './helpers';
 import KeywordOriginZoneForm from './KeywordOriginZoneForm';
 import { Button } from '@/components/ui/button';
@@ -126,8 +125,8 @@ export default async function MemberJourneyPage() {
 
   if (primaryBusiness?.gPlaceId) {
     try {
-      const { place } = await fetchPlaceDetails(primaryBusiness.gPlaceId);
-      optimizationRoadmap = buildOptimizationRoadmap(place);
+      const { roadmap } = await loadOptimizationData(primaryBusiness.gPlaceId);
+      optimizationRoadmap = roadmap;
     } catch (error) {
       optimizationRoadmap = null;
       optimizationError = error?.message ?? 'Failed to load Google Places data.';

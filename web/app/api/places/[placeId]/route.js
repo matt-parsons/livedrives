@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { fetchPlaceDetails, PlacesError } from '@/lib/googlePlaces';
+import { PlacesError } from '@/lib/googlePlaces';
+import { loadOptimizationData } from '@/lib/optimizationData';
 
 export async function GET(_request, { params }) {
   const placeId = params?.placeId;
@@ -9,8 +10,8 @@ export async function GET(_request, { params }) {
   }
 
   try {
-    const { place } = await fetchPlaceDetails(placeId);
-    return NextResponse.json({ place });
+    const { place, roadmap } = await loadOptimizationData(placeId);
+    return NextResponse.json({ place, roadmap });
   } catch (error) {
     if (error instanceof PlacesError) {
       return NextResponse.json({ error: error.message }, { status: error.status ?? 500 });
