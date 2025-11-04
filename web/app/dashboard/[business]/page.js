@@ -9,8 +9,8 @@ import {
   loadBusiness,
   loadGeoGridRunSummaries
 } from './helpers';
-import { buildOptimizationRoadmap, resolveLetterGrade } from './optimization';
-import { fetchPlaceDetails } from '@/lib/googlePlaces';
+import { resolveLetterGrade } from './optimization';
+import { loadOptimizationData } from '@/lib/optimizationData';
 
 function resolveStatus(status) {
   if (!status) {
@@ -152,8 +152,8 @@ export default async function BusinessDashboardPage({ params }) {
 
   if (business.gPlaceId) {
     try {
-      const { place } = await fetchPlaceDetails(business.gPlaceId);
-      optimizationRoadmap = buildOptimizationRoadmap(place);
+      const { roadmap } = await loadOptimizationData(business.gPlaceId);
+      optimizationRoadmap = roadmap;
     } catch (error) {
       optimizationError = error?.message ?? 'Failed to load Google Places details.';
     }

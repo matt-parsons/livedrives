@@ -2451,6 +2451,356 @@ textarea {
   color: #546e73;
 }
 
+.business-optimization-roadmap__profile-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  align-items: stretch;
+  margin-top: 1.5rem;
+  margin-bottom: 1.75rem;
+}
+
+.business-optimization-roadmap__profile-media {
+  flex: 1 1 280px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.business-optimization-roadmap__profile-cover {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgba(3, 60, 87, 0.08);
+}
+
+.business-optimization-roadmap__profile-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.business-optimization-roadmap__profile-cover-placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(3, 60, 87, 0.08);
+  color: rgba(3, 60, 87, 0.6);
+  font-size: 0.92rem;
+}
+
+.business-optimization-roadmap__profile-thumbnails {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(72px, 1fr));
+  gap: 0.5rem;
+}
+
+.business-optimization-roadmap__profile-thumbnail {
+  border-radius: 10px;
+  overflow: hidden;
+  background: rgba(3, 60, 87, 0.08);
+  aspect-ratio: 1 / 1;
+}
+
+.business-optimization-roadmap__profile-thumbnail img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.business-optimization-roadmap__profile-details {
+  flex: 1 1 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.business-optimization-roadmap__profile-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.business-optimization-roadmap__profile-name {
+  margin: 0;
+  font-size: 1.45rem;
+  color: var(--color-heading);
+}
+
+.business-optimization-roadmap__profile-flags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.business-optimization-roadmap__profile-category {
+  font-size: 0.92rem;
+  font-weight: 500;
+  color: rgba(3, 60, 87, 0.66);
+}
+
+.business-optimization-roadmap__profile-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border-radius: 999px;
+  border: 1px solid rgba(34, 174, 209, 0.35);
+  background: rgba(34, 174, 209, 0.15);
+  color: rgba(3, 60, 87, 0.72);
+  padding: 0.25rem 0.75rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.business-optimization-roadmap__profile-rating {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  font-size: 1rem;
+  color: rgba(3, 60, 87, 0.85);
+}
+
+.business-optimization-roadmap__profile-rating-value {
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.business-optimization-roadmap__profile-review-count {
+  font-size: 0.95rem;
+  color: rgba(3, 60, 87, 0.62);
+}
+
+.business-optimization-roadmap__profile-description {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: rgba(3, 60, 87, 0.8);
+}
+
+.business-optimization-roadmap__profile-description--muted {
+  color: rgba(3, 60, 87, 0.55);
+  font-style: italic;
+}
+
+.business-optimization-roadmap__profile-meta {
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.business-optimization-roadmap__profile-meta-item {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.business-optimization-roadmap__profile-meta-item dt {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(3, 60, 87, 0.5);
+}
+
+.business-optimization-roadmap__profile-meta-item dd {
+  margin: 0;
+  font-size: 0.95rem;
+  color: rgba(3, 60, 87, 0.82);
+}
+
+.business-optimization-roadmap__profile-meta-item a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.business-optimization-roadmap__profile-meta-item a:hover,
+.business-optimization-roadmap__profile-meta-item a:focus {
+  text-decoration: underline;
+}
+
+.business-optimization-roadmap__profile-meta-item code {
+  font-family: 'SFMono-Regular', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New',
+    monospace;
+  font-size: 0.82rem;
+  color: rgba(3, 60, 87, 0.72);
+  word-break: break-all;
+}
+
+.business-optimization-roadmap__profile-insights {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.business-optimization-roadmap__profile-detail-card {
+  border: 1px solid rgba(3, 60, 87, 0.12);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.86);
+  padding: 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  min-height: 140px;
+  box-shadow: 0 6px 12px rgba(3, 60, 87, 0.06);
+}
+
+.business-optimization-roadmap__profile-detail-card--review {
+  grid-column: span 2;
+}
+
+.business-optimization-roadmap__profile-detail-title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: rgba(3, 60, 87, 0.82);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.business-optimization-roadmap__profile-chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.business-optimization-roadmap__profile-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  background: rgba(3, 60, 87, 0.08);
+  color: rgba(3, 60, 87, 0.78);
+  font-size: 0.8rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+.business-optimization-roadmap__profile-detail-empty {
+  margin: 0;
+  font-size: 0.85rem;
+  color: rgba(3, 60, 87, 0.6);
+}
+
+.business-optimization-roadmap__profile-detail-body {
+  margin: 0;
+  font-size: 0.9rem;
+  color: rgba(3, 60, 87, 0.82);
+  line-height: 1.5;
+}
+
+.business-optimization-roadmap__profile-detail-footnote {
+  margin: 0;
+  font-size: 0.78rem;
+  color: rgba(3, 60, 87, 0.55);
+}
+
+.business-optimization-roadmap__profile-hours {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.88rem;
+  color: rgba(3, 60, 87, 0.8);
+}
+
+.business-optimization-roadmap__profile-review {
+  display: flex;
+  gap: 0.85rem;
+}
+
+.business-optimization-roadmap__profile-review-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid rgba(3, 60, 87, 0.12);
+  box-shadow: 0 4px 8px rgba(3, 60, 87, 0.08);
+}
+
+.business-optimization-roadmap__profile-review-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  flex: 1;
+}
+
+.business-optimization-roadmap__profile-review-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.business-optimization-roadmap__profile-review-author {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: rgba(3, 60, 87, 0.85);
+}
+
+.business-optimization-roadmap__profile-review-author:hover,
+.business-optimization-roadmap__profile-review-author:focus {
+  color: var(--color-primary-strong);
+}
+
+.business-optimization-roadmap__profile-review-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.25rem;
+  font-size: 0.78rem;
+  color: rgba(3, 60, 87, 0.6);
+}
+
+.business-optimization-roadmap__profile-review-rating {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: rgba(254, 136, 51, 0.12);
+  color: rgba(254, 136, 51, 0.92);
+  border-radius: 999px;
+  padding: 0.2rem 0.6rem;
+  font-weight: 600;
+}
+
+.business-optimization-roadmap__profile-review-text {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: rgba(3, 60, 87, 0.82);
+}
+
+.business-optimization-roadmap__profile-review-footnote {
+  margin: 0;
+  font-size: 0.75rem;
+  color: rgba(3, 60, 87, 0.55);
+}
+
+@media (max-width: 720px) {
+  .business-optimization-roadmap__profile-preview {
+    flex-direction: column;
+    margin-bottom: 1.25rem;
+  }
+
+  .business-optimization-roadmap__profile-media,
+  .business-optimization-roadmap__profile-details {
+    flex: 1 1 auto;
+  }
+
+  .business-optimization-roadmap__profile-detail-card--review {
+    grid-column: span 1;
+  }
+}
+
 .business-optimization-roadmap__task-card {
   list-style: none;
   padding: 1rem 1.1rem;

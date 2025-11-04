@@ -3,8 +3,7 @@ import { AuthError, requireAuth } from '@/lib/authServer';
 import BusinessOptimizationRoadmap from '../BusinessOptimizationRoadmap';
 import BusinessNavigation from '../BusinessNavigation';
 import { loadBusiness } from '../helpers';
-import { buildOptimizationRoadmap } from '../optimization';
-import { fetchPlaceDetails } from '@/lib/googlePlaces';
+import { loadOptimizationData } from '@/lib/optimizationData';
 
 export const metadata = {
   title: 'Optimization steps · Local Paint Pilot'
@@ -41,8 +40,8 @@ export default async function BusinessOptimizationStepsPage({ params }) {
 
   if (business.gPlaceId) {
     try {
-      const { place } = await fetchPlaceDetails(business.gPlaceId);
-      optimizationRoadmap = buildOptimizationRoadmap(place);
+      const { roadmap } = await loadOptimizationData(business.gPlaceId);
+      optimizationRoadmap = roadmap;
     } catch (error) {
       optimizationError = error?.message ?? 'Failed to load Google Places details.';
     }
