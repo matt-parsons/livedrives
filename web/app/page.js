@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { buildOptimizationRoadmap, resolveLetterGrade } from '@/app/dashboard/[business]/optimization';
+import { resolveLetterGrade } from '@/app/dashboard/[business]/optimization';
 
 const LOADING_STEPS = [
   {
@@ -256,7 +256,7 @@ export default function IndexPage() {
         setLoadingStep(2);
         const payload = await response.json();
         const details = payload.place ?? null;
-        const roadmapResult = details ? buildOptimizationRoadmap(details) : null;
+        const roadmapResult = payload.roadmap ?? null;
 
         setPlaceDetails(details);
         setRoadmap(roadmapResult);
