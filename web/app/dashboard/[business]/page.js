@@ -9,8 +9,7 @@ import {
   loadBusiness,
   loadGeoGridRunSummaries
 } from './helpers';
-import { resolveLetterGrade } from './optimization';
-import { loadOptimizationData } from '@/lib/optimizationData';
+import OptimizationPanelsClient from './OptimizationPanelsClient';
 
 function resolveStatus(status) {
   if (!status) {
@@ -104,16 +103,6 @@ function summarizeLatestRun(runs, baseHref) {
   };
 }
 
-function selectNextOptimizationSteps(roadmap, limit = 3) {
-  if (!roadmap || !Array.isArray(roadmap.tasks)) {
-    return [];
-  }
-
-  return roadmap.tasks
-    .filter((task) => task.status && task.status.key !== 'completed')
-    .sort((a, b) => (b.weight ?? 0) - (a.weight ?? 0))
-    .slice(0, limit);
-}
 
 export default async function BusinessDashboardPage({ params }) {
   const identifier = params.business;
@@ -140,29 +129,11 @@ export default async function BusinessDashboardPage({ params }) {
     notFound();
   }
 
-  const isOwner = session.role === 'owner';
   const canManageSettings = session.role === 'owner' || session.role === 'admin';
 
   const geoGridRunsRaw = await loadGeoGridRunSummaries(business.id);
   const geoGridRuns = geoGridRunsRaw.map(mapRunRecord);
   const latestRunSummary = summarizeLatestRun(geoGridRuns, baseHref);
-
-  let optimizationRoadmap = null;
-  let optimizationError = null;
-
-  if (business.gPlaceId) {
-    try {
-      const { roadmap } = await loadOptimizationData(business.gPlaceId);
-      optimizationRoadmap = roadmap;
-    } catch (error) {
-      optimizationError = error?.message ?? 'Failed to load Google Places details.';
-    }
-  }
-
-  const optimizationGrade = optimizationRoadmap
-    ? resolveLetterGrade(optimizationRoadmap.progressPercent)
-    : null;
-  const optimizationSteps = selectNextOptimizationSteps(optimizationRoadmap);
 
   const businessIdentifier = business.businessSlug ?? String(business.id);
   return (
@@ -175,158 +146,12 @@ export default async function BusinessDashboardPage({ params }) {
 
         <main className="dashboard-layout__main">
           <div className="dashboard-layout__content">
-
-
-            <section className="section">
-              <div className="surface-card surface-card--muted surface-card--compact">
-                <div className="section-header">
-                  <div>
-                    <h2 className="section-title">Next steps to optimize</h2>
-                    <p className="section-caption">
-                      Focus on these tasks to strengthen your local visibility.
-                    </p>
-                  </div>
-                  <Link className="cta-link" href={optimizationHref}>
-                    Explore full roadmap ↗
-                  </Link>
-                </div>
-
-                {business.gPlaceId && optimizationRoadmap ? (
-                  optimizationSteps.length ? (
-                    <ul
-                      style={{
-                        listStyle: 'none',
-                        display: 'grid',
-                        gap: '0.75rem',
-                        margin: '0.75rem 0 0',
-                        padding: 0
-                      }}
-                    >
-                      {optimizationSteps.map((task) => (
-                        <li
-                          key={task.id}
-                          style={{
-                            border: '1px solid rgba(3, 60, 87, 0.12)',
-                            borderRadius: '12px',
-                            padding: '0.85rem 1rem',
-                            background: '#fff',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: '0.4rem'
-                          }}
-                        >
-                          <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.75rem' }}>
-                            <strong style={{ fontSize: '1.05rem', color: 'var(--color-heading)' }}>{task.label}</strong>
-                            <span className="status-pill" data-status={task.status.key}>
-                              {task.status.label}
-                            </span>
-                          </div>
-                          <p style={{ margin: 0, color: 'rgba(3, 60, 87, 0.66)', fontSize: '0.9rem' }}>{task.detail}</p>
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p style={{ marginTop: '0.75rem', color: '#6b7280' }}>
-                      Great work! Automated checks did not surface additional actions right now.
-                    </p>
-                  )
-                ) : (
-                  <p style={{ marginTop: '0.75rem', color: '#6b7280' }}>
-                    Connect your Google Business Profile to unlock personalized recommendations.
-                  </p>
-                )}
-              </div>
-            </section>
-
-            <section className="section">
-              <div className="surface-card surface-card--muted">
-                <div className="section-header">
-                  <div>
-                    <h2 className="section-title">GBP optimization</h2>
-                    <p className="section-caption">
-                      Gauge how complete your Google Business Profile looks today.
-                    </p>
-                  </div>
-                  <Link className="cta-link" href={optimizationHref}>
-                    View full checklist ↗
-                  </Link>
-                </div>
-
-                {business.gPlaceId ? (
-                  optimizationError ? (
-                    <div className="inline-error" role="status" style={{ marginTop: '0.75rem' }}>
-                      <strong>Unable to contact Google Places</strong>
-                      <span>{optimizationError}</span>
-                    </div>
-                  ) : optimizationRoadmap ? (
-                    <div
-                      style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '0.85rem',
-                        marginTop: '0.75rem'
-                      }}
-                    >
-                      <div
-                        style={{
-                          display: 'flex',
-                          flexWrap: 'wrap',
-                          gap: '1.5rem',
-                          alignItems: 'center'
-                        }}
-                      >
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                          <span style={{ color: '#6b7280', fontSize: '0.85rem' }}>Overall grade</span>
-                          <strong style={{ fontSize: '2rem', color: 'var(--color-heading)' }}>
-                            {optimizationGrade ?? '—'}
-                          </strong>
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                          <span style={{ color: '#6b7280', fontSize: '0.85rem' }}>Automated readiness</span>
-                          <strong style={{ fontSize: '1.4rem', color: 'var(--color-heading)' }}>
-                            {optimizationRoadmap.progressPercent}% complete
-                          </strong>
-                        </div>
-                      </div>
-
-                      <div
-                        style={{
-                          height: '0.65rem',
-                          borderRadius: '999px',
-                          background: 'rgba(3, 60, 87, 0.12)',
-                          overflow: 'hidden'
-                        }}
-                        role="presentation"
-                      >
-                        <div
-                          style={{
-                            width: `${Math.min(100, Math.max(0, optimizationRoadmap.progressPercent))}%`,
-                            background: 'var(--color-primary)',
-                            height: '100%'
-                          }}
-                        />
-                      </div>
-                    </div>
-                  ) : (
-                    <p style={{ marginTop: '0.75rem', color: '#6b7280' }}>
-                      We could not compute optimization insights for this profile yet.
-                    </p>
-                  )
-                ) : (
-                  <div style={{ marginTop: '0.75rem' }}>
-                    <p style={{ color: '#6b7280', marginBottom: '0.75rem' }}>
-                      Connect a Google Place ID to unlock automated profile scoring and guidance.
-                    </p>
-                    {canManageSettings ? (
-                      <Link className="cta-link" href={editHref}>
-                        Add Google Place ID ↗
-                      </Link>
-                    ) : null}
-                  </div>
-                )}
-              </div>
-            </section>
-
+            <OptimizationPanelsClient
+              placeId={business.gPlaceId ?? null}
+              optimizationHref={optimizationHref}
+              canManageSettings={canManageSettings}
+              editHref={editHref}
+            />
 
 
             <section className="section">

@@ -3,7 +3,8 @@ const nextConfig = {
   reactStrictMode: true,
   experimental: {
     typedRoutes: false,
-    externalDir: true
+    externalDir: true,
+    serverComponentsExternalPackages: ['puppeteer-extra', 'puppeteer-extra-plugin-stealth']
   }
 };
 

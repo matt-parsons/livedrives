@@ -140,13 +140,8 @@ function buildPlacePayload(result, { fallbackPlaceId, timezone = null, sidebarDa
   const location = result.geometry?.location ?? null;
   const openingHours = result.current_opening_hours ?? result.opening_hours ?? null;
   const weekdayText = Array.isArray(openingHours?.weekday_text) ? openingHours.weekday_text : [];
-  const categories = extractCategories(result.types);
   const serviceCapabilities = extractServiceCapabilities(result);
-  const description =
-    result.editorial_summary?.overview ??
-    result.editorial_summary?.description ??
-    result.editorial_summary?.tagline ??
-    null;
+  const description = sidebarData?.description ?? null;
 
   const latestPostDate = sidebarData?.latestPostDate ?? null;
   const reviewCountRaw = result.user_ratings_total ?? result.userRatingsTotal ?? null;
@@ -159,38 +154,21 @@ function buildPlacePayload(result, { fallbackPlaceId, timezone = null, sidebarDa
     ? result.reviews.sort((a, b) => b.time - a.time)[0]
     : null;
 
-  // --- New sidebar data fields ---
-  const {
-    cid = null,
-    coords = null,
-    phone = null,
-    address = null,
-    coverPhoto = null,
-    photos = [],
-    posts = [],
-    reviews = [],
-    qna = [],
-    competitors = [],
-    categories: sidebarCategories = []
-  } = sidebarData;
-
-  const mergedCategories = [
-    ...new Set([...categories, ...(sidebarCategories ?? [])])
-  ].filter(Boolean);
+  
+  const sidebarLocation = {latitude: sidebarData.latitude, longitude: sidebarData.longitude}
 
   return {
     // --- Core Google Places fields ---
     placeId: result.place_id ?? fallbackPlaceId ?? sidebarData?.placeId ?? null,
-    cid,
+    cid: result.cid ?? sidebarData?.cid ?? '',
     name: result.name ?? sidebarData?.name ?? '',
     formattedAddress: result.formatted_address ?? address ?? '',
-    location: coords ?? location,
+    location: result.coords ?? sidebarLocation ?? '',
     postalCode: extractPostalCode(result.address_components),
     timezone,
     phoneNumber:
       result.formatted_phone_number ??
       result.international_phone_number ??
-      phone ??
       null,
     website: result.website ?? sidebarData?.website ?? null,
     googleMapsUri: result.url ?? result.googleMapsUri ?? null,
@@ -198,27 +176,16 @@ function buildPlacePayload(result, { fallbackPlaceId, timezone = null, sidebarDa
     rating,
     reviewCount,
     latestReview,
-    categories: mergedCategories,
-    primaryCategory: mergedCategories[0] ?? null,
-    photoCount: Array.isArray(result.photos)
-      ? result.photos.length
-      : sidebarData?.photos?.length ?? 0,
+    categories: sidebarData?.categories ?? '',
+    primaryCategory: sidebarData?.category ?? '',
+    photos: sidebarData?.photos ?? null,
+    photoCount: sidebarData?.photos?.length ?? 0,
     openingHours,
     weekdayText,
     description,
     latestPostDate,
     serviceCapabilities,
     fetchedAt: new Date().toISOString(),
-
-    // --- Extended fields from sidebar scraper ---
-    sidebar: {
-      coverPhoto,
-      photos,
-      posts,
-      reviews,
-      qna,
-      competitors
-    }
   };
 }
 
@@ -281,10 +248,10 @@ export async function fetchPlaceDetails(placeId, { signal } = {}) {
     }
 
     const result = detailsData.result ?? {};
-    const resolvedPlaceId = result.place_id ?? placeId;
+    console.log(result.geometry);
     const [timezone, sidebarData] = await Promise.all([
       fetchTimezone(result.geometry?.location ?? null, { signal }),
-      loadSidebarData(resolvedPlaceId, { businessName: result.name ?? null })
+      loadSidebarData(result.geometry?.location, { businessName: result.name ?? null })
     ]);
     const place = buildPlacePayload(result, {
       fallbackPlaceId: placeId,

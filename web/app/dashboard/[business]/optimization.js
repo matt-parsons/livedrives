@@ -569,6 +569,7 @@ export function buildOptimizationRoadmap(place) {
   if (!place) {
     return null;
   }
+  // console.log('buildOptimizationRoadmap', place);
 
   const sidebarPhotos = normalizeSidebarPhotos(place.sidebar);
 

@@ -1,9 +1,8 @@
 import { notFound, redirect } from 'next/navigation';
 import { AuthError, requireAuth } from '@/lib/authServer';
-import BusinessOptimizationRoadmap from '../BusinessOptimizationRoadmap';
+import OptimizationRoadmapClient from '../OptimizationRoadmapClient';
 import BusinessNavigation from '../BusinessNavigation';
 import { loadBusiness } from '../helpers';
-import { loadOptimizationData } from '@/lib/optimizationData';
 
 export const metadata = {
   title: 'Optimization steps · Local Paint Pilot'
@@ -35,18 +34,6 @@ export default async function BusinessOptimizationStepsPage({ params }) {
   const editHref = `${baseHref}/edit`;
   const businessName = business.businessName || 'this business';
 
-  let optimizationRoadmap = null;
-  let optimizationError = null;
-
-  if (business.gPlaceId) {
-    try {
-      const { roadmap } = await loadOptimizationData(business.gPlaceId);
-      optimizationRoadmap = roadmap;
-    } catch (error) {
-      optimizationError = error?.message ?? 'Failed to load Google Places details.';
-    }
-  }
-
   return (
     <div className="dashboard-layout__body">
         <aside className="dashboard-layout__sidebar" aria-label="Workspace navigation">
@@ -57,22 +44,8 @@ export default async function BusinessOptimizationStepsPage({ params }) {
 
         <main className="dashboard-layout__main">
           <div className="dashboard-layout__content">
-            <header className="dashboard-page-header">
-              <div className="dashboard-page-header__intro">
-                <h2 className="page-title">Optimization steps</h2>
-                <p className="page-subtitle">
-                  Guided checklist to improve Google Business Profile performance for {businessName}.
-                </p>
-              </div>
-            </header>
-
             <section className="section">
-              <BusinessOptimizationRoadmap
-                roadmap={optimizationRoadmap}
-                error={optimizationError}
-                placeId={business.gPlaceId}
-                editHref={editHref}
-              />
+              <OptimizationRoadmapClient placeId={business.gPlaceId} editHref={editHref} />
             </section>
           </div>
         </main>
