@@ -213,43 +213,26 @@ export default function OptimizationPanelsClient({
         </div>
       </section>    
       <section className="section">
-        <div className="surface-card surface-card--muted surface-card--compact">
-          <div className="section-header">
-            <div>
-              <h2 className="section-title">Next steps to optimize</h2>
-              <p className="section-caption">
-                Focus on these tasks to strengthen your local visibility.
-              </p>
-            </div>
-            <Link className="cta-link" href={optimizationHref}>
-              Explore full roadmap ↗
-            </Link>
-          </div>
-
           {loading ? (
-            <div
-              style={{
-                marginTop: '0.75rem',
-                padding: '0.85rem 1rem',
-                borderRadius: '12px',
-                background: 'rgba(3, 60, 87, 0.08)',
-                color: 'rgba(3, 60, 87, 0.8)',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center'
-              }}
-            >
-              <span>Gathering Google profile data…</span>
-              <span className="status-pill" data-status="in_progress">
-                Loading
-              </span>
-            </div>
+            <div></div>
           ) : error ? (
             <div className="inline-error" role="status" style={{ marginTop: '0.75rem' }}>
               <strong>Unable to contact Google Places</strong>
               <span>{error}</span>
             </div>
           ) : roadmap && optimizationSteps.length ? (
+          <div className="surface-card surface-card--muted surface-card--compact">
+            <div className="section-header">
+              <div>
+                <h2 className="section-title">Next steps to optimize</h2>
+                <p className="section-caption">
+                  Focus on these tasks to strengthen your local visibility.
+                </p>
+              </div>
+              <Link className="cta-link" href={optimizationHref}>
+                Explore full roadmap ↗
+              </Link>
+            </div>            
             <ul
               style={{
                 listStyle: 'none',
@@ -286,6 +269,8 @@ export default function OptimizationPanelsClient({
                 </li>
               ))}
             </ul>
+          </div>
+
           ) : roadmap ? (
             <p style={{ marginTop: '0.75rem', color: '#6b7280' }}>
               Great work! Automated checks did not surface additional actions right now.
@@ -295,7 +280,6 @@ export default function OptimizationPanelsClient({
               We could not compute optimization insights for this profile yet.
             </p>
           )}
-        </div>
       </section>
 
     </>

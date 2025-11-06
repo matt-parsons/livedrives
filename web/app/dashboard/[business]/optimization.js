@@ -131,7 +131,7 @@ function computeDescriptionStatus(description) {
   if (length >= 160) {
     return {
       status: normalizeStatus('completed'),
-      detail: `Description length looks healthy (160+ characters).<br> ${description}`
+      detail: `Description length looks healthy (160+ characters).`
     };
   }
 
@@ -251,6 +251,7 @@ function buildProfilePreview(place, sidebarPhotosArg) {
   }
 
   const latestPostDate = parseDateInput(place.latestPostDate);
+  console.log('latestPostDate', latestPostDate);
   const latestPost = latestPostDate
     ? {
         iso: latestPostDate.toISOString(),
@@ -322,7 +323,7 @@ function computeCategoryStatus(categories) {
   if (list.length >= 2) {
     return {
       status: normalizeStatus('completed'),
-      detail: `${list.length} categories detected: ${text}`
+      detail: `${list.length} categories detected`
     };
   }
 
@@ -370,7 +371,7 @@ function computeHoursStatus(weekdayText) {
   if (entries.length >= 5) {
     return {
       status: normalizeStatus('completed'),
-      detail: `Weekly hours detected in Google: ${hoursText}`
+      detail: `Weekly hours detected in Google`
     };
   }
 
@@ -422,7 +423,7 @@ function computePhoneStatus(phoneNumber) {
   if (phoneNumber) {
     return {
       status: normalizeStatus('completed'),
-      detail: `Business phone number detected: ${phoneNumber}`
+      detail: `Business phone number detected`
     };
   }
 
@@ -436,7 +437,7 @@ function computeWebsiteStatus(website) {
   if (website) {
     return {
       status: normalizeStatus('completed'),
-      detail: `Website link detected: ${website}`
+      detail: `Website link detected`
     };
   }
 

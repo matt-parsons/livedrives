@@ -137,13 +137,16 @@ async function loadSidebarData(placeId, { businessName } = {}) {
 }
 
 function buildPlacePayload(result, { fallbackPlaceId, timezone = null, sidebarData = {} } = {}) {
+  console.log('✅✅ buildPlacePayload');
+
   const location = result.geometry?.location ?? null;
   const openingHours = result.current_opening_hours ?? result.opening_hours ?? null;
   const weekdayText = Array.isArray(openingHours?.weekday_text) ? openingHours.weekday_text : [];
   const serviceCapabilities = extractServiceCapabilities(result);
   const description = sidebarData?.description ?? null;
 
-  const latestPostDate = sidebarData?.latestPostDate ?? null;
+  const posts = sidebarData?.posts ?? null;
+  const latestPostDate = posts?.[0]?.[12] ?? null;
   const reviewCountRaw = result.user_ratings_total ?? result.userRatingsTotal ?? null;
   const reviewCountNumeric = Number(reviewCountRaw);
   const reviewCount = Number.isFinite(reviewCountNumeric) ? reviewCountNumeric : null;
@@ -183,6 +186,7 @@ function buildPlacePayload(result, { fallbackPlaceId, timezone = null, sidebarDa
     openingHours,
     weekdayText,
     description,
+    posts,
     latestPostDate,
     serviceCapabilities,
     fetchedAt: new Date().toISOString(),
@@ -246,9 +250,10 @@ export async function fetchPlaceDetails(placeId, { signal } = {}) {
       const message = detailsData.error_message || `Place details returned status ${detailsData.status}.`;
       throw new PlacesError(message, { status: 502 });
     }
+    // console.log('API GBP detailsData', detailsData);
+    console.log('API GBP detailsData');
 
     const result = detailsData.result ?? {};
-    console.log(result.geometry);
     const [timezone, sidebarData] = await Promise.all([
       fetchTimezone(result.geometry?.location ?? null, { signal }),
       loadSidebarData(result.geometry?.location, { businessName: result.name ?? null })
