@@ -1,4 +1,22 @@
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '';
+const fs = require("fs");
+const path = require("path");
+
+const logDir = "@lib/../logs";
+if (!fs.existsSync(logDir)) fs.mkdirSync(logDir, { recursive: true });
+const logFile = path.join(logDir, "googlePlaces.log");
+
+function logLine(level, message, extra = "") {
+  const timestamp = new Date().toISOString();
+  const line = `[${timestamp}] [${level}] ${message} ${extra}\n`;
+  try {
+    fs.appendFileSync(logFile, line);
+  } catch (err) {
+    console.error("Failed to write googlePlaces log:", err);
+  }
+  if (process.env.NODE_ENV !== "production") console.log(line.trim());
+}
+logLine("INFO", "googlePlaces.js started");
 
 class PlacesError extends Error {
   constructor(message, { status = 500 } = {}) {

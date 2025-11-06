@@ -1,0 +1,11 @@
+[2025-11-06T21:33:55.677Z] [INFO] fetchPlaceSidebarData 
+[2025-11-06T21:33:56.846Z] [INFO] → [Sidebar] Using SOAX residential proxy 206.255.59.17 (proxy.soax.com:5000) 
+[2025-11-06T21:34:06.757Z] [INFO] Detected single place page, extracting directly 
+[2025-11-06T21:34:06.757Z] [INFO] Single place detected → reloading for full payload 
+[2025-11-06T21:34:15.683Z] [INFO] attempts url https://www.google.com/maps/place/East+Asia+massage/@34.586758,-112.324892,13z/data=!4m6!3m5!1s0x872d23fcf5e22d0b:0x2d3163cf8a545fdd!8m2!3d34.586758!4d-112.324892!16s%2Fg%2F11c1ww_f2q?hl=en&entry=ttu&g_ep=EgoyMDI1MTEwNC4xIKXMDSoASAFQAw%3D%3D
+[2025-11-06T21:34:23.510Z] [INFO] attempts url https://www.google.com/maps/place/East+Asia+massage/@34.586758,-112.324892,16z/data=!3m1!4b1!4m6!3m5!1s0x872d23fcf5e22d0b:0x2d3163cf8a545fdd!8m2!3d34.586758!4d-112.324892!16s%2Fg%2F11c1ww_f2q?entry=ttu&g_ep=EgoyMDI1MTEwNC4xIKXMDSoASAFQAw%3D%3D
+[2025-11-06T21:34:31.149Z] [INFO] attempts url https://www.google.com/maps/place/East+Asia+massage/@34.586758,-112.324892,16z/data=!3m1!4b1!4m6!3m5!1s0x872d23fcf5e22d0b:0x2d3163cf8a545fdd!8m2!3d34.586758!4d-112.324892!16s%2Fg%2F11c1ww_f2q?entry=ttu&g_ep=EgoyMDI1MTEwNC4xIKXMDSoASAFQAw%3D%3D
+[2025-11-06T21:34:38.648Z] [INFO] attempts url https://www.google.com/maps/place/East+Asia+massage/@34.586758,-112.324892,16z/data=!3m1!4b1!4m6!3m5!1s0x872d23fcf5e22d0b:0x2d3163cf8a545fdd!8m2!3d34.586758!4d-112.324892!16s%2Fg%2F11c1ww_f2q?entry=ttu&g_ep=EgoyMDI1MTEwNC4xIKXMDSoASAFQAw%3D%3D
+[2025-11-06T21:34:38.652Z] [INFO] Expanded single candidate into 815 inner arrays 
+[2025-11-06T21:34:38.681Z] [INFO] parsedCandidates (including nested): 14
+[2025-11-06T21:34:38.702Z] [INFO] ✅ Picked best candidate for East Asia massage with score: 36
