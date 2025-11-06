@@ -1,7 +1,7 @@
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '';
 const fs = require("fs");
 const path = require("path");
-const { fetchPlaceSidebarData } = require('@lib/google/placesSidebar.js');
+const { fetchPlaceSidebarData } = require('@/lib/placesSidebar.js');
 
 
 const logDir = "@lib/../logs";
