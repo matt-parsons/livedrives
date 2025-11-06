@@ -250,6 +250,7 @@ export async function fetchPlaceDetails(placeId, { signal } = {}) {
       fetchTimezone(result.geometry?.location ?? null, { signal }),
       fetchPlaceSidebarData(result.geometry?.location, result.place_id, { businessName: result.name ?? null })
     ]);
+    console.log('sidebarData', sidebarData);
     const place = buildPlacePayload(result, {
       fallbackPlaceId: placeId,
       timezone,
