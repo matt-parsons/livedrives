@@ -1,6 +1,8 @@
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '';
 const fs = require("fs");
 const path = require("path");
+const { fetchPlaceSidebarData } = require('@lib/google/placesSidebar.js');
+
 
 const logDir = "@lib/../logs";
 if (!fs.existsSync(logDir)) fs.mkdirSync(logDir, { recursive: true });
@@ -122,30 +124,6 @@ async function fetchTimezone(location, { signal } = {}) {
   }
 
   return null;
-}
-
-async function loadSidebarData(geometry, placeId, { businessName } = {}) {
-  if (!geometry) {
-    return {};
-  }
-
-  try {
-    const sidebarModule = await import('@lib/google/placesSidebar.js');
-    const fetchSidebar =
-      sidebarModule.fetchPlaceSidebarData ??
-      sidebarModule.default?.fetchPlaceSidebarData ??
-      sidebarModule.default;
-
-    if (typeof fetchSidebar !== 'function') {
-      return {};
-    }
-
-    return await fetchSidebar(geometry, placeId, { businessName });
-  } catch (error) {
-    console.error('Failed to fetch Google Maps sidebar data', error);
-  }
-
-  return {};
 }
 
 function buildPlacePayload(result, { fallbackPlaceId, timezone = null, sidebarData = {} } = {}) {
@@ -270,7 +248,7 @@ export async function fetchPlaceDetails(placeId, { signal } = {}) {
     const result = detailsData.result ?? {};
     const [timezone, sidebarData] = await Promise.all([
       fetchTimezone(result.geometry?.location ?? null, { signal }),
-      loadSidebarData(result.geometry?.location, result.place_id, { businessName: result.name ?? null })
+      fetchPlaceSidebarData(result.geometry?.location, result.place_id, { businessName: result.name ?? null })
     ]);
     const place = buildPlacePayload(result, {
       fallbackPlaceId: placeId,
