@@ -358,7 +358,7 @@ function computeServicesStatus(serviceCapabilities) {
 
   return {
     status: normalizeStatus('pending'),
-    detail: 'No service capabilities returned via the Places API.'
+    detail: 'No services found.'
   };
 }
 function computeServicesDescriptionsStatus(serviceCapabilities) {
@@ -367,7 +367,7 @@ function computeServicesDescriptionsStatus(serviceCapabilities) {
   if (list.length === 0) {
     return {
       status: normalizeStatus('pending'),
-      detail: 'No service capabilities returned via the Places API.'
+      detail: 'No services found.'
     };
   }
 

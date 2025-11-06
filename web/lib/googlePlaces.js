@@ -106,8 +106,8 @@ async function fetchTimezone(location, { signal } = {}) {
   return null;
 }
 
-async function loadSidebarData(placeId, { businessName } = {}) {
-  if (!placeId) {
+async function loadSidebarData(geometry, placeId, { businessName } = {}) {
+  if (!geometry) {
     return {};
   }
 
@@ -122,7 +122,7 @@ async function loadSidebarData(placeId, { businessName } = {}) {
       return {};
     }
 
-    return await fetchSidebar(placeId, { businessName });
+    return await fetchSidebar(geometry, placeId, { businessName });
   } catch (error) {
     console.error('Failed to fetch Google Maps sidebar data', error);
   }
@@ -252,7 +252,7 @@ export async function fetchPlaceDetails(placeId, { signal } = {}) {
     const result = detailsData.result ?? {};
     const [timezone, sidebarData] = await Promise.all([
       fetchTimezone(result.geometry?.location ?? null, { signal }),
-      loadSidebarData(result.geometry?.location, { businessName: result.name ?? null })
+      loadSidebarData(result.geometry?.location, result.place_id, { businessName: result.name ?? null })
     ]);
     const place = buildPlacePayload(result, {
       fallbackPlaceId: placeId,
