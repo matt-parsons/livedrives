@@ -42,12 +42,12 @@ function ProfilePreview({ preview }) {
   const hasRating = Number.isFinite(preview.rating);
   const hasReviewCount = Number.isFinite(preview.reviewCount);
   const telHref = sanitizeTelephone(preview.phoneNumber);
-  const categories = Array.isArray(preview.categories) ? preview.categories : [];
-  const services = Array.isArray(preview.serviceCapabilities) ? preview.serviceCapabilities : [];
+  const categories = preview.categories ?? [];
+  const services = preview.serviceCapabilities ?? [];
   const hours = Array.isArray(preview.weekdayText) ? preview.weekdayText : [];
   const latestReview = preview.latestReview ?? null;
   const latestPost = preview.latestPost ?? null;
-  const postsCount = Array.isArray(preview.posts) ? preview.posts.length : 0;
+  const postsCount = preview.posts.length ?? 0;
 
   return (
     <div className="business-optimization-roadmap__profile-preview">
@@ -244,7 +244,7 @@ function ProfilePreview({ preview }) {
               </p>
             )}
             <p className="business-optimization-roadmap__profile-detail-footnote">
-              {postsCount} post{postsCount === 1 ? '' : 's'} linked from sidebar scrape.
+              {postsCount} post{postsCount === 1 ? '' : 's'} found in total.
             </p>
           </div>
 

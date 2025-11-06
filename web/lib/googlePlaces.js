@@ -78,12 +78,6 @@ function extractCategories(types) {
     .filter(Boolean);
 }
 
-function extractServiceCapabilities(result) {
-  return SERVICE_FIELDS.filter((field) => {
-    const candidates = [field.key, ...(field.legacyKeys ?? [])];
-    return candidates.some((candidate) => result?.[candidate] === true);
-  }).map((field) => field.label);
-}
 
 async function fetchTimezone(location, { signal } = {}) {
   if (!location || location.lat === undefined || location.lng === undefined) {
@@ -142,7 +136,7 @@ function buildPlacePayload(result, { fallbackPlaceId, timezone = null, sidebarDa
   const location = result.geometry?.location ?? null;
   const openingHours = result.current_opening_hours ?? result.opening_hours ?? null;
   const weekdayText = Array.isArray(openingHours?.weekday_text) ? openingHours.weekday_text : [];
-  const serviceCapabilities = extractServiceCapabilities(result);
+  const serviceCapabilities = sidebarData?.services;
   const description = sidebarData?.description ?? null;
 
   const posts = sidebarData?.posts ?? null;
@@ -152,6 +146,8 @@ function buildPlacePayload(result, { fallbackPlaceId, timezone = null, sidebarDa
   const reviewCount = Number.isFinite(reviewCountNumeric) ? reviewCountNumeric : null;
   const ratingNumeric = Number(result.rating);
   const rating = Number.isFinite(ratingNumeric) ? ratingNumeric : null;
+
+  const photos = result.photos;
 
   const latestReview = Array.isArray(result.reviews)
     ? result.reviews.sort((a, b) => b.time - a.time)[0]
@@ -179,16 +175,16 @@ function buildPlacePayload(result, { fallbackPlaceId, timezone = null, sidebarDa
     rating,
     reviewCount,
     latestReview,
-    categories: sidebarData?.categories ?? '',
+    categories: sidebarData?.bCategories ?? '',
     primaryCategory: sidebarData?.category ?? '',
-    photos: sidebarData?.photos ?? null,
-    photoCount: sidebarData?.photos?.length ?? 0,
+    photos: photos ?? null,
+    photoCount: photos?.length ?? 0,
     openingHours,
     weekdayText,
     description,
     posts,
     latestPostDate,
-    serviceCapabilities,
+    serviceCapabilities: serviceCapabilities,
     fetchedAt: new Date().toISOString(),
   };
 }

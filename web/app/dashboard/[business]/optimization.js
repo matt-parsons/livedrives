@@ -251,7 +251,6 @@ function buildProfilePreview(place, sidebarPhotosArg) {
   }
 
   const latestPostDate = parseDateInput(place.latestPostDate);
-  console.log('latestPostDate', latestPostDate);
   const latestPost = latestPostDate
     ? {
         iso: latestPostDate.toISOString(),
@@ -360,6 +359,47 @@ function computeServicesStatus(serviceCapabilities) {
   return {
     status: normalizeStatus('pending'),
     detail: 'No service capabilities returned via the Places API.'
+  };
+}
+function computeServicesDescriptionsStatus(serviceCapabilities) {
+  const list = Array.isArray(serviceCapabilities) ? serviceCapabilities : [];
+  
+  if (list.length === 0) {
+    return {
+      status: normalizeStatus('pending'),
+      detail: 'No service capabilities returned via the Places API.'
+    };
+  }
+
+  // Count services with descriptions (non-empty second element)
+  const servicesWithDescriptions = list.filter(service => {
+    const description = service?.[0]?.[1]; // Get the description from nested array
+    return description && description.trim() !== '';
+  }).length;
+
+  const totalServices = list.length;
+  const percentageComplete = (servicesWithDescriptions / totalServices) * 100;
+
+  // All services have descriptions
+  if (servicesWithDescriptions === totalServices) {
+    return {
+      status: normalizeStatus('completed'),
+      detail: `All ${totalServices} services have descriptions.`
+    };
+  }
+
+  // Some services have descriptions
+  if (servicesWithDescriptions > 0) {
+    return {
+      status: normalizeStatus('in_progress'),
+      detail: `${servicesWithDescriptions} of ${totalServices} services have descriptions (${Math.round(percentageComplete)}%).`
+    };
+  }
+
+  // No services have descriptions
+  return {
+    status: normalizeStatus('pending'),
+    detail: `0 of ${totalServices} services have descriptions. Add descriptions to help customers understand your offerings.`
   };
 }
 
@@ -519,17 +559,17 @@ export function resolveLetterGrade(percent) {
   }
 
   if (value >= 97) return 'A+';
-  if (value >= 93) return 'A';
-  if (value >= 90) return 'A-';
-  if (value >= 87) return 'B+';
-  if (value >= 83) return 'B';
-  if (value >= 80) return 'B-';
-  if (value >= 77) return 'C+';
-  if (value >= 73) return 'C';
-  if (value >= 70) return 'C-';
-  if (value >= 67) return 'D+';
-  if (value >= 63) return 'D';
-  if (value >= 60) return 'D-';
+  if (value >= 90) return 'A';
+  if (value >= 83) return 'A-';
+  if (value >= 76) return 'B+';
+  if (value >= 69) return 'B';
+  if (value >= 62) return 'B-';
+  if (value >= 55) return 'C+';
+  if (value >= 48) return 'C';
+  if (value >= 41) return 'C-';
+  if (value >= 34) return 'D+';
+  if (value >= 27) return 'D';
+  if (value >= 20) return 'D-';
   return 'F';
 }
 
@@ -614,9 +654,8 @@ export function buildOptimizationRoadmap(place) {
       id: 'service-descriptions',
       label: 'Add service descriptions',
       weight: 8,
-      auto: false,
-      status: normalizeStatus('pending'),
-      detail: 'Google Places does not expose service descriptions. Confirm each service has on-brand copy inside GBP.'
+      auto: true,
+      ...computeServicesDescriptionsStatus(place.serviceCapabilities)
     },
     {
       id: 'update-posts',
