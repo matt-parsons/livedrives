@@ -21,3 +21,63 @@
 [2025-11-07T00:16:49.545Z] [INFO] Expanded single candidate into 824 inner arrays 
 [2025-11-07T00:16:49.574Z] [INFO] parsedCandidates (including nested): 14
 [2025-11-07T00:16:49.603Z] [INFO] ✅ Picked best candidate for East Asia massage with score: 46
+[2025-11-07T04:50:03.462Z] [INFO] places Sidebar getting started! 
+[2025-11-07T04:50:03.476Z] [INFO] fetchPlaceSidebarData 
+[2025-11-07T04:50:05.562Z] [INFO] → [Sidebar] Using SOAX residential proxy 174.64.138.70 (proxy.soax.com:5000) 
+[2025-11-07T04:50:16.296Z] [INFO] Detected single place page, extracting directly 
+[2025-11-07T04:50:16.296Z] [INFO] Single place detected → reloading for full payload 
+[2025-11-07T04:50:25.963Z] [INFO] attempts url https://www.google.com/maps/place/East+Asia+massage/@34.586758,-112.324892,13z/data=!4m6!3m5!1s0x872d23fcf5e22d0b:0x2d3163cf8a545fdd!8m2!3d34.586758!4d-112.324892!16s%2Fg%2F11c1ww_f2q?hl=en&entry=ttu&g_ep=EgoyMDI1MTEwNC4xIKXMDSoASAFQAw%3D%3D
+[2025-11-07T04:50:34.441Z] [INFO] attempts url https://www.google.com/maps/place/East+Asia+massage/@34.586758,-112.324892,16z/data=!3m1!4b1!4m6!3m5!1s0x872d23fcf5e22d0b:0x2d3163cf8a545fdd!8m2!3d34.586758!4d-112.324892!16s%2Fg%2F11c1ww_f2q?entry=ttu&g_ep=EgoyMDI1MTEwNC4xIKXMDSoASAFQAw%3D%3D
+[2025-11-07T04:50:41.923Z] [INFO] attempts url https://www.google.com/maps/place/East+Asia+massage/@34.586758,-112.324892,16z/data=!3m1!4b1!4m6!3m5!1s0x872d23fcf5e22d0b:0x2d3163cf8a545fdd!8m2!3d34.586758!4d-112.324892!16s%2Fg%2F11c1ww_f2q?entry=ttu&g_ep=EgoyMDI1MTEwNC4xIKXMDSoASAFQAw%3D%3D
+[2025-11-07T04:50:49.455Z] [INFO] attempts url https://www.google.com/maps/place/East+Asia+massage/@34.586758,-112.324892,16z/data=!3m1!4b1!4m6!3m5!1s0x872d23fcf5e22d0b:0x2d3163cf8a545fdd!8m2!3d34.586758!4d-112.324892!16s%2Fg%2F11c1ww_f2q?entry=ttu&g_ep=EgoyMDI1MTEwNC4xIKXMDSoASAFQAw%3D%3D
+[2025-11-07T04:50:49.460Z] [INFO] Expanded single candidate into 817 inner arrays 
+[2025-11-07T04:50:49.487Z] [INFO] parsedCandidates (including nested): 14
+[2025-11-07T04:50:49.507Z] [INFO] ✅ Picked best candidate for East Asia massage with score: 46
+[2025-11-07T05:02:40.760Z] [INFO] places Sidebar getting started! 
+[2025-11-07T05:02:40.764Z] [INFO] fetchPlaceSidebarData 
+[2025-11-07T05:02:41.853Z] [INFO] → [Sidebar] Using SOAX residential proxy 24.73.49.137 (proxy.soax.com:5000) 
+[2025-11-07T05:02:51.351Z] [INFO] Detected single place page, extracting directly 
+[2025-11-07T05:02:51.351Z] [INFO] Single place detected → reloading for full payload 
+[2025-11-07T05:02:59.435Z] [INFO] attempts url https://www.google.com/maps/place/East+Asia+massage/@34.586758,-112.324892,13z/data=!4m6!3m5!1s0x872d23fcf5e22d0b:0x2d3163cf8a545fdd!8m2!3d34.586758!4d-112.324892!16s%2Fg%2F11c1ww_f2q?hl=en&entry=ttu&g_ep=EgoyMDI1MTEwNC4xIKXMDSoASAFQAw%3D%3D
+[2025-11-07T05:03:07.104Z] [INFO] attempts url https://www.google.com/maps/place/East+Asia+massage/@34.586758,-112.324892,16z/data=!3m1!4b1!4m6!3m5!1s0x872d23fcf5e22d0b:0x2d3163cf8a545fdd!8m2!3d34.586758!4d-112.324892!16s%2Fg%2F11c1ww_f2q?entry=ttu&g_ep=EgoyMDI1MTEwNC4xIKXMDSoASAFQAw%3D%3D
+[2025-11-07T05:03:14.297Z] [INFO] attempts url https://www.google.com/maps/place/East+Asia+massage/@34.586758,-112.324892,16z/data=!3m1!4b1!4m6!3m5!1s0x872d23fcf5e22d0b:0x2d3163cf8a545fdd!8m2!3d34.586758!4d-112.324892!16s%2Fg%2F11c1ww_f2q?entry=ttu&g_ep=EgoyMDI1MTEwNC4xIKXMDSoASAFQAw%3D%3D
+[2025-11-07T05:03:21.521Z] [INFO] attempts url https://www.google.com/maps/place/East+Asia+massage/@34.586758,-112.324892,16z/data=!3m1!4b1!4m6!3m5!1s0x872d23fcf5e22d0b:0x2d3163cf8a545fdd!8m2!3d34.586758!4d-112.324892!16s%2Fg%2F11c1ww_f2q?entry=ttu&g_ep=EgoyMDI1MTEwNC4xIKXMDSoASAFQAw%3D%3D
+[2025-11-07T05:03:21.529Z] [INFO] Expanded single candidate into 802 inner arrays 
+[2025-11-07T05:03:21.569Z] [INFO] parsedCandidates (including nested): 13
+[2025-11-07T05:03:21.597Z] [INFO] ✅ Picked best candidate for East Asia massage with score: 46
+[2025-11-07T05:07:02.888Z] [INFO] places Sidebar getting started! 
+[2025-11-07T05:07:02.892Z] [INFO] fetchPlaceSidebarData 
+[2025-11-07T05:07:04.341Z] [INFO] → [Sidebar] Using SOAX residential proxy 98.195.202.91 (proxy.soax.com:5000) 
+[2025-11-07T05:07:13.305Z] [INFO] Detected single place page, extracting directly 
+[2025-11-07T05:07:13.305Z] [INFO] Single place detected → reloading for full payload 
+[2025-11-07T05:07:21.899Z] [INFO] attempts url https://www.google.com/maps/place/East+Asia+massage/@34.586758,-112.324892,13z/data=!4m6!3m5!1s0x872d23fcf5e22d0b:0x2d3163cf8a545fdd!8m2!3d34.586758!4d-112.324892!16s%2Fg%2F11c1ww_f2q?hl=en&entry=ttu&g_ep=EgoyMDI1MTEwNC4xIKXMDSoASAFQAw%3D%3D
+[2025-11-07T05:07:29.920Z] [INFO] attempts url https://www.google.com/maps/place/East+Asia+massage/@34.586758,-112.324892,16z/data=!3m1!4b1!4m6!3m5!1s0x872d23fcf5e22d0b:0x2d3163cf8a545fdd!8m2!3d34.586758!4d-112.324892!16s%2Fg%2F11c1ww_f2q?entry=ttu&g_ep=EgoyMDI1MTEwNC4xIKXMDSoASAFQAw%3D%3D
+[2025-11-07T05:07:37.380Z] [INFO] attempts url https://www.google.com/maps/place/East+Asia+massage/@34.586758,-112.324892,16z/data=!3m1!4b1!4m6!3m5!1s0x872d23fcf5e22d0b:0x2d3163cf8a545fdd!8m2!3d34.586758!4d-112.324892!16s%2Fg%2F11c1ww_f2q?entry=ttu&g_ep=EgoyMDI1MTEwNC4xIKXMDSoASAFQAw%3D%3D
+[2025-11-07T05:07:44.711Z] [INFO] attempts url https://www.google.com/maps/place/East+Asia+massage/@34.586758,-112.324892,16z/data=!3m1!4b1!4m6!3m5!1s0x872d23fcf5e22d0b:0x2d3163cf8a545fdd!8m2!3d34.586758!4d-112.324892!16s%2Fg%2F11c1ww_f2q?entry=ttu&g_ep=EgoyMDI1MTEwNC4xIKXMDSoASAFQAw%3D%3D
+[2025-11-07T05:07:44.716Z] [INFO] Expanded single candidate into 801 inner arrays 
+[2025-11-07T05:07:44.743Z] [INFO] parsedCandidates (including nested): 13
+[2025-11-07T05:07:44.773Z] [INFO] ✅ Picked best candidate for East Asia massage with score: 46
+[2025-11-07T05:20:06.481Z] [INFO] places Sidebar getting started! 
+[2025-11-07T05:20:06.485Z] [INFO] fetchPlaceSidebarData 
+[2025-11-07T05:20:07.648Z] [INFO] → [Sidebar] Using SOAX residential proxy 73.237.221.123 (proxy.soax.com:5000) 
+[2025-11-07T05:20:16.579Z] [INFO] Detected single place page, extracting directly 
+[2025-11-07T05:20:16.580Z] [INFO] Single place detected → reloading for full payload 
+[2025-11-07T05:20:19.582Z] [INFO] attempts url https://www.google.com/maps/place/East+Asia+massage/@34.586758,-112.324892,13z/data=!4m6!3m5!1s0x872d23fcf5e22d0b:0x2d3163cf8a545fdd!8m2!3d34.586758!4d-112.324892!16s%2Fg%2F11c1ww_f2q?hl=en&entry=ttu&g_ep=EgoyMDI1MTEwNS4wIKXMDSoASAFQAw%3D%3D
+[2025-11-07T05:20:21.970Z] [INFO] attempts url https://www.google.com/maps/place/?q=place_id:ChIJCy3i9fwjLYcR3V9Uis9jMS0
+[2025-11-07T05:20:23.841Z] [INFO] attempts url https://www.google.com/maps/place/?q=place_id:ChIJCy3i9fwjLYcR3V9Uis9jMS0
+[2025-11-07T05:20:25.707Z] [INFO] attempts url https://www.google.com/maps/place/?q=place_id:ChIJCy3i9fwjLYcR3V9Uis9jMS0
+[2025-11-07T05:20:25.710Z] [INFO] Expanded single candidate into 798 inner arrays 
+[2025-11-07T05:20:25.734Z] [INFO] parsedCandidates (including nested): 13
+[2025-11-07T05:20:25.763Z] [INFO] ✅ Picked best candidate for East Asia massage with score: 46
+[2025-11-07T05:21:52.190Z] [INFO] places Sidebar getting started! 
+[2025-11-07T05:21:52.192Z] [INFO] fetchPlaceSidebarData 
+[2025-11-07T05:21:53.163Z] [INFO] → [Sidebar] Using SOAX residential proxy 71.150.122.50 (proxy.soax.com:5000) 
+[2025-11-07T05:22:03.016Z] [INFO] Detected single place page, extracting directly 
+[2025-11-07T05:22:03.017Z] [INFO] Single place detected → reloading for full payload 
+[2025-11-07T05:22:06.564Z] [INFO] attempts url https://www.google.com/maps/place/East+Asia+massage/@34.586758,-112.324892,13z/data=!4m6!3m5!1s0x872d23fcf5e22d0b:0x2d3163cf8a545fdd!8m2!3d34.586758!4d-112.324892!16s%2Fg%2F11c1ww_f2q?hl=en&entry=ttu&g_ep=EgoyMDI1MTEwNC4xIKXMDSoASAFQAw%3D%3D
+[2025-11-07T05:22:08.990Z] [INFO] attempts url https://www.google.com/maps/place/?q=place_id:ChIJCy3i9fwjLYcR3V9Uis9jMS0
+[2025-11-07T05:22:11.214Z] [INFO] attempts url https://www.google.com/maps/place/?q=place_id:ChIJCy3i9fwjLYcR3V9Uis9jMS0
+[2025-11-07T05:22:13.416Z] [INFO] attempts url https://www.google.com/maps/place/?q=place_id:ChIJCy3i9fwjLYcR3V9Uis9jMS0
+[2025-11-07T05:22:13.419Z] [INFO] Expanded single candidate into 817 inner arrays 
+[2025-11-07T05:22:13.450Z] [INFO] parsedCandidates (including nested): 14
+[2025-11-07T05:22:13.478Z] [INFO] ✅ Picked best candidate for East Asia massage with score: 36

@@ -84,7 +84,7 @@ export default function OptimizationPanelsClient({
           <div className="surface-card surface-card--muted surface-card--compact">
             <div className="section-header">
               <div>
-                <h2 className="section-title">Next steps to optimize</h2>
+                <h2 className="section-title">Next steps to improve your profile</h2>
                 <p className="section-caption">
                   Focus on these tasks to strengthen your local visibility.
                 </p>
@@ -224,7 +224,7 @@ export default function OptimizationPanelsClient({
           <div className="surface-card surface-card--muted surface-card--compact">
             <div className="section-header">
               <div>
-                <h2 className="section-title">Next steps to optimize</h2>
+                <h2 className="section-title">Next steps to improve your profile</h2>
                 <p className="section-caption">
                   Focus on these tasks to strengthen your local visibility.
                 </p>

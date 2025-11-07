@@ -158,7 +158,7 @@ export default async function BusinessDashboardPage({ params }) {
               <div className="surface-card surface-card--muted">
                 <div className="section-header">
                   <div>
-                    <h2 className="section-title">Latest geo grid run</h2>
+                    <h2 className="section-title">Latest Ranking Report</h2>
                     <p className="section-caption">
                       Review your freshest keyword coverage snapshot across the map.
                     </p>

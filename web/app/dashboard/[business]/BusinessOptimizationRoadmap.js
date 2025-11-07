@@ -148,6 +148,15 @@ function ProfilePreview({ preview }) {
         </div>
       ) : null}
 
+      {preview.description ? (
+        <div className="business-optimization-roadmap__profile-review-snippet">
+          <div className="business-optimization-roadmap__profile-review-snippet-header">
+            <p className="business-optimization-roadmap__profile-review-author">Description</p>
+          </div>
+          <p className="business-optimization-roadmap__profile-review-snippet-body">{preview.description}</p>
+        </div>
+      ) : null}
+
       {latestReview ? (
         <div className="business-optimization-roadmap__profile-review-snippet">
           <div className="business-optimization-roadmap__profile-review-snippet-header">

@@ -2577,6 +2577,8 @@ textarea {
   margin: 0;
   font-size: 0.9rem;
   color: rgba(3, 60, 87, 0.82);
+  width: 100%;
+  overflow: hidden;
 }
 
 .business-optimization-roadmap__profile-info-item a {
