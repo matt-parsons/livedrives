@@ -9,3 +9,15 @@
 [2025-11-06T21:34:38.652Z] [INFO] Expanded single candidate into 815 inner arrays 
 [2025-11-06T21:34:38.681Z] [INFO] parsedCandidates (including nested): 14
 [2025-11-06T21:34:38.702Z] [INFO] ✅ Picked best candidate for East Asia massage with score: 36
+[2025-11-07T00:16:06.827Z] [INFO] places Sidebar getting started! 
+[2025-11-07T00:16:06.842Z] [INFO] fetchPlaceSidebarData 
+[2025-11-07T00:16:08.115Z] [INFO] → [Sidebar] Using SOAX residential proxy 132.147.144.217 (proxy.soax.com:5000) 
+[2025-11-07T00:16:18.567Z] [INFO] Detected single place page, extracting directly 
+[2025-11-07T00:16:18.568Z] [INFO] Single place detected → reloading for full payload 
+[2025-11-07T00:16:27.200Z] [INFO] attempts url https://www.google.com/maps/place/East+Asia+massage/@34.586758,-112.324892,13z/data=!4m6!3m5!1s0x872d23fcf5e22d0b:0x2d3163cf8a545fdd!8m2!3d34.586758!4d-112.324892!16s%2Fg%2F11c1ww_f2q?hl=en&entry=ttu&g_ep=EgoyMDI1MTEwNC4xIKXMDSoASAFQAw%3D%3D
+[2025-11-07T00:16:34.912Z] [INFO] attempts url https://www.google.com/maps/place/East+Asia+massage/@34.586758,-112.324892,16z/data=!3m1!4b1!4m6!3m5!1s0x872d23fcf5e22d0b:0x2d3163cf8a545fdd!8m2!3d34.586758!4d-112.324892!16s%2Fg%2F11c1ww_f2q?entry=ttu&g_ep=EgoyMDI1MTEwNC4xIKXMDSoASAFQAw%3D%3D
+[2025-11-07T00:16:42.277Z] [INFO] attempts url https://www.google.com/maps/place/East+Asia+massage/@34.586758,-112.324892,16z/data=!3m1!4b1!4m6!3m5!1s0x872d23fcf5e22d0b:0x2d3163cf8a545fdd!8m2!3d34.586758!4d-112.324892!16s%2Fg%2F11c1ww_f2q?entry=ttu&g_ep=EgoyMDI1MTEwNC4xIKXMDSoASAFQAw%3D%3D
+[2025-11-07T00:16:49.541Z] [INFO] attempts url https://www.google.com/maps/place/East+Asia+massage/@34.586758,-112.324892,16z/data=!3m1!4b1!4m6!3m5!1s0x872d23fcf5e22d0b:0x2d3163cf8a545fdd!8m2!3d34.586758!4d-112.324892!16s%2Fg%2F11c1ww_f2q?entry=ttu&g_ep=EgoyMDI1MTEwNC4xIKXMDSoASAFQAw%3D%3D
+[2025-11-07T00:16:49.545Z] [INFO] Expanded single candidate into 824 inner arrays 
+[2025-11-07T00:16:49.574Z] [INFO] parsedCandidates (including nested): 14
+[2025-11-07T00:16:49.603Z] [INFO] ✅ Picked best candidate for East Asia massage with score: 46

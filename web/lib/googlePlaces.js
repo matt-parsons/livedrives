@@ -1,8 +1,8 @@
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '';
+const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+
 const fs = require("fs");
 const path = require("path");
-const { fetchPlaceSidebarData } = require('@lib/google/placesSidebar.js');
-
 
 const logDir = "@lib/../logs";
 if (!fs.existsSync(logDir)) fs.mkdirSync(logDir, { recursive: true });
@@ -248,9 +248,26 @@ export async function fetchPlaceDetails(placeId, { signal } = {}) {
     const result = detailsData.result ?? {};
     const [timezone, sidebarData] = await Promise.all([
       fetchTimezone(result.geometry?.location ?? null, { signal }),
-      fetchPlaceSidebarData(result.geometry?.location, result.place_id, { businessName: result.name ?? null })
+      await fetch(`${baseUrl}/api/places/sidebar`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        signal,
+        body: JSON.stringify({
+          geometry: result.geometry?.location ?? null,
+          placeId: result.place_id,
+          options: { businessName: result.name ?? null }
+        })
+      })
+        .then(res => {
+          if (!res.ok) throw new Error(`Sidebar API failed: ${res.status}`);
+          return res.json();
+        })
+        .catch(err => {
+          console.error('Sidebar API error:', err);
+          return {}; // Fallback if it fails
+        })
+
     ]);
-    console.log('sidebarData', sidebarData);
     const place = buildPlacePayload(result, {
       fallbackPlaceId: placeId,
       timezone,
