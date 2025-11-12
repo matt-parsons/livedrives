@@ -526,7 +526,7 @@ export default function IndexPage() {
             <SummaryStat label="GBP rating" value={formatRating(placeDetails?.rating)} />
             <SummaryStat label="Review count" value={formatNumber(placeDetails?.reviewCount)} />
             <SummaryStat label="Photos detected" value={formatNumber(placeDetails?.photoCount)} />
-            <SummaryStat label="Profile completeness" value={`${roadmap?.progressPercent ?? 0}%`} />
+            <SummaryStat label="Business Setup" value={`${roadmap?.progressPercent ?? 0}%`} />
           </section>
 
           <section className="space-y-4">

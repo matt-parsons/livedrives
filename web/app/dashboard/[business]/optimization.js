@@ -576,31 +576,31 @@ export function resolveLetterGrade(percent) {
 const SECTION_DEFINITIONS = [
   {
     id: 'profile-completeness',
-    title: 'Profile Completeness',
+    title: 'Business Setup',
     description: 'Make sure customers see the most accurate business basics.',
     taskIds: ['claim-profile', 'hours', 'phone-number', 'website']
   },
   {
     id: 'visual-presence',
-    title: 'Visual Presence',
+    title: 'Photos',
     description: 'Keep the listing visually fresh with current media.',
     taskIds: ['photos']
   },
   {
     id: 'customer-engagement',
-    title: 'Customer Engagement',
+    title: 'Customer Trust',
     description: 'Respond to customers and share updates to build trust.',
     taskIds: ['reviews', 'update-posts']
   },
   {
     id: 'local-seo-optimization',
-    title: 'Local SEO Optimization',
+    title: 'Local Visibility',
     description: 'Improve keyword coverage and service clarity for local search.',
     taskIds: ['description', 'categories', 'services', 'service-descriptions']
   },
   {
     id: 'competitive-analysis',
-    title: 'Competitive Analysis',
+    title: 'Outrank your Competitors',
     description: 'Track how nearby competitors attract attention.',
     taskIds: ['competitive-benchmark', 'competitive-keywords']
   }
