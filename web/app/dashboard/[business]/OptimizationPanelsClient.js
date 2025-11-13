@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 
+import LatestGeoGridSnapshot from './LatestGeoGridSnapshot';
+import NextStepsPanel from './NextStepsPanel';
 import { resolveLetterGrade } from './optimization';
 
 function formatTimestamp(value) {
@@ -42,7 +44,13 @@ export default function OptimizationPanelsClient({
   businessId,
   optimizationHref,
   canManageSettings,
-  editHref
+  editHref,
+  mapPoints = [],
+  mapCenter = null,
+  mapsApiKey = null,
+  latestRunSummary = null,
+  keywordsHref = null,
+  ctrHref = null
 }) {
   const [loading, setLoading] = useState(Boolean(placeId));
   const [error, setError] = useState(null);
@@ -198,7 +206,7 @@ export default function OptimizationPanelsClient({
           <div className="surface-card surface-card--muted">
             <div className="section-header">
               <div>
-                <h2 className="section-title">GBP optimization</h2>
+                <h2 className="section-title">Overall Progress</h2>
                 <p className="section-caption">
                   Let's get you to 100% and improve your rankings!
                 </p>
@@ -227,207 +235,119 @@ export default function OptimizationPanelsClient({
   const optimizationGrade = roadmap ? resolveLetterGrade(roadmap.progressPercent) : null;
   const optimizationSteps = selectNextOptimizationSteps(roadmap);
 
+  const summaryLink = optimizationHref ?? '#';
+  const automationLink = ctrHref ?? '#';
+
   return (
     <>
-
-      <section className="section">
-        <div className="surface-card surface-card--muted">
-          <div className="section-header">
-            <div>
-              <h2 className="section-title">GBP optimization</h2>
-              <p className="section-caption">
-                Gauge how complete your Google Business Profile looks today.
-              </p>
-            </div>
-            {placeId ? (
-              <div
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'flex-end',
-                  gap: '0.35rem',
-                  textAlign: 'right'
-                }}
-              >
-                <button
-                  type="button"
-                  onClick={handleRefreshClick}
-                  disabled={refreshDisabled}
-                  style={{
-                    borderRadius: '999px',
-                    border: '1px solid rgba(3, 60, 87, 0.2)',
-                    padding: '0.35rem 1rem',
-                    fontSize: '0.9rem',
-                    fontWeight: 600,
-                    backgroundColor: refreshDisabled ? '#e5e7eb' : '#033c57',
-                    color: refreshDisabled ? '#6b7280' : '#fff',
-                    cursor: refreshDisabled ? 'not-allowed' : 'pointer',
-                    transition: 'background-color 120ms ease'
-                  }}
-                >
-                  {refreshing ? 'Refreshing…' : 'Refresh data'}
-                </button>
-                <p style={{ margin: 0, fontSize: '0.75rem', color: '#6b7280' }}>
-                  {manualCooldownActive
-                    ? `Next manual refresh available ${manualCooldownLabel}.`
-                    : 'You can refresh this data once per day when needed.'}
-                </p>
-                <p style={{ margin: 0, fontSize: '0.75rem', color: '#6b7280' }}>
-                  Last refreshed {lastRefreshedLabel}.
-                </p>
-                {refreshNotice ? (
-                  <p
-                    style={{
-                      margin: 0,
-                      fontSize: '0.8rem',
-                      color: refreshNotice.tone === 'error' ? '#b91c1c' : '#047857'
-                    }}
-                  >
-                    {refreshNotice.text}
-                  </p>
-                ) : null}
-                {meta?.warning ? (
-                  <p style={{ margin: 0, fontSize: '0.75rem', color: '#92400e' }}>{meta.warning}</p>
-                ) : null}
-              </div>
-            ) : null}
-          </div>
-
-          {loading ? (
-            <p style={{ marginTop: '0.75rem', color: '#6b7280' }}>
-              Gathering data… check back in a moment.
-            </p>
-          ) : error ? (
-            <div className="inline-error" role="status" style={{ marginTop: '0.75rem' }}>
-              <strong>Unable to contact Google Places</strong>
-              <span>{error}</span>
-            </div>
-          ) : roadmap ? (
-            <div
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '0.85rem',
-                marginTop: '0.75rem'
-              }}
-            >
-              <div
-                style={{
-                  display: 'flex',
-                  flexWrap: 'wrap',
-                  gap: '1.5rem',
-                  alignItems: 'center'
-                }}
-              >
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                  <span style={{ color: '#6b7280', fontSize: '0.85rem' }}>Overall grade</span>
-                  <strong style={{ fontSize: '2rem', color: 'var(--color-heading)' }}>
-                    {optimizationGrade ?? '—'}
-                  </strong>
+      <section className="section business-dashboard__hero">
+        <div className="business-dashboard__top-row">
+          <LatestGeoGridSnapshot
+            apiKey={mapsApiKey}
+            center={mapCenter}
+            points={mapPoints}
+            summary={latestRunSummary}
+            keywordsHref={keywordsHref}
+          />
+          <div className="business-dashboard__optimization-column">
+            <div className="surface-card surface-card--muted dashboard-optimization-card">
+              <div className="section-header">
+                <div>
+                  <h2 className="section-title">Overall Progress</h2>
+                  <p className="section-caption">Complete all tasks to maximize your ranking potential</p>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                  <span style={{ color: '#6b7280', fontSize: '0.85rem' }}>Automated readiness</span>
-                  <strong style={{ fontSize: '1.4rem', color: 'var(--color-heading)' }}>
-                    {roadmap.progressPercent}% complete
-                  </strong>
-                </div>
-              </div>
-
-              <div
-                style={{
-                  height: '0.65rem',
-                  borderRadius: '999px',
-                  background: 'rgba(3, 60, 87, 0.12)',
-                  overflow: 'hidden'
-                }}
-                role="presentation"
-              >
-                <div
-                  style={{
-                    width: `${Math.min(100, Math.max(0, roadmap.progressPercent))}%`,
-                    background: 'var(--color-primary)',
-                    height: '100%'
-                  }}
-                />
-              </div>
-            </div>
-          ) : (
-            <p style={{ marginTop: '0.75rem', color: '#6b7280' }}>
-              We could not compute optimization insights for this profile yet.
-            </p>
-          )}
-        </div>
-      </section>    
-      <section className="section">
-          {loading ? (
-            <div></div>
-          ) : error ? (
-            <div className="inline-error" role="status" style={{ marginTop: '0.75rem' }}>
-              <strong>Unable to contact Google Places</strong>
-              <span>{error}</span>
-            </div>
-          ) : roadmap && optimizationSteps.length ? (
-          <div className="surface-card surface-card--muted surface-card--compact">
-            <div className="section-header">
-              <div>
-                <h2 className="section-title">Next steps to improve your profile</h2>
-                <p className="section-caption">
-                  Focus on these tasks to strengthen your local visibility.
-                </p>
-              </div>
-              <Link className="cta-link" href={optimizationHref}>
-                Explore full roadmap ↗
-              </Link>
-            </div>            
-            <ul
-              style={{
-                listStyle: 'none',
-                display: 'grid',
-                gap: '0.75rem',
-                margin: '0.75rem 0 0',
-                padding: 0
-              }}
-            >
-              {optimizationSteps.map((task) => (
-                <li
-                  key={task.id}
-                  style={{
-                    border: '1px solid rgba(3, 60, 87, 0.12)',
-                    borderRadius: '12px',
-                    padding: '0.85rem 1rem',
-                    background: '#fff',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '0.4rem'
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.75rem' }}>
-                    <strong style={{ fontSize: '1.05rem', color: 'var(--color-heading)' }}>
-                      {task.label}
-                    </strong>
-                    <span className="status-pill" data-status={task.status.key}>
-                      {task.status.label}
-                    </span>
+                <div className="dashboard-optimization-card__scores">
+                  <div>
+                    {loading ? (
+                      <strong>0%</strong>
+                    ) : error ? (
+                      <strong>0%</strong>
+                    ) : roadmap ? (
+                      <strong>{roadmap.progressPercent}%</strong>
+                    ) : (
+                      <strong>0%</strong>
+                    )}
                   </div>
-                  <p style={{ margin: 0, color: 'rgba(3, 60, 87, 0.66)', fontSize: '0.9rem' }}>
-                    {task.detail}
-                  </p>
-                </li>
-              ))}
-            </ul>
-          </div>
+                </div>
+              </div>
 
-          ) : roadmap ? (
-            <p style={{ marginTop: '0.75rem', color: '#6b7280' }}>
-              Great work! Automated checks did not surface additional actions right now.
-            </p>
-          ) : (
-            <p style={{ marginTop: '0.75rem', color: '#6b7280' }}>
-              We could not compute optimization insights for this profile yet.
-            </p>
-          )}
+              {loading ? (
+                <p className="dashboard-optimization-card__message">Gathering data… check back in a moment.</p>
+              ) : error ? (
+                <div className="inline-error" role="status" style={{ marginTop: '0.75rem' }}>
+                  <strong>We're having trouble gathering your data</strong>
+                  <span>{error}</span>
+                </div>
+              ) : roadmap ? (
+                <div className="dashboard-optimization-card__content">
+                  <div className="dashboard-optimization-card__progress">
+                    <div
+                      style={{
+                        width: `${Math.min(100, Math.max(0, roadmap.progressPercent))}%`
+                      }}
+                    />
+                  </div>
+                <div className="dashboard-optimization-card__actions">
+                  {placeId ? (
+                    <button
+                      type="button"
+                      onClick={handleRefreshClick}
+                      disabled={refreshDisabled}
+                      className="dashboard-optimization-card__refresh"
+                    >
+                      {refreshing ? 'Refreshing…' : 'Refresh data'}
+                    </button>
+                  ) : null}
+                </div>
+
+                  <div className="dashboard-optimization-card__meta">
+                    <p>
+                      {manualCooldownActive
+                        ? `Next manual refresh available ${manualCooldownLabel}.`
+                        : 'You can refresh this data once per day when needed.'}
+                    </p>
+                    <p>Last refreshed {lastRefreshedLabel}.</p>
+                    {refreshNotice ? (
+                      <p className={`dashboard-optimization-card__notice dashboard-optimization-card__notice--${refreshNotice.tone}`}>
+                        {refreshNotice.text}
+                      </p>
+                    ) : null}
+                    {meta?.warning ? (
+                      <p className="dashboard-optimization-card__notice dashboard-optimization-card__notice--warning">
+                        {meta.warning}
+                      </p>
+                    ) : null}
+                  </div>
+                </div>
+              ) : (
+                <p className="dashboard-optimization-card__message">
+                  We could not compute optimization insights for this profile yet.
+                </p>
+              )}
+            </div>
+
+            <div className="surface-card surface-card--muted automation-cta">
+              <div className="automation-cta__icon" aria-hidden="true">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-zap w-6 h-6 text-white" data-source-location="components/dashboard/CTRBanner:25:10" data-dynamic-content="false"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"></path></svg>
+              </div>
+              <div className="automation-cta__info">
+                <strong>Automated CTR Optimization Active</strong>
+                <p>
+                  Our AI is continuously improving your click-through rate in the background. No action needed.{' '}
+                  <Link href={automationLink}>Click here to learn more.</Link>
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
       </section>
 
+      <NextStepsPanel
+        steps={optimizationSteps}
+        optimizationHref={optimizationHref}
+        loading={loading}
+        error={error}
+      />
     </>
   );
 }

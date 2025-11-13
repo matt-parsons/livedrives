@@ -424,7 +424,7 @@ function computeHoursStatus(weekdayText) {
 
   return {
     status: normalizeStatus('pending'),
-    detail: 'No hours detected from the Places API.'
+    detail: 'No hours detected on your profile.'
   };
 }
 

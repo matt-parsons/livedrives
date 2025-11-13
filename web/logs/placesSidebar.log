@@ -81,3 +81,40 @@
 [2025-11-07T05:22:13.419Z] [INFO] Expanded single candidate into 817 inner arrays 
 [2025-11-07T05:22:13.450Z] [INFO] parsedCandidates (including nested): 14
 [2025-11-07T05:22:13.478Z] [INFO] ✅ Picked best candidate for East Asia massage with score: 36
+[2025-11-13T18:26:56.537Z] [INFO] places Sidebar getting started! 
+[2025-11-13T18:26:56.555Z] [INFO] fetchPlaceSidebarData 
+[2025-11-13T18:26:57.821Z] [INFO] → [Sidebar] Using SOAX residential proxy 108.246.23.139 (proxy.soax.com:5000) 
+[2025-11-13T18:27:19.675Z] [INFO] Detected single place page, extracting directly 
+[2025-11-13T18:27:19.676Z] [INFO] Single place detected → reloading for full payload 
+[2025-11-13T18:27:22.876Z] [INFO] attempts url https://www.google.com/maps/place/East+Asia+massage/@34.586758,-112.324892,13z/data=!4m6!3m5!1s0x872d23fcf5e22d0b:0x2d3163cf8a545fdd!8m2!3d34.586758!4d-112.324892!16s%2Fg%2F11c1ww_f2q?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMC4wIKXMDSoASAFQAw%3D%3D
+[2025-11-13T18:27:25.531Z] [INFO] attempts url https://www.google.com/maps/place/?q=place_id:ChIJCy3i9fwjLYcR3V9Uis9jMS0
+[2025-11-13T18:27:27.631Z] [INFO] attempts url https://www.google.com/maps/place/?q=place_id:ChIJCy3i9fwjLYcR3V9Uis9jMS0
+[2025-11-13T18:27:29.774Z] [INFO] attempts url https://www.google.com/maps/place/?q=place_id:ChIJCy3i9fwjLYcR3V9Uis9jMS0
+[2025-11-13T18:27:29.779Z] [INFO] Expanded single candidate into 826 inner arrays 
+[2025-11-13T18:27:29.818Z] [INFO] parsedCandidates (including nested): 15
+[2025-11-13T18:27:29.844Z] [INFO] ✅ Picked best candidate for East Asia massage with score: 36
+[2025-11-13T20:38:57.173Z] [INFO] places Sidebar getting started! 
+[2025-11-13T20:38:57.177Z] [INFO] fetchPlaceSidebarData 
+[2025-11-13T20:38:58.188Z] [INFO] → [Sidebar] Using SOAX residential proxy 24.186.140.15 (proxy.soax.com:5000) 
+[2025-11-13T20:39:09.385Z] [INFO] Detected single place page, extracting directly 
+[2025-11-13T20:39:09.385Z] [INFO] Single place detected → reloading for full payload 
+[2025-11-13T20:39:12.585Z] [INFO] attempts url https://www.google.com/maps/place/Star+Painters+LLC/@41.5971971,-73.1047398,13z/data=!4m6!3m5!1s0x89e7ea9b14d3ea07:0x757e00d69dae6883!8m2!3d41.5971971!4d-73.1047398!16s%2Fg%2F1ptykd05c?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D
+[2025-11-13T20:39:14.845Z] [INFO] attempts url https://www.google.com/maps/place/?q=place_id:ChIJB-rTFJvq54kRg2iundYAfnU
+[2025-11-13T20:39:16.772Z] [INFO] attempts url https://www.google.com/maps/place/?q=place_id:ChIJB-rTFJvq54kRg2iundYAfnU
+[2025-11-13T20:39:18.707Z] [INFO] attempts url https://www.google.com/maps/place/?q=place_id:ChIJB-rTFJvq54kRg2iundYAfnU
+[2025-11-13T20:39:18.711Z] [INFO] Expanded single candidate into 1050 inner arrays 
+[2025-11-13T20:39:18.743Z] [INFO] parsedCandidates (including nested): 16
+[2025-11-13T20:39:18.772Z] [INFO] ✅ Picked best candidate for Star Painters LLC with score: 47
+[2025-11-13T21:01:10.524Z] [INFO] places Sidebar getting started! 
+[2025-11-13T21:01:10.528Z] [INFO] fetchPlaceSidebarData 
+[2025-11-13T21:01:11.496Z] [INFO] → [Sidebar] Using SOAX residential proxy 24.45.172.138 (proxy.soax.com:5000) 
+[2025-11-13T21:01:18.916Z] [INFO] Detected search results feed, clicking first result 
+[2025-11-13T21:01:18.947Z] [INFO] Click target: https://www.google.com/maps/place/Finishing+Touch+Painting/data=!4m7!3m6!1s0x872d23de6eaeef59:0x5d87eea9cf28f652!8m2!3d34.6028779!4d-112.4585864!16s%2Fg%2F11fnpjqswy!19sChIJWe-ubt4jLYcRUvYoz6nuh10?authuser=0&hl=en&rclk=1
+[2025-11-13T21:01:21.134Z] [INFO] Reloading place page for full payload: https://www.google.com/maps/place/Finishing+Touch+Painting/data=!4m7!3m6!1s0x872d23de6eaeef59:0x5d87eea9cf28f652!8m2!3d34.6028779!4d-112.4585864!16s%2Fg%2F11fnpjqswy!19sChIJWe-ubt4jLYcRUvYoz6nuh10?authuser=0&hl=en&rclk=1
+[2025-11-13T21:01:24.314Z] [INFO] attempts url https://www.google.com/maps/place/Finishing+Touch+Painting/data=!4m7!3m6!1s0x872d23de6eaeef59:0x5d87eea9cf28f652!8m2!3d34.6028779!4d-112.4585864!16s%2Fg%2F11fnpjqswy!19sChIJWe-ubt4jLYcRUvYoz6nuh10?authuser=0&hl=en&rclk=1
+[2025-11-13T21:01:26.498Z] [INFO] attempts url https://www.google.com/maps/place/?q=place_id:ChIJWe-ubt4jLYcRUvYoz6nuh10
+[2025-11-13T21:01:28.167Z] [INFO] attempts url https://www.google.com/maps/place/?q=place_id:ChIJWe-ubt4jLYcRUvYoz6nuh10
+[2025-11-13T21:01:29.952Z] [INFO] attempts url https://www.google.com/maps/place/?q=place_id:ChIJWe-ubt4jLYcRUvYoz6nuh10
+[2025-11-13T21:01:29.957Z] [INFO] Expanded single candidate into 1045 inner arrays 
+[2025-11-13T21:01:29.994Z] [INFO] parsedCandidates (including nested): 19
+[2025-11-13T21:01:30.031Z] [INFO] ✅ Picked best candidate for Finishing Touch Painting with score: 36

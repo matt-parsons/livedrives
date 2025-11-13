@@ -120,7 +120,7 @@ function fitBoundsToPoints(map, mapsApi, center, points) {
     bounds.extend({ lat: point.lat, lng: point.lng });
   });
 
-  map.fitBounds(bounds, 80);
+  map.fitBounds(bounds, 40);
 }
 
 export default function GeoGridMap({
