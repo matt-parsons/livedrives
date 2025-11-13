@@ -181,6 +181,7 @@ function buildPlacePayload(result, { fallbackPlaceId, timezone = null, sidebarDa
     posts,
     latestPostDate,
     serviceCapabilities: serviceCapabilities,
+    sidebar: sidebarData ?? null,
     fetchedAt: new Date().toISOString(),
   };
 }
@@ -274,7 +275,7 @@ export async function fetchPlaceDetails(placeId, { signal } = {}) {
       sidebarData
     });
 
-    return { place, raw: result };
+    return { place, raw: result, sidebar: sidebarData ?? null };
   } catch (error) {
     if (error instanceof PlacesError) {
       throw error;

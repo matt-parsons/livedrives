@@ -5,6 +5,27 @@ import Link from 'next/link';
 
 import { resolveLetterGrade } from './optimization';
 
+function formatTimestamp(value) {
+  if (!value) {
+    return 'Not yet refreshed';
+  }
+
+  const date = value instanceof Date ? value : new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return typeof value === 'string' ? value : 'Not yet refreshed';
+  }
+
+  try {
+    return new Intl.DateTimeFormat('en-US', {
+      dateStyle: 'medium',
+      timeStyle: 'short'
+    }).format(date);
+  } catch (error) {
+    return date.toISOString();
+  }
+}
+
 function selectNextOptimizationSteps(roadmap, limit = 3) {
   if (!roadmap || !Array.isArray(roadmap.tasks)) {
     return [];
@@ -18,6 +39,7 @@ function selectNextOptimizationSteps(roadmap, limit = 3) {
 
 export default function OptimizationPanelsClient({
   placeId,
+  businessId,
   optimizationHref,
   canManageSettings,
   editHref
@@ -25,12 +47,17 @@ export default function OptimizationPanelsClient({
   const [loading, setLoading] = useState(Boolean(placeId));
   const [error, setError] = useState(null);
   const [roadmap, setRoadmap] = useState(null);
+  const [meta, setMeta] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [refreshNotice, setRefreshNotice] = useState(null);
 
   useEffect(() => {
     if (!placeId) {
       setLoading(false);
       setError(null);
       setRoadmap(null);
+      setMeta(null);
+      setRefreshNotice(null);
       return;
     }
 
@@ -38,11 +65,17 @@ export default function OptimizationPanelsClient({
     setLoading(true);
     setError(null);
     setRoadmap(null);
+    setRefreshNotice(null);
 
     const controller = new AbortController();
     const fetchData = async () => {
       try {
-        const response = await fetch(`/api/optimization-data?placeId=${encodeURIComponent(placeId)}`, {
+        const params = new URLSearchParams({ placeId });
+        if (businessId) {
+          params.set('businessId', String(businessId));
+        }
+
+        const response = await fetch(`/api/optimization-data?${params.toString()}`, {
           method: 'GET',
           signal: controller.signal,
           cache: 'no-store'
@@ -56,6 +89,7 @@ export default function OptimizationPanelsClient({
         const payload = await response.json();
         if (isMounted) {
           setRoadmap(payload?.data?.roadmap ?? null);
+          setMeta(payload?.data?.meta ?? null);
           setError(null);
         }
       } catch (err) {
@@ -75,7 +109,67 @@ export default function OptimizationPanelsClient({
       isMounted = false;
       controller.abort();
     };
-  }, [placeId]);
+  }, [placeId, businessId]);
+
+  const nextManualRefreshDate = meta?.nextManualRefreshAt
+    ? new Date(meta.nextManualRefreshAt)
+    : null;
+  const manualCooldownActive = Boolean(
+    nextManualRefreshDate && nextManualRefreshDate.getTime() > Date.now()
+  );
+  const manualCooldownLabel = manualCooldownActive
+    ? formatTimestamp(nextManualRefreshDate)
+    : null;
+  const lastRefreshedLabel = meta?.lastRefreshedAt
+    ? formatTimestamp(meta.lastRefreshedAt)
+    : 'Not yet refreshed';
+  const refreshDisabled = !placeId || refreshing || loading || manualCooldownActive;
+
+  const handleRefreshClick = async () => {
+    if (!placeId || refreshing) {
+      return;
+    }
+
+    setRefreshNotice(null);
+    setRefreshing(true);
+
+    try {
+      const response = await fetch('/api/optimization-data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        cache: 'no-store',
+        body: JSON.stringify({ placeId, businessId })
+      });
+
+      const payload = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        if (payload?.nextAllowedAt) {
+          setMeta((previous) => {
+            const base = previous ?? {};
+            return { ...base, nextManualRefreshAt: payload.nextAllowedAt };
+          });
+        }
+
+        throw new Error(payload?.error || `Request failed with status ${response.status}`);
+      }
+
+      setRoadmap(payload?.data?.roadmap ?? null);
+      setMeta(payload?.data?.meta ?? null);
+      setError(null);
+      setRefreshNotice({
+        tone: 'success',
+        text: 'Google Business Profile data was refreshed just now.'
+      });
+    } catch (err) {
+      setRefreshNotice({
+        tone: 'error',
+        text: err?.message || 'Unable to refresh Google data right now.'
+      });
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   if (!placeId) {
     return (
@@ -145,6 +239,58 @@ export default function OptimizationPanelsClient({
                 Gauge how complete your Google Business Profile looks today.
               </p>
             </div>
+            {placeId ? (
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'flex-end',
+                  gap: '0.35rem',
+                  textAlign: 'right'
+                }}
+              >
+                <button
+                  type="button"
+                  onClick={handleRefreshClick}
+                  disabled={refreshDisabled}
+                  style={{
+                    borderRadius: '999px',
+                    border: '1px solid rgba(3, 60, 87, 0.2)',
+                    padding: '0.35rem 1rem',
+                    fontSize: '0.9rem',
+                    fontWeight: 600,
+                    backgroundColor: refreshDisabled ? '#e5e7eb' : '#033c57',
+                    color: refreshDisabled ? '#6b7280' : '#fff',
+                    cursor: refreshDisabled ? 'not-allowed' : 'pointer',
+                    transition: 'background-color 120ms ease'
+                  }}
+                >
+                  {refreshing ? 'Refreshing…' : 'Refresh data'}
+                </button>
+                <p style={{ margin: 0, fontSize: '0.75rem', color: '#6b7280' }}>
+                  {manualCooldownActive
+                    ? `Next manual refresh available ${manualCooldownLabel}.`
+                    : 'You can refresh this data once per day when needed.'}
+                </p>
+                <p style={{ margin: 0, fontSize: '0.75rem', color: '#6b7280' }}>
+                  Last refreshed {lastRefreshedLabel}.
+                </p>
+                {refreshNotice ? (
+                  <p
+                    style={{
+                      margin: 0,
+                      fontSize: '0.8rem',
+                      color: refreshNotice.tone === 'error' ? '#b91c1c' : '#047857'
+                    }}
+                  >
+                    {refreshNotice.text}
+                  </p>
+                ) : null}
+                {meta?.warning ? (
+                  <p style={{ margin: 0, fontSize: '0.75rem', color: '#92400e' }}>{meta.warning}</p>
+                ) : null}
+              </div>
+            ) : null}
           </div>
 
           {loading ? (

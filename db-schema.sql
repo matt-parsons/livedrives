@@ -50,6 +50,29 @@ CREATE TABLE `businesses` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `gbp_profile_cache`
+--
+
+CREATE TABLE `gbp_profile_cache` (
+  `place_id` varchar(128) NOT NULL,
+  `business_id` bigint(20) UNSIGNED DEFAULT NULL,
+  `place_payload` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`place_payload`)),
+  `places_raw_payload` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`places_raw_payload`)),
+  `sidebar_payload` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`sidebar_payload`)),
+  `last_refreshed_at` datetime NOT NULL,
+  `last_manual_refresh_at` datetime DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`place_id`),
+  KEY `idx_gbp_profile_cache_business` (`business_id`),
+  CONSTRAINT `fk_gbp_profile_cache_business`
+    FOREIGN KEY (`business_id`) REFERENCES `businesses` (`id`)
+    ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `business_hours`
 --
 

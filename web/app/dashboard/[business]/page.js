@@ -148,6 +148,7 @@ export default async function BusinessDashboardPage({ params }) {
           <div className="dashboard-layout__content">
             <OptimizationPanelsClient
               placeId={business.gPlaceId ?? null}
+              businessId={business.id}
               optimizationHref={optimizationHref}
               canManageSettings={canManageSettings}
               editHref={editHref}
