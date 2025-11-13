@@ -106,7 +106,7 @@ export default function OptimizationPanelsClient({
               <div>
                 <h2 className="section-title">GBP optimization</h2>
                 <p className="section-caption">
-                  Gauge how complete your Google Business Profile looks today.
+                  Let's get you to 100% and improve your rankings!
                 </p>
               </div>
               <Link className="cta-link" href={optimizationHref}>

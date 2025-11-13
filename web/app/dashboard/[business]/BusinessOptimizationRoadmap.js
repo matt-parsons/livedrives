@@ -156,44 +156,6 @@ function ProfilePreview({ preview }) {
           <p className="business-optimization-roadmap__profile-review-snippet-body">{preview.description}</p>
         </div>
       ) : null}
-
-      {latestReview ? (
-        <div className="business-optimization-roadmap__profile-review-snippet">
-          <div className="business-optimization-roadmap__profile-review-snippet-header">
-            {latestReview.authorUrl ? (
-              <a
-                href={latestReview.authorUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="business-optimization-roadmap__profile-review-author"
-              >
-                {latestReview.authorName ?? 'Google user'}
-              </a>
-            ) : (
-              <span className="business-optimization-roadmap__profile-review-author">
-                {latestReview.authorName ?? 'Google user'}
-              </span>
-            )}
-            {Number.isFinite(latestReview.rating) ? (
-              <span className="business-optimization-roadmap__profile-review-snippet-rating">
-                ★{' '}
-                {latestReview.rating % 1 === 0
-                  ? latestReview.rating.toFixed(0)
-                  : latestReview.rating.toFixed(1)}
-              </span>
-            ) : null}
-          </div>
-          {latestReview.text ? (
-            <p className="business-optimization-roadmap__profile-review-snippet-body">{latestReview.text}</p>
-          ) : null}
-          <div className="business-optimization-roadmap__profile-review-snippet-meta">
-            {latestReview.postedAt ? <span>{latestReview.postedAt}</span> : null}
-            {latestReview.relativeTimeDescription ? (
-              <span>{latestReview.relativeTimeDescription}</span>
-            ) : null}
-          </div>
-        </div>
-      ) : null}
     </aside>
   );
 }
@@ -287,21 +249,6 @@ export default function BusinessOptimizationRoadmap({ roadmap, error, placeId, e
         }`}
       >
         <div className="business-optimization-roadmap__overview-main">
-          {hasSections ? (
-            <div className="business-optimization-roadmap__section-summary-grid">
-              {sections.map((section) => (
-                <div key={section.id} className="business-optimization-roadmap__section-summary-card">
-                  <span className="business-optimization-roadmap__section-summary-card-title">
-                    {section.title}
-                  </span>
-                  <strong className="business-optimization-roadmap__section-summary-card-grade">{section.grade ?? '—'}</strong>
-                  <span className="business-optimization-roadmap__section-summary-card-completion">
-                    {section.completion === null ? 'No score yet' : `${section.completion}% complete`}
-                  </span>
-                </div>
-              ))}
-            </div>
-          ) : null}
 
           <div
             className={`business-optimization-roadmap__sections-summary ${
@@ -321,6 +268,23 @@ export default function BusinessOptimizationRoadmap({ roadmap, error, placeId, e
               />
             </div>
           </div>
+                    
+          {hasSections ? (
+            <div className="business-optimization-roadmap__section-summary-grid">
+              {sections.map((section) => (
+                <div key={section.id} className="business-optimization-roadmap__section-summary-card">
+                  <span className="business-optimization-roadmap__section-summary-card-title">
+                    {section.title}
+                  </span>
+                  <strong className="business-optimization-roadmap__section-summary-card-grade">{section.grade ?? '—'}</strong>
+                  <span className="business-optimization-roadmap__section-summary-card-completion">
+                    {section.completion === null ? 'No score yet' : `${section.completion}% complete`}
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : null}
+
         </div>
 
         {roadmap.profilePreview ? <ProfilePreview preview={roadmap.profilePreview} /> : null}
