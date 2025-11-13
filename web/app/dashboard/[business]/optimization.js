@@ -598,12 +598,6 @@ const SECTION_DEFINITIONS = [
     description: 'Improve keyword coverage and service clarity for local search.',
     taskIds: ['description', 'categories', 'services', 'service-descriptions']
   },
-  {
-    id: 'competitive-analysis',
-    title: 'Outrank your Competitors',
-    description: 'Track how nearby competitors attract attention.',
-    taskIds: ['competitive-benchmark', 'competitive-keywords']
-  }
 ];
 
 export function buildOptimizationRoadmap(place) {
@@ -691,23 +685,6 @@ export function buildOptimizationRoadmap(place) {
       weight: 2,
       auto: true,
       ...computeReviewStatus(place.reviewCount, place.latestReview)
-    },
-    {
-      id: 'competitive-benchmark',
-      label: 'Monitor top local competitors',
-      weight: 5,
-      auto: false,
-      status: normalizeStatus('pending'),
-      detail:
-        'Identify the top three profiles ranking for your priority keywords and track how often they earn new reviews or posts.'
-    },
-    {
-      id: 'competitive-keywords',
-      label: 'Compare keyword positioning',
-      weight: 4,
-      auto: false,
-      status: normalizeStatus('pending'),
-      detail: 'Use geo grid runs to spot keywords where competitors outrank you and plan follow-up actions.'
     }
   ];
 
