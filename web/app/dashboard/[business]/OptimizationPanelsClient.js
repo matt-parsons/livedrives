@@ -50,7 +50,8 @@ export default function OptimizationPanelsClient({
   mapsApiKey = null,
   latestRunSummary = null,
   keywordsHref = null,
-  ctrHref = null
+  ctrHref = null,
+  isOwner = false
 }) {
   const [loading, setLoading] = useState(Boolean(placeId));
   const [error, setError] = useState(null);
@@ -122,9 +123,9 @@ export default function OptimizationPanelsClient({
   const nextManualRefreshDate = meta?.nextManualRefreshAt
     ? new Date(meta.nextManualRefreshAt)
     : null;
-  const manualCooldownActive = Boolean(
-    nextManualRefreshDate && nextManualRefreshDate.getTime() > Date.now()
-  );
+  const manualCooldownActive =
+    !isOwner &&
+    Boolean(nextManualRefreshDate && nextManualRefreshDate.getTime() > Date.now());
   const manualCooldownLabel = manualCooldownActive
     ? formatTimestamp(nextManualRefreshDate)
     : null;
@@ -132,6 +133,11 @@ export default function OptimizationPanelsClient({
     ? formatTimestamp(meta.lastRefreshedAt)
     : 'Not yet refreshed';
   const refreshDisabled = !placeId || refreshing || loading || manualCooldownActive;
+  const manualRefreshHelper = isOwner
+    ? 'Owners can refresh this data without waiting between attempts.'
+    : manualCooldownActive
+      ? `Next manual refresh available ${manualCooldownLabel}.`
+      : 'You can refresh this data once per day when needed.';
 
   const handleRefreshClick = async () => {
     if (!placeId || refreshing) {
@@ -301,11 +307,7 @@ export default function OptimizationPanelsClient({
                 </div>
 
                   <div className="dashboard-optimization-card__meta">
-                    <p>
-                      {manualCooldownActive
-                        ? `Next manual refresh available ${manualCooldownLabel}.`
-                        : 'You can refresh this data once per day when needed.'}
-                    </p>
+                    <p>{manualRefreshHelper}</p>
                     <p>Last refreshed {lastRefreshedLabel}.</p>
                     {refreshNotice ? (
                       <p className={`dashboard-optimization-card__notice dashboard-optimization-card__notice--${refreshNotice.tone}`}>

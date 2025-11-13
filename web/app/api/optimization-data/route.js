@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { AuthError, requireAuth } from '@/lib/authServer';
 import { loadOptimizationData } from '@/lib/optimizationData';
 
 export const runtime = 'nodejs';
@@ -51,11 +52,23 @@ export async function POST(request) {
     return NextResponse.json({ error: 'Missing placeId parameter.' }, { status: 400 });
   }
 
+  let session;
+  try {
+    session = await requireAuth(request);
+  } catch (error) {
+    if (error instanceof AuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.statusCode });
+    }
+
+    throw error;
+  }
+
   try {
     const data = await loadOptimizationData(placeId, {
       businessId,
       forceRefresh: true,
-      manualTrigger: true
+      manualTrigger: true,
+      manualRefreshCooldownBypass: session.role === 'owner'
     });
     return NextResponse.json({ data });
   } catch (error) {

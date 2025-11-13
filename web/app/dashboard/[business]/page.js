@@ -191,6 +191,7 @@ export default async function BusinessDashboardPage({ params }) {
               businessId={business.id}
               optimizationHref={optimizationHref}
               canManageSettings={canManageSettings}
+              isOwner={session.role === 'owner'}
               editHref={editHref}
               mapPoints={mapPoints}
               mapCenter={mapCenter}

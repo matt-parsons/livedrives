@@ -49,6 +49,7 @@ export async function loadOptimizationData(placeId, options = {}) {
     signal,
     forceRefresh = false,
     manualTrigger = false,
+    manualRefreshCooldownBypass = false,
     businessId = null
   } = options;
 
@@ -68,7 +69,10 @@ export async function loadOptimizationData(placeId, options = {}) {
 
   if (manualTrigger && cache?.lastManualRefreshAt) {
     const nextAllowed = new Date(cache.lastManualRefreshAt.getTime() + DAY_MS);
-    if (nextAllowed.getTime() > now.getTime()) {
+    if (
+      !manualRefreshCooldownBypass &&
+      nextAllowed.getTime() > now.getTime()
+    ) {
       const error = new Error('You can refresh this profile once every 24 hours.');
       error.code = 'MANUAL_REFRESH_THROTTLED';
       error.nextAllowedAt = nextAllowed;
