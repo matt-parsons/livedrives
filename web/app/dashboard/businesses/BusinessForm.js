@@ -18,26 +18,49 @@ function nullIfEmpty(value) {
   return value === null || value === undefined || value === '' ? null : value;
 }
 
+function slugify(value) {
+  if (!value) {
+    return '';
+  }
+
+  return value
+    .toString()
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 80);
+}
+
 export default function BusinessForm({ mode = 'create', businessId = null, initialValues = {} }) {
   const router = useRouter();
-  const [formState, setFormState] = useState(() => ({
-    businessName: initialValues.businessName ?? '',
-    businessSlug: initialValues.businessSlug ?? '',
-    brandSearch: initialValues.brandSearch ?? '',
-    mid: initialValues.mid ?? '',
-    destinationAddress: initialValues.destinationAddress ?? '',
-    destinationZip: initialValues.destinationZip ?? '',
-    destLat: toInputString(initialValues.destLat),
-    destLng: toInputString(initialValues.destLng),
-    timezone: initialValues.timezone ?? '',
-    drivesPerDay: toInputString(initialValues.drivesPerDay),
-    gPlaceId: initialValues.gPlaceId ?? '',
-    isActive: typeof initialValues.isActive === 'boolean'
-      ? initialValues.isActive
-      : initialValues.isActive === undefined
-        ? true
-        : Boolean(initialValues.isActive)
-  }));
+  const [formState, setFormState] = useState(() => {
+    const defaultDrivesPerDay =
+      initialValues.drivesPerDay !== undefined && initialValues.drivesPerDay !== null
+        ? initialValues.drivesPerDay
+        : mode === 'create'
+          ? 5
+          : '';
+
+    return {
+      businessName: initialValues.businessName ?? '',
+      businessSlug: initialValues.businessSlug ?? '',
+      brandSearch: initialValues.brandSearch ?? '',
+      mid: initialValues.mid ?? '',
+      destinationAddress: initialValues.destinationAddress ?? '',
+      destinationZip: initialValues.destinationZip ?? '',
+      destLat: toInputString(initialValues.destLat),
+      destLng: toInputString(initialValues.destLng),
+      timezone: initialValues.timezone ?? '',
+      drivesPerDay: toInputString(defaultDrivesPerDay),
+      gPlaceId: initialValues.gPlaceId ?? '',
+      isActive: typeof initialValues.isActive === 'boolean'
+        ? initialValues.isActive
+        : initialValues.isActive === undefined
+          ? true
+          : Boolean(initialValues.isActive)
+    };
+  });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [placesQuery, setPlacesQuery] = useState('');
@@ -45,37 +68,45 @@ export default function BusinessForm({ mode = 'create', businessId = null, initi
   const [placesError, setPlacesError] = useState('');
   const [placesLoading, setPlacesLoading] = useState(false);
 
-  const title = useMemo(() => (mode === 'edit' ? 'Save changes' : 'Create business'), [mode]);
-
-  const handleChange = (field) => (event) => {
-    const value = event.target.value;
-    setFormState((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const handleCheckboxChange = (event) => {
-    const { checked } = event.target;
-    setFormState((prev) => ({ ...prev, isActive: checked }));
-  };
+  const title = useMemo(() => (mode === 'edit' ? 'Save changes' : 'Add Your Business'), [mode]);
 
   const handlePlacesQueryChange = (event) => {
     setPlacesQuery(event.target.value);
   };
 
   const prefillFromPlace = (place) => {
+    if (!place) {
+      return;
+    }
+
+    const location = place.location ?? {};
+    const latValue =
+      location.lat ??
+      location.latitude ??
+      place.sidebar?.latitude ??
+      null;
+    const lngValue =
+      location.lng ??
+      location.longitude ??
+      place.sidebar?.longitude ??
+      null;
+    const nextSlug = slugify(place.name ?? '');
+    const derivedMid = place.sidebar?.mid ?? place.sidebar?.cid ?? place.cid ?? null;
+    const placeId = place.placeId ?? place.place_id ?? null;
+
     setFormState((prev) => ({
       ...prev,
       businessName: place.name ?? prev.businessName,
+      businessSlug: nextSlug || prev.businessSlug,
       brandSearch: place.name ?? prev.brandSearch,
       destinationAddress: place.formattedAddress ?? prev.destinationAddress,
       destinationZip: place.postalCode ?? prev.destinationZip,
-      destLat: place.location?.lat !== undefined && place.location?.lat !== null
-        ? String(place.location.lat)
-        : prev.destLat,
-      destLng: place.location?.lng !== undefined && place.location?.lng !== null
-        ? String(place.location.lng)
-        : prev.destLng,
+      destLat: latValue !== undefined && latValue !== null ? String(latValue) : prev.destLat,
+      destLng: lngValue !== undefined && lngValue !== null ? String(lngValue) : prev.destLng,
       timezone: place.timezone ?? prev.timezone,
-      gPlaceId: place.placeId ?? prev.gPlaceId
+      gPlaceId: placeId ?? prev.gPlaceId,
+      mid: derivedMid ? String(derivedMid) : prev.mid,
+      drivesPerDay: prev.drivesPerDay || '5'
     }));
   };
 
@@ -125,6 +156,7 @@ export default function BusinessForm({ mode = 'create', businessId = null, initi
     try {
       const response = await fetch(`/api/places/${encodeURIComponent(placeId)}`);
       const data = await response.json().catch(() => ({}));
+      console.log(data);
 
       if (!response.ok) {
         throw new Error(data.error || 'Failed to load place details.');
@@ -194,6 +226,8 @@ export default function BusinessForm({ mode = 'create', businessId = null, initi
     }
   };
 
+  const hasSelectedPlace = Boolean(formState.businessName || formState.destinationAddress);
+
   return (
     <form className="grid gap-6" onSubmit={handleSubmit}>
       <div className="space-y-2">
@@ -250,163 +284,47 @@ export default function BusinessForm({ mode = 'create', businessId = null, initi
         </div>
       ) : null}
 
-      <div className="grid gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="business-name">Business name</Label>
-          <Input
-            id="business-name"
-            type="text"
-            value={formState.businessName}
-            onChange={handleChange('businessName')}
-            required
-            disabled={submitting}
-            autoComplete="organization"
-          />
+      {hasSelectedPlace ? (
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label>Selected business</Label>
+            <div className="rounded-lg border border-border bg-muted/40 p-4">
+              <div className="space-y-4">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    Business name
+                  </p>
+                  <p className="text-lg font-medium text-foreground">
+                    {formState.businessName || 'No business selected yet'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    Address
+                  </p>
+                  <p className="text-base text-foreground">
+                    {formState.destinationAddress || 'No address selected yet'}
+                  </p>
+                </div>
+              </div>
+              <p className="mt-4 text-sm text-muted-foreground">
+                Is this the business you’d like to add? Click below to confirm.
+              </p>
+            </div>
+          </div>
+          <input type="hidden" name="businessSlug" value={formState.businessSlug} readOnly />
+          <input type="hidden" name="gPlaceId" value={formState.gPlaceId} readOnly />
         </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="business-slug">Slug (optional)</Label>
-          <Input
-            id="business-slug"
-            type="text"
-            value={formState.businessSlug}
-            onChange={handleChange('businessSlug')}
-            disabled={submitting}
-            placeholder="auto-generated from business name"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="brand-search">Brand search label (optional)</Label>
-          <Input
-            id="brand-search"
-            type="text"
-            value={formState.brandSearch}
-            onChange={handleChange('brandSearch')}
-            disabled={submitting}
-            placeholder="Used for search matching"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="mid">Google MID (optional)</Label>
-          <Input
-            id="mid"
-            type="text"
-            value={formState.mid}
-            onChange={handleChange('mid')}
-            disabled={submitting}
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="gplace">Google Place ID (optional)</Label>
-          <Input
-            id="gplace"
-            type="text"
-            value={formState.gPlaceId}
-            onChange={handleChange('gPlaceId')}
-            disabled={submitting}
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="destination-address">Destination address (optional)</Label>
-          <Input
-            id="destination-address"
-            type="text"
-            value={formState.destinationAddress}
-            onChange={handleChange('destinationAddress')}
-            disabled={submitting}
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="destination-zip">Destination ZIP (optional)</Label>
-          <Input
-            id="destination-zip"
-            type="text"
-            value={formState.destinationZip}
-            onChange={handleChange('destinationZip')}
-            disabled={submitting}
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="dest-lat">Destination latitude (optional)</Label>
-          <Input
-            id="dest-lat"
-            type="number"
-            inputMode="decimal"
-            step="0.0000001"
-            value={formState.destLat}
-            onChange={handleChange('destLat')}
-            disabled={submitting}
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="dest-lng">Destination longitude (optional)</Label>
-          <Input
-            id="dest-lng"
-            type="number"
-            inputMode="decimal"
-            step="0.0000001"
-            value={formState.destLng}
-            onChange={handleChange('destLng')}
-            disabled={submitting}
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="timezone">Timezone (optional)</Label>
-          <Input
-            id="timezone"
-            type="text"
-            value={formState.timezone}
-            onChange={handleChange('timezone')}
-            disabled={submitting}
-            placeholder="e.g. America/Phoenix"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="drives-per-day">Drives per day (optional)</Label>
-          <Input
-            id="drives-per-day"
-            type="number"
-            inputMode="numeric"
-            min="0"
-            step="1"
-            value={formState.drivesPerDay}
-            onChange={handleChange('drivesPerDay')}
-            disabled={submitting}
-          />
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <span className="text-sm font-medium text-foreground">Activation</span>
-        <label className="inline-flex items-center gap-3 text-sm font-medium text-muted-foreground">
-          <input
-            type="checkbox"
-            checked={formState.isActive}
-            onChange={handleCheckboxChange}
-            disabled={submitting}
-          />
-          <span>{formState.isActive ? 'Active' : 'Inactive'}</span>
-        </label>
-      </div>
-
+      ) : null}
       {error ? (
         <p className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive" role="alert">
           {error}
         </p>
       ) : null}
-
       <Button type="submit" disabled={submitting}>
         {submitting ? 'Saving...' : title}
       </Button>
     </form>
+
   );
 }

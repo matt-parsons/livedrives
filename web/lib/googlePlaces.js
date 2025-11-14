@@ -1,4 +1,4 @@
-const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '';
+const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY || '';
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
 
 const fs = require("fs");
@@ -98,8 +98,7 @@ function extractCategories(types) {
     .filter(Boolean);
 }
 
-
-async function fetchTimezone(location, { signal } = {}) {
+export async function fetchTimezone(location, { signal } = {}) {
   if (!location || location.lat === undefined || location.lng === undefined) {
     return null;
   }
@@ -244,9 +243,9 @@ export async function fetchPlaceDetails(placeId, { signal } = {}) {
       throw new PlacesError(message, { status: 502 });
     }
     // console.log('API GBP detailsData', detailsData);
-    console.log('API GBP detailsData');
 
     const result = detailsData.result ?? {};
+    console.log('API GBP detailsData', result.geometry?.location);
     const [timezone, sidebarData] = await Promise.all([
       fetchTimezone(result.geometry?.location ?? null, { signal }),
       await fetch(`${baseUrl}/api/places/sidebar`, {

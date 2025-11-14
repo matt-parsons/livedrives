@@ -419,3 +419,137 @@
 [2025-11-14T19:56:24.655Z] [INFO] attempts url https://www.google.com/maps/place/Prescott+Epoxy+Company/@34.6030006,-112.46146,16z/data=!3m1!4b1!4m6!3m5!1s0x872d2fae98c4c781:0xe71009e90703faf2!8m2!3d34.6030006!4d-112.4588851!16s%2Fg%2F11w3mrlrg4?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D
 [2025-11-14T19:56:24.660Z] [INFO] Picked darray via jd6_direct score=0 
 [2025-11-14T19:56:24.672Z] [INFO] Z4kXaZLcFPuNvMcP0ab16QU 
+[2025-11-14T22:07:55.663Z] [INFO] places Sidebar getting started! 
+[2025-11-14T22:07:55.690Z] [INFO] fetchPlaceSidebarData 
+[2025-11-14T22:07:56.793Z] [INFO] → [Sidebar] Using SOAX residential proxy 71.139.104.131 (proxy.soax.com:5000) 
+[2025-11-14T22:08:05.330Z] [INFO] Single place detected → reloading for full payload https://www.google.com/maps/place/?q=place_id%3AChIJudEAbu9JLYcRx7BHuRAJyB0&hl=en
+[2025-11-14T22:08:09.521Z] [INFO] Refreshing this URL: https://www.google.com/maps/place/Prescott+Air+Conditioning+%26+Heating+Repair+LLC/@34.5924195,-112.4427455,17z/data=!3m1!4b1!4m6!3m5!1s0x872d49ef6e00d1b9:0x1dc80910b947b0c7!8m2!3d34.5924195!4d-112.4401706!16s%2Fg%2F11cmk1jdyc?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T22:08:11.467Z] [INFO] attempts url https://www.google.com/maps/place/Prescott+Air+Conditioning+%26+Heating+Repair+LLC/@34.5924195,-112.4427455,17z/data=!3m1!4b1!4m6!3m5!1s0x872d49ef6e00d1b9:0x1dc80910b947b0c7!8m2!3d34.5924195!4d-112.4401706!16s%2Fg%2F11cmk1jdyc?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T22:08:13.056Z] [INFO] attempts url https://www.google.com/maps/place/Prescott+Air+Conditioning+%26+Heating+Repair+LLC/@34.5924195,-112.4427455,17z/data=!3m1!4b1!4m6!3m5!1s0x872d49ef6e00d1b9:0x1dc80910b947b0c7!8m2!3d34.5924195!4d-112.4401706!16s%2Fg%2F11cmk1jdyc?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T22:08:14.602Z] [INFO] attempts url https://www.google.com/maps/place/Prescott+Air+Conditioning+%26+Heating+Repair+LLC/@34.5924195,-112.4427455,17z/data=!3m1!4b1!4m6!3m5!1s0x872d49ef6e00d1b9:0x1dc80910b947b0c7!8m2!3d34.5924195!4d-112.4401706!16s%2Fg%2F11cmk1jdyc?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T22:08:16.144Z] [INFO] attempts url https://www.google.com/maps/place/Prescott+Air+Conditioning+%26+Heating+Repair+LLC/@34.5924195,-112.4427455,17z/data=!3m1!4b1!4m6!3m5!1s0x872d49ef6e00d1b9:0x1dc80910b947b0c7!8m2!3d34.5924195!4d-112.4401706!16s%2Fg%2F11cmk1jdyc?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T22:08:16.146Z] [INFO] Picked darray via jd6_direct score=0 
+[2025-11-14T22:08:16.157Z] [INFO] TqgXaZHiPNnTp84Pxfa3yAE 
+[2025-11-14T22:09:24.189Z] [INFO] places Sidebar getting started! 
+[2025-11-14T22:09:24.191Z] [INFO] fetchPlaceSidebarData [object Object]
+[2025-11-14T22:09:29.075Z] [INFO] → [Sidebar] Using SOAX residential proxy 184.52.84.189 (proxy.soax.com:5000) 
+[2025-11-14T22:09:36.156Z] [INFO] Single place detected → reloading for full payload https://www.google.com/maps/place/?q=place_id%3AChIJudEAbu9JLYcRx7BHuRAJyB0&hl=en
+[2025-11-14T22:09:40.891Z] [INFO] Refreshing this URL: https://www.google.com/maps/place/Prescott+Air+Conditioning+%26+Heating+Repair+LLC/@34.5924195,-112.4401706,17z/data=!3m1!4b1!4m6!3m5!1s0x872d49ef6e00d1b9:0x1dc80910b947b0c7!8m2!3d34.5924195!4d-112.4401706!16s%2Fg%2F11cmk1jdyc?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMi4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T22:09:44.287Z] [INFO] attempts url https://www.google.com/maps/place/Prescott+Air+Conditioning+%26+Heating+Repair+LLC/@34.5924195,-112.4401706,17z/data=!3m1!4b1!4m6!3m5!1s0x872d49ef6e00d1b9:0x1dc80910b947b0c7!8m2!3d34.5924195!4d-112.4401706!16s%2Fg%2F11cmk1jdyc?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMi4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T22:09:46.177Z] [INFO] attempts url https://www.google.com/maps/place/Prescott+Air+Conditioning+%26+Heating+Repair+LLC/@34.5924195,-112.4401706,17z/data=!3m1!4b1!4m6!3m5!1s0x872d49ef6e00d1b9:0x1dc80910b947b0c7!8m2!3d34.5924195!4d-112.4401706!16s%2Fg%2F11cmk1jdyc?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMi4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T22:09:48.243Z] [INFO] attempts url https://www.google.com/maps/place/Prescott+Air+Conditioning+%26+Heating+Repair+LLC/@34.5924195,-112.4401706,17z/data=!3m1!4b1!4m6!3m5!1s0x872d49ef6e00d1b9:0x1dc80910b947b0c7!8m2!3d34.5924195!4d-112.4401706!16s%2Fg%2F11cmk1jdyc?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMi4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T22:09:48.681Z] [INFO] places Sidebar getting started! 
+[2025-11-14T22:09:48.685Z] [INFO] fetchPlaceSidebarData 
+[2025-11-14T22:09:49.268Z] [INFO] → [Sidebar] Using SOAX residential proxy 108.80.34.125 (proxy.soax.com:5000) 
+[2025-11-14T22:09:49.948Z] [INFO] attempts url https://www.google.com/maps/place/Prescott+Air+Conditioning+%26+Heating+Repair+LLC/@34.5924195,-112.4401706,17z/data=!3m1!4b1!4m6!3m5!1s0x872d49ef6e00d1b9:0x1dc80910b947b0c7!8m2!3d34.5924195!4d-112.4401706!16s%2Fg%2F11cmk1jdyc?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMi4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T22:09:49.953Z] [INFO] Picked darray via jd6_direct score=0 
+[2025-11-14T22:09:49.974Z] [INFO] Prescott Air Conditioning & Heating Repair LLC 
+[2025-11-14T22:09:49.975Z] [INFO] ✅ Picked best candidate for Prescott Air Conditioning & Heating Repair LLC with score: 47
+[2025-11-14T22:09:49.985Z] [INFO] ✅ Saved 844 entries to ../logs/Prescott Air Conditioning & Heating Repair LLC_preview.txt 
+[2025-11-14T22:09:54.990Z] [INFO] Single place detected → reloading for full payload https://www.google.com/maps/place/?q=place_id%3AChIJudEAbu9JLYcRx7BHuRAJyB0&hl=en
+[2025-11-14T22:09:58.037Z] [INFO] Refreshing this URL: https://www.google.com/maps/place/Prescott+Air+Conditioning+%26+Heating+Repair+LLC/@34.5924195,-112.4427455,17z/data=!3m1!4b1!4m6!3m5!1s0x872d49ef6e00d1b9:0x1dc80910b947b0c7!8m2!3d34.5924195!4d-112.4401706!16s%2Fg%2F11cmk1jdyc?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMi4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T22:10:00.090Z] [INFO] attempts url https://www.google.com/maps/place/Prescott+Air+Conditioning+%26+Heating+Repair+LLC/@34.5924195,-112.4427455,17z/data=!3m1!4b1!4m6!3m5!1s0x872d49ef6e00d1b9:0x1dc80910b947b0c7!8m2!3d34.5924195!4d-112.4401706!16s%2Fg%2F11cmk1jdyc?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMi4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T22:10:01.593Z] [INFO] attempts url https://www.google.com/maps/place/Prescott+Air+Conditioning+%26+Heating+Repair+LLC/@34.5924195,-112.4427455,17z/data=!3m1!4b1!4m6!3m5!1s0x872d49ef6e00d1b9:0x1dc80910b947b0c7!8m2!3d34.5924195!4d-112.4401706!16s%2Fg%2F11cmk1jdyc?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMi4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T22:10:03.208Z] [INFO] attempts url https://www.google.com/maps/place/Prescott+Air+Conditioning+%26+Heating+Repair+LLC/@34.5924195,-112.4427455,17z/data=!3m1!4b1!4m6!3m5!1s0x872d49ef6e00d1b9:0x1dc80910b947b0c7!8m2!3d34.5924195!4d-112.4401706!16s%2Fg%2F11cmk1jdyc?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMi4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T22:10:04.846Z] [INFO] attempts url https://www.google.com/maps/place/Prescott+Air+Conditioning+%26+Heating+Repair+LLC/@34.5924195,-112.4427455,17z/data=!3m1!4b1!4m6!3m5!1s0x872d49ef6e00d1b9:0x1dc80910b947b0c7!8m2!3d34.5924195!4d-112.4401706!16s%2Fg%2F11cmk1jdyc?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMi4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T22:10:04.849Z] [INFO] Picked darray via jd6_direct score=0 
+[2025-11-14T22:10:04.869Z] [INFO] Prescott Air Conditioning & Heating Repair LLC 
+[2025-11-14T22:10:04.870Z] [INFO] ✅ Picked best candidate for Prescott Air Conditioning & Heating Repair LLC with score: 47
+[2025-11-14T22:10:04.929Z] [INFO] ✅ Saved 844 entries to ../logs/Prescott Air Conditioning & Heating Repair LLC_preview.txt 
+[2025-11-14T22:12:15.788Z] [INFO] places Sidebar getting started! 
+[2025-11-14T22:12:15.790Z] [INFO] fetchPlaceSidebarData 
+[2025-11-14T22:12:16.833Z] [INFO] → [Sidebar] Using SOAX residential proxy 162.206.204.111 (proxy.soax.com:5000) 
+[2025-11-14T22:12:22.103Z] [INFO] Single place detected → reloading for full payload https://www.google.com/maps/place/?q=place_id%3AChIJudEAbu9JLYcRx7BHuRAJyB0&hl=en
+[2025-11-14T22:12:25.733Z] [INFO] Refreshing this URL: https://www.google.com/maps/place/Prescott+Air+Conditioning+%26+Heating+Repair+LLC/@34.5924195,-112.4427455,17z/data=!3m1!4b1!4m6!3m5!1s0x872d49ef6e00d1b9:0x1dc80910b947b0c7!8m2!3d34.5924195!4d-112.4401706!16s%2Fg%2F11cmk1jdyc?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMi4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T22:12:31.280Z] [INFO] attempts url https://www.google.com/maps/place/Prescott+Air+Conditioning+%26+Heating+Repair+LLC/@34.5924195,-112.4427455,17z/data=!3m1!4b1!4m6!3m5!1s0x872d49ef6e00d1b9:0x1dc80910b947b0c7!8m2!3d34.5924195!4d-112.4401706!16s%2Fg%2F11cmk1jdyc?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMi4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T22:12:33.272Z] [INFO] attempts url https://www.google.com/maps/place/Prescott+Air+Conditioning+%26+Heating+Repair+LLC/@34.5924195,-112.4427455,17z/data=!3m1!4b1!4m6!3m5!1s0x872d49ef6e00d1b9:0x1dc80910b947b0c7!8m2!3d34.5924195!4d-112.4401706!16s%2Fg%2F11cmk1jdyc?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMi4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T22:12:34.850Z] [INFO] attempts url https://www.google.com/maps/place/Prescott+Air+Conditioning+%26+Heating+Repair+LLC/@34.5924195,-112.4427455,17z/data=!3m1!4b1!4m6!3m5!1s0x872d49ef6e00d1b9:0x1dc80910b947b0c7!8m2!3d34.5924195!4d-112.4401706!16s%2Fg%2F11cmk1jdyc?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMi4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T22:12:36.325Z] [INFO] attempts url https://www.google.com/maps/place/Prescott+Air+Conditioning+%26+Heating+Repair+LLC/@34.5924195,-112.4427455,17z/data=!3m1!4b1!4m6!3m5!1s0x872d49ef6e00d1b9:0x1dc80910b947b0c7!8m2!3d34.5924195!4d-112.4401706!16s%2Fg%2F11cmk1jdyc?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMi4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T22:12:36.327Z] [INFO] Picked darray via jd6_direct score=0 
+[2025-11-14T22:12:36.341Z] [INFO] U6kXaarnDMeUwbkPvKG0sQY 
+[2025-11-14T22:12:57.810Z] [INFO] places Sidebar getting started! 
+[2025-11-14T22:12:57.812Z] [INFO] fetchPlaceSidebarData 
+[2025-11-14T22:12:58.680Z] [INFO] → [Sidebar] Using SOAX residential proxy 68.192.53.161 (proxy.soax.com:5000) 
+[2025-11-14T22:13:43.177Z] [INFO] places Sidebar getting started! 
+[2025-11-14T22:13:43.179Z] [INFO] fetchPlaceSidebarData 
+[2025-11-14T22:13:44.249Z] [INFO] → [Sidebar] Using SOAX residential proxy 50.41.27.249 (proxy.soax.com:5000) 
+[2025-11-14T22:13:49.961Z] [INFO] Single place detected → reloading for full payload https://www.google.com/maps/place/?q=place_id%3AChIJudEAbu9JLYcRx7BHuRAJyB0&hl=en
+[2025-11-14T22:13:53.544Z] [INFO] Refreshing this URL: https://www.google.com/maps/place/Prescott+Air+Conditioning+%26+Heating+Repair+LLC/@34.5924195,-112.4427455,17z/data=!3m1!4b1!4m6!3m5!1s0x872d49ef6e00d1b9:0x1dc80910b947b0c7!8m2!3d34.5924195!4d-112.4401706!16s%2Fg%2F11cmk1jdyc?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMi4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T22:13:56.135Z] [INFO] attempts url https://www.google.com/maps/place/Prescott+Air+Conditioning+%26+Heating+Repair+LLC/@34.5924195,-112.4427455,17z/data=!3m1!4b1!4m6!3m5!1s0x872d49ef6e00d1b9:0x1dc80910b947b0c7!8m2!3d34.5924195!4d-112.4401706!16s%2Fg%2F11cmk1jdyc?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMi4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T22:13:58.029Z] [INFO] attempts url https://www.google.com/maps/place/Prescott+Air+Conditioning+%26+Heating+Repair+LLC/@34.5924195,-112.4427455,17z/data=!3m1!4b1!4m6!3m5!1s0x872d49ef6e00d1b9:0x1dc80910b947b0c7!8m2!3d34.5924195!4d-112.4401706!16s%2Fg%2F11cmk1jdyc?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMi4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T22:13:59.790Z] [INFO] attempts url https://www.google.com/maps/place/Prescott+Air+Conditioning+%26+Heating+Repair+LLC/@34.5924195,-112.4427455,17z/data=!3m1!4b1!4m6!3m5!1s0x872d49ef6e00d1b9:0x1dc80910b947b0c7!8m2!3d34.5924195!4d-112.4401706!16s%2Fg%2F11cmk1jdyc?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMi4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T22:14:01.583Z] [INFO] attempts url https://www.google.com/maps/place/Prescott+Air+Conditioning+%26+Heating+Repair+LLC/@34.5924195,-112.4427455,17z/data=!3m1!4b1!4m6!3m5!1s0x872d49ef6e00d1b9:0x1dc80910b947b0c7!8m2!3d34.5924195!4d-112.4401706!16s%2Fg%2F11cmk1jdyc?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMi4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T22:14:01.585Z] [INFO] Picked darray via jd6_direct score=0 
+[2025-11-14T22:14:01.605Z] [INFO] Prescott Air Conditioning & Heating Repair LLC 
+[2025-11-14T22:14:01.607Z] [INFO] ✅ Picked best candidate for Prescott Air Conditioning & Heating Repair LLC with score: 47
+[2025-11-14T22:14:01.616Z] [INFO] ✅ Saved 844 entries to ../logs/Prescott Air Conditioning & Heating Repair LLC_preview.txt 
+[2025-11-14T22:19:30.815Z] [INFO] places Sidebar getting started! 
+[2025-11-14T22:19:30.821Z] [INFO] fetchPlaceSidebarData 
+[2025-11-14T22:19:32.339Z] [INFO] → [Sidebar] Using SOAX residential proxy 73.140.71.51 (proxy.soax.com:5000) 
+[2025-11-14T22:19:40.059Z] [INFO] Single place detected → reloading for full payload https://www.google.com/maps/place/?q=place_id%3AChIJudEAbu9JLYcRx7BHuRAJyB0&hl=en
+[2025-11-14T22:19:42.219Z] [INFO] Refreshing this URL: https://www.google.com/maps/place/Prescott+Air+Conditioning+%26+Heating+Repair+LLC/@34.5924195,-112.4427455,17z/data=!3m1!4b1!4m6!3m5!1s0x872d49ef6e00d1b9:0x1dc80910b947b0c7!8m2!3d34.5924195!4d-112.4401706!16s%2Fg%2F11cmk1jdyc?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T22:19:47.083Z] [INFO] attempts url https://www.google.com/maps/place/Prescott+Air+Conditioning+%26+Heating+Repair+LLC/@34.5924195,-112.4427455,17z/data=!3m1!4b1!4m6!3m5!1s0x872d49ef6e00d1b9:0x1dc80910b947b0c7!8m2!3d34.5924195!4d-112.4401706!16s%2Fg%2F11cmk1jdyc?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T22:19:49.415Z] [INFO] attempts url https://www.google.com/maps/place/Prescott+Air+Conditioning+%26+Heating+Repair+LLC/@34.5924195,-112.4427455,17z/data=!3m1!4b1!4m6!3m5!1s0x872d49ef6e00d1b9:0x1dc80910b947b0c7!8m2!3d34.5924195!4d-112.4401706!16s%2Fg%2F11cmk1jdyc?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T22:19:51.526Z] [INFO] attempts url https://www.google.com/maps/place/Prescott+Air+Conditioning+%26+Heating+Repair+LLC/@34.5924195,-112.4427455,17z/data=!3m1!4b1!4m6!3m5!1s0x872d49ef6e00d1b9:0x1dc80910b947b0c7!8m2!3d34.5924195!4d-112.4401706!16s%2Fg%2F11cmk1jdyc?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T22:19:52.888Z] [INFO] attempts url https://www.google.com/maps/place/Prescott+Air+Conditioning+%26+Heating+Repair+LLC/@34.5924195,-112.4427455,17z/data=!3m1!4b1!4m6!3m5!1s0x872d49ef6e00d1b9:0x1dc80910b947b0c7!8m2!3d34.5924195!4d-112.4401706!16s%2Fg%2F11cmk1jdyc?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T22:19:52.892Z] [INFO] Picked darray via jd6_direct score=0 
+[2025-11-14T22:19:52.918Z] [INFO] B6sXadu0N6CxptQP9J6o4Qk 
+[2025-11-14T22:19:56.630Z] [INFO] places Sidebar getting started! 
+[2025-11-14T22:19:56.632Z] [INFO] fetchPlaceSidebarData 
+[2025-11-14T22:19:57.947Z] [INFO] → [Sidebar] Using SOAX residential proxy 73.83.28.49 (proxy.soax.com:5000) 
+[2025-11-14T22:20:04.949Z] [INFO] Single place detected → reloading for full payload https://www.google.com/maps/place/?q=place_id%3AChIJudEAbu9JLYcRx7BHuRAJyB0&hl=en
+[2025-11-14T22:20:09.096Z] [INFO] Refreshing this URL: https://www.google.com/maps/place/Prescott+Air+Conditioning+%26+Heating+Repair+LLC/@34.5924195,-112.4427455,17z/data=!3m1!4b1!4m6!3m5!1s0x872d49ef6e00d1b9:0x1dc80910b947b0c7!8m2!3d34.5924195!4d-112.4401706!16s%2Fg%2F11cmk1jdyc?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMi4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T22:20:11.756Z] [INFO] attempts url https://www.google.com/maps/place/Prescott+Air+Conditioning+%26+Heating+Repair+LLC/@34.5924195,-112.4427455,17z/data=!3m1!4b1!4m6!3m5!1s0x872d49ef6e00d1b9:0x1dc80910b947b0c7!8m2!3d34.5924195!4d-112.4401706!16s%2Fg%2F11cmk1jdyc?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMi4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T22:20:13.489Z] [INFO] attempts url https://www.google.com/maps/place/Prescott+Air+Conditioning+%26+Heating+Repair+LLC/@34.5924195,-112.4427455,17z/data=!3m1!4b1!4m6!3m5!1s0x872d49ef6e00d1b9:0x1dc80910b947b0c7!8m2!3d34.5924195!4d-112.4401706!16s%2Fg%2F11cmk1jdyc?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMi4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T22:20:15.281Z] [INFO] attempts url https://www.google.com/maps/place/Prescott+Air+Conditioning+%26+Heating+Repair+LLC/@34.5924195,-112.4427455,17z/data=!3m1!4b1!4m6!3m5!1s0x872d49ef6e00d1b9:0x1dc80910b947b0c7!8m2!3d34.5924195!4d-112.4401706!16s%2Fg%2F11cmk1jdyc?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMi4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T22:20:16.705Z] [INFO] attempts url https://www.google.com/maps/place/Prescott+Air+Conditioning+%26+Heating+Repair+LLC/@34.5924195,-112.4427455,17z/data=!3m1!4b1!4m6!3m5!1s0x872d49ef6e00d1b9:0x1dc80910b947b0c7!8m2!3d34.5924195!4d-112.4401706!16s%2Fg%2F11cmk1jdyc?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMi4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T22:20:16.708Z] [INFO] Picked darray via jd6_direct score=0 
+[2025-11-14T22:20:16.739Z] [INFO] H6sXaZ-8KOOPwbkPn9aUoAM 
+[2025-11-14T22:21:10.704Z] [INFO] places Sidebar getting started! 
+[2025-11-14T22:21:10.706Z] [INFO] fetchPlaceSidebarData 
+[2025-11-14T22:21:11.699Z] [INFO] → [Sidebar] Using SOAX residential proxy 162.239.249.5 (proxy.soax.com:5000) 
+[2025-11-14T22:21:18.300Z] [INFO] Single place detected → reloading for full payload https://www.google.com/maps/place/?q=place_id%3AChIJudEAbu9JLYcRx7BHuRAJyB0&hl=en
+[2025-11-14T22:21:22.203Z] [INFO] Refreshing this URL: https://www.google.com/maps/place/Prescott+Air+Conditioning+%26+Heating+Repair+LLC/@34.5924195,-112.4427455,17z/data=!3m1!4b1!4m6!3m5!1s0x872d49ef6e00d1b9:0x1dc80910b947b0c7!8m2!3d34.5924195!4d-112.4401706!16s%2Fg%2F11cmk1jdyc?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMi4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T22:21:24.509Z] [INFO] attempts url https://www.google.com/maps/place/Prescott+Air+Conditioning+%26+Heating+Repair+LLC/@34.5924195,-112.4427455,17z/data=!3m1!4b1!4m6!3m5!1s0x872d49ef6e00d1b9:0x1dc80910b947b0c7!8m2!3d34.5924195!4d-112.4401706!16s%2Fg%2F11cmk1jdyc?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMi4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T22:21:26.259Z] [INFO] attempts url https://www.google.com/maps/place/Prescott+Air+Conditioning+%26+Heating+Repair+LLC/@34.5924195,-112.4427455,17z/data=!3m1!4b1!4m6!3m5!1s0x872d49ef6e00d1b9:0x1dc80910b947b0c7!8m2!3d34.5924195!4d-112.4401706!16s%2Fg%2F11cmk1jdyc?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMi4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T22:21:28.408Z] [INFO] attempts url https://www.google.com/maps/place/Prescott+Air+Conditioning+%26+Heating+Repair+LLC/@34.5924195,-112.4427455,17z/data=!3m1!4b1!4m6!3m5!1s0x872d49ef6e00d1b9:0x1dc80910b947b0c7!8m2!3d34.5924195!4d-112.4401706!16s%2Fg%2F11cmk1jdyc?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMi4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T22:21:31.404Z] [INFO] attempts url https://www.google.com/maps/place/Prescott+Air+Conditioning+%26+Heating+Repair+LLC/@34.5924195,-112.4427455,17z/data=!3m1!4b1!4m6!3m5!1s0x872d49ef6e00d1b9:0x1dc80910b947b0c7!8m2!3d34.5924195!4d-112.4401706!16s%2Fg%2F11cmk1jdyc?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMi4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T22:21:31.537Z] [INFO] Picked darray via jd6_direct score=0 
+[2025-11-14T22:21:31.581Z] [INFO] Prescott Air Conditioning & Heating Repair LLC 
+[2025-11-14T22:21:31.582Z] [INFO] ✅ Picked best candidate for Prescott Air Conditioning & Heating Repair LLC with score: 47
+[2025-11-14T22:21:31.589Z] [INFO] ✅ Saved 844 entries to ../logs/Prescott Air Conditioning & Heating Repair LLC_preview.txt 
+[2025-11-14T22:32:47.510Z] [INFO] places Sidebar getting started! 
+[2025-11-14T22:32:47.580Z] [INFO] fetchPlaceSidebarData 
+[2025-11-14T22:32:48.922Z] [INFO] → [Sidebar] Using SOAX residential proxy 72.201.152.156 (proxy.soax.com:5000) 
+[2025-11-14T22:32:54.749Z] [INFO] Single place detected → reloading for full payload https://www.google.com/maps/place/?q=place_id%3AChIJudEAbu9JLYcRx7BHuRAJyB0&hl=en
+[2025-11-14T22:32:58.677Z] [INFO] Refreshing this URL: https://www.google.com/maps/place/Prescott+Air+Conditioning+%26+Heating+Repair+LLC/@34.5924195,-112.4427455,17z/data=!3m1!4b1!4m6!3m5!1s0x872d49ef6e00d1b9:0x1dc80910b947b0c7!8m2!3d34.5924195!4d-112.4401706!16s%2Fg%2F11cmk1jdyc?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T22:33:00.997Z] [INFO] attempts url https://www.google.com/maps/place/Prescott+Air+Conditioning+%26+Heating+Repair+LLC/@34.5924195,-112.4427455,17z/data=!3m1!4b1!4m6!3m5!1s0x872d49ef6e00d1b9:0x1dc80910b947b0c7!8m2!3d34.5924195!4d-112.4401706!16s%2Fg%2F11cmk1jdyc?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T22:33:02.533Z] [INFO] attempts url https://www.google.com/maps/place/Prescott+Air+Conditioning+%26+Heating+Repair+LLC/@34.5924195,-112.4427455,17z/data=!3m1!4b1!4m6!3m5!1s0x872d49ef6e00d1b9:0x1dc80910b947b0c7!8m2!3d34.5924195!4d-112.4401706!16s%2Fg%2F11cmk1jdyc?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T22:33:04.244Z] [INFO] attempts url https://www.google.com/maps/place/Prescott+Air+Conditioning+%26+Heating+Repair+LLC/@34.5924195,-112.4427455,17z/data=!3m1!4b1!4m6!3m5!1s0x872d49ef6e00d1b9:0x1dc80910b947b0c7!8m2!3d34.5924195!4d-112.4401706!16s%2Fg%2F11cmk1jdyc?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T22:33:05.731Z] [INFO] attempts url https://www.google.com/maps/place/Prescott+Air+Conditioning+%26+Heating+Repair+LLC/@34.5924195,-112.4427455,17z/data=!3m1!4b1!4m6!3m5!1s0x872d49ef6e00d1b9:0x1dc80910b947b0c7!8m2!3d34.5924195!4d-112.4401706!16s%2Fg%2F11cmk1jdyc?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T22:33:05.741Z] [INFO] Picked darray via jd6_direct score=0 
+[2025-11-14T22:33:05.788Z] [INFO] IK4XadLXJ7CEp84P5eS-uA8 
+[2025-11-14T22:33:36.977Z] [INFO] places Sidebar getting started! 
+[2025-11-14T22:33:36.980Z] [INFO] fetchPlaceSidebarData 
+[2025-11-14T22:33:37.937Z] [INFO] → [Sidebar] Using SOAX residential proxy 96.253.61.130 (proxy.soax.com:5000) 
+[2025-11-14T22:33:44.992Z] [INFO] Single place detected → reloading for full payload https://www.google.com/maps/place/?q=place_id%3AChIJef0eqDwvLYcR0uxb4FNBL4o&hl=en
+[2025-11-14T22:33:47.987Z] [INFO] Refreshing this URL: https://www.google.com/maps/place/Lasting+Images+Photography/@34.5963597,-112.4685597,17z/data=!3m1!4b1!4m6!3m5!1s0x872d2f3ca81efd79:0x8a2f4153e05becd2!8m2!3d34.5963597!4d-112.4659848!16s%2Fg%2F11fvyhrrrt?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T22:33:50.519Z] [INFO] attempts url https://www.google.com/maps/place/Lasting+Images+Photography/@34.5963597,-112.4685597,17z/data=!3m1!4b1!4m6!3m5!1s0x872d2f3ca81efd79:0x8a2f4153e05becd2!8m2!3d34.5963597!4d-112.4659848!16s%2Fg%2F11fvyhrrrt?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T22:33:52.398Z] [INFO] attempts url https://www.google.com/maps/place/Lasting+Images+Photography/@34.5963597,-112.4685597,17z/data=!3m1!4b1!4m6!3m5!1s0x872d2f3ca81efd79:0x8a2f4153e05becd2!8m2!3d34.5963597!4d-112.4659848!16s%2Fg%2F11fvyhrrrt?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T22:33:54.329Z] [INFO] attempts url https://www.google.com/maps/place/Lasting+Images+Photography/@34.5963597,-112.4685597,17z/data=!3m1!4b1!4m6!3m5!1s0x872d2f3ca81efd79:0x8a2f4153e05becd2!8m2!3d34.5963597!4d-112.4659848!16s%2Fg%2F11fvyhrrrt?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T22:33:56.060Z] [INFO] attempts url https://www.google.com/maps/place/Lasting+Images+Photography/@34.5963597,-112.4685597,17z/data=!3m1!4b1!4m6!3m5!1s0x872d2f3ca81efd79:0x8a2f4153e05becd2!8m2!3d34.5963597!4d-112.4659848!16s%2Fg%2F11fvyhrrrt?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T22:33:56.063Z] [INFO] Picked darray via jd6_direct score=0 
+[2025-11-14T22:33:56.088Z] [INFO] Uq4XadK9L7HSp84Pr4eX6As 
+[2025-11-14T22:39:03.488Z] [INFO] places Sidebar getting started! 
+[2025-11-14T22:39:03.496Z] [INFO] fetchPlaceSidebarData 
+[2025-11-14T22:39:04.820Z] [INFO] → [Sidebar] Using SOAX residential proxy 75.128.19.11 (proxy.soax.com:5000) 
+[2025-11-14T22:39:13.867Z] [INFO] Single place detected → reloading for full payload https://www.google.com/maps/place/?q=place_id%3AChIJb9HV5sYoLYcRxxXhA7BcQaE&hl=en
+[2025-11-14T22:39:18.606Z] [INFO] Refreshing this URL: https://www.google.com/maps/place/Allan's+Flowers+%26+More/@34.5516668,-112.4825001,16z/data=!3m1!4b1!4m6!3m5!1s0x872d28c6e6d5d16f:0xa1415cb003e115c7!8m2!3d34.5516668!4d-112.4799252!16s%2Fg%2F1tfzsd32?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T22:39:22.766Z] [INFO] attempts url https://www.google.com/maps/place/Allan's+Flowers+%26+More/@34.5516668,-112.4825001,16z/data=!3m1!4b1!4m6!3m5!1s0x872d28c6e6d5d16f:0xa1415cb003e115c7!8m2!3d34.5516668!4d-112.4799252!16s%2Fg%2F1tfzsd32?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T22:39:25.263Z] [INFO] attempts url https://www.google.com/maps/place/Allan's+Flowers+%26+More/@34.5516668,-112.4825001,16z/data=!3m1!4b1!4m6!3m5!1s0x872d28c6e6d5d16f:0xa1415cb003e115c7!8m2!3d34.5516668!4d-112.4799252!16s%2Fg%2F1tfzsd32?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T22:39:27.888Z] [INFO] attempts url https://www.google.com/maps/place/Allan's+Flowers+%26+More/@34.5516668,-112.4825001,16z/data=!3m1!4b1!4m6!3m5!1s0x872d28c6e6d5d16f:0xa1415cb003e115c7!8m2!3d34.5516668!4d-112.4799252!16s%2Fg%2F1tfzsd32?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T22:39:30.600Z] [INFO] attempts url https://www.google.com/maps/place/Allan's+Flowers+%26+More/@34.5516668,-112.4825001,16z/data=!3m1!4b1!4m6!3m5!1s0x872d28c6e6d5d16f:0xa1415cb003e115c7!8m2!3d34.5516668!4d-112.4799252!16s%2Fg%2F1tfzsd32?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T22:39:30.606Z] [INFO] Picked darray via jd6_direct score=0 
+[2025-11-14T22:39:30.685Z] [INFO] Allan's Flowers & More 
+[2025-11-14T22:39:30.687Z] [INFO] ✅ Picked best candidate for Allan's Flowers & More with score: 47
+[2025-11-14T22:39:30.713Z] [INFO] ✅ Saved 1125 entries to ../logs/Allan's Flowers & More_preview.txt 
