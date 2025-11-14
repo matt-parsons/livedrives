@@ -34,8 +34,8 @@ const OWNER_OPERATION_LINKS = [
     description: 'Start a geo grid run for any managed business.'
   },
   {
-    href: '/dashboard/member-journey',
-    label: 'Member journey',
+    href: '/dashboard/get-started',
+    label: 'Get Started',
     description: 'Guide new members through trials, business setup, and geo keywords.'
   },
   {

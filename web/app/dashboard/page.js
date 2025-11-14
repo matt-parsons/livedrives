@@ -48,7 +48,7 @@ export default async function DashboardPage() {
         <section className="page-header">
           <h1 className="page-title">Set up your first business</h1>
           <p className="page-subtitle">
-            Create a business profile to unlock scheduling, geo grid insights, and live operations monitoring.
+            Create a business profile to unlock optimization, profile ranking insights, and live operations monitoring.
           </p>
         </section>
 
@@ -59,13 +59,13 @@ export default async function DashboardPage() {
               There are no businesses linked to your organization yet.
             </CardDescription>
           </CardHeader>
-          <CardContent className="flex flex-col">
+          <div className="flex flex-col mt-5">
             <div className="flex flex-wrap">
               <Button asChild variant="outline">
-                <Link href="/dashboard/member-journey">Get Started!</Link>
+                <Link href="/dashboard/get-started">Get Started!</Link>
               </Button>
             </div>
-          </CardContent>
+          </div>
         </Card>
       </div>
     );
