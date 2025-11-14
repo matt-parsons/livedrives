@@ -109,7 +109,7 @@ const TASK_GUIDES = {
       id: 'category-template',
       title: 'Category plan',
       description: 'Map out your category stack before editing the profile.',
-      text: `Primary category: [ex. Personal injury attorney]\nSecondary category 1: [ex. Trial attorney]\nSecondary category 2: [ex. Legal services]\nSecondary category 3: [ex. Medical lawyer]\nSeasonal/temporary category to add during promotions: [ex. DUI attorney]\nCategories to remove: [list anything outdated]`
+      text: `Primary category: [ex. Painter]\nSecondary category 1: [ex. Contractor]\nSecondary category 2: [ex. Painting]\nSecondary category 3: [ex. Carpenter]\nCategories to remove: [list anything outdated]`
     },
     tips: [
       'Only use categories that describe your core services—adding unrelated ones can hurt rankings.',
@@ -128,7 +128,7 @@ const TASK_GUIDES = {
       id: 'services-template',
       title: 'Service menu draft',
       description: 'Copy this outline into a doc, customize, and paste it back into GBP.',
-      text: `Category: [ex. Water heater installation]\n• Service 1: [Tankless water heater install]\n• Service 2: [Traditional tank replacement]\n• Service 3: [Emergency leak repair]\nCategory: [ex. Drain cleaning]\n• Service 1: [Hydro jetting]\n• Service 2: [Camera inspections]\n• Service 3: [Preventative maintenance plan]`
+      text: `Category: [ex. Exterior painting]\n• Service 1: [Exterior house painting]\n• Service 2: [Deck staining]\n• Service 3: [Deck sealing]\nCategory: [ex. Interior painting]\n• Service 1: [Wall & ceiling painting]\n• Service 2: [Door painting]\n• Service 3: [Furniture painting]\nCategory: [ex. Drywall repair]\n• Service 1: [Drywall repair and patching]\n• Service 2: [Texture matching]\n• Service 3: [Crack & hole repair]\nCategory: [ex. Specialty coatings]\n• Service 1: [Epoxy floor coating]\n• Service 2: [Wood staining]\n• Service 3: [Wood varnishing]\nCategory: [ex. Commercial painting]\n• Service 1: [Commercial interior painting]\n• Service 2: [Commercial exterior painting]\n• Service 3: [Office & retail painting]`
     },
     tips: [
       'Match the service names to the keywords you target on your website for consistency.',

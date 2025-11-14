@@ -23,7 +23,7 @@ function parseDateInput(value) {
     if (!trimmed) {
       return null;
     }
-    
+
     // Handle relative dates like "3 days ago", "6 days ago", "2 weeks ago", "1 month ago"
     const relativeMatch = trimmed.match(/^(\d+)\s+(day|week|month)s?\s+ago$/i);
     if (relativeMatch) {
@@ -162,7 +162,7 @@ function computeDescriptionStatus(description) {
 
   return {
     status: normalizeStatus('pending'),
-    detail: 'No description returned via Google Places.'
+    detail: 'Your profile does not have a description.'
   };
 }
 

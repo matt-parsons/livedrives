@@ -248,3 +248,36 @@
 [2025-11-14T01:29:22.833Z] [INFO] Expanded single candidate into 678 inner arrays 
 [2025-11-14T01:29:22.851Z] [INFO] parsedCandidates (including nested): 14
 [2025-11-14T01:29:22.869Z] [INFO] ✅ Picked best candidate for Quad Cities Design with score: 43
+[2025-11-14T04:22:48.170Z] [INFO] places Sidebar getting started! 
+[2025-11-14T04:22:48.176Z] [INFO] fetchPlaceSidebarData 
+[2025-11-14T04:22:49.214Z] [INFO] → [Sidebar] Using SOAX residential proxy 67.184.246.133 (proxy.soax.com:5000) 
+[2025-11-14T04:23:03.065Z] [INFO] Single place detected → reloading for full payload 
+[2025-11-14T04:23:06.185Z] [INFO] attempts url https://www.google.com/maps/place/?q=place_id%3AChIJL6rieLM6LYcR3IcC3Q2OtJQ&hl=en
+[2025-11-14T04:23:07.974Z] [INFO] attempts url https://www.google.com/maps/place/?q=place_id:ChIJL6rieLM6LYcR3IcC3Q2OtJQ
+[2025-11-14T04:23:10.048Z] [INFO] attempts url https://www.google.com/maps/place/?q=place_id:ChIJL6rieLM6LYcR3IcC3Q2OtJQ
+[2025-11-14T04:23:11.961Z] [INFO] attempts url https://www.google.com/maps/place/?q=place_id:ChIJL6rieLM6LYcR3IcC3Q2OtJQ
+[2025-11-14T04:23:11.966Z] [INFO] Expanded single candidate into 695 inner arrays 
+[2025-11-14T04:23:11.986Z] [INFO] parsedCandidates (including nested): 8
+[2025-11-14T04:23:12.011Z] [INFO] ✅ Picked best candidate for Willbuilt Seamless Gutters by Willbuilt Construction with score: 47
+[2025-11-14T05:54:47.454Z] [INFO] places Sidebar getting started! 
+[2025-11-14T05:54:47.457Z] [INFO] fetchPlaceSidebarData 
+[2025-11-14T05:54:48.497Z] [INFO] → [Sidebar] Using SOAX residential proxy 35.147.46.24 (proxy.soax.com:5000) 
+[2025-11-14T05:54:54.952Z] [INFO] Single place detected → reloading for full payload 
+[2025-11-14T05:54:58.177Z] [INFO] attempts url https://www.google.com/maps/place/?q=place_id%3AChIJL6rieLM6LYcR3IcC3Q2OtJQ&hl=en
+[2025-11-14T05:55:00.259Z] [INFO] attempts url https://www.google.com/maps/place/?q=place_id:ChIJL6rieLM6LYcR3IcC3Q2OtJQ
+[2025-11-14T05:55:02.720Z] [INFO] attempts url https://www.google.com/maps/place/?q=place_id:ChIJL6rieLM6LYcR3IcC3Q2OtJQ
+[2025-11-14T05:55:04.996Z] [INFO] attempts url https://www.google.com/maps/place/?q=place_id:ChIJL6rieLM6LYcR3IcC3Q2OtJQ
+[2025-11-14T05:55:05.000Z] [INFO] Expanded single candidate into 695 inner arrays 
+[2025-11-14T05:55:05.023Z] [INFO] parsedCandidates (including nested): 8
+[2025-11-14T05:58:04.864Z] [INFO] places Sidebar getting started! 
+[2025-11-14T05:58:04.867Z] [INFO] fetchPlaceSidebarData 
+[2025-11-14T05:58:06.148Z] [INFO] → [Sidebar] Using SOAX residential proxy 173.47.45.111 (proxy.soax.com:5000) 
+[2025-11-14T05:58:12.098Z] [INFO] Single place detected → reloading for full payload 
+[2025-11-14T05:58:14.761Z] [INFO] attempts url https://www.google.com/maps/place/?q=place_id%3AChIJL6rieLM6LYcR3IcC3Q2OtJQ&hl=en
+[2025-11-14T05:58:16.844Z] [INFO] attempts url https://www.google.com/maps/place/?q=place_id:ChIJL6rieLM6LYcR3IcC3Q2OtJQ
+[2025-11-14T05:58:19.242Z] [INFO] attempts url https://www.google.com/maps/place/?q=place_id:ChIJL6rieLM6LYcR3IcC3Q2OtJQ
+[2025-11-14T05:58:21.227Z] [INFO] attempts url https://www.google.com/maps/place/?q=place_id:ChIJL6rieLM6LYcR3IcC3Q2OtJQ
+[2025-11-14T05:58:21.231Z] [INFO] Expanded single candidate into 695 inner arrays 
+[2025-11-14T05:58:21.253Z] [INFO] parsedCandidates (including nested): 8
+[2025-11-14T05:58:21.274Z] [INFO] ✅ Picked best candidate for Willbuilt Seamless Gutters by Willbuilt Construction with score: 47
+[2025-11-14T05:58:21.279Z] [INFO] ✅ Saved 738 entries to ../logs/Willbuilt Seamless Gutters by Willbuilt Construction_preview.txt 
