@@ -634,8 +634,8 @@ textarea {
   background: #fff;
   border-radius: 16px;
   padding: 1.25rem 1.5rem;
-  width: min(460px, 90%);
-  max-height: min(90vh, 420px);
+  width: min(720px, 95%);
+  max-height: min(92vh, 640px);
   overflow: auto;
   box-shadow: 0 20px 45px rgba(15, 23, 42, 0.22);
   pointer-events: all;
@@ -667,6 +667,13 @@ textarea {
   font-size: 0.95rem;
 }
 
+.task-overlay__content {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin: 1rem 0;
+}
+
 .task-overlay__cta {
   margin: 0;
   font-size: 0.9rem;
@@ -675,6 +682,98 @@ textarea {
 
 .task-overlay__cta a {
   text-decoration: underline;
+}
+
+.task-guide__section {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #f8fafc;
+  padding: 1rem;
+}
+
+.task-guide__section h4 {
+  margin: 0 0 0.35rem;
+  font-size: 0.95rem;
+  color: #0f172a;
+}
+
+.task-guide__section p {
+  margin: 0 0 0.5rem;
+  color: #475569;
+  font-size: 0.9rem;
+}
+
+.task-guide__steps {
+  margin: 0;
+  padding-left: 1.2rem;
+  color: #0f172a;
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+.task-guide__tips {
+  margin: 0;
+  padding-left: 1.2rem;
+  color: #0f172a;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.task-guide__template textarea {
+  width: 100%;
+  min-height: 140px;
+  border-radius: 10px;
+  border: 1px solid #cbd5f5;
+  font-size: 0.92rem;
+  padding: 0.75rem;
+  font-family: inherit;
+  resize: vertical;
+  background: #fff;
+  color: #0f172a;
+}
+
+.task-guide__template small {
+  display: block;
+  margin-top: 0.5rem;
+  color: #475569;
+}
+
+.task-guide__template-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
+.task-guide__copy {
+  border: 1px solid #0f172a;
+  border-radius: 999px;
+  padding: 0.4rem 0.9rem;
+  font-size: 0.85rem;
+  background: #0f172a;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.task-guide__copy:hover {
+  background: #172554;
+}
+
+.task-guide__error {
+  margin: 0.5rem 0 0;
+  color: #b42318;
+  font-size: 0.85rem;
+}
+
+.task-guide__resources ul {
+  margin: 0;
+  padding-left: 1.1rem;
+  font-size: 0.9rem;
+}
+
+.task-guide__resources a {
+  color: #0f172a;
 }
 
 @keyframes automation-spin {
