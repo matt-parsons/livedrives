@@ -192,3 +192,38 @@
 [2025-11-14T00:59:02.324Z] [INFO] Expanded single candidate into 679 inner arrays 
 [2025-11-14T00:59:02.348Z] [INFO] parsedCandidates (including nested): 14
 [2025-11-14T00:59:02.382Z] [INFO] ✅ Picked best candidate for Quad Cities Design with score: 43
+[2025-11-14T01:07:45.135Z] [INFO] places Sidebar getting started! 
+[2025-11-14T01:07:45.137Z] [INFO] fetchPlaceSidebarData 
+[2025-11-14T01:07:46.153Z] [INFO] → [Sidebar] Using SOAX residential proxy 68.83.228.232 (proxy.soax.com:5000) 
+[2025-11-14T01:07:52.166Z] [INFO] Single place detected → reloading for full payload 
+[2025-11-14T01:07:54.783Z] [INFO] attempts url https://www.google.com/maps/place/?q=place_id%3AChIJa78YQLMvLYcRmR3jfg4pJfM&hl=en
+[2025-11-14T01:07:56.922Z] [INFO] attempts url https://www.google.com/maps/place/?q=place_id:ChIJa78YQLMvLYcRmR3jfg4pJfM
+[2025-11-14T01:07:59.099Z] [INFO] attempts url https://www.google.com/maps/place/?q=place_id:ChIJa78YQLMvLYcRmR3jfg4pJfM
+[2025-11-14T01:08:01.197Z] [INFO] attempts url https://www.google.com/maps/place/?q=place_id:ChIJa78YQLMvLYcRmR3jfg4pJfM
+[2025-11-14T01:08:01.205Z] [INFO] Expanded single candidate into 680 inner arrays 
+[2025-11-14T01:08:01.230Z] [INFO] parsedCandidates (including nested): 14
+[2025-11-14T01:08:01.264Z] [INFO] ✅ Picked best candidate for Quad Cities Design with score: 43
+[2025-11-14T01:08:01.270Z] [INFO] ✅ Saved 629 entries to ../logs/Quad Cities Design_preview.txt 
+[2025-11-14T01:10:41.765Z] [INFO] places Sidebar getting started! 
+[2025-11-14T01:10:41.768Z] [INFO] fetchPlaceSidebarData 
+[2025-11-14T01:10:42.829Z] [INFO] → [Sidebar] Using SOAX residential proxy 173.88.8.15 (proxy.soax.com:5000) 
+[2025-11-14T01:10:48.695Z] [INFO] Single place detected → reloading for full payload 
+[2025-11-14T01:10:51.343Z] [INFO] attempts url https://www.google.com/maps/place/?q=place_id%3AChIJa78YQLMvLYcRmR3jfg4pJfM&hl=en
+[2025-11-14T01:10:53.733Z] [INFO] attempts url https://www.google.com/maps/place/?q=place_id:ChIJa78YQLMvLYcRmR3jfg4pJfM
+[2025-11-14T01:10:55.883Z] [INFO] attempts url https://www.google.com/maps/place/?q=place_id:ChIJa78YQLMvLYcRmR3jfg4pJfM
+[2025-11-14T01:10:58.125Z] [INFO] attempts url https://www.google.com/maps/place/?q=place_id:ChIJa78YQLMvLYcRmR3jfg4pJfM
+[2025-11-14T01:10:58.182Z] [INFO] Expanded single candidate into 680 inner arrays 
+[2025-11-14T01:10:58.222Z] [INFO] parsedCandidates (including nested): 14
+[2025-11-14T01:10:58.257Z] [INFO] ✅ Picked best candidate for Quad Cities Design with score: 43
+[2025-11-14T01:10:58.261Z] [INFO] ✅ Saved 629 entries to ../logs/Quad Cities Design_preview.txt 
+[2025-11-14T01:14:50.707Z] [INFO] fetchPlaceSidebarData 
+[2025-11-14T01:14:51.875Z] [INFO] → [Sidebar] Using SOAX residential proxy 24.146.226.15 (proxy.soax.com:5000) 
+[2025-11-14T01:14:59.256Z] [INFO] Single place detected → reloading for full payload 
+[2025-11-14T01:15:02.249Z] [INFO] attempts url https://www.google.com/maps/place/?q=place_id%3AChIJCy3i9fwjLYcR3V9Uis9jMS0&hl=en
+[2025-11-14T01:15:04.585Z] [INFO] attempts url https://www.google.com/maps/place/?q=place_id:ChIJCy3i9fwjLYcR3V9Uis9jMS0
+[2025-11-14T01:15:07.154Z] [INFO] attempts url https://www.google.com/maps/place/?q=place_id:ChIJCy3i9fwjLYcR3V9Uis9jMS0
+[2025-11-14T01:15:10.324Z] [INFO] attempts url https://www.google.com/maps/place/?q=place_id:ChIJCy3i9fwjLYcR3V9Uis9jMS0
+[2025-11-14T01:15:10.329Z] [INFO] Expanded single candidate into 824 inner arrays 
+[2025-11-14T01:15:10.356Z] [INFO] parsedCandidates (including nested): 15
+[2025-11-14T01:15:10.387Z] [INFO] ✅ Picked best candidate for East Asia massage with score: 46
+[2025-11-14T01:15:10.400Z] [INFO] ✅ Saved 1149 entries to ../logs/East Asia massage_preview.txt 
