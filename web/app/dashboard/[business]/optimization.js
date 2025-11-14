@@ -80,7 +80,7 @@ function describeRecency(date) {
 function normalizeStatus(key) {
   const mapping = {
     completed: { key: 'completed', label: 'Completed' },
-    in_progress: { key: 'in_progress', label: 'In progress' },
+    in_progress: { key: 'in_progress', label: 'Needs Improvement' },
     pending: { key: 'pending', label: 'Needs attention' },
     unknown: { key: 'unknown', label: 'Manual check' }
   };

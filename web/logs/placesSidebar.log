@@ -118,3 +118,77 @@
 [2025-11-13T21:01:29.957Z] [INFO] Expanded single candidate into 1045 inner arrays 
 [2025-11-13T21:01:29.994Z] [INFO] parsedCandidates (including nested): 19
 [2025-11-13T21:01:30.031Z] [INFO] ✅ Picked best candidate for Finishing Touch Painting with score: 36
+[2025-11-14T00:03:23.972Z] [INFO] places Sidebar getting started! 
+[2025-11-14T00:03:23.977Z] [INFO] fetchPlaceSidebarData 
+[2025-11-14T00:09:58.133Z] [INFO] places Sidebar getting started! 
+[2025-11-14T00:09:58.136Z] [INFO] fetchPlaceSidebarData 
+[2025-11-14T00:09:59.162Z] [INFO] → [Sidebar] Using SOAX residential proxy 98.236.61.116 (proxy.soax.com:5000) 
+[2025-11-14T00:10:05.858Z] [INFO] Detected single place page, extracting directly 
+[2025-11-14T00:10:05.858Z] [INFO] Single place detected → reloading for full payload 
+[2025-11-14T00:10:23.711Z] [INFO] attempts url https://www.google.com/maps/place/East+Asia+massage/@34.586758,-112.324892,16z/data=!3m1!4b1!4m6!3m5!1s0x872d23fcf5e22d0b:0x2d3163cf8a545fdd!8m2!3d34.586758!4d-112.324892!16s%2Fg%2F11c1ww_f2q?entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T00:15:00.128Z] [INFO] places Sidebar getting started! 
+[2025-11-14T00:15:00.131Z] [INFO] fetchPlaceSidebarData 
+[2025-11-14T00:15:01.077Z] [INFO] → [Sidebar] Using SOAX residential proxy 73.154.8.178 (proxy.soax.com:5000) 
+[2025-11-14T00:15:06.975Z] [INFO] Detected single place page, extracting directly 
+[2025-11-14T00:15:06.975Z] [INFO] Single place detected → reloading for full payload 
+[2025-11-14T00:15:24.900Z] [INFO] attempts url https://www.google.com/maps/place/East+Asia+massage/@34.586758,-112.324892,16z/data=!3m1!4b1!4m6!3m5!1s0x872d23fcf5e22d0b:0x2d3163cf8a545fdd!8m2!3d34.586758!4d-112.324892!16s%2Fg%2F11c1ww_f2q?entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T00:23:14.148Z] [INFO] places Sidebar getting started! 
+[2025-11-14T00:23:14.151Z] [INFO] fetchPlaceSidebarData 
+[2025-11-14T00:23:15.409Z] [INFO] → [Sidebar] Using SOAX residential proxy 76.147.112.241 (proxy.soax.com:5000) 
+[2025-11-14T00:23:21.160Z] [INFO] Detected single place page, extracting directly 
+[2025-11-14T00:23:21.160Z] [INFO] Single place detected → reloading for full payload 
+[2025-11-14T00:23:39.392Z] [INFO] attempts url https://www.google.com/maps/place/East+Asia+massage/@34.586758,-112.324892,17z/data=!3m1!4b1!4m6!3m5!1s0x872d23fcf5e22d0b:0x2d3163cf8a545fdd!8m2!3d34.586758!4d-112.324892!16s%2Fg%2F11c1ww_f2q?entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T00:25:34.958Z] [INFO] places Sidebar getting started! 
+[2025-11-14T00:25:34.961Z] [INFO] fetchPlaceSidebarData 
+[2025-11-14T00:26:47.911Z] [INFO] places Sidebar getting started! 
+[2025-11-14T00:26:47.913Z] [INFO] fetchPlaceSidebarData 
+[2025-11-14T00:30:51.350Z] [INFO] fetchPlaceSidebarData 
+[2025-11-14T00:37:22.057Z] [INFO] places Sidebar getting started! 
+[2025-11-14T00:37:22.060Z] [INFO] fetchPlaceSidebarData 
+[2025-11-14T00:37:22.999Z] [INFO] → [Sidebar] Using SOAX residential proxy 75.128.142.86 (proxy.soax.com:5000) 
+[2025-11-14T00:37:35.027Z] [INFO] Detected single place page, extracting directly 
+[2025-11-14T00:37:35.027Z] [INFO] Single place detected → reloading for full payload 
+[2025-11-14T00:37:38.291Z] [INFO] attempts url https://www.google.com/maps/place/?q=place_id%3AChIJCy3i9fwjLYcR3V9Uis9jMS0&hl=en
+[2025-11-14T00:37:40.933Z] [INFO] attempts url https://www.google.com/maps/place/?q=place_id:ChIJCy3i9fwjLYcR3V9Uis9jMS0
+[2025-11-14T00:37:43.845Z] [INFO] attempts url https://www.google.com/maps/place/?q=place_id:ChIJCy3i9fwjLYcR3V9Uis9jMS0
+[2025-11-14T00:37:45.936Z] [INFO] attempts url https://www.google.com/maps/place/?q=place_id:ChIJCy3i9fwjLYcR3V9Uis9jMS0
+[2025-11-14T00:37:45.941Z] [INFO] Expanded single candidate into 807 inner arrays 
+[2025-11-14T00:37:45.969Z] [INFO] parsedCandidates (including nested): 14
+[2025-11-14T00:37:46.001Z] [INFO] ✅ Picked best candidate for East Asia massage with score: 46
+[2025-11-14T00:39:11.494Z] [INFO] fetchPlaceSidebarData 
+[2025-11-14T00:39:12.449Z] [INFO] → [Sidebar] Using SOAX residential proxy 104.179.175.46 (proxy.soax.com:5000) 
+[2025-11-14T00:39:18.836Z] [INFO] Detected single place page, extracting directly 
+[2025-11-14T00:39:18.837Z] [INFO] Single place detected → reloading for full payload 
+[2025-11-14T00:39:21.507Z] [INFO] attempts url https://www.google.com/maps/place/?q=place_id%3AChIJWe-ubt4jLYcRUvYoz6nuh10&hl=en
+[2025-11-14T00:41:51.753Z] [INFO] places Sidebar getting started! 
+[2025-11-14T00:41:51.761Z] [INFO] fetchPlaceSidebarData 
+[2025-11-14T00:41:53.040Z] [INFO] → [Sidebar] Using SOAX residential proxy 98.161.18.235 (proxy.soax.com:5000) 
+[2025-11-14T00:41:59.222Z] [INFO] Single place detected → reloading for full payload 
+[2025-11-14T00:42:01.803Z] [INFO] attempts url https://www.google.com/maps/place/?q=place_id%3AChIJWe-ubt4jLYcRUvYoz6nuh10&hl=en
+[2025-11-14T00:42:04.288Z] [INFO] attempts url https://www.google.com/maps/place/?q=place_id:ChIJWe-ubt4jLYcRUvYoz6nuh10
+[2025-11-14T00:42:06.500Z] [INFO] attempts url https://www.google.com/maps/place/?q=place_id:ChIJWe-ubt4jLYcRUvYoz6nuh10
+[2025-11-14T00:42:08.739Z] [INFO] attempts url https://www.google.com/maps/place/?q=place_id:ChIJWe-ubt4jLYcRUvYoz6nuh10
+[2025-11-14T00:42:08.749Z] [INFO] Expanded single candidate into 1018 inner arrays 
+[2025-11-14T00:42:08.786Z] [INFO] parsedCandidates (including nested): 17
+[2025-11-14T00:42:08.828Z] [INFO] ✅ Picked best candidate for Finishing Touch Painting with score: 46
+[2025-11-14T00:50:41.713Z] [INFO] fetchPlaceSidebarData 
+[2025-11-14T00:50:42.973Z] [INFO] → [Sidebar] Using SOAX residential proxy 73.138.203.105 (proxy.soax.com:5000) 
+[2025-11-14T00:50:49.884Z] [INFO] Single place detected → reloading for full payload 
+[2025-11-14T00:50:52.463Z] [INFO] attempts url https://www.google.com/maps/place/?q=place_id%3AChIJk_DyiekpLYcRuHZ7ZBqY2O4&hl=en
+[2025-11-14T00:50:54.678Z] [INFO] attempts url https://www.google.com/maps/place/?q=place_id:ChIJk_DyiekpLYcRuHZ7ZBqY2O4
+[2025-11-14T00:50:56.770Z] [INFO] attempts url https://www.google.com/maps/place/?q=place_id:ChIJk_DyiekpLYcRuHZ7ZBqY2O4
+[2025-11-14T00:50:58.924Z] [INFO] attempts url https://www.google.com/maps/place/?q=place_id:ChIJk_DyiekpLYcRuHZ7ZBqY2O4
+[2025-11-14T00:50:58.927Z] [INFO] Expanded single candidate into 484 inner arrays 
+[2025-11-14T00:50:58.950Z] [INFO] parsedCandidates (including nested): 12
+[2025-11-14T00:50:58.980Z] [INFO] ✅ Picked best candidate for Northern Arizona Epoxy Floors LLC with score: 42
+[2025-11-14T00:58:45.668Z] [INFO] places Sidebar getting started! 
+[2025-11-14T00:58:45.671Z] [INFO] fetchPlaceSidebarData 
+[2025-11-14T00:58:46.764Z] [INFO] → [Sidebar] Using SOAX residential proxy 98.49.113.200 (proxy.soax.com:5000) 
+[2025-11-14T00:58:52.828Z] [INFO] Single place detected → reloading for full payload 
+[2025-11-14T00:58:55.697Z] [INFO] attempts url https://www.google.com/maps/place/?q=place_id%3AChIJa78YQLMvLYcRmR3jfg4pJfM&hl=en
+[2025-11-14T00:58:57.827Z] [INFO] attempts url https://www.google.com/maps/place/?q=place_id:ChIJa78YQLMvLYcRmR3jfg4pJfM
+[2025-11-14T00:59:00.092Z] [INFO] attempts url https://www.google.com/maps/place/?q=place_id:ChIJa78YQLMvLYcRmR3jfg4pJfM
+[2025-11-14T00:59:02.315Z] [INFO] attempts url https://www.google.com/maps/place/?q=place_id:ChIJa78YQLMvLYcRmR3jfg4pJfM
+[2025-11-14T00:59:02.324Z] [INFO] Expanded single candidate into 679 inner arrays 
+[2025-11-14T00:59:02.348Z] [INFO] parsedCandidates (including nested): 14
+[2025-11-14T00:59:02.382Z] [INFO] ✅ Picked best candidate for Quad Cities Design with score: 43

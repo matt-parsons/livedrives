@@ -9,6 +9,7 @@ import {
   loadGeoGridRunSummaries,
   loadGeoGridRunWithPoints
 } from './helpers';
+import { buildRunTrendIndicator } from './trendIndicators';
 import { buildMapPoints, resolveCenter } from './runs/formatters';
 import OptimizationPanelsClient from './OptimizationPanelsClient';
 
@@ -25,7 +26,7 @@ function resolveStatus(status) {
   }
 
   if (lower.includes('progress') || lower.includes('running')) {
-    return { key: 'in_progress', label: 'In progress' };
+    return { key: 'in_progress', label: 'Needs Improvement' };
   }
 
   if (lower.includes('fail') || lower.includes('error')) {
@@ -91,33 +92,31 @@ function summarizeLatestRun(runs, baseHref) {
     latest.avgPositionValue === null || latest.avgPositionValue === undefined
       ? '—'
       : formatDecimal(latest.avgPositionValue, 2);
-  const createTrend = (currentValue, previousValue) => {
-    if (currentValue === null || currentValue === undefined) {
-      return null;
-    }
-    if (previousValue === null || previousValue === undefined) {
-      return null;
-    }
 
-    const currentNumber = Number(currentValue);
-    const previousNumber = Number(previousValue);
+  const avgDelta =
+    latest.avgPositionValue !== null &&
+    latest.avgPositionValue !== undefined &&
+    previous?.avgPositionValue !== null &&
+    previous?.avgPositionValue !== undefined
+      ? Number(latest.avgPositionValue) - Number(previous.avgPositionValue)
+      : null;
+  const solvDelta =
+    latest.solvTop3Value !== null &&
+    latest.solvTop3Value !== undefined &&
+    previous?.solvTop3Value !== null &&
+    previous?.solvTop3Value !== undefined
+      ? Number(latest.solvTop3Value) - Number(previous.solvTop3Value)
+      : null;
 
-    if (!Number.isFinite(currentNumber) || !Number.isFinite(previousNumber)) {
-      return null;
-    }
+  const avgDeltaAbs = avgDelta !== null ? formatDecimal(Math.abs(avgDelta), 2) : null;
+  const avgDeltaLabel =
+    avgDeltaAbs !== null ? `${avgDelta > 0 ? '+' : avgDelta < 0 ? '-' : ''}${avgDeltaAbs}` : null;
+  const solvDeltaAbs = solvDelta !== null ? formatDecimal(Math.abs(solvDelta), 1) : null;
+  const solvDeltaLabel =
+    solvDeltaAbs !== null ? `${solvDelta > 0 ? '+' : solvDelta < 0 ? '-' : ''}${solvDeltaAbs}%` : null;
 
-    if (currentNumber > previousNumber) {
-      return 'up';
-    }
-
-    if (currentNumber < previousNumber) {
-      return 'down';
-    }
-
-    return null;
-  };
-  const avgTrend = createTrend(latest.avgPositionValue, previous?.avgPositionValue ?? null);
-  const solvTrend = createTrend(latest.solvTop3Value, previous?.solvTop3Value ?? null);
+  const avgTrendIndicator = buildRunTrendIndicator(avgDelta, { invert: true, digits: 2 });
+  const solvTrendIndicator = buildRunTrendIndicator(solvDelta, { unit: '%', digits: 1 });
 
   return {
     id: latest.id ?? null,
@@ -128,8 +127,10 @@ function summarizeLatestRun(runs, baseHref) {
     top3Points: latest.top3Points ?? 0,
     solvLabel,
     avgLabel,
-    avgTrend,
-    solvTrend,
+    avgDeltaLabel,
+    solvDeltaLabel,
+    avgTrendIndicator,
+    solvTrendIndicator,
     href: latest.id ? `${baseHref}/runs/${latest.id}` : null
   };
 }
@@ -186,6 +187,20 @@ export default async function BusinessDashboardPage({ params }) {
 
         <main className="dashboard-layout__main">
           <div className="dashboard-layout__content">
+            <div className="section-header latest-geogrid-card__header">
+              <div>
+                <h2 className="section-title">Latest Ranking Report</h2>
+                
+                <p className="section-caption">
+                  Review your freshest keyword coverage snapshot across the map.
+                </p>
+
+                <div className="section-caption">
+                  <span>Last Report Run: </span>
+                  <strong>{latestRunSummary?.runDate ?? 'No runs yet'}</strong>
+                </div>
+              </div>
+            </div>            
             <OptimizationPanelsClient
               placeId={business.gPlaceId ?? null}
               businessId={business.id}

@@ -14,7 +14,7 @@ function normalizeStatus(status) {
   }
 
   if (lower.includes('progress') || lower.includes('running')) {
-    return { key: 'in_progress', label: 'In progress' };
+    return { key: 'in_progress', label: 'Needs Improvement' };
   }
 
   return { key: 'unknown', label: value.replace(/_/g, ' ') };
@@ -106,7 +106,7 @@ export default async function RunsPage() {
               <span>{runs.length}</span>
             </div>
             <div className="detail-tile">
-              <strong>In progress</strong>
+              <strong>Needs Improvement</strong>
               <span>{inProgressCount}</span>
             </div>
             <div className="detail-tile">

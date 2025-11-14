@@ -225,24 +225,6 @@ export default function BusinessOptimizationRoadmap({ roadmap, error, placeId, e
 
   return (
     <div className="surface-card surface-card--muted">
-      <div className="section-header">
-        <div>
-          <h2 className="section-title">Optimization roadmap</h2>
-          <p className="section-caption">
-            We analyse Google Places data to prioritize the biggest profile wins.
-          </p>
-        </div>
-        {roadmap.place?.googleMapsUri ? (
-          <a
-            className="cta-link"
-            href={roadmap.place.googleMapsUri}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            View on Google Maps ↗
-          </a>
-        ) : null}
-      </div>
       <div
         className={`business-optimization-roadmap__overview${
           roadmap.profilePreview ? ' business-optimization-roadmap__overview--with-profile' : ''

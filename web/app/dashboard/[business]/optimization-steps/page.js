@@ -44,6 +44,14 @@ export default async function BusinessOptimizationStepsPage({ params }) {
 
         <main className="dashboard-layout__main">
           <div className="dashboard-layout__content">
+          <div className="section-header">
+            <div>
+              <h2 className="section-title">Optimization roadmap</h2>
+              <p className="section-caption">
+                We analyse Google Places data to prioritize the biggest profile wins.
+              </p>
+            </div>
+          </div>            
             <section className="section">
               <OptimizationRoadmapClient placeId={business.gPlaceId} editHref={editHref} />
             </section>

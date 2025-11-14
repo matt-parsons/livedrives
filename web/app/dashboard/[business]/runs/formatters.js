@@ -207,7 +207,7 @@ export function resolveStatus(status) {
   }
 
   if (lower.includes('progress') || lower.includes('running')) {
-    return { key: 'in_progress', label: 'In progress' };
+    return { key: 'in_progress', label: 'Needs Improvement' };
   }
 
   if (lower.includes('fail') || lower.includes('error')) {
