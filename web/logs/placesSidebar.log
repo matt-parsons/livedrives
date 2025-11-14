@@ -227,3 +227,24 @@
 [2025-11-14T01:15:10.356Z] [INFO] parsedCandidates (including nested): 15
 [2025-11-14T01:15:10.387Z] [INFO] ✅ Picked best candidate for East Asia massage with score: 46
 [2025-11-14T01:15:10.400Z] [INFO] ✅ Saved 1149 entries to ../logs/East Asia massage_preview.txt 
+[2025-11-14T01:28:58.774Z] [INFO] places Sidebar getting started! 
+[2025-11-14T01:28:58.778Z] [INFO] fetchPlaceSidebarData 
+[2025-11-14T01:29:00.045Z] [INFO] → [Sidebar] Using SOAX residential proxy 75.176.155.240 (proxy.soax.com:5000) 
+[2025-11-14T01:29:05.271Z] [INFO] fetchPlaceSidebarData 
+[2025-11-14T01:29:05.985Z] [INFO] → [Sidebar] Using SOAX residential proxy 172.249.46.46 (proxy.soax.com:5000) 
+[2025-11-14T01:29:07.905Z] [INFO] Single place detected → reloading for full payload 
+[2025-11-14T01:29:10.518Z] [INFO] attempts url https://www.google.com/maps/place/?q=place_id%3AChIJCy3i9fwjLYcR3V9Uis9jMS0&hl=en
+[2025-11-14T01:29:11.950Z] [INFO] Single place detected → reloading for full payload 
+[2025-11-14T01:29:13.123Z] [INFO] attempts url https://www.google.com/maps/place/?q=place_id:ChIJCy3i9fwjLYcR3V9Uis9jMS0
+[2025-11-14T01:29:15.202Z] [INFO] attempts url https://www.google.com/maps/place/?q=place_id%3AChIJa78YQLMvLYcRmR3jfg4pJfM&hl=en
+[2025-11-14T01:29:15.308Z] [INFO] attempts url https://www.google.com/maps/place/?q=place_id:ChIJCy3i9fwjLYcR3V9Uis9jMS0
+[2025-11-14T01:29:17.285Z] [INFO] attempts url https://www.google.com/maps/place/?q=place_id:ChIJa78YQLMvLYcRmR3jfg4pJfM
+[2025-11-14T01:29:17.733Z] [INFO] attempts url https://www.google.com/maps/place/?q=place_id:ChIJCy3i9fwjLYcR3V9Uis9jMS0
+[2025-11-14T01:29:17.737Z] [INFO] Expanded single candidate into 815 inner arrays 
+[2025-11-14T01:29:17.763Z] [INFO] parsedCandidates (including nested): 14
+[2025-11-14T01:29:17.817Z] [INFO] ✅ Picked best candidate for East Asia massage with score: 46
+[2025-11-14T01:29:19.794Z] [INFO] attempts url https://www.google.com/maps/place/?q=place_id:ChIJa78YQLMvLYcRmR3jfg4pJfM
+[2025-11-14T01:29:22.830Z] [INFO] attempts url https://www.google.com/maps/place/?q=place_id:ChIJa78YQLMvLYcRmR3jfg4pJfM
+[2025-11-14T01:29:22.833Z] [INFO] Expanded single candidate into 678 inner arrays 
+[2025-11-14T01:29:22.851Z] [INFO] parsedCandidates (including nested): 14
+[2025-11-14T01:29:22.869Z] [INFO] ✅ Picked best candidate for Quad Cities Design with score: 43

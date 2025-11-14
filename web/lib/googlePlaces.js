@@ -127,7 +127,7 @@ async function fetchTimezone(location, { signal } = {}) {
 }
 
 function buildPlacePayload(result, { fallbackPlaceId, timezone = null, sidebarData = {} } = {}) {
-  console.log('✅✅ buildPlacePayload', sidebarData?.posts);
+  console.log('✅✅ buildPlacePayload');
 
   const location = result.geometry?.location ?? null;
   const openingHours = result.current_opening_hours ?? result.opening_hours ?? null;

@@ -23,6 +23,24 @@ function parseDateInput(value) {
     if (!trimmed) {
       return null;
     }
+    
+    // Handle relative dates like "3 days ago", "6 days ago", "2 weeks ago", "1 month ago"
+    const relativeMatch = trimmed.match(/^(\d+)\s+(day|week|month)s?\s+ago$/i);
+    if (relativeMatch) {
+      const amount = parseInt(relativeMatch[1], 10);
+      const unit = relativeMatch[2].toLowerCase();
+      const date = new Date();
+      
+      if (unit === 'day') {
+        date.setDate(date.getDate() - amount);
+      } else if (unit === 'week') {
+        date.setDate(date.getDate() - (amount * 7));
+      } else if (unit === 'month') {
+        date.setMonth(date.getMonth() - amount);
+      }
+      
+      return date;
+    }
 
     const numeric = Number(trimmed);
 
