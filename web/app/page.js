@@ -558,7 +558,7 @@ export default function IndexPage() {
                 <div className="space-y-3 rounded-md border border-emerald-400/60 bg-emerald-500/10 p-4 text-sm text-emerald-700">
                   <p className="font-semibold">You&apos;re all set!</p>
                   <p>
-                    Check your inbox for a verification email from Firebase. Once confirmed you&apos;ll have full access to Local Paint Pilot.
+                    Check your email for a verification email. Once confirmed you&apos;ll have full access to Local Paint Pilot.
                   </p>
                 </div>
               ) : (

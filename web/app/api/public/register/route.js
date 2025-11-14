@@ -1,6 +1,9 @@
 import pool from '@lib/db/db.js';
 import { adminAuth } from '@/lib/firebaseAdmin';
-import { sendFirebaseVerificationEmail } from '@/lib/firebaseVerification';
+import {
+  sendFirebaseVerificationEmail,
+  sendFirebasePasswordResetEmail
+} from '@/lib/firebaseVerification';
 
 export const runtime = 'nodejs';
 
@@ -38,6 +41,7 @@ export async function POST(request) {
     const firebaseDisplayName = sanitizedName ? sanitizedName.slice(0, 128) : undefined;
 
     let userRecord;
+    let isNewUser = false;
 
     try {
       userRecord = await adminAuth.getUserByEmail(trimmedEmail);
@@ -54,6 +58,7 @@ export async function POST(request) {
           email: trimmedEmail,
           displayName: firebaseDisplayName
         });
+        isNewUser = true;
       } else {
         throw error;
       }
@@ -66,6 +71,18 @@ export async function POST(request) {
         console.error('Failed to send Firebase verification email', error);
         return Response.json(
           { error: 'Unable to send verification email. Please try again later.' },
+          { status: 502 }
+        );
+      }
+    }
+
+    if (isNewUser) {
+      try {
+        await sendFirebasePasswordResetEmail(trimmedEmail);
+      } catch (error) {
+        console.error('Failed to send Firebase password reset email', error);
+        return Response.json(
+          { error: 'Unable to send login email. Please try again later.' },
           { status: 502 }
         );
       }

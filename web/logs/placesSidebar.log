@@ -405,3 +405,17 @@
 [2025-11-14T19:24:17.871Z] [INFO] Clif Jones Painting Company 
 [2025-11-14T19:24:17.872Z] [INFO] ✅ Picked best candidate for Clif Jones Painting Company with score: 42
 [2025-11-14T19:24:17.878Z] [INFO] ✅ Saved 569 entries to ../logs/Clif Jones Painting Company_preview.txt 
+[2025-11-14T19:43:58.088Z] [INFO] places Sidebar getting started! 
+[2025-11-14T19:43:58.091Z] [INFO] fetchPlaceSidebarData 
+[2025-11-14T19:44:00.343Z] [INFO] → [Sidebar] Using SOAX residential proxy 68.134.240.178 (proxy.soax.com:5000) 
+[2025-11-14T19:56:06.925Z] [INFO] places Sidebar getting started! 
+[2025-11-14T19:56:06.929Z] [INFO] fetchPlaceSidebarData 
+[2025-11-14T19:56:07.949Z] [INFO] → [Sidebar] Using SOAX residential proxy 73.104.129.54 (proxy.soax.com:5000) 
+[2025-11-14T19:56:13.756Z] [INFO] Single place detected → reloading for full payload https://www.google.com/maps/place/?q=place_id%3AChIJgcfEmK4vLYcR8voDB-kJEOc&hl=en
+[2025-11-14T19:56:17.648Z] [INFO] Refreshing this URL: https://www.google.com/maps/place/Prescott+Epoxy+Company/@34.6030006,-112.46146,16z/data=!3m1!4b1!4m6!3m5!1s0x872d2fae98c4c781:0xe71009e90703faf2!8m2!3d34.6030006!4d-112.4588851!16s%2Fg%2F11w3mrlrg4?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T19:56:19.675Z] [INFO] attempts url https://www.google.com/maps/place/Prescott+Epoxy+Company/@34.6030006,-112.46146,16z/data=!3m1!4b1!4m6!3m5!1s0x872d2fae98c4c781:0xe71009e90703faf2!8m2!3d34.6030006!4d-112.4588851!16s%2Fg%2F11w3mrlrg4?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T19:56:21.414Z] [INFO] attempts url https://www.google.com/maps/place/Prescott+Epoxy+Company/@34.6030006,-112.46146,16z/data=!3m1!4b1!4m6!3m5!1s0x872d2fae98c4c781:0xe71009e90703faf2!8m2!3d34.6030006!4d-112.4588851!16s%2Fg%2F11w3mrlrg4?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T19:56:23.008Z] [INFO] attempts url https://www.google.com/maps/place/Prescott+Epoxy+Company/@34.6030006,-112.46146,16z/data=!3m1!4b1!4m6!3m5!1s0x872d2fae98c4c781:0xe71009e90703faf2!8m2!3d34.6030006!4d-112.4588851!16s%2Fg%2F11w3mrlrg4?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T19:56:24.655Z] [INFO] attempts url https://www.google.com/maps/place/Prescott+Epoxy+Company/@34.6030006,-112.46146,16z/data=!3m1!4b1!4m6!3m5!1s0x872d2fae98c4c781:0xe71009e90703faf2!8m2!3d34.6030006!4d-112.4588851!16s%2Fg%2F11w3mrlrg4?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T19:56:24.660Z] [INFO] Picked darray via jd6_direct score=0 
+[2025-11-14T19:56:24.672Z] [INFO] Z4kXaZLcFPuNvMcP0ab16QU 

@@ -42,7 +42,6 @@ export default async function DashboardPage() {
   const businesses = await loadOrganizationBusinesses(session.organizationId);
 
   if (!businesses.length) {
-    const isOwner = session.role === 'owner';
 
     return (
       <div className="page-shell">
@@ -60,21 +59,12 @@ export default async function DashboardPage() {
               There are no businesses linked to your organization yet.
             </CardDescription>
           </CardHeader>
-          <CardContent className="flex flex-col gap-4">
-            {isOwner ? (
-              <div className="flex flex-wrap gap-3">
-                <Button asChild>
-                  <Link href="/dashboard/businesses/new">Create a business</Link>
-                </Button>
-                <Button asChild variant="outline">
-                  <Link href="/dashboard/member-journey">Start member journey</Link>
-                </Button>
-              </div>
-            ) : (
-              <p className="text-sm text-muted-foreground">
-                Reach out to an owner or admin so they can create and assign a business to you.
-              </p>
-            )}
+          <CardContent className="flex flex-col">
+            <div className="flex flex-wrap">
+              <Button asChild variant="outline">
+                <Link href="/dashboard/member-journey">Get Started!</Link>
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
