@@ -380,3 +380,28 @@
 [2025-11-14T18:36:55.010Z] [INFO] CIHM0ogKEICAgIC2jqWnnwE 
 [2025-11-14T18:36:55.010Z] [INFO] ✅ Picked best candidate for Willbuilt Seamless Gutters by Willbuilt Construction with score: 47
 [2025-11-14T18:36:55.016Z] [INFO] ✅ Saved 736 entries to ../logs/Willbuilt Seamless Gutters by Willbuilt Construction_preview.txt 
+[2025-11-14T19:22:21.219Z] [INFO] places Sidebar getting started! 
+[2025-11-14T19:22:21.222Z] [INFO] fetchPlaceSidebarData 
+[2025-11-14T19:22:22.624Z] [INFO] → [Sidebar] Using SOAX residential proxy 173.166.73.50 (proxy.soax.com:5000) 
+[2025-11-14T19:22:27.952Z] [INFO] Single place detected → reloading for full payload https://www.google.com/maps/place/?q=place_id%3AChIJL6rieLM6LYcR3IcC3Q2OtJQ&hl=en
+[2025-11-14T19:22:31.419Z] [INFO] Refreshing this URL: https://www.google.com/maps/place/Willbuilt+Seamless+Gutters+by+Willbuilt+Construction/@34.5973601,-112.4287644,17z/data=!3m1!4b1!4m6!3m5!1s0x872d3ab378e2aa2f:0x94b48e0ddd0287dc!8m2!3d34.5973601!4d-112.4261895!16s%2Fg%2F12635_16n?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T19:22:33.414Z] [INFO] attempts url https://www.google.com/maps/place/Willbuilt+Seamless+Gutters+by+Willbuilt+Construction/@34.5973601,-112.4287644,17z/data=!3m1!4b1!4m6!3m5!1s0x872d3ab378e2aa2f:0x94b48e0ddd0287dc!8m2!3d34.5973601!4d-112.4261895!16s%2Fg%2F12635_16n?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T19:22:34.823Z] [INFO] attempts url https://www.google.com/maps/place/Willbuilt+Seamless+Gutters+by+Willbuilt+Construction/@34.5973601,-112.4287644,17z/data=!3m1!4b1!4m6!3m5!1s0x872d3ab378e2aa2f:0x94b48e0ddd0287dc!8m2!3d34.5973601!4d-112.4261895!16s%2Fg%2F12635_16n?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T19:22:36.661Z] [INFO] attempts url https://www.google.com/maps/place/Willbuilt+Seamless+Gutters+by+Willbuilt+Construction/@34.5973601,-112.4287644,17z/data=!3m1!4b1!4m6!3m5!1s0x872d3ab378e2aa2f:0x94b48e0ddd0287dc!8m2!3d34.5973601!4d-112.4261895!16s%2Fg%2F12635_16n?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T19:22:38.197Z] [INFO] attempts url https://www.google.com/maps/place/Willbuilt+Seamless+Gutters+by+Willbuilt+Construction/@34.5973601,-112.4287644,17z/data=!3m1!4b1!4m6!3m5!1s0x872d3ab378e2aa2f:0x94b48e0ddd0287dc!8m2!3d34.5973601!4d-112.4261895!16s%2Fg%2F12635_16n?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T19:22:38.199Z] [INFO] Picked darray via jd6_direct score=0 
+[2025-11-14T19:22:38.208Z] [INFO] Willbuilt Seamless Gutters by Willbuilt Construction 
+[2025-11-14T19:22:38.209Z] [INFO] ✅ Picked best candidate for Willbuilt Seamless Gutters by Willbuilt Construction with score: 47
+[2025-11-14T19:22:38.214Z] [INFO] ✅ Saved 723 entries to ../logs/Willbuilt Seamless Gutters by Willbuilt Construction_preview.txt 
+[2025-11-14T19:23:59.399Z] [INFO] fetchPlaceSidebarData 
+[2025-11-14T19:24:01.568Z] [INFO] → [Sidebar] Using SOAX residential proxy 76.233.68.46 (proxy.soax.com:5000) 
+[2025-11-14T19:24:07.360Z] [INFO] Single place detected → reloading for full payload https://www.google.com/maps/place/?q=place_id%3AChIJQ3fjdyKWwoARsxs3riNcKhc&hl=en
+[2025-11-14T19:24:11.039Z] [INFO] Refreshing this URL: https://www.google.com/maps/place/Clif+Jones+Painting+Company/@34.154539,-118.4189049,17z/data=!3m1!4b1!4m6!3m5!1s0x80c2962277e37743:0x172a5c23ae371bb3!8m2!3d34.154539!4d-118.41633!16s%2Fg%2F119vv2dr6?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMi4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T19:24:13.054Z] [INFO] attempts url https://www.google.com/maps/place/Clif+Jones+Painting+Company/@34.154539,-118.4189049,17z/data=!3m1!4b1!4m6!3m5!1s0x80c2962277e37743:0x172a5c23ae371bb3!8m2!3d34.154539!4d-118.41633!16s%2Fg%2F119vv2dr6?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMi4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T19:24:14.511Z] [INFO] attempts url https://www.google.com/maps/place/Clif+Jones+Painting+Company/@34.154539,-118.4189049,17z/data=!3m1!4b1!4m6!3m5!1s0x80c2962277e37743:0x172a5c23ae371bb3!8m2!3d34.154539!4d-118.41633!16s%2Fg%2F119vv2dr6?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMi4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T19:24:16.354Z] [INFO] attempts url https://www.google.com/maps/place/Clif+Jones+Painting+Company/@34.154539,-118.4189049,17z/data=!3m1!4b1!4m6!3m5!1s0x80c2962277e37743:0x172a5c23ae371bb3!8m2!3d34.154539!4d-118.41633!16s%2Fg%2F119vv2dr6?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMi4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T19:24:17.865Z] [INFO] attempts url https://www.google.com/maps/place/Clif+Jones+Painting+Company/@34.154539,-118.4189049,17z/data=!3m1!4b1!4m6!3m5!1s0x80c2962277e37743:0x172a5c23ae371bb3!8m2!3d34.154539!4d-118.41633!16s%2Fg%2F119vv2dr6?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMi4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T19:24:17.867Z] [INFO] Picked darray via jd6_direct score=0 
+[2025-11-14T19:24:17.871Z] [INFO] Clif Jones Painting Company 
+[2025-11-14T19:24:17.872Z] [INFO] ✅ Picked best candidate for Clif Jones Painting Company with score: 42
+[2025-11-14T19:24:17.878Z] [INFO] ✅ Saved 569 entries to ../logs/Clif Jones Painting Company_preview.txt 
