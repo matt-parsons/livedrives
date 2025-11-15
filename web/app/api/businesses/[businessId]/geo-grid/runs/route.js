@@ -1,5 +1,6 @@
 import pool from '@lib/db/db.js';
 import { AuthError, requireAuth } from '@/lib/authServer';
+import { buildOrganizationScopeClause } from '@/lib/organizations';
 import {
   buildGridPoints,
   calculateSpacingMiles,
@@ -69,15 +70,16 @@ export async function POST(request, { params }) {
       return Response.json({ error: 'Forbidden' }, { status: 403 });
     }
 
+    const scope = buildOrganizationScopeClause(session);
     const [businessRows] = await pool.query(
       `SELECT id,
               dest_lat AS destLat,
               dest_lng AS destLng
          FROM businesses
         WHERE id = ?
-          AND organization_id = ?
+          AND ${scope.clause}
         LIMIT 1`,
-      [businessId, session.organizationId]
+      [businessId, ...scope.params]
     );
 
     if (!businessRows.length) {

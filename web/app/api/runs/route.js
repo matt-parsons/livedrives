@@ -1,11 +1,13 @@
 import pool from '@lib/db/db.js';
 import { AuthError, requireAuth } from '@/lib/authServer';
+import { buildOrganizationScopeClause } from '@/lib/organizations';
 
 export const runtime = 'nodejs';
 
 export async function GET(request) {
   try {
     const session = await requireAuth(request);
+    const scope = buildOrganizationScopeClause(session, 'b.organization_id');
     const [rows] = await pool.query(
       `SELECT r.id,
               r.business_id   AS businessId,
@@ -16,10 +18,10 @@ export async function GET(request) {
               b.name          AS businessName
          FROM runs r
          JOIN businesses b ON b.id = r.business_id
-        WHERE b.organization_id = ?
+        WHERE ${scope.clause}
         ORDER BY r.created_at DESC
         LIMIT 100`,
-      [session.organizationId]
+      scope.params
     );
 
     return Response.json({ runs: rows });

@@ -26,7 +26,7 @@ export async function GET(request, { params }) {
 
   try {
     const session = await requireAuth(request);
-    const business = await loadBusiness(session.organizationId, String(businessId));
+    const business = await loadBusiness(session, String(businessId));
 
     if (!business) {
       return Response.json({ error: 'Business not found.' }, { status: 404 });
@@ -102,7 +102,7 @@ export async function POST(request, { params }) {
       return Response.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const business = await loadBusiness(session.organizationId, String(businessId));
+    const business = await loadBusiness(session, String(businessId));
 
     if (!business) {
       return Response.json({ error: 'Business not found.' }, { status: 404 });

@@ -1,6 +1,7 @@
 import pool from '@lib/db/db.js';
 import geoGridSchedules from '@lib/db/geoGridSchedules.js';
 import { AuthError, requireAuth } from '@/lib/authServer';
+import { buildOrganizationScopeClause } from '@/lib/organizations';
 import { mapToDbColumns, normalizeBusinessPayload } from '../utils.js';
 
 export const runtime = 'nodejs';
@@ -27,6 +28,7 @@ export async function PATCH(request, { params }) {
     }
 
     const dbValues = mapToDbColumns(values);
+    const scope = buildOrganizationScopeClause(session);
 
     if (!Object.keys(dbValues).length) {
       return Response.json({ error: 'No valid fields were provided for update.' }, { status: 400 });
@@ -46,9 +48,9 @@ export async function PATCH(request, { params }) {
       UPDATE businesses
          SET ${setClauses.join(', ')}
        WHERE id = ?
-         AND organization_id = ?
+         AND ${scope.clause}
     `;
-    paramsList.push(businessId, session.organizationId);
+    paramsList.push(businessId, ...scope.params);
 
     const [result] = await pool.query(sql, paramsList);
 
@@ -82,9 +84,9 @@ export async function PATCH(request, { params }) {
               updated_at          AS updatedAt
          FROM businesses
         WHERE id = ?
-          AND organization_id = ?
+          AND ${scope.clause}
         LIMIT 1`,
-      [businessId, session.organizationId]
+      [businessId, ...scope.params]
     );
 
     if (!rows.length) {

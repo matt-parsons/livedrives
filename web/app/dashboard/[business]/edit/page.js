@@ -19,7 +19,7 @@ export default async function EditBusinessPage({ params }) {
     throw error;
   }
 
-  const business = await loadBusiness(session.organizationId, identifier);
+  const business = await loadBusiness(session, identifier);
 
   if (!business) {
     notFound();
