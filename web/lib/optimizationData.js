@@ -47,7 +47,7 @@ function buildMeta(record, { refreshedFromSource = false, warning = null } = {})
 export async function loadOptimizationData(placeId, options = {}) {
   const {
     signal,
-    forceRefresh = true,
+    forceRefresh = false,
     manualTrigger = false,
     manualRefreshCooldownBypass = false,
     businessId = null

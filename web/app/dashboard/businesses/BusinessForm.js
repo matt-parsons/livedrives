@@ -213,7 +213,8 @@ export default function BusinessForm({ mode = 'create', businessId = null, initi
 
   const submitBusiness = async (values) => {
     setSubmitting(true);
-    setError('submitBusiness');
+    setError('');
+    console.log('submitBusiness start', { mode, businessId, values });
     const payload = buildPayloadFromValues(values);
     const endpoint = mode === 'edit' ? `/api/businesses/${businessId}` : '/api/businesses';
     const method = mode === 'edit' ? 'PATCH' : 'POST';
@@ -226,7 +227,7 @@ export default function BusinessForm({ mode = 'create', businessId = null, initi
       });
 
       const data = await response.json().catch(() => ({}));
-      console.log(data);
+      console.log('submitBusiness response', { status: response.status, data });
 
       if (!response.ok) {
         throw new Error(data.error || 'Failed to save business.');
@@ -270,8 +271,10 @@ export default function BusinessForm({ mode = 'create', businessId = null, initi
     setLookupError('');
 
     try {
+      console.log('handleAddBusiness fetching', placeId);
       const response = await fetch(`/api/places/${encodeURIComponent(placeId)}`);
       const data = await response.json().catch(() => ({}));
+      console.log('handleAddBusiness response', { status: response.status, data });
 
       if (!response.ok) {
         throw new Error(data.error || 'Failed to load place details.');
@@ -282,10 +285,7 @@ export default function BusinessForm({ mode = 'create', businessId = null, initi
       }
 
       let derivedState = derivePlaceValuesFromPlace(data.place, formState);
-      const timezoneFromPlace = await resolveTimezoneFromPlace(data.place);
-      if (timezoneFromPlace) {
-        derivedState = { ...derivedState, timezone: timezoneFromPlace };
-      }
+      console.log('handleAddBusiness derivedState', derivedState);
 
       setFormState(derivedState);
       setSuggestions([]);
@@ -297,6 +297,7 @@ export default function BusinessForm({ mode = 'create', businessId = null, initi
       await submitBusiness(derivedState);
     } catch (err) {
       setLookupError(err.message || 'Failed to load place details.');
+      setLookupState('error');
     } finally {
       setGatheringData(false);
       setGatheringMessage('');

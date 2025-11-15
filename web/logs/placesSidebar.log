@@ -627,3 +627,38 @@
 [2025-11-14T23:44:51.024Z] [INFO] Painting 
 [2025-11-14T23:44:51.025Z] [INFO] ✅ Picked best candidate for Canyon Painting, LLC with score: 46
 [2025-11-14T23:44:51.033Z] [INFO] ✅ Saved 802 entries to ../logs/Canyon Painting, LLC_preview.txt 
+[2025-11-14T23:54:21.361Z] [INFO] places Sidebar getting started! 
+[2025-11-14T23:54:21.363Z] [INFO] fetchPlaceSidebarData 
+[2025-11-14T23:54:22.476Z] [INFO] → [Sidebar] Using SOAX residential proxy 24.62.22.228 (proxy.soax.com:5000) 
+[2025-11-14T23:54:32.800Z] [INFO] Single place detected → reloading for full payload https://www.google.com/maps/place/?q=place_id%3AChIJudEAbu9JLYcRx7BHuRAJyB0&hl=en
+[2025-11-14T23:54:34.423Z] [INFO] places Sidebar getting started! 
+[2025-11-14T23:54:34.427Z] [INFO] fetchPlaceSidebarData 
+[2025-11-14T23:54:35.334Z] [INFO] → [Sidebar] Using SOAX residential proxy 73.13.2.175 (proxy.soax.com:5000) 
+[2025-11-14T23:54:37.803Z] [INFO] Refreshing this URL: https://www.google.com/maps/place/Prescott+Air+Conditioning+%26+Heating+Repair+LLC/@34.5924195,-112.4427455,17z/data=!3m1!4b1!4m6!3m5!1s0x872d49ef6e00d1b9:0x1dc80910b947b0c7!8m2!3d34.5924195!4d-112.4401706!16s%2Fg%2F11cmk1jdyc?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T23:54:39.789Z] [INFO] attempts url https://www.google.com/maps/place/Prescott+Air+Conditioning+%26+Heating+Repair+LLC/@34.5924195,-112.4427455,17z/data=!3m1!4b1!4m6!3m5!1s0x872d49ef6e00d1b9:0x1dc80910b947b0c7!8m2!3d34.5924195!4d-112.4401706!16s%2Fg%2F11cmk1jdyc?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T23:54:40.956Z] [INFO] Single place detected → reloading for full payload https://www.google.com/maps/place/?q=place_id%3AChIJlfeNp5KlLYcRpn0deEHVuo0&hl=en
+[2025-11-14T23:54:41.404Z] [INFO] attempts url https://www.google.com/maps/place/Prescott+Air+Conditioning+%26+Heating+Repair+LLC/@34.5924195,-112.4427455,17z/data=!3m1!4b1!4m6!3m5!1s0x872d49ef6e00d1b9:0x1dc80910b947b0c7!8m2!3d34.5924195!4d-112.4401706!16s%2Fg%2F11cmk1jdyc?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T23:54:43.300Z] [INFO] attempts url https://www.google.com/maps/place/Prescott+Air+Conditioning+%26+Heating+Repair+LLC/@34.5924195,-112.4427455,17z/data=!3m1!4b1!4m6!3m5!1s0x872d49ef6e00d1b9:0x1dc80910b947b0c7!8m2!3d34.5924195!4d-112.4401706!16s%2Fg%2F11cmk1jdyc?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T23:54:43.968Z] [INFO] Refreshing this URL: https://www.google.com/maps/place/Canyon+Painting,+LLC/@34.8640574,-111.7958947,17z/data=!3m1!4b1!4m6!3m5!1s0x872da592a78df795:0x8dbad541781d7da6!8m2!3d34.8640574!4d-111.7933198!16s%2Fg%2F11gk8wtxbx?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T23:54:45.513Z] [INFO] attempts url https://www.google.com/maps/place/Prescott+Air+Conditioning+%26+Heating+Repair+LLC/@34.5924195,-112.4427455,17z/data=!3m1!4b1!4m6!3m5!1s0x872d49ef6e00d1b9:0x1dc80910b947b0c7!8m2!3d34.5924195!4d-112.4401706!16s%2Fg%2F11cmk1jdyc?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T23:54:45.515Z] [INFO] Picked darray via jd6_direct score=0 
+[2025-11-14T23:54:45.535Z] [INFO] Q8EXabfuK7jTp84PhZ6o8AQ 
+[2025-11-14T23:54:45.905Z] [INFO] attempts url https://www.google.com/maps/place/Canyon+Painting,+LLC/@34.8640574,-111.7958947,17z/data=!3m1!4b1!4m6!3m5!1s0x872da592a78df795:0x8dbad541781d7da6!8m2!3d34.8640574!4d-111.7933198!16s%2Fg%2F11gk8wtxbx?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T23:54:48.516Z] [INFO] attempts url https://www.google.com/maps/place/Canyon+Painting,+LLC/@34.8640574,-111.7958947,17z/data=!3m1!4b1!4m6!3m5!1s0x872da592a78df795:0x8dbad541781d7da6!8m2!3d34.8640574!4d-111.7933198!16s%2Fg%2F11gk8wtxbx?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T23:54:50.197Z] [INFO] attempts url https://www.google.com/maps/place/Canyon+Painting,+LLC/@34.8640574,-111.7958947,17z/data=!3m1!4b1!4m6!3m5!1s0x872da592a78df795:0x8dbad541781d7da6!8m2!3d34.8640574!4d-111.7933198!16s%2Fg%2F11gk8wtxbx?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T23:54:51.835Z] [INFO] attempts url https://www.google.com/maps/place/Canyon+Painting,+LLC/@34.8640574,-111.7958947,17z/data=!3m1!4b1!4m6!3m5!1s0x872da592a78df795:0x8dbad541781d7da6!8m2!3d34.8640574!4d-111.7933198!16s%2Fg%2F11gk8wtxbx?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T23:54:51.838Z] [INFO] Picked darray via jd6_direct score=0 
+[2025-11-14T23:54:51.848Z] [INFO] SsEXaYC0IKmawbkPj6SL0Q0 
+[2025-11-14T23:55:25.817Z] [INFO] places Sidebar getting started! 
+[2025-11-14T23:55:25.819Z] [INFO] fetchPlaceSidebarData 
+[2025-11-14T23:55:26.885Z] [INFO] → [Sidebar] Using SOAX residential proxy 47.200.187.216 (proxy.soax.com:5000) 
+[2025-11-14T23:55:36.320Z] [INFO] Single place detected → reloading for full payload https://www.google.com/maps/place/?q=place_id%3AChIJlfeNp5KlLYcRpn0deEHVuo0&hl=en
+[2025-11-14T23:55:41.743Z] [INFO] Refreshing this URL: https://www.google.com/maps/place/Canyon+Painting,+LLC/@34.8640574,-111.7958947,17z/data=!3m1!4b1!4m6!3m5!1s0x872da592a78df795:0x8dbad541781d7da6!8m2!3d34.8640574!4d-111.7933198!16s%2Fg%2F11gk8wtxbx?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T23:55:44.316Z] [INFO] attempts url https://www.google.com/maps/place/Canyon+Painting,+LLC/@34.8640574,-111.7958947,17z/data=!3m1!4b1!4m6!3m5!1s0x872da592a78df795:0x8dbad541781d7da6!8m2!3d34.8640574!4d-111.7933198!16s%2Fg%2F11gk8wtxbx?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T23:55:47.185Z] [INFO] attempts url https://www.google.com/maps/place/Canyon+Painting,+LLC/@34.8640574,-111.7958947,17z/data=!3m1!4b1!4m6!3m5!1s0x872da592a78df795:0x8dbad541781d7da6!8m2!3d34.8640574!4d-111.7933198!16s%2Fg%2F11gk8wtxbx?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T23:55:49.745Z] [INFO] attempts url https://www.google.com/maps/place/Canyon+Painting,+LLC/@34.8640574,-111.7958947,17z/data=!3m1!4b1!4m6!3m5!1s0x872da592a78df795:0x8dbad541781d7da6!8m2!3d34.8640574!4d-111.7933198!16s%2Fg%2F11gk8wtxbx?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T23:55:52.668Z] [INFO] attempts url https://www.google.com/maps/place/Canyon+Painting,+LLC/@34.8640574,-111.7958947,17z/data=!3m1!4b1!4m6!3m5!1s0x872da592a78df795:0x8dbad541781d7da6!8m2!3d34.8640574!4d-111.7933198!16s%2Fg%2F11gk8wtxbx?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D
+[2025-11-14T23:55:52.670Z] [INFO] Picked darray via jd6_direct score=0 
+[2025-11-14T23:55:52.682Z] [INFO] Painting 
+[2025-11-14T23:55:52.683Z] [INFO] ✅ Picked best candidate for Canyon Painting, LLC with score: 46
+[2025-11-14T23:55:52.687Z] [INFO] ✅ Saved 802 entries to ../logs/Canyon Painting, LLC_preview.txt 
