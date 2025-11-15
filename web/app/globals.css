@@ -158,6 +158,42 @@ textarea {
   display: none;
 }
 
+.app-footer {
+  width: 100%;
+  margin: 0 auto;
+  padding: clamp(18px, 3vw, 28px) clamp(18px, 3vw, 32px);
+  background: var(--color-heading);
+  border: 1px solid rgba(3, 60, 87, 0.08);
+  backdrop-filter: blur(14px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.app-footer__text {
+  font-size: 0.9rem;
+  color: var(--color-muted);
+}
+
+.app-footer__actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.app-footer__link {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-brand);
+  text-decoration: none;
+}
+
+.app-footer__link:hover {
+  text-decoration: underline;
+}
+
 .brand-mark {
   display: inline-flex;
   align-items: center;
