@@ -1,0 +1,45 @@
+on:
+  push:
+    branches:
+      - production
+  create: {}
+
+jobs:
+  deploy-production:
+    if: >
+      github.event_name == 'push' ||
+      (github.event_name == 'create' && github.event.ref == 'production' && github.event.ref_type == 'branch')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Start ssh-agent and add key
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Ensure known_hosts has the server fingerprint
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -p "${{ secrets.SSH_PORT }}" -H "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Rsync repo to remote server
+        env:
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+          TARGET_PATH: ${{ secrets.DEPLOY_TARGET_PATH }}
+        run: |
+          rsync -az --delete --exclude='.git' -e "ssh -p ${SSH_PORT}" ./ ${SSH_USER}@${SSH_HOST}:${TARGET_PATH}
+
+      - name: Run remote deploy script
+        env:
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+          TARGET_PATH: ${{ secrets.DEPLOY_TARGET_PATH }}
+        run: |
+          ssh -p ${SSH_PORT} ${SSH_USER}@${SSH_HOST} "bash ${TARGET_PATH}/updates.sh"
