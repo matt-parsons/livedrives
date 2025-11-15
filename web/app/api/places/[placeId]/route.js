@@ -10,8 +10,8 @@ export async function GET(_request, { params }) {
   }
 
   try {
-    const { place, roadmap } = await loadOptimizationData(placeId);
-    return NextResponse.json({ place, roadmap });
+    const { place, roadmap, meta } = await loadOptimizationData(placeId);
+    return NextResponse.json({ place, roadmap, meta });
   } catch (error) {
     if (error instanceof PlacesError) {
       return NextResponse.json({ error: error.message }, { status: error.status ?? 500 });

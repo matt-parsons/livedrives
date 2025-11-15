@@ -328,6 +328,33 @@ CREATE TABLE `user_org_members` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `funnel_leads`
+--
+
+CREATE TABLE `funnel_leads` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `email` varchar(255) NOT NULL,
+  `place_id` varchar(128) NOT NULL,
+  `place_name` varchar(255) DEFAULT NULL,
+  `place_address` varchar(255) DEFAULT NULL,
+  `place_lat` decimal(10,7) DEFAULT NULL,
+  `place_lng` decimal(10,7) DEFAULT NULL,
+  `place_metadata_json` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`place_metadata_json`)),
+  `preview_status` enum('pending','completed','error') NOT NULL DEFAULT 'pending',
+  `preview_error` varchar(512) DEFAULT NULL,
+  `preview_started_at` datetime DEFAULT NULL,
+  `preview_completed_at` datetime DEFAULT NULL,
+  `converted_lead_id` bigint(20) UNSIGNED DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  CONSTRAINT `fk_funnel_leads_user`
+    FOREIGN KEY (`converted_lead_id`) REFERENCES `users` (`id`)
+    ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
 --
 -- Indexes for dumped tables
 --
@@ -463,6 +490,15 @@ ALTER TABLE `user_org_members`
   ADD KEY `fk_uom_org` (`organization_id`);
 
 --
+-- Indexes for table `funnel_leads`
+--
+ALTER TABLE `funnel_leads`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uniq_funnel_email` (`email`),
+  ADD KEY `idx_funnel_place` (`place_id`),
+  ADD KEY `idx_funnel_converted` (`converted_lead_id`);
+
+--
 -- AUTO_INCREMENT for dumped tables
 --
 
@@ -536,6 +572,12 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `user_org_members`
 --
 ALTER TABLE `user_org_members`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `funnel_leads`
+--
+ALTER TABLE `funnel_leads`
   MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
