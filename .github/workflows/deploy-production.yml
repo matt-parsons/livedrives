@@ -6,6 +6,7 @@ on:
 
 jobs:
   deploy-production:
+    # Run when push to refs/heads/production OR when a branch 'production' is created
     if: >
       github.event_name == 'push' ||
       (github.event_name == 'create' && github.event.ref == 'production' && github.event.ref_type == 'branch')
@@ -26,14 +27,37 @@ jobs:
           mkdir -p ~/.ssh
           ssh-keyscan -p "${{ secrets.SSH_PORT }}" -H "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
 
-      - name: Rsync repo to remote server
+      - name: Rsync repo to remote server (exclude deploy dir and SAFE_FILES)
         env:
           SSH_USER: ${{ secrets.SSH_USER }}
           SSH_HOST: ${{ secrets.SSH_HOST }}
           SSH_PORT: ${{ secrets.SSH_PORT }}
           TARGET_PATH: ${{ secrets.DEPLOY_TARGET_PATH }}
         run: |
-          rsync -az --delete --exclude='.git' -e "ssh -p ${SSH_PORT}" ./ ${SSH_USER}@${SSH_HOST}:${TARGET_PATH}
+          rsync -az --delete --no-times \
+            --exclude='.git' \
+            --exclude='node_modules' \
+            --exclude='.github-deploy' \
+            --exclude='updates.sh' \
+            --exclude='.gitignore' \
+            --exclude='jsconfig.json' \
+            --exclude='.env.local' \
+            --exclude='serviceAccountKey.json' \
+            -e "ssh -p ${SSH_PORT}" ./ ${SSH_USER}@${SSH_HOST}:${TARGET_PATH}
+
+      - name: Restore safe files (ensure perms if needed)
+        env:
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+          TARGET_PATH: ${{ secrets.DEPLOY_TARGET_PATH }}
+        run: |
+          # optional: ensure sensitive files have safe perms after sync
+          ssh -p ${SSH_PORT} ${SSH_USER}@${SSH_HOST} "\
+            set -e; \
+            if [ -f '${TARGET_PATH}/.env.local' ]; then chmod 0640 '${TARGET_PATH}/.env.local' || true; fi; \
+            if [ -f '${TARGET_PATH}/serviceAccountKey.json' ]; then chmod 0600 '${TARGET_PATH}/serviceAccountKey.json' || true; fi \
+          "
 
       - name: Run remote deploy script
         env:
@@ -42,4 +66,4 @@ jobs:
           SSH_PORT: ${{ secrets.SSH_PORT }}
           TARGET_PATH: ${{ secrets.DEPLOY_TARGET_PATH }}
         run: |
-          ssh -p ${SSH_PORT} ${SSH_USER}@${SSH_HOST} "bash ${TARGET_PATH}/updates.sh"
+          ssh -p ${SSH_PORT} ${SSH_USER}@${SSH_HOST} "bash ${TARGET_PATH}/../updates.sh"
