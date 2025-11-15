@@ -22,7 +22,7 @@ export default async function OperationsPage({ searchParams }) {
         <section className="page-header">
           <h1 className="page-title">Operations hub</h1>
           <p className="page-subtitle">
-            Review live execution logs, monitor today’s scheduler queue, and control geo grid operations from one
+            Review live execution logs, monitor today’s scheduler queue, and control ranking report operations from one
             workspace.
           </p>
         </section>

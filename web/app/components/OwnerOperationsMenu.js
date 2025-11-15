@@ -26,12 +26,12 @@ const OWNER_OPERATION_LINKS = [
   {
     href: '/dashboard/operations?tab=geo',
     label: 'Geo map runs',
-    description: 'Monitor cross-business geo grid performance.'
+    description: 'Monitor cross-business ranking performance.'
   },
   {
     href: '/dashboard/operations?tab=launcher',
-    label: 'Launch geo grid',
-    description: 'Start a geo grid run for any managed business.'
+    label: 'Launch ranking report',
+    description: 'Start a ranking report for any managed business.'
   },
   {
     href: '/dashboard/get-started',

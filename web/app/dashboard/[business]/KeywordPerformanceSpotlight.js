@@ -10,7 +10,7 @@ function renderHeatmapContent(activeItem, mapsApiKey) {
   if (!activeItem.latestRunId) {
     return (
       <p style={{ margin: 0, fontSize: '0.85rem', color: '#6b7280' }}>
-        Deploy another geo grid run to unlock the live heatmap preview.
+        Deploy another ranking report run to unlock the live heatmap preview.
       </p>
     );
   }
@@ -27,7 +27,7 @@ function renderHeatmapContent(activeItem, mapsApiKey) {
           padding: '0.85rem 1rem'
         }}
       >
-        Add a Google Maps API key to preview the latest geo grid run.
+        Add a Google Maps API key to preview the latest ranking report run.
       </div>
     );
   }
@@ -44,7 +44,7 @@ function renderHeatmapContent(activeItem, mapsApiKey) {
           padding: '0.85rem 1rem'
         }}
       >
-        Geo grid map preview unavailable for this run.
+        Ranking report map preview unavailable for this run.
       </div>
     );
   }
@@ -89,7 +89,7 @@ export default function KeywordPerformanceSpotlight({ items, mapsApiKey = null }
           </div>
         </div>
         <p style={{ marginTop: '1rem', color: '#6b7280' }}>
-          Not enough geo grid runs in the last 30 days to chart keyword movement.
+          Not enough ranking reports in the last 30 days to chart keyword movement.
         </p>
       </div>
     );

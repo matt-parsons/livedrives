@@ -127,7 +127,7 @@ export default async function BusinessSettingsPage({ params }) {
               <div className="section-header">
                 <h2 className="section-title">SOAX configuration</h2>
                 <p className="section-caption">
-                  Configure the proxy credentials used when running geo grid and CTR sessions for this business.
+                  Configure the proxy credentials used when running ranking reports and CTR sessions for this business.
                 </p>
               </div>
 

@@ -64,7 +64,7 @@ export async function POST(request) {
           [organizationId]
         );
 
-        membership = { organizationId, role: 'owner' };
+        membership = { organizationId, role: 'member' };
       }
 
       await connection.commit();

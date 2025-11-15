@@ -85,15 +85,15 @@ export default function GeoGridScheduleCard({
 
   const statusMessage = useMemo(() => {
     if (!isBusinessActive) {
-      return 'Business is inactive — weekly geo grid runs are paused.';
+      return 'Business is inactive — weekly ranking reports are paused.';
     }
 
     if (!currentSchedule) {
-      return 'Weekly geo grid schedule will be initialized shortly.';
+      return 'Weekly ranking report schedule will be initialized shortly.';
     }
 
     if (!currentSchedule.isActive) {
-      return 'Geo grid schedule is paused.';
+      return 'Local ranking report schedule is paused.';
     }
 
     if (nextRunLabel) {
@@ -123,7 +123,7 @@ export default function GeoGridScheduleCard({
       const data = await response.json().catch(() => ({}));
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to update geo grid schedule.');
+        throw new Error(data.error || 'Failed to update ranking report schedule.');
       }
 
       if (data.schedule) {
@@ -131,10 +131,10 @@ export default function GeoGridScheduleCard({
         setStartTime(normalizeTimeValue(data.schedule.startTimeLocal));
       }
 
-      setStatus({ message: 'Geo grid schedule updated.', tone: 'success' });
+      setStatus({ message: 'Ranking report schedule updated.', tone: 'success' });
       router.refresh();
     } catch (error) {
-      setStatus({ message: error.message || 'Failed to update geo grid schedule.', tone: 'danger' });
+      setStatus({ message: error.message || 'Failed to update ranking report schedule.', tone: 'danger' });
     } finally {
       setSubmitting(false);
     }
@@ -143,9 +143,9 @@ export default function GeoGridScheduleCard({
   return (
     <div className="surface-card surface-card--muted geo-schedule-card">
       <div className="surface-card__body">
-        <h2 className="section-title">Weekly geo grid run</h2>
+        <h2 className="section-title">Weekly ranking report run</h2>
         <p className="section-caption">
-          Automatically queue a geo grid run during mid-afternoon business hours once per week.
+          Automatically queue a ranking report run during mid-afternoon business hours once per week.
         </p>
 
         <div className="geo-schedule-card__status">

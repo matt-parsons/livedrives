@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 import { AuthError, requireAuth } from '@/lib/authServer';
 
 export const metadata = {
-  title: 'Geo grid launcher | Mongooz Boost Console'
+  title: 'Ranking report launcher | Local Paint Pilot'
 };
 
 export default async function GeoGridLauncherPage() {

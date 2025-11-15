@@ -136,7 +136,7 @@ export async function POST(request) {
 
         await connection.query(
           `INSERT INTO user_org_members (user_id, organization_id, role)
-           VALUES (?, ?, 'owner')`,
+           VALUES (?, ?, 'member')`,
           [userId, organizationId]
         );
 
@@ -147,7 +147,7 @@ export async function POST(request) {
           [organizationId]
         );
 
-        membership = { organizationId, role: 'owner' };
+        membership = { organizationId, role: 'member' };
       }
 
       await connection.commit();

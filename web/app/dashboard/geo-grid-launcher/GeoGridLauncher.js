@@ -179,12 +179,12 @@ export default function GeoGridLauncher({ showHeader = true }) {
       event.preventDefault();
 
       if (!selectedBusiness) {
-        setStatus({ message: 'Select a business to start a geo grid run.', tone: 'danger' });
+        setStatus({ message: 'Select a business to start a ranking report.', tone: 'danger' });
         return;
       }
 
       if (!selectedKeyword) {
-        setStatus({ message: 'Select a keyword before starting a geo grid run.', tone: 'danger' });
+        setStatus({ message: 'Select a keyword before starting a ranking report.', tone: 'danger' });
         return;
       }
 
@@ -228,12 +228,12 @@ export default function GeoGridLauncher({ showHeader = true }) {
         const confirmMessage = `Start a ${selectedGrid.label} grid (${effectiveRadius} mi radius, ${pointsCount} points) for ${businessLabel} — “${selectedKeyword}”?\nOrigin: ${zoneLabel} (${coordsLabel})`;
 
         if (typeof window !== 'undefined' && !window.confirm(confirmMessage)) {
-          setStatus({ message: 'Geo grid run cancelled.', tone: 'muted' });
+          setStatus({ message: 'Ranking report cancelled.', tone: 'muted' });
           setSubmitting(false);
           return;
         }
 
-        setStatus({ message: 'Creating geo grid run…', tone: 'muted' });
+        setStatus({ message: 'Creating ranking report...', tone: 'muted' });
 
         const payload = {
           keyword: selectedKeyword,
@@ -259,7 +259,7 @@ export default function GeoGridLauncher({ showHeader = true }) {
         const createData = await createResponse.json().catch(() => ({}));
 
         if (!createResponse.ok) {
-          throw new Error(createData.error || 'Failed to create geo grid run.');
+          throw new Error(createData.error || 'Failed to create ranking report.');
         }
 
         setStatus({
@@ -267,7 +267,7 @@ export default function GeoGridLauncher({ showHeader = true }) {
           tone: 'success'
         });
       } catch (err) {
-        setStatus({ message: err.message || 'Failed to start geo grid run.', tone: 'danger' });
+        setStatus({ message: err.message || 'Failed to start ranking report.', tone: 'danger' });
       } finally {
         setSubmitting(false);
       }
@@ -279,9 +279,9 @@ export default function GeoGridLauncher({ showHeader = true }) {
     <div className="surface-card geo-launcher-card">
       {showHeader ? (
         <div>
-          <h2 className="section-title">Launch a geo grid</h2>
+          <h2 className="section-title">Launch a ranking report</h2>
           <p className="section-caption">
-            Kick off a geo grid run for any managed business. Choose a keyword and configuration, confirm the origin zone,
+            Kick off a ranking report for any managed business. Choose a keyword and configuration, confirm the origin zone,
             and the worker queue will handle the rest.
           </p>
         </div>
@@ -415,7 +415,7 @@ export default function GeoGridLauncher({ showHeader = true }) {
               radiusValue <= 0
             }
           >
-            {submitting ? 'Starting…' : 'Start geo grid run'}
+            {submitting ? 'Starting…' : 'Start ranking report'}
           </button>
           <button
             type="button"

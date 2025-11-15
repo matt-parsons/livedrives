@@ -110,7 +110,7 @@ export default async function GeoGridRunPage({ params }) {
           <div className="dashboard-layout__content" style={{ width: 'min(1240px, 100%)' }}>
             <header className="dashboard-page-header">
               <div className="dashboard-page-header__intro">
-                <h2 className="page-title">Geo grid run</h2>
+                <h2 className="page-title">Ranking report</h2>
                 {runSubtitle ? <p className="page-subtitle">{runSubtitle}</p> : null}
               </div>
               <div className="dashboard-page-header__actions">

@@ -72,7 +72,7 @@ export async function POST(request) {
     try {
       await geoGridSchedules.initializeGeoGridSchedule(businessId);
     } catch (scheduleError) {
-      console.error('Failed to initialize geo grid schedule', scheduleError);
+      console.error('Failed to initialize heat map schedule', scheduleError);
     }
 
     const [rows] = await pool.query(

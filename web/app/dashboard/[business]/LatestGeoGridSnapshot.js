@@ -66,7 +66,7 @@ export default function LatestGeoGridSnapshot({
           />
         ) : (
           <div className="latest-geogrid-card__placeholder">
-            <p>{summary ? 'Geo grid map preview unavailable.' : 'Run a geo grid to unlock this map preview.'}</p>
+            <p>{summary ? 'Local ranking report map preview unavailable.' : 'Once your first ranking report is done it will unlock this map preview.'}</p>
           </div>
         )}
       </div>

@@ -189,7 +189,7 @@ export async function POST(request, { params }) {
       return Response.json({ error: error.message }, { status: error.statusCode });
     }
 
-    console.error(`Failed to create geo grid run for business ${businessId}`, error);
+    console.error(`Failed to create heat map run for business ${businessId}`, error);
     return Response.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

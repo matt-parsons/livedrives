@@ -275,7 +275,7 @@ export default function GeoGridMap({
       <div
         ref={mapRef}
         className="geo-grid-map__canvas"
-        aria-label="Geo grid map"
+        aria-label="Local Ranking map"
         data-interactive={interactive ? 'true' : 'false'}
         style={{ '--geo-grid-map-min-height': minHeight }}
       />

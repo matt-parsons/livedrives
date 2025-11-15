@@ -103,15 +103,18 @@ export async function loadBusiness(organizationId, identifier) {
 }
 
 export async function loadOrganizationBusinesses(organizationId) {
+  // id 1 is the admin
+  const isGetAll = organizationId === null || organizationId === 1;
+
   const [rows] = await pool.query(
     `SELECT id,
             business_name AS businessName,
             business_slug AS businessSlug,
             is_active     AS isActive
        FROM businesses
-      WHERE organization_id = ?
+      WHERE (organization_id = ? OR ?)
       ORDER BY is_active DESC, business_name ASC, id ASC`,
-    [organizationId]
+    [organizationId, isGetAll]
   );
 
   return rows.map((row) => ({

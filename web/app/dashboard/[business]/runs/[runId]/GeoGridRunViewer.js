@@ -421,18 +421,18 @@ export default function GeoGridRunViewer({
       const payload = await response.json().catch(() => ({}));
 
       if (!response.ok || payload?.error) {
-        throw new Error(payload?.error || 'Failed to start geo grid run.');
+        throw new Error(payload?.error || 'Failed to start ranking report run.');
       }
 
       setRerunSuccessMessage(
         payload?.runId
-          ? `Queued new geo grid run #${payload.runId}.`
-          : 'Geo grid run queued.'
+          ? `Queued new ranking report run #${payload.runId}.`
+          : 'Ranking report run queued.'
       );
     } catch (error) {
-      console.error('Failed to re-run geo grid', error);
+      console.error('Failed to re-run ranking report', error);
       setRerunError(
-        error instanceof Error ? error.message : 'Failed to start geo grid run.'
+        error instanceof Error ? error.message : 'Failed to start ranking report run.'
       );
     } finally {
       setRerunPending(false);
@@ -490,7 +490,7 @@ export default function GeoGridRunViewer({
                         onClick={handleRerunClick}
                         disabled={rerunButtonDisabled}
                       >
-                        {rerunPending ? 'Queueing…' : 'Re-run geo grid'}
+                        {rerunPending ? 'Queueing…' : 'Re-run ranking report'}
                       </button>
                       {rerunSuccessMessage ? (
                         <span className="run-summary__feedback" role="status">

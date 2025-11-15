@@ -501,7 +501,7 @@ export default function IndexPage() {
               </div>
             </div>
             <p className="text-base leading-relaxed text-muted-foreground">
-              Here&apos;s how Local Paint Pilot scores your Google profile. Upgrade to a 7 day trial to unlock the full dashboard, geo grid tracking, and automation.
+              Here&apos;s how Local Paint Pilot scores your Google profile. Upgrade to a 7 day trial to unlock the full dashboard, keyword rank tracking, and automation.
             </p>
             <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
               {Array.isArray(placeDetails?.categories) && placeDetails.categories.length ? (
@@ -606,7 +606,7 @@ export default function IndexPage() {
             {trialStatus !== 'success' ? (
               <CardFooter>
                 <p className="text-xs text-muted-foreground">
-                  Trials include full access to dashboards, geo grid runs, and live operations tooling. Cancel anytime during the first 7 days.
+                  Trials include full access to dashboards, keyword rank tracking, and live operations tooling. Cancel anytime during the first 7 days.
                 </p>
               </CardFooter>
             ) : null}

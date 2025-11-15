@@ -189,7 +189,7 @@ export default async function BusinessDashboardPage({ params }) {
           <div className="dashboard-layout__content">
             <div className="section-header latest-geogrid-card__header">
               <div>
-                <h2 className="section-title">Latest Ranking Report</h2>
+                <h2 className="section-title">Profile Overview</h2>
                 
                 <p className="section-caption">
                   Review your freshest keyword coverage snapshot across the map.

@@ -22,10 +22,10 @@ const SCHEDULE_VIEW_OPTIONS = [
 
 const TAB_OPTIONS = [
   { id: 'logs', label: 'Run logs' },
-  { id: 'geosearch', label: 'GeoSearch log' },
+  { id: 'geosearch', label: 'Ranking Report log' },
   { id: 'schedule', label: "Today's scheduled drives" },
-  { id: 'geo', label: 'Geo map runs' },
-  { id: 'launcher', label: 'Geo grid launcher' }
+  { id: 'geo', label: 'Ranking reports' },
+  { id: 'launcher', label: 'Ranking report launcher' }
 ];
 
 const TAB_IDS = new Set(TAB_OPTIONS.map((tab) => tab.id));
@@ -870,7 +870,7 @@ export default function OperationsConsole({ timezone: initialTimezone, initialTa
             <div>
               <h2 className="section-title">Geo map runs</h2>
               <p className="section-caption">
-                Review the full history of geo grid runs across your managed businesses and refresh results on demand.
+                Review the full history of ranking reports across your managed businesses and refresh results on demand.
               </p>
             </div>
             <button type="button" className="refresh-button" onClick={loadGeoRuns} disabled={geoRunsLoading}>
@@ -978,9 +978,9 @@ export default function OperationsConsole({ timezone: initialTimezone, initialTa
         >
           <div className="section-header">
             <div>
-              <h2 className="section-title">Geo grid launcher</h2>
+              <h2 className="section-title">Ranking report launcher</h2>
               <p className="section-caption">
-                Spin up fresh geo grid runs without leaving the operations workspace. Configure your business, keyword,
+                Spin up fresh ranking reports without leaving the operations workspace. Configure your business, keyword,
                 and grid settings in one place.
               </p>
             </div>

@@ -87,7 +87,7 @@ function TrialStatusCard({ trial }) {
       <div className="rounded-md border border-border/60 bg-background/60 p-4 shadow-sm">
         <p className="text-xs uppercase tracking-wide text-muted-foreground">What to expect</p>
         <p>
-          Enjoy full access to dashboards, GBP optimization insights, and geo grid tools for 7 days. We'll prompt you
+          Enjoy full access to dashboards, GBP optimization insights, and local ranking report tools for 7 days. We'll prompt you
           before the trial ends.
         </p>
       </div>
@@ -227,7 +227,7 @@ export default async function MemberJourneyPage() {
       >
         {!primaryBusiness ? (
           <p className="text-sm text-muted-foreground">
-            Once your business profile is saved we can generate the default origin zone and start geo grid tracking.
+            Once your business profile is saved we can generate the default origin zone and start rank tracking.
           </p>
         ) : (
           <KeywordOriginZoneForm

@@ -351,7 +351,7 @@ export default async function BusinessKeywordsPage({ params, searchParams }) {
     : null;
   const destinationCoordinates = buildCoordinatePair(business.destLat, business.destLng);
   const highlightTiles = [
-    { label: 'Geo Grid Runs', value: geoGridRuns.length },
+    { label: 'Local Rankings', value: geoGridRuns.length },
     { label: 'Origin Zones', value: originZones.length },
     { label: 'Business Status', value: businessStatus.label, status: businessStatus.key }
   ];
@@ -387,7 +387,7 @@ export default async function BusinessKeywordsPage({ params, searchParams }) {
   ];
 
   const geoSectionCaption = geoGridRuns.length === 0
-    ? 'Launch your first geo grid run to start mapping local rankings.'
+    ? 'Launch your first ranking report to start seeing where your profile shows up.'
     : 'Switch between detailed runs and keyword trend arcs to track performance.';
 
   const trendMeta = {
@@ -518,14 +518,9 @@ export default async function BusinessKeywordsPage({ params, searchParams }) {
               <div className="dashboard-page-header__intro">
                 <h2 className="page-title">Keyword insights</h2>
                 <p className="page-subtitle">
-                  Track geo grid performance, CTR sessions, and operational readiness for {businessName}.
+                  Track local ranking performance, CTR sessions, and profile optimization for {businessName}.
                 </p>
               </div>
-              {locationLabel ? (
-                <div className="dashboard-page-header__meta">
-                  <span className="dashboard-sidebar__location">{locationLabel}</span>
-                </div>
-              ) : null}
             </header>
 
             <section className="section">

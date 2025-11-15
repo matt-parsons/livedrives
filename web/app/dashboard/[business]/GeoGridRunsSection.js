@@ -119,11 +119,11 @@ export default function GeoGridRunsSection({ caption, defaultView = 'trend', tre
   return (
     <div className="surface-card surface-card--muted">
       <div className="section-header">
-        <h2 className="section-title">Geo grid runs</h2>
+        <h2 className="section-title">Local Rankings</h2>
         <p className="section-caption">{caption}</p>
       </div>
 
-      <div className="view-switch" role="tablist" aria-label="Geo grid view mode">
+      <div className="view-switch" role="tablist" aria-label="Local Rankings view mode">
         {VIEW_OPTIONS.map((option) => {
           const isActive = activeView === option.id;
 
@@ -226,8 +226,8 @@ export default function GeoGridRunsSection({ caption, defaultView = 'trend', tre
           ) : runItems.length === 0 ? (
             <div className="empty-state" style={{ marginTop: '20px' }}>
               <div>
-                <h3>No geo grid runs yet</h3>
-                <p>Deploy a run to start mapping rankings across your coverage area.</p>
+                <h3>No local ranking reports yet</h3>
+                <p>Once we've checked your rankings we'll start mapping them across your area.</p>
               </div>
             </div>
           ) : (

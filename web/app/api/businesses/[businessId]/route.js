@@ -60,7 +60,7 @@ export async function PATCH(request, { params }) {
       try {
         await geoGridSchedules.setScheduleActiveState(businessId, values.isActive === 1);
       } catch (scheduleError) {
-        console.error(`Failed to update geo grid schedule activation for business ${rawId}`, scheduleError);
+        console.error(`Failed to update heat map schedule activation for business ${rawId}`, scheduleError);
       }
     }
 
