@@ -113,6 +113,14 @@ export async function POST(request) {
 
       const userId = userRows[0].id;
 
+      await connection.query(
+        `UPDATE funnel_leads
+            SET converted_lead_id = ?, updated_at = UTC_TIMESTAMP()
+          WHERE email = ?
+            AND converted_lead_id IS NULL`,
+        [userId, trimmedEmail]
+      );
+
       const [membershipRows] = await connection.query(
         `SELECT organization_id AS organizationId, role
            FROM user_org_members

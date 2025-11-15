@@ -40,6 +40,27 @@ function formatRating(value) {
   return numeric.toFixed(1);
 }
 
+function formatTimestamp(value) {
+  if (!value) {
+    return null;
+  }
+
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+
+  try {
+    return new Intl.DateTimeFormat(undefined, {
+      dateStyle: 'medium',
+      timeStyle: 'short'
+    }).format(date);
+  } catch (error) {
+    console.warn('Failed to format timestamp', error);
+    return null;
+  }
+}
+
 function classNames(...tokens) {
   return tokens.filter(Boolean).join(' ');
 }
@@ -154,6 +175,13 @@ export default function IndexPage() {
   const [trialEmail, setTrialEmail] = useState('');
   const [trialStatus, setTrialStatus] = useState('idle');
   const [trialError, setTrialError] = useState('');
+  const [leadEmail, setLeadEmail] = useState('');
+  const [leadStatus, setLeadStatus] = useState('idle');
+  const [leadError, setLeadError] = useState('');
+  const [leadId, setLeadId] = useState(null);
+  const [existingPreview, setExistingPreview] = useState(false);
+  const [leadPreviewStartedAt, setLeadPreviewStartedAt] = useState(null);
+  const [leadPreviewCompletedAt, setLeadPreviewCompletedAt] = useState(null);
 
   const inputRef = useRef(null);
 
@@ -212,6 +240,39 @@ export default function IndexPage() {
     };
   }, [phase, query]);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const storageKey = 'localpaintpilot:funnelLeadId';
+
+    try {
+      if (leadId) {
+        window.sessionStorage?.setItem(storageKey, leadId.toString());
+      } else {
+        window.sessionStorage?.removeItem(storageKey);
+      }
+    } catch (error) {
+      console.warn('Failed to persist lead id', error);
+    }
+
+    try {
+      const url = new URL(window.location.href);
+      if (leadId) {
+        url.searchParams.set('lead', leadId.toString());
+      } else {
+        url.searchParams.delete('lead');
+      }
+
+      const search = url.searchParams.toString();
+      const nextUrl = `${url.pathname}${search ? `?${search}` : ''}${url.hash}`;
+      window.history.replaceState(window.history.state, '', nextUrl);
+    } catch (error) {
+      console.warn('Failed to update lead id in URL', error);
+    }
+  }, [leadId]);
+
   const resetFlow = useCallback(() => {
     setPhase('search');
     setQuery('');
@@ -228,6 +289,32 @@ export default function IndexPage() {
     setTrialEmail('');
     setTrialStatus('idle');
     setTrialError('');
+    setLeadEmail('');
+    setLeadStatus('idle');
+    setLeadError('');
+    setLeadId(null);
+    setExistingPreview(false);
+    setLeadPreviewStartedAt(null);
+    setLeadPreviewCompletedAt(null);
+  }, []);
+
+  const startLeadCapture = useCallback((place) => {
+    if (!place?.placeId) {
+      return;
+    }
+
+    setSelectedPlace(place);
+    setPhase('lead');
+    setLeadStatus('idle');
+    setLeadError('');
+    setAnalysisError('');
+    setPlaceDetails(null);
+    setRoadmap(null);
+    setLoadingStep(0);
+    setExistingPreview(false);
+    setLeadPreviewStartedAt(null);
+    setLeadPreviewCompletedAt(null);
+    setLeadId(null);
   }, []);
 
   const beginAnalysis = useCallback(
@@ -290,9 +377,9 @@ export default function IndexPage() {
         return;
       }
 
-      beginAnalysis(selected);
+      startLeadCapture(selected);
     },
-    [activeIndex, beginAnalysis, suggestions]
+    [activeIndex, startLeadCapture, suggestions]
   );
 
   const handleLookupKeyDown = useCallback(
@@ -310,6 +397,66 @@ export default function IndexPage() {
       }
     },
     [suggestions]
+  );
+
+  const handleLeadSubmit = useCallback(
+    async (event) => {
+      event.preventDefault();
+
+      if (!selectedPlace?.placeId) {
+        setLeadError('Select a Google Business Profile to continue.');
+        return;
+      }
+
+      setLeadError('');
+
+      const trimmedEmail = leadEmail.trim().toLowerCase();
+      if (!emailPattern.test(trimmedEmail)) {
+        setLeadError('Enter a valid work email to continue.');
+        return;
+      }
+
+      setLeadStatus('submitting');
+
+      try {
+        const response = await fetch('/api/funnel/lead', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: trimmedEmail,
+            place: {
+              placeId: selectedPlace.placeId,
+              name: selectedPlace.name,
+              formattedAddress: selectedPlace.formattedAddress,
+              location: selectedPlace.location
+            }
+          })
+        });
+
+        const payload = await response.json().catch(() => ({}));
+
+        if (!response.ok || !payload?.leadId) {
+          throw new Error(payload.error || 'Unable to start your preview right now.');
+        }
+
+        const resolvedPlace = payload.place?.placeId ? payload.place : selectedPlace;
+
+        setLeadStatus('success');
+        setLeadEmail(trimmedEmail);
+        setLeadId(payload.leadId);
+        setExistingPreview(Boolean(payload.existingPreview));
+        setLeadPreviewStartedAt(payload.previewStartedAt ?? null);
+        setLeadPreviewCompletedAt(payload.previewCompletedAt ?? null);
+        setTrialEmail((current) => current || trimmedEmail);
+
+        await beginAnalysis(resolvedPlace);
+      } catch (error) {
+        console.error('Lead capture failed', error);
+        setLeadStatus('idle');
+        setLeadError(error.message || 'Unable to start your preview right now.');
+      }
+    },
+    [beginAnalysis, leadEmail, selectedPlace]
   );
 
   const topOpportunities = useMemo(() => {
@@ -419,7 +566,7 @@ export default function IndexPage() {
                         key={suggestion.placeId}
                         suggestion={suggestion}
                         isActive={index === activeIndex}
-                        onSelect={(choice) => beginAnalysis(choice)}
+                        onSelect={(choice) => startLeadCapture(choice)}
                       />
                     ))}
                   </div>
@@ -435,6 +582,83 @@ export default function IndexPage() {
       </div>
     </div>
   );
+
+  const renderLeadCapture = () => {
+    if (!selectedPlace) {
+      return renderSearch();
+    }
+
+    return (
+      <div className="page-shell">
+        <div className="mx-auto flex w-full max-w-3xl flex-col gap-8">
+          <section className="space-y-4">
+            <h1 className="text-3xl font-semibold text-foreground">Where should we send your preview?</h1>
+            <p className="text-base text-muted-foreground">
+              We email a secure link before we start analyzing your Google Business Profile.
+            </p>
+          </section>
+
+          <Card className="shadow-lg">
+            <CardHeader>
+              <CardTitle>Confirm your profile</CardTitle>
+              <CardDescription>Drop your email to save the preview and kick off the scan.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form className="space-y-6" onSubmit={handleLeadSubmit}>
+                <div className="rounded-xl border border-border/60 bg-muted/10 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Google profile</p>
+                  <p className="mt-2 text-lg font-semibold text-foreground">{selectedPlace.name || 'Unnamed profile'}</p>
+                  {selectedPlace.formattedAddress ? (
+                    <p className="text-sm text-muted-foreground">{selectedPlace.formattedAddress}</p>
+                  ) : null}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="lead-email">Work email</Label>
+                  <Input
+                    id="lead-email"
+                    type="email"
+                    value={leadEmail}
+                    onChange={(event) => setLeadEmail(event.target.value)}
+                    placeholder="you@company.com"
+                    autoComplete="email"
+                    disabled={leadStatus === 'submitting'}
+                    required
+                  />
+                </div>
+
+                {leadError ? (
+                  <p className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive" role="alert">
+                    {leadError}
+                  </p>
+                ) : (
+                  <p className="text-sm text-muted-foreground">We&apos;ll send your preview link and onboarding resources.</p>
+                )}
+
+                <div className="flex flex-wrap justify-between gap-3">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => {
+                      setPhase('search');
+                      setSelectedPlace(null);
+                      setLeadStatus('idle');
+                      setLeadError('');
+                    }}
+                  >
+                    Pick a different profile
+                  </Button>
+                  <Button type="submit" disabled={leadStatus === 'submitting'}>
+                    {leadStatus === 'submitting' ? 'Saving your preview…' : 'Send me the preview'}
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  };
 
   const renderLoading = () => (
     <div className="page-shell">
@@ -481,6 +705,7 @@ export default function IndexPage() {
 
   const renderPreview = () => {
     const letterGrade = resolveLetterGrade(roadmap?.progressPercent ?? null);
+    const previewTimestampLabel = formatTimestamp(leadPreviewCompletedAt || leadPreviewStartedAt);
 
     return (
       <div className="page-shell">
@@ -503,6 +728,20 @@ export default function IndexPage() {
             <p className="text-base leading-relaxed text-muted-foreground">
               Here&apos;s how Local Paint Pilot scores your Google profile. Upgrade to a 7 day trial to unlock the full dashboard, keyword rank tracking, and automation.
             </p>
+            {previewTimestampLabel ? (
+              <div
+                className={classNames(
+                  'rounded-lg border px-4 py-3 text-sm',
+                  existingPreview
+                    ? 'border-secondary/60 bg-secondary/10 text-secondary-foreground'
+                    : 'border-border/60 bg-muted/10 text-muted-foreground'
+                )}
+              >
+                {existingPreview
+                  ? `We already created this preview on ${previewTimestampLabel}. Showing that same snapshot.`
+                  : `Preview generated on ${previewTimestampLabel}.`}
+              </div>
+            ) : null}
             <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
               {Array.isArray(placeDetails?.categories) && placeDetails.categories.length ? (
                 <span className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-card/80 px-3 py-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
@@ -615,6 +854,10 @@ export default function IndexPage() {
       </div>
     );
   };
+
+  if (phase === 'lead') {
+    return renderLeadCapture();
+  }
 
   if (phase === 'loading') {
     return renderLoading();
