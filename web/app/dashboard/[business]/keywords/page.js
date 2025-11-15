@@ -712,17 +712,6 @@ export default async function BusinessKeywordsPage({ params, searchParams }) {
               </section>
             ) : null}
 
-            <section className="section">
-              {isOwner ? (
-                <OriginZonesManager
-                  businessId={business.id}
-                  initialZones={originZones}
-                  caption={originSectionCaption}
-                />
-              ) : (
-                <div></div>
-              )}
-            </section>
           </div>
         </main>
       </div>
