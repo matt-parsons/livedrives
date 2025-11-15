@@ -662,3 +662,14 @@
 [2025-11-14T23:55:52.682Z] [INFO] Painting 
 [2025-11-14T23:55:52.683Z] [INFO] ✅ Picked best candidate for Canyon Painting, LLC with score: 46
 [2025-11-14T23:55:52.687Z] [INFO] ✅ Saved 802 entries to ../logs/Canyon Painting, LLC_preview.txt 
+[2025-11-15T05:00:40.862Z] [INFO] places Sidebar getting started! 
+[2025-11-15T05:00:40.876Z] [INFO] fetchPlaceSidebarData 
+[2025-11-15T05:00:42.303Z] [INFO] → [Sidebar] Using SOAX residential proxy 108.228.10.216 (proxy.soax.com:5000) 
+[2025-11-15T05:00:49.293Z] [INFO] Single place detected → reloading for full payload https://www.google.com/maps/place/?q=place_id%3AChIJ789A6KQuLYcRXp4JRNxPoZo&hl=en
+[2025-11-15T05:00:52.981Z] [INFO] Refreshing this URL: https://www.google.com/maps/place/Pinon+Painting,+LLC/@34.5537596,-112.4871732,17z/data=!3m1!4b1!4m6!3m5!1s0x872d2ea4e840cfef:0x9aa14fdc44099e5e!8m2!3d34.5537596!4d-112.4845983!16s%2Fg%2F1232_0vs7?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D
+[2025-11-15T05:00:55.243Z] [INFO] attempts url https://www.google.com/maps/place/Pinon+Painting,+LLC/@34.5537596,-112.4871732,17z/data=!3m1!4b1!4m6!3m5!1s0x872d2ea4e840cfef:0x9aa14fdc44099e5e!8m2!3d34.5537596!4d-112.4845983!16s%2Fg%2F1232_0vs7?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D
+[2025-11-15T05:00:56.836Z] [INFO] attempts url https://www.google.com/maps/place/Pinon+Painting,+LLC/@34.5537596,-112.4871732,17z/data=!3m1!4b1!4m6!3m5!1s0x872d2ea4e840cfef:0x9aa14fdc44099e5e!8m2!3d34.5537596!4d-112.4845983!16s%2Fg%2F1232_0vs7?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D
+[2025-11-15T05:00:58.565Z] [INFO] attempts url https://www.google.com/maps/place/Pinon+Painting,+LLC/@34.5537596,-112.4871732,17z/data=!3m1!4b1!4m6!3m5!1s0x872d2ea4e840cfef:0x9aa14fdc44099e5e!8m2!3d34.5537596!4d-112.4845983!16s%2Fg%2F1232_0vs7?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D
+[2025-11-15T05:01:00.340Z] [INFO] attempts url https://www.google.com/maps/place/Pinon+Painting,+LLC/@34.5537596,-112.4871732,17z/data=!3m1!4b1!4m6!3m5!1s0x872d2ea4e840cfef:0x9aa14fdc44099e5e!8m2!3d34.5537596!4d-112.4845983!16s%2Fg%2F1232_0vs7?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D
+[2025-11-15T05:01:00.342Z] [INFO] Picked darray via jd6_direct score=0 
+[2025-11-15T05:01:00.355Z] [INFO] Painter 

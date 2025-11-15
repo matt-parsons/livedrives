@@ -17,7 +17,7 @@ export default async function AuthSessionToggle({ appearance = 'button' } = {}) 
     }
 
     return (
-      <Link href="/(auth)/signin" className="app-footer__link">
+      <Link href="/signin" className="app-footer__link">
         Log in
       </Link>
     );
@@ -29,7 +29,7 @@ export default async function AuthSessionToggle({ appearance = 'button' } = {}) 
 
   return (
     <Button asChild size="sm" variant="secondary">
-      <Link href="/(auth)/signin">Log in</Link>
+      <Link href="/signin">Log in</Link>
     </Button>
   );
 }
