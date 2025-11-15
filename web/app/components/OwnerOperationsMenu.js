@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { ChevronDown } from 'lucide-react';
-import { AuthError, requireAuth } from '@/lib/authServer';
+import { getOptionalSession } from '@/lib/authServer';
 import { Button } from '@/components/ui/button';
 import RolePreviewMenuItem from '@/app/components/RolePreviewMenuItem';
 import {
@@ -46,16 +46,10 @@ const OWNER_OPERATION_LINKS = [
 ];
 
 export default async function OwnerOperationsMenu() {
-  let session;
+  const session = await getOptionalSession();
 
-  try {
-    session = await requireAuth();
-  } catch (error) {
-    if (error instanceof AuthError && error.statusCode >= 400 && error.statusCode < 500) {
-      return null;
-    }
-
-    throw error;
+  if (!session) {
+    return null;
   }
 
   const hasOwnerAccess = session.actualRole === 'owner';

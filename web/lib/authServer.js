@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import { cookies } from 'next/headers';
 import pool from '@lib/db/db.js';
 import { adminAuth } from '@/lib/firebaseAdmin';
@@ -80,3 +81,15 @@ export async function requireAuth(request) {
     previewRole: isPreviewActive ? previewRole : null
   };
 }
+
+export const getOptionalSession = cache(async function getOptionalSession(request) {
+  try {
+    return await requireAuth(request);
+  } catch (error) {
+    if (error instanceof AuthError && error.statusCode >= 400 && error.statusCode < 500) {
+      return null;
+    }
+
+    throw error;
+  }
+});

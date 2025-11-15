@@ -2,6 +2,7 @@ import Link from 'next/link';
 import './globals.css';
 import { Inter } from 'next/font/google';
 import OwnerOperationsMenu from '@/app/components/OwnerOperationsMenu';
+import AuthSessionToggle from '@/app/components/AuthSessionToggle';
 
 
 const inter = Inter({ subsets: ['latin'] });
@@ -18,6 +19,8 @@ function MongoozBoostMark(props) {
 }
 
 export default function RootLayout({ children }) {
+  const currentYear = new Date().getFullYear();
+
   return (
     <html lang="en" className={inter.className}>
       <body className="app-body">
@@ -35,10 +38,17 @@ export default function RootLayout({ children }) {
               </div>
             </Link>
             <div className="app-header__actions">
+              <AuthSessionToggle />
               <OwnerOperationsMenu />
             </div>
           </header>
           <main className="app-main">{children}</main>
+          <footer className="app-footer">
+            <p className="app-footer__text">© {currentYear} Local Paint Pilot</p>
+            <div className="app-footer__actions">
+              <AuthSessionToggle appearance="link" />
+            </div>
+          </footer>
         </div>
       </body>
     </html>
