@@ -2,6 +2,7 @@ import pool from '@lib/db/db.js';
 import geoGridSchedules from '@lib/db/geoGridSchedules.js';
 import geoGridSchedule from '@lib/utils/geoGridSchedule.js';
 import { AuthError, requireAuth } from '@/lib/authServer';
+import { buildOrganizationScopeClause } from '@/lib/organizations';
 
 const { parseTimeString } = geoGridSchedule;
 
@@ -55,13 +56,14 @@ export async function PATCH(request, { params }) {
       return Response.json({ error: 'Forbidden' }, { status: 403 });
     }
 
+    const scope = buildOrganizationScopeClause(session);
     const [businessRows] = await pool.query(
       `SELECT id
          FROM businesses
         WHERE id = ?
-          AND organization_id = ?
+          AND ${scope.clause}
         LIMIT 1`,
-      [businessId, session.organizationId]
+      [businessId, ...scope.params]
     );
 
     if (!businessRows.length) {

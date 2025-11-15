@@ -1,6 +1,7 @@
 import pool from '@lib/db/db.js';
 import geoGridSchedules from '@lib/db/geoGridSchedules.js';
 import { AuthError, requireAuth } from '@/lib/authServer';
+import { buildOrganizationScopeClause } from '@/lib/organizations';
 import { mapToDbColumns, normalizeBusinessPayload, wasProvided } from './utils.js';
 
 export const runtime = 'nodejs';
@@ -8,15 +9,16 @@ export const runtime = 'nodejs';
 export async function GET(request) {
   try {
     const session = await requireAuth(request);
+    const scope = buildOrganizationScopeClause(session);
     const [rows] = await pool.query(
       `SELECT id,
               business_name AS businessName,
               business_slug AS businessSlug,
               organization_id AS organizationId
          FROM businesses
-        WHERE organization_id = ?
+        WHERE ${scope.clause}
         ORDER BY business_name ASC`,
-      [session.organizationId]
+      scope.params
     );
 
     return Response.json({ businesses: rows });
@@ -75,15 +77,16 @@ export async function POST(request) {
       console.error('Failed to initialize heat map schedule', scheduleError);
     }
 
+    const scope = buildOrganizationScopeClause(session);
     const [rows] = await pool.query(
       `SELECT id,
               business_name AS businessName,
               business_slug AS businessSlug
          FROM businesses
         WHERE id = ?
-          AND organization_id = ?
+          AND ${scope.clause}
         LIMIT 1`,
-      [businessId, session.organizationId]
+      [businessId, ...scope.params]
     );
 
     return Response.json({ business: rows[0] }, { status: 201 });

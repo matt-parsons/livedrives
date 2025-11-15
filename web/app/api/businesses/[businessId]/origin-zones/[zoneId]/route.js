@@ -1,10 +1,12 @@
 import pool from '@lib/db/db.js';
 import { AuthError, requireAuth } from '@/lib/authServer';
+import { buildOrganizationScopeClause } from '@/lib/organizations';
 import { formatZoneRow, mapToDbColumns, normalizeOriginZonePayload } from '../utils.js';
 
 export const runtime = 'nodejs';
 
 async function loadZone(session, businessId, zoneId) {
+  const scope = buildOrganizationScopeClause(session, 'b.organization_id');
   const [rows] = await pool.query(
     `SELECT z.id,
             z.business_id,
@@ -21,9 +23,9 @@ async function loadZone(session, businessId, zoneId) {
        JOIN businesses b ON b.id = z.business_id
       WHERE z.id = ?
         AND z.business_id = ?
-        AND b.organization_id = ?
+        AND ${scope.clause}
       LIMIT 1`,
-    [zoneId, businessId, session.organizationId]
+    [zoneId, businessId, ...scope.params]
   );
 
   return rows[0] ?? null;

@@ -19,13 +19,13 @@ export default async function BusinessLayout({ children, params }) {
     throw error;
   }
 
-  const business = await loadBusiness(session.organizationId, identifier);
+  const business = await loadBusiness(session, identifier);
 
   if (!business) {
     notFound();
   }
 
-  const organizationBusinesses = await loadOrganizationBusinesses(session.organizationId);
+  const organizationBusinesses = await loadOrganizationBusinesses(session);
   const businessOptions = organizationBusinesses.map((entry) => ({
     id: entry.id,
     value: entry.businessSlug ?? String(entry.id),

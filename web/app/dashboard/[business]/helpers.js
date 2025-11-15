@@ -1,5 +1,6 @@
 import pool from '@lib/db/db.js';
 import geoGridSchedules from '@lib/db/geoGridSchedules.js';
+import { buildOrganizationScopeClause } from '@/lib/organizations';
 import { formatDate, formatDecimal, toTimestamp } from './runs/formatters.js';
 
 export { formatDate, formatDecimal, toTimestamp };
@@ -78,33 +79,33 @@ export function formatTrend(first, latest, digits = 2, unitSuffix = '') {
   return `${firstStr} -> ${latestStr} (delta ${sign}${diffMagnitude}${unitSuffix})`;
 }
 
-export async function loadBusiness(organizationId, identifier) {
+export async function loadBusiness(organizationContext, identifier) {
   const numericId = isNumericIdentifier(identifier) ? Number(identifier) : null;
+  const scope = buildOrganizationScopeClause(organizationContext);
 
   const query = numericId === null
     ? `SELECT ${BUSINESS_FIELDS}
          FROM businesses
-        WHERE organization_id = ?
+        WHERE ${scope.clause}
           AND business_slug = ?
         LIMIT 1`
     : `SELECT ${BUSINESS_FIELDS}
          FROM businesses
-        WHERE organization_id = ?
+        WHERE ${scope.clause}
           AND (business_slug = ? OR id = ?)
         LIMIT 1`;
 
   const params = numericId === null
-    ? [organizationId, identifier]
-    : [organizationId, identifier, numericId];
+    ? [...scope.params, identifier]
+    : [...scope.params, identifier, numericId];
 
   const [rows] = await pool.query(query, params);
 
   return rows[0] ?? null;
 }
 
-export async function loadOrganizationBusinesses(organizationId) {
-  // id 1 is the admin
-  const isGetAll = organizationId === null || organizationId === 1;
+export async function loadOrganizationBusinesses(organizationContext) {
+  const scope = buildOrganizationScopeClause(organizationContext);
 
   const [rows] = await pool.query(
     `SELECT id,
@@ -112,9 +113,9 @@ export async function loadOrganizationBusinesses(organizationId) {
             business_slug AS businessSlug,
             is_active     AS isActive
        FROM businesses
-      WHERE (organization_id = ? OR ?)
+      WHERE ${scope.clause}
       ORDER BY is_active DESC, business_name ASC, id ASC`,
-    [organizationId, isGetAll]
+    scope.params
   );
 
   return rows.map((row) => ({

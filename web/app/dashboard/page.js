@@ -39,7 +39,7 @@ export default async function DashboardPage() {
     throw error;
   }
 
-  const businesses = await loadOrganizationBusinesses(session.organizationId);
+  const businesses = await loadOrganizationBusinesses(session);
 
   if (!businesses.length) {
 

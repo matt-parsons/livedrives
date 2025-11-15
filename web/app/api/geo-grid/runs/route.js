@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import pool from '@lib/db/db.js';
 import { requireAuth } from '@/lib/authServer';
+import { buildOrganizationScopeClause } from '@/lib/organizations';
 
 const DEFAULT_TIMEZONE = process.env.LOGS_TIMEZONE || 'America/Phoenix';
 
@@ -10,6 +11,7 @@ export async function GET(request) {
   try {
     const session = await requireAuth(request);
 
+    const scope = buildOrganizationScopeClause(session, 'b.organization_id');
     const [rows] = await pool.query(
       `SELECT r.id,
               r.business_id    AS businessId,
@@ -32,10 +34,10 @@ export async function GET(request) {
          FROM geo_grid_runs r
          JOIN businesses b ON b.id = r.business_id
          LEFT JOIN geo_grid_points gp ON gp.run_id = r.id
-        WHERE b.organization_id = ?
+        WHERE ${scope.clause}
         GROUP BY r.id
         ORDER BY r.created_at DESC, r.id DESC`,
-      [session.organizationId]
+      scope.params
     );
 
     return NextResponse.json({

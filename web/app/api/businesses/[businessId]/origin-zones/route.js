@@ -1,17 +1,19 @@
 import pool from '@lib/db/db.js';
 import { AuthError, requireAuth } from '@/lib/authServer';
+import { buildOrganizationScopeClause } from '@/lib/organizations';
 import { formatZoneRow, mapToDbColumns, normalizeOriginZonePayload } from './utils.js';
 
 export const runtime = 'nodejs';
 
 async function requireBusiness(session, businessId) {
+  const scope = buildOrganizationScopeClause(session);
   const [rows] = await pool.query(
     `SELECT id
        FROM businesses
       WHERE id = ?
-        AND organization_id = ?
+        AND ${scope.clause}
       LIMIT 1`,
-    [businessId, session.organizationId]
+    [businessId, ...scope.params]
   );
 
   if (!rows.length) {

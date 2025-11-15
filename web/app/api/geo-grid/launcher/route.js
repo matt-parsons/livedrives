@@ -1,5 +1,6 @@
 import pool from '@lib/db/db.js';
 import { AuthError, requireAuth } from '@/lib/authServer';
+import { buildOrganizationScopeClause } from '@/lib/organizations';
 import { GEO_GRID_PRESETS, GEO_RADIUS_PRESETS } from '@/lib/geoGrid';
 
 const DEFAULT_TIMEZONE = process.env.LOGS_TIMEZONE || 'America/Phoenix';
@@ -148,14 +149,15 @@ export async function GET(request) {
       return Response.json({ error: 'Forbidden' }, { status: 403 });
     }
 
+    const businessScope = buildOrganizationScopeClause(session);
     const [businessRows] = await pool.query(
       `SELECT id,
               business_name AS businessName,
               business_slug AS businessSlug
          FROM businesses
-        WHERE organization_id = ?
+        WHERE ${businessScope.clause}
         ORDER BY business_name ASC`,
-      [session.organizationId]
+      businessScope.params
     );
 
     const businesses = businessRows.map((row) => ({
@@ -186,6 +188,7 @@ export async function GET(request) {
       END`;
     const dayExpr = `DATE(CONVERT_TZ(COALESCE(${tsUtc}, rl.created_at), '+00:00', ?))`;
 
+    const runScope = buildOrganizationScopeClause(session, 'b.organization_id');
     const [keywordRows] = await pool.query(
       `SELECT ${dayExpr} AS day,
               rl.business_id AS businessId,
@@ -193,11 +196,11 @@ export async function GET(request) {
               SUM(CASE WHEN rl.reason = 'success' THEN 1 ELSE 0 END) AS successCount
          FROM run_logs rl
          JOIN businesses b ON b.id = rl.business_id
-        WHERE b.organization_id = ?
+        WHERE ${runScope.clause}
         GROUP BY day, businessId, keyword
         HAVING successCount > 0
         ORDER BY day DESC, successCount DESC`,
-      [timezoneOffset, session.organizationId]
+      [timezoneOffset, ...runScope.params]
     );
 
     const totalsByBusiness = new Map();
