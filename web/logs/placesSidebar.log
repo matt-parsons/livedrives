@@ -673,3 +673,50 @@
 [2025-11-15T05:01:00.340Z] [INFO] attempts url https://www.google.com/maps/place/Pinon+Painting,+LLC/@34.5537596,-112.4871732,17z/data=!3m1!4b1!4m6!3m5!1s0x872d2ea4e840cfef:0x9aa14fdc44099e5e!8m2!3d34.5537596!4d-112.4845983!16s%2Fg%2F1232_0vs7?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D
 [2025-11-15T05:01:00.342Z] [INFO] Picked darray via jd6_direct score=0 
 [2025-11-15T05:01:00.355Z] [INFO] Painter 
+[2025-11-16T19:24:03.141Z] [INFO] places Sidebar getting started! 
+[2025-11-16T19:24:03.160Z] [INFO] fetchPlaceSidebarData 
+[2025-11-16T19:24:06.071Z] [INFO] → [Sidebar] Using SOAX residential proxy 172.92.115.49 (proxy.soax.com:5000) 
+[2025-11-16T19:49:35.669Z] [INFO] places Sidebar getting started! 
+[2025-11-16T19:49:35.684Z] [INFO] fetchPlaceSidebarData 
+[2025-11-16T19:49:36.947Z] [INFO] → [Sidebar] Using SOAX residential proxy 98.156.180.178 (proxy.soax.com:5000) 
+[2025-11-16T21:46:31.098Z] [INFO] places Sidebar getting started! 
+[2025-11-16T21:46:31.101Z] [INFO] fetchPlaceSidebarData 
+[2025-11-16T21:46:32.849Z] [INFO] → [Sidebar] Using SOAX residential proxy 76.147.105.68 (proxy.soax.com:5000) 
+[2025-11-16T21:50:42.053Z] [INFO] places Sidebar getting started! 
+[2025-11-16T21:50:42.058Z] [INFO] fetchPlaceSidebarData 
+[2025-11-16T21:50:43.553Z] [INFO] → [Sidebar] Using SOAX residential proxy 73.48.80.123 (proxy.soax.com:5000) 
+[2025-11-16T21:52:23.076Z] [INFO] places Sidebar getting started! 
+[2025-11-16T21:52:23.079Z] [INFO] fetchPlaceSidebarData 
+[2025-11-16T21:52:24.450Z] [INFO] → [Sidebar] Using SOAX residential proxy 24.243.108.101 (proxy.soax.com:5000) 
+[2025-11-16T21:53:26.335Z] [INFO] places Sidebar getting started! 
+[2025-11-16T21:53:26.337Z] [INFO] fetchPlaceSidebarData 
+[2025-11-16T21:53:27.381Z] [INFO] → [Sidebar] Using SOAX residential proxy 24.171.69.97 (proxy.soax.com:5000) 
+[2025-11-16T21:54:28.876Z] [INFO] places Sidebar getting started! 
+[2025-11-16T21:54:28.878Z] [INFO] fetchPlaceSidebarData 
+[2025-11-16T21:54:29.993Z] [INFO] → [Sidebar] Using SOAX residential proxy 73.3.54.35 (proxy.soax.com:5000) 
+[2025-11-16T21:58:38.246Z] [INFO] places Sidebar getting started! 
+[2025-11-16T21:58:38.251Z] [INFO] fetchPlaceSidebarData 
+[2025-11-16T21:58:39.368Z] [INFO] → [Sidebar] Using SOAX residential proxy 99.107.76.252 (proxy.soax.com:5000) 
+[2025-11-16T21:58:49.984Z] [INFO] Single place detected → reloading for full payload https://www.google.com/maps/place/?q=place_id%3AChIJL6rieLM6LYcR3IcC3Q2OtJQ&hl=en&force=lite
+[2025-11-16T21:58:54.146Z] [INFO] Refreshing this URL: https://www.google.com/maps/place//@28.5595396,-81.1302912,14017a,13.1y/data=!3m1!4b1!4m2!3m1!1s0x872d3ab378e2aa2f:0x94b48e0ddd0287dc?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMi4wIKXMDSoASAFQAw%3D%3D
+[2025-11-16T21:58:56.175Z] [INFO] attempts url https://www.google.com/maps/place//@28.5595396,-81.1302912,14017a,13.1y/data=!3m1!4b1!4m2!3m1!1s0x872d3ab378e2aa2f:0x94b48e0ddd0287dc?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMi4wIKXMDSoASAFQAw%3D%3D
+[2025-11-16T21:58:57.584Z] [INFO] attempts url https://www.google.com/maps/place//@28.5595396,-81.1302912,14017a,13.1y/data=!3m1!4b1!4m2!3m1!1s0x872d3ab378e2aa2f:0x94b48e0ddd0287dc?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMi4wIKXMDSoASAFQAw%3D%3D
+[2025-11-16T21:58:59.283Z] [INFO] attempts url https://www.google.com/maps/place//@28.5595396,-81.1302912,14017a,13.1y/data=!3m1!4b1!4m2!3m1!1s0x872d3ab378e2aa2f:0x94b48e0ddd0287dc?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMi4wIKXMDSoASAFQAw%3D%3D
+[2025-11-16T21:59:02.484Z] [INFO] attempts url https://www.google.com/maps/place//@28.5595396,-81.1302912,14017a,13.1y/data=!3m1!4b1!4m2!3m1!1s0x872d3ab378e2aa2f:0x94b48e0ddd0287dc?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMi4wIKXMDSoASAFQAw%3D%3D
+[2025-11-16T21:59:02.486Z] [INFO] Picked darray via jd6_direct score=0 
+[2025-11-16T21:59:02.496Z] [INFO] Willbuilt Seamless Gutters by Willbuilt Construction 
+[2025-11-16T21:59:02.497Z] [INFO] ✅ Picked best candidate for Willbuilt Seamless Gutters by Willbuilt Construction with score: 47
+[2025-11-16T21:59:02.501Z] [INFO] ✅ Saved 725 entries to ../logs/Willbuilt Seamless Gutters by Willbuilt Construction_preview.txt 
+[2025-11-16T21:59:45.101Z] [INFO] places Sidebar getting started! 
+[2025-11-16T21:59:45.102Z] [INFO] fetchPlaceSidebarData 
+[2025-11-16T21:59:46.468Z] [INFO] → [Sidebar] Using SOAX residential proxy 65.254.187.101 (proxy.soax.com:5000) 
+[2025-11-16T21:59:53.907Z] [INFO] Single place detected → reloading for full payload https://www.google.com/maps/place/?q=place_id%3AChIJL6rieLM6LYcR3IcC3Q2OtJQ&hl=en&force=lite
+[2025-11-16T21:59:58.124Z] [INFO] Refreshing this URL: https://www.google.com/maps/place//@35.4418688,-80.756736,13002a,13.1y/data=!3m1!4b1!4m2!3m1!1s0x872d3ab378e2aa2f:0x94b48e0ddd0287dc?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMi4wIKXMDSoASAFQAw%3D%3D
+[2025-11-16T22:00:00.120Z] [INFO] attempts url https://www.google.com/maps/place//@35.4418688,-80.756736,13002a,13.1y/data=!3m1!4b1!4m2!3m1!1s0x872d3ab378e2aa2f:0x94b48e0ddd0287dc?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMi4wIKXMDSoASAFQAw%3D%3D
+[2025-11-16T22:00:01.697Z] [INFO] attempts url https://www.google.com/maps/place//@35.4418688,-80.756736,13002a,13.1y/data=!3m1!4b1!4m2!3m1!1s0x872d3ab378e2aa2f:0x94b48e0ddd0287dc?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMi4wIKXMDSoASAFQAw%3D%3D
+[2025-11-16T22:00:03.573Z] [INFO] attempts url https://www.google.com/maps/place//@35.4418688,-80.756736,13002a,13.1y/data=!3m1!4b1!4m2!3m1!1s0x872d3ab378e2aa2f:0x94b48e0ddd0287dc?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMi4wIKXMDSoASAFQAw%3D%3D
+[2025-11-16T22:00:06.156Z] [INFO] attempts url https://www.google.com/maps/place//@35.4418688,-80.756736,13002a,13.1y/data=!3m1!4b1!4m2!3m1!1s0x872d3ab378e2aa2f:0x94b48e0ddd0287dc?hl=en&entry=ttu&g_ep=EgoyMDI1MTExMi4wIKXMDSoASAFQAw%3D%3D
+[2025-11-16T22:00:06.158Z] [INFO] Picked darray via jd6_direct score=0 
+[2025-11-16T22:00:06.165Z] [INFO] Willbuilt Seamless Gutters by Willbuilt Construction 
+[2025-11-16T22:00:06.165Z] [INFO] ✅ Picked best candidate for Willbuilt Seamless Gutters by Willbuilt Construction with score: 47
+[2025-11-16T22:00:06.169Z] [INFO] ✅ Saved 725 entries to ../logs/Willbuilt Seamless Gutters by Willbuilt Construction_preview.txt 
