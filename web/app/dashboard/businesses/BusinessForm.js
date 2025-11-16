@@ -67,7 +67,12 @@ function derivePlaceValuesFromPlace(place, prevState) {
   };
 }
 
-export default function BusinessForm({ mode = 'create', businessId = null, initialValues = {} }) {
+export default function BusinessForm({
+  mode = 'create',
+  businessId = null,
+  initialValues = {},
+  showPlaceSearch = mode !== 'edit'
+}) {
   const router = useRouter();
   const [formState, setFormState] = useState(() => {
     const defaultDrivesPerDay =
@@ -108,6 +113,10 @@ export default function BusinessForm({ mode = 'create', businessId = null, initi
   const [gatheringMessage, setGatheringMessage] = useState('');
 
   const handlePlacesQueryChange = (event) => {
+    if (!showPlaceSearch) {
+      return;
+    }
+
     setPlacesQuery(event.target.value);
     setPhase('search');
     setLookupState('idle');
@@ -115,7 +124,7 @@ export default function BusinessForm({ mode = 'create', businessId = null, initi
   };
 
   useEffect(() => {
-    if (phase !== 'search') {
+    if (!showPlaceSearch || phase !== 'search') {
       return;
     }
 
@@ -173,10 +182,10 @@ export default function BusinessForm({ mode = 'create', businessId = null, initi
       clearTimeout(handler);
       controller.abort();
     };
-  }, [phase, placesQuery]);
+  }, [phase, placesQuery, showPlaceSearch]);
 
   const handleLookupKeyDown = (event) => {
-    if (phase !== 'search' || !suggestions.length) {
+    if (!showPlaceSearch || phase !== 'search' || !suggestions.length) {
       return;
     }
 
@@ -261,7 +270,7 @@ export default function BusinessForm({ mode = 'create', businessId = null, initi
   };
 
   const handleAddBusiness = async (placeId) => {
-    if (!placeId || gatheringData || submitting) {
+    if (!showPlaceSearch || !placeId || gatheringData || submitting) {
       return;
     }
 
@@ -305,80 +314,262 @@ export default function BusinessForm({ mode = 'create', businessId = null, initi
     }
   };
 
-  return (
-    <form className="grid gap-6" onSubmit={handleSubmit}>
-      <div className="space-y-2">
-        <Label htmlFor="places-query">Search Google Places</Label>
-        <div className="flex flex-col gap-2 sm:flex-row">
-          <Input
-            id="places-query"
-            type="text"
-            value={placesQuery}
-            onChange={handlePlacesQueryChange}
-            onKeyDown={handleLookupKeyDown}
-            disabled={submitting || gatheringData}
-            placeholder="Search by business name or address"
-            autoComplete="off"
-            className="sm:flex-1"
-          />
-        </div>
-        <p className="text-xs text-muted-foreground">Select a result to automatically fill in the business details.</p>
-        {lookupState === 'loading' && !gatheringData ? (
-          <p className="text-sm text-muted-foreground">Loading suggestions…</p>
-        ) : null}
-        {gatheringData && gatheringMessage ? (
-          <p className="text-sm text-muted-foreground">{gatheringMessage}</p>
-        ) : null}
-        {lookupError && lookupState !== 'loading' ? (
-          <p className="text-sm text-destructive" role="alert">
-            {lookupError}
-          </p>
-        ) : null}
-      </div>
+  const handleInputChange = (field) => (event) => {
+    const value = event.target.value;
+    setFormState((prev) => ({ ...prev, [field]: value }));
+  };
 
-      {suggestions.length > 0 ? (
-        <div className="space-y-3">
-          <span className="text-sm font-semibold text-muted-foreground">Search results</span>
-          <div className="grid gap-3">
-            {suggestions.map((place, index) => {
-              const isActive = index === activeSuggestionIndex;
-              return (
-                <div
-                  key={place.placeId}
-                  className={classNames(
-                    'rounded-lg border border-border bg-card/80 p-4 shadow-sm transition',
-                    isActive ? 'ring-2 ring-secondary ring-offset-2 ring-offset-background' : ''
-                  )}
-                  onMouseEnter={() => setActiveSuggestionIndex(index)}
-                >
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                    <div>
-                      <p className="font-semibold text-foreground">{place.name}</p>
-                      {place.formattedAddress ? (
-                        <p className="text-sm text-muted-foreground">{place.formattedAddress}</p>
-                      ) : null}
-                    </div>
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      onClick={() => handleAddBusiness(place.placeId)}
-                      disabled={submitting || lookupState === 'loading' || gatheringData}
-                    >
-                      {gatheringData ? 'Adding…' : 'Add this business'}
-                    </Button>
-                  </div>
-                </div>
-              );
-            })}
+  const handleIsActiveChange = (event) => {
+    const value = event.target.value;
+    const nextIsActive = value === 'active';
+
+    setFormState((prev) => ({ ...prev, isActive: nextIsActive }));
+  };
+
+  return (
+    <form className="grid gap-8" onSubmit={handleSubmit}>
+      {showPlaceSearch ? (
+        <div className="grid gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="places-query">Search Google Places</Label>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Input
+                id="places-query"
+                type="text"
+                value={placesQuery}
+                onChange={handlePlacesQueryChange}
+                onKeyDown={handleLookupKeyDown}
+                disabled={submitting || gatheringData}
+                placeholder="Search by business name or address"
+                autoComplete="off"
+                className="sm:flex-1"
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">Select a result to automatically fill in the business details.</p>
+            {lookupState === 'loading' && !gatheringData ? (
+              <p className="text-sm text-muted-foreground">Loading suggestions…</p>
+            ) : null}
+            {gatheringData && gatheringMessage ? (
+              <p className="text-sm text-muted-foreground">{gatheringMessage}</p>
+            ) : null}
+            {lookupError && lookupState !== 'loading' ? (
+              <p className="text-sm text-destructive" role="alert">
+                {lookupError}
+              </p>
+            ) : null}
           </div>
+
+          {suggestions.length > 0 ? (
+            <div className="space-y-3">
+              <span className="text-sm font-semibold text-muted-foreground">Search results</span>
+              <div className="grid gap-3">
+                {suggestions.map((place, index) => {
+                  const isActive = index === activeSuggestionIndex;
+                  return (
+                    <div
+                      key={place.placeId}
+                      className={classNames(
+                        'rounded-lg border border-border bg-card/80 p-4 shadow-sm transition',
+                        isActive ? 'ring-2 ring-secondary ring-offset-2 ring-offset-background' : ''
+                      )}
+                      onMouseEnter={() => setActiveSuggestionIndex(index)}
+                    >
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                        <div>
+                          <p className="font-semibold text-foreground">{place.name}</p>
+                          {place.formattedAddress ? (
+                            <p className="text-sm text-muted-foreground">{place.formattedAddress}</p>
+                          ) : null}
+                        </div>
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          onClick={() => handleAddBusiness(place.placeId)}
+                          disabled={submitting || lookupState === 'loading' || gatheringData}
+                        >
+                          {gatheringData ? 'Adding…' : 'Add this business'}
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ) : null}
         </div>
       ) : null}
+
+      <div className="grid gap-6">
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="business-name">Business name</Label>
+            <Input
+              id="business-name"
+              value={formState.businessName}
+              onChange={handleInputChange('businessName')}
+              required
+              placeholder="Acme Painting"
+              disabled={submitting}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="business-slug">Slug</Label>
+            <Input
+              id="business-slug"
+              value={formState.businessSlug}
+              onChange={handleInputChange('businessSlug')}
+              placeholder="acme-painting"
+              disabled={submitting}
+            />
+            <p className="text-xs text-muted-foreground">Optional: short identifier used in URLs.</p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="brand-search">Brand search term</Label>
+            <Input
+              id="brand-search"
+              value={formState.brandSearch}
+              onChange={handleInputChange('brandSearch')}
+              placeholder="Acme Painting near me"
+              disabled={submitting}
+            />
+            <p className="text-xs text-muted-foreground">Used when constructing ranking and CTR keywords.</p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="mid">MID</Label>
+            <Input
+              id="mid"
+              value={formState.mid}
+              onChange={handleInputChange('mid')}
+              placeholder="Map marker ID"
+              disabled={submitting}
+            />
+          </div>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="destination-address">Destination address</Label>
+            <Input
+              id="destination-address"
+              value={formState.destinationAddress}
+              onChange={handleInputChange('destinationAddress')}
+              placeholder="123 Main St"
+              disabled={submitting}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="destination-zip">Destination ZIP / postal</Label>
+            <Input
+              id="destination-zip"
+              value={formState.destinationZip}
+              onChange={handleInputChange('destinationZip')}
+              placeholder="90210"
+              disabled={submitting}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="dest-lat">Destination latitude</Label>
+            <Input
+              id="dest-lat"
+              value={formState.destLat}
+              onChange={handleInputChange('destLat')}
+              inputMode="decimal"
+              placeholder="34.10000"
+              disabled={submitting}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="dest-lng">Destination longitude</Label>
+            <Input
+              id="dest-lng"
+              value={formState.destLng}
+              onChange={handleInputChange('destLng')}
+              inputMode="decimal"
+              placeholder="-118.32500"
+              disabled={submitting}
+            />
+          </div>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-3">
+          <div className="space-y-2">
+            <Label htmlFor="timezone">Timezone</Label>
+            <Input
+              id="timezone"
+              value={formState.timezone}
+              onChange={handleInputChange('timezone')}
+              placeholder="America/Los_Angeles"
+              disabled={submitting}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="drives-per-day">Drives per day</Label>
+            <Input
+              id="drives-per-day"
+              type="number"
+              min="0"
+              value={formState.drivesPerDay}
+              onChange={handleInputChange('drivesPerDay')}
+              placeholder="5"
+              disabled={submitting}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="is-active">Status</Label>
+            <select
+              id="is-active"
+              value={formState.isActive ? 'active' : 'inactive'}
+              onChange={handleIsActiveChange}
+              className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+              disabled={submitting}
+            >
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+            <p className="text-xs text-muted-foreground">Inactive businesses pause scheduled activity.</p>
+          </div>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="gplace-id">Google Place ID</Label>
+            <Input
+              id="gplace-id"
+              value={formState.gPlaceId}
+              onChange={handleInputChange('gPlaceId')}
+              placeholder="ChIJ..."
+              disabled={submitting}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="notes-helper">Notes</Label>
+            <p id="notes-helper" className="text-xs text-muted-foreground">
+              Keep this in sync with your live Google Business Profile identifiers.
+            </p>
+          </div>
+        </div>
+      </div>
 
       {error ? (
         <p className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive" role="alert">
           {error}
         </p>
       ) : null}
+
+      <div className="flex justify-end">
+        <Button type="submit" disabled={submitting || gatheringData}>
+          {submitting ? 'Saving…' : mode === 'edit' ? 'Save changes' : 'Create business'}
+        </Button>
+      </div>
     </form>
 
   );

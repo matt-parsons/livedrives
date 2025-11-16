@@ -4,14 +4,12 @@ import { AuthError, requireAuth } from '@/lib/authServer';
 import GeoGridRunsSection from '../GeoGridRunsSection';
 import KeywordPerformanceSpotlight from '../KeywordPerformanceSpotlight';
 import BusinessNavigation from '../BusinessNavigation';
-import OriginZonesManager from '../OriginZonesManager';
 import {
   formatDate,
   formatDecimal,
   formatTrend,
   toTimestamp,
   loadBusiness,
-  loadOriginZones,
   loadGeoGridRunSummaries,
   loadGeoGridRunWithPoints,
   loadCtrKeywordOverview
@@ -84,7 +82,6 @@ export default async function BusinessKeywordsPage({ params, searchParams }) {
   const viewMode = searchParams?.view === 'list' ? 'list' : 'trend';
   const baseHref = `/dashboard/${encodeURIComponent(identifier)}`;
   const ctrHref = `${baseHref}/ctr`;
-  const editHref = `${baseHref}/edit`;
 
   let session;
 
@@ -105,9 +102,10 @@ export default async function BusinessKeywordsPage({ params, searchParams }) {
   }
 
   const isOwner = session.role === 'owner';
-  const canManageSettings = session.role === 'owner' || session.role === 'admin';
 
-  const originZones = await loadOriginZones(business.id);
+  const businessName = business.businessName || 'Business dashboard';
+  const businessIdentifier = business.businessSlug ?? String(business.id);
+
   const ctrOverview = await loadCtrKeywordOverview(business.id, 30);
   const geoGridRunsRaw = await loadGeoGridRunSummaries(business.id);
 
@@ -341,51 +339,6 @@ export default async function BusinessKeywordsPage({ params, searchParams }) {
     return entries.map(({ firstRunDateValue, latestRunDateValue, ...rest }) => rest);
   })();
 
-  const createdAt = formatDate(business.createdAt);
-  const updatedAt = formatDate(business.updatedAt);
-  const businessStatus = business.isActive ? { key: 'active', label: 'Active' } : { key: 'inactive', label: 'Inactive' };
-  const businessName = business.businessName || 'Business dashboard';
-  const businessIdentifier = business.businessSlug ?? String(business.id);
-  const destination = business.destinationAddress
-    ? `${business.destinationAddress}${business.destinationZip ? `, ${business.destinationZip}` : ''}`
-    : null;
-  const destinationCoordinates = buildCoordinatePair(business.destLat, business.destLng);
-  const highlightTiles = [
-    { label: 'Local Rankings', value: geoGridRuns.length },
-    { label: 'Origin Zones', value: originZones.length },
-    { label: 'Business Status', value: businessStatus.label, status: businessStatus.key }
-  ];
-
-  if (business.drivesPerDay !== null && business.drivesPerDay !== undefined) {
-    highlightTiles.push({ label: 'Drives / day', value: business.drivesPerDay });
-  }
-
-  const infoBlocks = [
-    { label: 'Business ID', value: business.id },
-    business.businessSlug ? { label: 'Slug', value: business.businessSlug } : null,
-    business.mid ? { label: 'MID', value: business.mid } : null,
-    business.timezone ? { label: 'Timezone', value: business.timezone } : null,
-    destination ? { label: 'Destination', value: destination } : null,
-    destinationCoordinates ? { label: 'Destination coordinates', value: destinationCoordinates } : null,
-    createdAt ? { label: 'Created', value: createdAt } : null,
-    updatedAt ? { label: 'Updated', value: updatedAt } : null
-  ].filter(Boolean);
-
-  const businessOverviewItems = [
-    ...highlightTiles.map((tile) => ({
-      key: tile.label,
-      label: tile.label,
-      value: tile.value,
-      status: tile.status ?? null
-    })),
-    ...infoBlocks.map((item) => ({
-      key: item.label,
-      label: item.label,
-      value: item.value,
-      status: null
-    }))
-  ];
-
   const geoSectionCaption = geoGridRuns.length === 0
     ? 'Launch your first ranking report to start seeing where your profile shows up.'
     : 'Switch between detailed runs and keyword trend arcs to track performance.';
@@ -498,11 +451,6 @@ export default async function BusinessKeywordsPage({ params, searchParams }) {
       delta: item.solvDelta
     }
   }));
-
-  const locationLabel = destination ?? null;
-  const originSectionCaption = originZones.length === 0
-    ? 'Define origin zones to balance coverage and routing priorities.'
-    : 'Targeted pickup regions shaping this business’s live operations.';
 
   return (
     <div className="dashboard-layout__body">
@@ -642,72 +590,6 @@ export default async function BusinessKeywordsPage({ params, searchParams }) {
                   <Link className="cta-link" href={ctrHref}>
                     Open CTR dashboard ↗
                   </Link>
-                </div>
-              </section>
-            ) : null}
-
-            {isOwner ? (
-              <section className="section">
-                <div className="surface-card surface-card--muted">
-                  <div className="section-header">
-                    <div>
-                      <h2 className="section-title">Business overview</h2>
-                      <p className="section-caption">Current state and identifiers powering live operations.</p>
-                    </div>
-                    <Link className="cta-link" href={editHref}>
-                      Edit business
-                    </Link>
-                  </div>
-
-                  {businessOverviewItems.length ? (
-                    <div style={{ marginTop: '0.5rem', overflowX: 'auto' }}>
-                      <table
-                        style={{
-                          width: '100%',
-                          minWidth: '640px',
-                          borderCollapse: 'separate',
-                          borderSpacing: '0 0.25rem',
-                          fontSize: '0.9rem',
-                          lineHeight: 1.4,
-                          textAlign: 'center',
-                          whiteSpace: 'nowrap'
-                        }}
-                      >
-                        <thead>
-                          <tr>
-                            {businessOverviewItems.map((item) => (
-                              <th
-                                key={`${item.key}-header`}
-                                style={{
-                                  padding: '0.35rem 0.5rem',
-                                  color: '#6b7280',
-                                  fontWeight: 600
-                                }}
-                                scope="col"
-                              >
-                                {item.label}
-                              </th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr>
-                            {businessOverviewItems.map((item) => (
-                              <td key={`${item.key}-value`} style={{ padding: '0.35rem 0.5rem', color: '#111827' }}>
-                                {item.status ? (
-                                  <span className="status-pill" data-status={item.status}>
-                                    {item.value}
-                                  </span>
-                                ) : (
-                                  item.value
-                                )}
-                              </td>
-                            ))}
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                  ) : null}
                 </div>
               </section>
             ) : null}
