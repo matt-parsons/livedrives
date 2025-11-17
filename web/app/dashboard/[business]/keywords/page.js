@@ -4,6 +4,8 @@ import { AuthError, requireAuth } from '@/lib/authServer';
 import GeoGridRunsSection from '../GeoGridRunsSection';
 import KeywordPerformanceSpotlight from '../KeywordPerformanceSpotlight';
 import BusinessNavigation from '../BusinessNavigation';
+import SidebarBrand from '../SidebarBrand';
+import DashboardBusinessHeader from '../DashboardBusinessHeader';
 import {
   formatDate,
   formatDecimal,
@@ -455,12 +457,14 @@ export default async function BusinessKeywordsPage({ params, searchParams }) {
   return (
     <div className="dashboard-layout__body">
         <aside className="dashboard-layout__sidebar" aria-label="Workspace navigation">
+          <SidebarBrand />
           <div className="dashboard-sidebar__menu">
             <BusinessNavigation businessIdentifier={businessIdentifier} active="keywords" />
           </div>
         </aside>
 
         <main className="dashboard-layout__main">
+          <DashboardBusinessHeader />
           <div className="dashboard-layout__content">
             <header className="dashboard-page-header">
               <div className="dashboard-page-header__intro">
