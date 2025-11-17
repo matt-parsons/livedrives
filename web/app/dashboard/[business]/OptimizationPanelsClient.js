@@ -5,7 +5,7 @@ import Link from 'next/link';
 
 import LatestGeoGridSnapshot from './LatestGeoGridSnapshot';
 import NextStepsPanel from './NextStepsPanel';
-import { resolveLetterGrade } from './optimization';
+import { resolveLetterGrade, selectNextOptimizationSteps } from './optimization';
 
 function formatTimestamp(value) {
   if (!value) {
@@ -26,17 +26,6 @@ function formatTimestamp(value) {
   } catch (error) {
     return date.toISOString();
   }
-}
-
-function selectNextOptimizationSteps(roadmap, limit = 3) {
-  if (!roadmap || !Array.isArray(roadmap.tasks)) {
-    return [];
-  }
-
-  return roadmap.tasks
-    .filter((task) => task.status && task.status.key !== 'completed')
-    .sort((a, b) => (b.weight ?? 0) - (a.weight ?? 0))
-    .slice(0, limit);
 }
 
 export default function OptimizationPanelsClient({
