@@ -535,20 +535,21 @@ export default function NextStepsPanel({ steps = [], optimizationHref = null, lo
                 <li key={task.id}>
                   <button
                     type="button"
-                    className="next-steps-panel__item"
+                    className={`next-steps-panel__item ${manualStatusLabel ? 'next-steps-panel__manual-select' : ''} `}
                     onClick={() => handleTaskClick(task)}
                   >
                     <div className="next-steps-panel__item-header">
                       <strong>{task.label}</strong>
                       <div className="next-steps-panel__status-group">
-                        <span className="status-pill" data-status={task.status.key}>
-                          {task.status.label}
-                        </span>
                         {manualStatusLabel ? (
                           <span className="status-pill status-pill--muted next-steps-panel__manual-pill">
                             {manualStatusLabel}
                           </span>
-                        ) : null}
+                        ) : 
+                        <span className="status-pill" data-status={task.status.key}>
+                          {task.status.label}
+                        </span>
+                        }
                       </div>
                     </div>
                     <p>{task.detail}</p>
@@ -664,10 +665,10 @@ export default function NextStepsPanel({ steps = [], optimizationHref = null, lo
               </div>
             ) : null}
 
-            <p className="task-overlay__cta">
-              Need more context? <Link href={optimizationHref ?? '#'}>View the full optimization roadmap ↗</Link>
-            </p>
             <div className="task-overlay__actions">
+              <button type="button" className="task-overlay__close-secondary" onClick={closeOverlay}>
+                Close
+              </button>
               {businessId ? (
                 <button
                   type="button"
@@ -682,9 +683,6 @@ export default function NextStepsPanel({ steps = [], optimizationHref = null, lo
                       : 'Mark as Complete'}
                 </button>
               ) : null}
-              <button type="button" className="task-overlay__close-secondary" onClick={closeOverlay}>
-                Close
-              </button>
             </div>
             {markSuccess ? (
               <p className="task-overlay__mark-message">{markSuccess}</p>
