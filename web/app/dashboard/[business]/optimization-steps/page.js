@@ -59,6 +59,7 @@ export default async function BusinessOptimizationStepsPage({ params }) {
           </div>
             <OptimizationRoadmapClient
               placeId={business.gPlaceId}
+              businessId={business.id}
               editHref={editHref}
               optimizationHref={optimizationHref}
             />

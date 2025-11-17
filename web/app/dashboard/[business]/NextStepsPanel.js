@@ -260,13 +260,68 @@ const TASK_GUIDES = {
   }
 };
 
-export default function NextStepsPanel({ steps = [], optimizationHref = null, loading, error }) {
-  const [activeTask, setActiveTask] = useState(null);
+function describeManualCompletion(manualCompletion) {
+  if (!manualCompletion) {
+    return null;
+  }
+
+  const status = manualCompletion.status ?? 'pending';
+
+  if (status === 'approved') {
+    return 'Marked complete';
+  }
+
+  if (status === 'rejected') {
+    return 'Marked complete · Needs review';
+  }
+
+  return 'Marked complete · Pending Google review';
+}
+
+function formatManualCompletionTimestamp(value) {
+  if (!value) {
+    return null;
+  }
+
+  const date = value instanceof Date ? value : new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+
+  try {
+    return new Intl.DateTimeFormat('en-US', {
+      dateStyle: 'medium',
+      timeStyle: 'short'
+    }).format(date);
+  } catch (error) {
+    return date.toISOString();
+  }
+}
+
+export default function NextStepsPanel({ steps = [], optimizationHref = null, loading, error, businessId = null }) {
+  const [visibleSteps, setVisibleSteps] = useState(() => (Array.isArray(steps) ? steps : []));
+  const [activeTaskId, setActiveTaskId] = useState(null);
   const [templateValues, setTemplateValues] = useState({});
   const [copiedTemplateId, setCopiedTemplateId] = useState(null);
   const [copyError, setCopyError] = useState(null);
+  const [markingTaskId, setMarkingTaskId] = useState(null);
+  const [markError, setMarkError] = useState(null);
+  const [markSuccess, setMarkSuccess] = useState(null);
 
-  const hasTasks = Array.isArray(steps) && steps.length > 0;
+  useEffect(() => {
+    setVisibleSteps(Array.isArray(steps) ? steps : []);
+  }, [steps]);
+
+  const hasTasks = Array.isArray(visibleSteps) && visibleSteps.length > 0;
+
+  const activeTask = useMemo(() => {
+    if (!activeTaskId) {
+      return null;
+    }
+
+    return visibleSteps.find((task) => task.id === activeTaskId) ?? null;
+  }, [visibleSteps, activeTaskId]);
 
   const overlayGuide = useMemo(() => {
     if (!activeTask) {
@@ -290,6 +345,19 @@ export default function NextStepsPanel({ steps = [], optimizationHref = null, lo
     );
   }, [activeTask, overlayGuide]);
 
+  const overlaySteps = useMemo(() => {
+    if (!overlayGuide) {
+      return [];
+    }
+
+    const entrySteps = Array.isArray(overlayGuide.entrySteps)
+      ? overlayGuide.entrySteps
+      : BASE_NAVIGATION_STEPS;
+    const changeSteps = Array.isArray(overlayGuide.steps) ? overlayGuide.steps : [];
+
+    return [...entrySteps, ...changeSteps].filter(Boolean);
+  }, [overlayGuide]);
+
   useEffect(() => {
     if (!activeTask) {
       return;
@@ -297,7 +365,7 @@ export default function NextStepsPanel({ steps = [], optimizationHref = null, lo
 
     const handleKeyUp = (event) => {
       if (event.key === 'Escape') {
-        setActiveTask(null);
+        setActiveTaskId(null);
       }
     };
 
@@ -308,26 +376,32 @@ export default function NextStepsPanel({ steps = [], optimizationHref = null, lo
   }, [activeTask]);
 
   useEffect(() => {
-    if (!activeTask) {
+    if (!activeTaskId) {
       return;
     }
 
-    const isStillSelected = steps.some((task) => task.id === activeTask.id);
+    const isStillSelected = visibleSteps.some((task) => task.id === activeTaskId);
     if (!isStillSelected) {
-      setActiveTask(null);
+      setActiveTaskId(null);
     }
-  }, [steps, activeTask]);
+  }, [visibleSteps, activeTaskId]);
 
   const handleTaskClick = (task) => {
-    setActiveTask(task);
+    if (!task) {
+      return;
+    }
+
+    setActiveTaskId(task.id);
   };
 
   useEffect(() => {
     setCopiedTemplateId(null);
     setCopyError(null);
+    setMarkError(null);
+    setMarkSuccess(null);
   }, [activeTask]);
 
-  const closeOverlay = () => setActiveTask(null);
+  const closeOverlay = () => setActiveTaskId(null);
 
   const handleTemplateChange = (templateId, value) => {
     setTemplateValues((prev) => ({
@@ -381,6 +455,55 @@ export default function NextStepsPanel({ steps = [], optimizationHref = null, lo
     }
   };
 
+  const manualCompletion = activeTask?.manualCompletion ?? null;
+  const manualLabel = describeManualCompletion(manualCompletion);
+  const manualTimestamp = formatManualCompletionTimestamp(manualCompletion?.markedAt);
+  const isMarking = Boolean(activeTask && markingTaskId === activeTask.id);
+  const markButtonDisabled = !businessId || !activeTask || Boolean(manualCompletion) || isMarking;
+
+  const handleMarkComplete = async () => {
+    if (!businessId || !activeTask) {
+      return;
+    }
+
+    setMarkError(null);
+    setMarkSuccess(null);
+    setMarkingTaskId(activeTask.id);
+
+    try {
+      const response = await fetch('/api/optimization-data/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        cache: 'no-store',
+        body: JSON.stringify({ businessId, taskId: activeTask.id })
+      });
+
+      const payload = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(payload?.error || 'Unable to mark this task complete.');
+      }
+
+      if (payload?.completion) {
+        setVisibleSteps((prevSteps) => {
+          if (!Array.isArray(prevSteps)) {
+            return prevSteps;
+          }
+
+          return prevSteps.map((task) =>
+            task.id === activeTask.id ? { ...task, manualCompletion: payload.completion } : task
+          );
+        });
+      }
+
+      setMarkSuccess('Marked complete. Waiting on Google to approve your changes.');
+    } catch (error) {
+      setMarkError(error?.message || 'Unable to mark this task complete right now.');
+    } finally {
+      setMarkingTaskId(null);
+    }
+  };
+
   return (
     <section className="section next-steps-panel">
       <div className="surface-card surface-card--muted surface-card--compact">
@@ -409,23 +532,33 @@ export default function NextStepsPanel({ steps = [], optimizationHref = null, lo
           </p>
         ) : (
           <ul className="next-steps-panel__list">
-            {steps.map((task) => (
-              <li key={task.id}>
-                <button
-                  type="button"
-                  className="next-steps-panel__item"
-                  onClick={() => handleTaskClick(task)}
-                >
-                  <div className="next-steps-panel__item-header">
-                    <strong>{task.label}</strong>
-                    <span className="status-pill" data-status={task.status.key}>
-                      {task.status.label}
-                    </span>
-                  </div>
-                  <p>{task.detail}</p>
-                </button>
-              </li>
-            ))}
+            {visibleSteps.map((task) => {
+              const manualStatusLabel = describeManualCompletion(task.manualCompletion);
+              return (
+                <li key={task.id}>
+                  <button
+                    type="button"
+                    className="next-steps-panel__item"
+                    onClick={() => handleTaskClick(task)}
+                  >
+                    <div className="next-steps-panel__item-header">
+                      <strong>{task.label}</strong>
+                      <div className="next-steps-panel__status-group">
+                        <span className="status-pill" data-status={task.status.key}>
+                          {task.status.label}
+                        </span>
+                        {manualStatusLabel ? (
+                          <span className="status-pill status-pill--muted next-steps-panel__manual-pill">
+                            {manualStatusLabel}
+                          </span>
+                        ) : null}
+                      </div>
+                    </div>
+                    <p>{task.detail}</p>
+                  </button>
+                </li>
+              );
+            })}
           </ul>
         )}
       </div>
@@ -450,30 +583,33 @@ export default function NextStepsPanel({ steps = [], optimizationHref = null, lo
                 ×
               </button>
             </div>
-            <p className="task-overlay__detail">{overlayDescription}</p>
-
-            {overlayGuide ? (
-              <div className="task-overlay__content">
-                <div className="task-guide__section">
-                  <h4>How to visit your profile</h4>
-                  <ol className="task-guide__steps">
-                    {(overlayGuide.entrySteps ?? BASE_NAVIGATION_STEPS).map((step) => (
-                      <li key={step}>{step}</li>
+            <div className="task-overlay__detail">
+              <div className="task-overlay__summary">
+                <p>{overlayDescription}</p>
+              </div>
+              {manualLabel ? (
+                <div className="task-overlay__manual-status">
+                  <strong>{manualLabel}</strong>
+                  {manualTimestamp ? <span>Marked {manualTimestamp}</span> : null}
+                </div>
+              ) : null}
+              {overlaySteps.length ? (
+                <div className="task-overlay__steps">
+                  <h4>Step-by-step guide</h4>
+                  <ol>
+                    {overlaySteps.map((step, index) => (
+                      <li key={`${step}-${index}`} className="task-overlay__step-item">
+                        <span className="task-overlay__step-index">{index + 1}</span>
+                        <p>{step}</p>
+                      </li>
                     ))}
                   </ol>
                 </div>
+              ) : null}
+            </div>
 
-                {overlayGuide.steps?.length ? (
-                  <div className="task-guide__section">
-                    <h4>Make the change inside Google</h4>
-                    <ol className="task-guide__steps">
-                      {overlayGuide.steps.map((step) => (
-                        <li key={step}>{step}</li>
-                      ))}
-                    </ol>
-                  </div>
-                ) : null}
-
+            {overlayGuide ? (
+              <div className="task-overlay__content">
                 {overlayGuide.template ? (
                   <div className="task-guide__section task-guide__template">
                     <div className="task-guide__template-header">
@@ -534,6 +670,31 @@ export default function NextStepsPanel({ steps = [], optimizationHref = null, lo
             <p className="task-overlay__cta">
               Need more context? <Link href={optimizationHref ?? '#'}>View the full optimization roadmap ↗</Link>
             </p>
+            <div className="task-overlay__actions">
+              {businessId ? (
+                <button
+                  type="button"
+                  className="task-overlay__mark-complete"
+                  onClick={handleMarkComplete}
+                  disabled={markButtonDisabled}
+                >
+                  {manualCompletion
+                    ? 'Marked as complete'
+                    : isMarking
+                      ? 'Marking…'
+                      : 'Mark as Complete'}
+                </button>
+              ) : null}
+              <button type="button" className="task-overlay__close-secondary" onClick={closeOverlay}>
+                Close
+              </button>
+            </div>
+            {markSuccess ? (
+              <p className="task-overlay__mark-message">{markSuccess}</p>
+            ) : null}
+            {markError ? (
+              <p className="task-overlay__mark-message task-overlay__mark-message--error">{markError}</p>
+            ) : null}
           </div>
         </div>
       ) : null}

@@ -591,6 +591,35 @@ export function resolveLetterGrade(percent) {
   return 'F';
 }
 
+function buildManualCompletionMap(records) {
+  if (!Array.isArray(records) || !records.length) {
+    return new Map();
+  }
+
+  const entries = records
+    .filter((record) => record && record.taskId && !record.resolvedAt)
+    .map((record) => [record.taskId, record]);
+
+  return new Map(entries);
+}
+
+function attachManualCompletion(task, manualCompletions) {
+  if (!task || !manualCompletions?.size) {
+    return task;
+  }
+
+  const manualCompletion = manualCompletions.get(task.id);
+
+  if (!manualCompletion || task.status?.key === 'completed') {
+    return task;
+  }
+
+  return {
+    ...task,
+    manualCompletion
+  };
+}
+
 const SECTION_DEFINITIONS = [
   {
     id: 'profile-completeness',
@@ -618,13 +647,14 @@ const SECTION_DEFINITIONS = [
   },
 ];
 
-export function buildOptimizationRoadmap(place) {
+export function buildOptimizationRoadmap(place, options = {}) {
   if (!place) {
     return null;
   }
   // console.log('buildOptimizationRoadmap', place);
 
   const sidebarPhotos = normalizeSidebarPhotos(place.sidebar);
+  const manualCompletionMap = buildManualCompletionMap(options.manualCompletions);
 
   const tasks = [
     {
@@ -704,7 +734,7 @@ export function buildOptimizationRoadmap(place) {
       auto: true,
       ...computeReviewStatus(place.reviewCount, place.latestReview)
     }
-  ];
+  ].map((task) => attachManualCompletion(task, manualCompletionMap));
 
   const automatedTasks = tasks.filter((task) => task.auto);
   const manualTasks = tasks.filter((task) => !task.auto);

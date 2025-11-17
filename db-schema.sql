@@ -73,6 +73,30 @@ CREATE TABLE `gbp_profile_cache` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `gbp_task_completions`
+--
+
+CREATE TABLE `gbp_task_completions` (
+  `business_id` bigint(20) UNSIGNED NOT NULL,
+  `task_id` varchar(64) NOT NULL,
+  `status` enum('pending','approved','rejected') NOT NULL DEFAULT 'pending',
+  `marked_by` bigint(20) UNSIGNED DEFAULT NULL,
+  `marked_at` datetime NOT NULL DEFAULT current_timestamp(),
+  `notes` varchar(255) DEFAULT NULL,
+  `resolved_at` datetime DEFAULT NULL,
+  PRIMARY KEY (`business_id`, `task_id`),
+  KEY `idx_gbp_task_completions_marked_by` (`marked_by`),
+  CONSTRAINT `fk_gbp_task_completion_business`
+    FOREIGN KEY (`business_id`) REFERENCES `businesses` (`id`)
+    ON DELETE CASCADE,
+  CONSTRAINT `fk_gbp_task_completion_user`
+    FOREIGN KEY (`marked_by`) REFERENCES `users` (`id`)
+    ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `business_hours`
 --
 
