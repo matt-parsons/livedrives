@@ -1,9 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import BusinessOptimizationRoadmap from './BusinessOptimizationRoadmap';
+import NextStepsPanel from './NextStepsPanel';
+import { selectNextOptimizationSteps } from './optimization';
 
-export default function OptimizationRoadmapClient({ placeId, editHref }) {
+export default function OptimizationRoadmapClient({ placeId, editHref, optimizationHref }) {
   const [loading, setLoading] = useState(Boolean(placeId));
   const [error, setError] = useState(null);
   const [roadmap, setRoadmap] = useState(null);
@@ -60,23 +62,37 @@ export default function OptimizationRoadmapClient({ placeId, editHref }) {
     };
   }, [placeId]);
 
-  if (loading) {
-    return (
-      <div className="surface-card surface-card--muted surface-card--compact">
-        <div className="section-header">
-          <div>
-            <h2 className="section-title">Optimization progress</h2>
-            <p className="section-caption">Grabbing your progress...</p>
-          </div>
+  const nextSteps = useMemo(() => selectNextOptimizationSteps(roadmap), [roadmap]);
+  const shouldShowNextSteps = Boolean(placeId);
+
+  const roadmapContent = loading ? (
+    <div className="surface-card surface-card--muted surface-card--compact">
+      <div className="section-header">
+        <div>
+          <h2 className="section-title">Optimization roadmap</h2>
+          <p className="section-caption">Gathering Google Profile insights…</p>
         </div>
-        <p className="business-optimization-roadmap__connect-message">
-          Hang tight while we pull the latest details from Google.
-        </p>
       </div>
-    );
-  }
+      <p className="business-optimization-roadmap__connect-message">
+        Hang tight while we pull the latest details from Google.
+      </p>
+    </div>
+  ) : (
+    <BusinessOptimizationRoadmap roadmap={roadmap} error={error} placeId={placeId} editHref={editHref} />
+  );
 
   return (
-    <BusinessOptimizationRoadmap roadmap={roadmap} error={error} placeId={placeId} editHref={editHref} />
+    <>
+      {shouldShowNextSteps ? (
+        <NextStepsPanel
+          steps={nextSteps}
+          optimizationHref={optimizationHref}
+          loading={loading}
+          error={error}
+        />
+      ) : null}
+
+      <section className="section">{roadmapContent}</section>
+    </>
   );
 }

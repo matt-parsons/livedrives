@@ -771,3 +771,14 @@ export function buildOptimizationRoadmap(place) {
     progressPercent
   };
 }
+
+export function selectNextOptimizationSteps(roadmap, limit = 3) {
+  if (!roadmap || !Array.isArray(roadmap.tasks)) {
+    return [];
+  }
+
+  return roadmap.tasks
+    .filter((task) => task.status && task.status.key !== 'completed')
+    .sort((a, b) => (b.weight ?? 0) - (a.weight ?? 0))
+    .slice(0, limit);
+}

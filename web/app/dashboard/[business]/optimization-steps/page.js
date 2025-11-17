@@ -34,6 +34,7 @@ export default async function BusinessOptimizationStepsPage({ params }) {
   const businessIdentifier = business.businessSlug ?? String(business.id);
   const baseHref = `/dashboard/${encodeURIComponent(businessIdentifier)}`;
   const editHref = `${baseHref}/edit`;
+  const optimizationHref = `${baseHref}/optimization-steps`;
   const businessName = business.businessName || 'this business';
 
   return (
@@ -55,10 +56,12 @@ export default async function BusinessOptimizationStepsPage({ params }) {
                 We analyse Google Places data to prioritize the biggest profile wins.
               </p>
             </div>
-          </div>            
-            <section className="section">
-              <OptimizationRoadmapClient placeId={business.gPlaceId} editHref={editHref} />
-            </section>
+          </div>
+            <OptimizationRoadmapClient
+              placeId={business.gPlaceId}
+              editHref={editHref}
+              optimizationHref={optimizationHref}
+            />
           </div>
         </main>
       </div>
