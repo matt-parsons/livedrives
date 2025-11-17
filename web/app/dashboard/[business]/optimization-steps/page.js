@@ -3,6 +3,8 @@ import { AuthError, requireAuth } from '@/lib/authServer';
 import OptimizationRoadmapClient from '../OptimizationRoadmapClient';
 import BusinessNavigation from '../BusinessNavigation';
 import { loadBusiness } from '../helpers';
+import SidebarBrand from '../SidebarBrand';
+import DashboardBusinessHeader from '../DashboardBusinessHeader';
 
 export const metadata = {
   title: 'Optimization steps · Local Paint Pilot'
@@ -37,12 +39,14 @@ export default async function BusinessOptimizationStepsPage({ params }) {
   return (
     <div className="dashboard-layout__body">
         <aside className="dashboard-layout__sidebar" aria-label="Workspace navigation">
+          <SidebarBrand />
           <div className="dashboard-sidebar__menu">
             <BusinessNavigation businessIdentifier={businessIdentifier} active="optimization-steps" />
           </div>
         </aside>
 
         <main className="dashboard-layout__main">
+          <DashboardBusinessHeader />
           <div className="dashboard-layout__content">
           <div className="section-header">
             <div>

@@ -1,8 +1,7 @@
 import { notFound, redirect } from 'next/navigation';
 import { AuthError, requireAuth } from '@/lib/authServer';
-import BusinessSwitcher from './BusinessSwitcher';
-import BusinessSettingsShortcut from './BusinessSettingsShortcut';
 import { loadBusiness, loadOrganizationBusinesses } from './helpers';
+import { BusinessLayoutProvider } from './BusinessLayoutContext';
 
 export default async function BusinessLayout({ children, params }) {
   const identifier = params.business;
@@ -43,31 +42,19 @@ export default async function BusinessLayout({ children, params }) {
     : null;
   const locationLabel = destination ?? null;
 
+  const layoutContextValue = {
+    businessName,
+    locationLabel,
+    canManageSettings,
+    showBusinessSwitcher,
+    businessIdentifier,
+    businessOptions,
+    currentBusinessOptionValue
+  };
+
   return (
-    <div className="dashboard-layout">
-      <header className="dashboard-layout__header">
-        <div className="dashboard-layout__header-container">
-          <div className="dashboard-header">
-            <div className="dashboard-header__content">
-              <h1 className="page-title">{businessName}</h1>
-              {locationLabel ? <span className="dashboard-sidebar__location">{locationLabel}</span> : null}
-            </div>
-          </div>
-
-          {canManageSettings || showBusinessSwitcher ? (
-            <div className="dashboard-header__actions" aria-label="Business shortcuts">
-              {canManageSettings ? (
-                <BusinessSettingsShortcut businessIdentifier={businessIdentifier} />
-              ) : null}
-              {showBusinessSwitcher ? (
-                <BusinessSwitcher businesses={businessOptions} currentValue={currentBusinessOptionValue} />
-              ) : null}
-            </div>
-          ) : null}
-        </div>
-      </header>
-
-      {children}
-    </div>
+    <BusinessLayoutProvider value={layoutContextValue}>
+      <div className="dashboard-layout">{children}</div>
+    </BusinessLayoutProvider>
   );
 }

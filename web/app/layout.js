@@ -4,6 +4,7 @@ import { Inter } from 'next/font/google';
 import OwnerOperationsMenu from '@/app/components/OwnerOperationsMenu';
 import AuthSessionToggle from '@/app/components/AuthSessionToggle';
 import DashboardNavMobileToggle from '@/app/components/DashboardNavMobileToggle';
+import BrandIdentity from '@/app/components/BrandIdentity';
 
 
 const inter = Inter({ subsets: ['latin'] });
@@ -12,12 +13,6 @@ export const metadata = {
   title: 'Local Paint Pilot',
   description: 'Operations console for LPP'
 };
-
-function MongoozBoostMark(props) {
-  return (
-    <img src="/images/local-paint-pilot.png" alt="Local Paint Pilot Logo" />
-  );
-}
 
 export default function RootLayout({ children }) {
   const currentYear = new Date().getFullYear();
@@ -32,13 +27,7 @@ export default function RootLayout({ children }) {
             <div className="app-header__left">
               <DashboardNavMobileToggle />
               <Link className="app-brand" href="/dashboard">
-                <div className="brand-mark">
-                  <MongoozBoostMark />
-                </div>
-                <div className="brand-copy">
-                  <span className="brand-title">Local Paint Pilot</span>
-                  <span className="brand-subtitle">Boosting you Google Profile</span>
-                </div>
+                <BrandIdentity />
               </Link>
             </div>
             <div className="app-header__actions">
