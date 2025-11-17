@@ -4,6 +4,8 @@ import { AuthError, requireAuth } from '@/lib/authServer';
 import { loadBusiness } from '../helpers';
 import BusinessNavigation from '../BusinessNavigation';
 import BusinessForm from '../../businesses/BusinessForm';
+import SidebarBrand from '../SidebarBrand';
+import DashboardBusinessHeader from '../DashboardBusinessHeader';
 
 export default async function EditBusinessPage({ params }) {
   const identifier = params.business;
@@ -43,12 +45,14 @@ export default async function EditBusinessPage({ params }) {
   return (
     <div className="dashboard-layout__body">
         <aside className="dashboard-layout__sidebar" aria-label="Workspace navigation">
+          <SidebarBrand />
           <div className="dashboard-sidebar__menu">
             <BusinessNavigation businessIdentifier={businessIdentifier} active="dashboard" />
           </div>
         </aside>
 
         <main className="dashboard-layout__main">
+          <DashboardBusinessHeader />
           <div className="dashboard-layout__content">
             <header className="dashboard-page-header">
               <div className="dashboard-page-header__intro">

@@ -1,6 +1,8 @@
 import { notFound, redirect } from 'next/navigation';
 import { AuthError, requireAuth } from '@/lib/authServer';
 import BusinessNavigation from './BusinessNavigation';
+import SidebarBrand from './SidebarBrand';
+import DashboardBusinessHeader from './DashboardBusinessHeader';
 import {
   formatDate,
   formatDecimal,
@@ -180,12 +182,14 @@ export default async function BusinessDashboardPage({ params }) {
   return (
     <div className="dashboard-layout__body">
         <aside className="dashboard-layout__sidebar" aria-label="Workspace navigation">
+          <SidebarBrand />
           <div className="dashboard-sidebar__menu">
             <BusinessNavigation businessIdentifier={businessIdentifier} active="dashboard" />
           </div>
         </aside>
 
         <main className="dashboard-layout__main">
+          <DashboardBusinessHeader />
           <div className="dashboard-layout__content">
             <div className="section-header latest-geogrid-card__header">
               <div>

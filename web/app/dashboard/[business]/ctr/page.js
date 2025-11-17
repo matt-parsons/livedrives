@@ -12,6 +12,8 @@ import CtrMap from './CtrMap';
 import TrendChart from './TrendChart';
 import SessionList from './SessionList';
 import styles from './styles.module.css';
+import SidebarBrand from '../SidebarBrand';
+import DashboardBusinessHeader from '../DashboardBusinessHeader';
 
 function resolveMapsApiKey() {
   return process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? process.env.GOOGLE_API_KEY ?? null;
@@ -339,12 +341,14 @@ export default async function CtrDashboardPage({ params, searchParams }) {
   return (
     <div className="dashboard-layout__body">
         <aside className="dashboard-layout__sidebar" aria-label="Workspace navigation">
+          <SidebarBrand />
           <div className="dashboard-sidebar__menu">
             <BusinessNavigation businessIdentifier={businessIdentifier} active={null} />
           </div>
         </aside>
 
         <main className="dashboard-layout__main">
+          <DashboardBusinessHeader />
           <div className="dashboard-layout__content">
             <header className="dashboard-page-header">
               <div className="dashboard-page-header__intro">
