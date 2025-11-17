@@ -65,8 +65,8 @@ export default function OptimizationRoadmapClient({ placeId, editHref }) {
       <div className="surface-card surface-card--muted surface-card--compact">
         <div className="section-header">
           <div>
-            <h2 className="section-title">Optimization roadmap</h2>
-            <p className="section-caption">Gathering Google Profile insights…</p>
+            <h2 className="section-title">Optimization progress</h2>
+            <p className="section-caption">Grabbing your progress...</p>
           </div>
         </div>
         <p className="business-optimization-roadmap__connect-message">
