@@ -50,7 +50,7 @@ async function sendOobCode(payload) {
 }
 
 async function triggerVerificationEmail(idToken) {
-  await sendOobCode({ requestType: 'VERIFY_EMAIL', idToken });
+  await sendOobCode({ requestType: 'VERIFY_EMAIL', email });
 }
 
 async function triggerPasswordResetEmail(email) {

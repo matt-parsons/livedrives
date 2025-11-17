@@ -76,17 +76,17 @@ export async function POST(request) {
       }
     }
 
-    if (isNewUser) {
-      try {
-        await sendFirebasePasswordResetEmail(trimmedEmail);
-      } catch (error) {
-        console.error('Failed to send Firebase password reset email', error);
-        return Response.json(
-          { error: 'Unable to send login email. Please try again later.' },
-          { status: 502 }
-        );
-      }
-    }
+    // if (isNewUser) {
+    //   try {
+    //     await sendFirebasePasswordResetEmail(trimmedEmail);
+    //   } catch (error) {
+    //     console.error('Failed to send Firebase password reset email', error);
+    //     return Response.json(
+    //       { error: 'Unable to send login email. Please try again later.' },
+    //       { status: 502 }
+    //     );
+    //   }
+    // }
 
     const connection = await pool.getConnection();
 

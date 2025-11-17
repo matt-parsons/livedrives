@@ -619,6 +619,7 @@ textarea {
   display: flex;
   justify-content: center;
   overflow-x: hidden;
+  margin: 2rem 0;
 }
 
 .dashboard-layout__content {
@@ -3612,7 +3613,7 @@ textarea {
     overflow: hidden;
   }
 
-  body.dashboard-nav-open::after {
+  body.dashboard-nav-open .app-main::after {
     content: '';
     position: fixed;
     inset: 0;

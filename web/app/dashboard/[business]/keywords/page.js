@@ -466,7 +466,7 @@ export default async function BusinessKeywordsPage({ params, searchParams }) {
               <div className="dashboard-page-header__intro">
                 <h2 className="page-title">Keyword insights</h2>
                 <p className="page-subtitle">
-                  Track local ranking performance, CTR sessions, and profile optimization for {businessName}.
+                  Track the local ranking performance for {businessName}.
                 </p>
               </div>
             </header>
