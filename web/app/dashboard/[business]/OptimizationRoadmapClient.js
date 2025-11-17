@@ -5,7 +5,7 @@ import BusinessOptimizationRoadmap from './BusinessOptimizationRoadmap';
 import NextStepsPanel from './NextStepsPanel';
 import { selectNextOptimizationSteps } from './optimization';
 
-export default function OptimizationRoadmapClient({ placeId, editHref, optimizationHref }) {
+export default function OptimizationRoadmapClient({ placeId, businessId = null, editHref, optimizationHref }) {
   const [loading, setLoading] = useState(Boolean(placeId));
   const [error, setError] = useState(null);
   const [roadmap, setRoadmap] = useState(null);
@@ -27,7 +27,12 @@ export default function OptimizationRoadmapClient({ placeId, editHref, optimizat
       setRoadmap(null);
 
       try {
-        const response = await fetch(`/api/optimization-data?placeId=${encodeURIComponent(placeId)}`, {
+        const params = new URLSearchParams({ placeId });
+        if (businessId) {
+          params.set('businessId', String(businessId));
+        }
+
+        const response = await fetch(`/api/optimization-data?${params.toString()}`, {
           method: 'GET',
           signal: controller.signal,
           cache: 'no-store'
@@ -60,7 +65,7 @@ export default function OptimizationRoadmapClient({ placeId, editHref, optimizat
       isMounted = false;
       controller.abort();
     };
-  }, [placeId]);
+  }, [placeId, businessId]);
 
   const nextSteps = useMemo(() => selectNextOptimizationSteps(roadmap), [roadmap]);
   const shouldShowNextSteps = Boolean(placeId);
@@ -89,6 +94,7 @@ export default function OptimizationRoadmapClient({ placeId, editHref, optimizat
           optimizationHref={optimizationHref}
           loading={loading}
           error={error}
+          businessId={businessId}
         />
       ) : null}
 

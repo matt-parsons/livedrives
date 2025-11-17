@@ -1,9 +1,12 @@
 import cacheModule from '@lib/db/gbpProfileCache.js';
+import taskCompletionModule from '@lib/db/gbpTaskCompletions.js';
 import { fetchPlaceDetails } from '@/lib/googlePlaces';
 import { buildOptimizationRoadmap } from '@/app/dashboard/[business]/optimization';
 
 const cacheApi = cacheModule?.default ?? cacheModule;
+const completionsApi = taskCompletionModule?.default ?? taskCompletionModule;
 const { loadCachedProfile, saveCachedProfile } = cacheApi;
+const { loadTaskCompletions } = completionsApi;
 
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -60,6 +63,7 @@ export async function loadOptimizationData(placeId, options = {}) {
   const now = new Date();
   let cache = await loadCachedProfile(placeId);
   let warning = null;
+  let resolvedBusinessId = normalizeBusinessId(businessId) ?? cache?.businessId ?? null;
 
   const shouldRefresh =
     forceRefresh ||
@@ -89,7 +93,8 @@ export async function loadOptimizationData(placeId, options = {}) {
 
       const refreshedAt = now;
       const manualRefreshAt = manualTrigger ? now : cache?.lastManualRefreshAt ?? null;
-      const normalizedBusinessId = normalizeBusinessId(businessId) ?? cache?.businessId ?? null;
+      const normalizedBusinessId =
+        resolvedBusinessId ?? cache?.businessId ?? null;
 
       await saveCachedProfile({
         placeId,
@@ -111,6 +116,7 @@ export async function loadOptimizationData(placeId, options = {}) {
         lastManualRefreshAt: manualRefreshAt
       };
       refreshedFromSource = true;
+      resolvedBusinessId = normalizedBusinessId;
     } catch (error) {
       if (!cache?.place) {
         throw error;
@@ -129,7 +135,18 @@ export async function loadOptimizationData(placeId, options = {}) {
     cache.place.sidebar = cache.sidebar;
   }
 
-  const roadmap = buildOptimizationRoadmap(cache.place);
+  resolvedBusinessId = resolvedBusinessId ?? cache?.businessId ?? null;
+
+  let manualCompletions = [];
+  if (resolvedBusinessId && typeof loadTaskCompletions === 'function') {
+    try {
+      manualCompletions = await loadTaskCompletions(resolvedBusinessId);
+    } catch (error) {
+      console.warn('Failed to load manual GBP task completions', error);
+    }
+  }
+
+  const roadmap = buildOptimizationRoadmap(cache.place, { manualCompletions });
 
   return {
     place: cache.place,

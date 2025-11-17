@@ -338,6 +338,7 @@ export default function OptimizationPanelsClient({
         optimizationHref={optimizationHref}
         loading={loading}
         error={error}
+        businessId={businessId}
       />
     </>
   );

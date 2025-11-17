@@ -934,6 +934,18 @@ textarea {
   gap: 0.75rem;
 }
 
+.next-steps-panel__status-group {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.35rem;
+}
+
+.next-steps-panel__manual-pill {
+  font-size: 0.78rem;
+  padding: 4px 10px;
+}
+
 .next-steps-panel__item strong {
   font-size: 1.05rem;
   color: var(--color-heading);
@@ -1003,6 +1015,75 @@ textarea {
   margin: 1rem 0;
   color: #0f172a;
   font-size: 0.95rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.task-overlay__summary p {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.task-overlay__manual-status {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: 12px;
+  background: #fef3c7;
+  color: #92400e;
+  font-size: 0.88rem;
+}
+
+.task-overlay__manual-status strong {
+  font-size: 0.92rem;
+  color: #92400e;
+}
+
+.task-overlay__steps {
+  border-top: 1px solid #e2e8f0;
+  padding-top: 0.9rem;
+}
+
+.task-overlay__steps h4 {
+  margin: 0 0 0.5rem;
+  font-size: 0.95rem;
+  color: #0f172a;
+}
+
+.task-overlay__steps ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.task-overlay__step-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.task-overlay__step-index {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #ecfeff;
+  color: #0e7490;
+  font-weight: 600;
+  font-size: 0.9rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.task-overlay__step-item p {
+  margin: 0;
+  line-height: 1.45;
 }
 
 .task-overlay__content {
@@ -1013,13 +1094,58 @@ textarea {
 }
 
 .task-overlay__cta {
-  margin: 0;
+  margin: 1rem 0 0;
   font-size: 0.9rem;
   color: rgba(15, 23, 42, 0.8);
 }
 
 .task-overlay__cta a {
   text-decoration: underline;
+}
+
+.task-overlay__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin: 0.85rem 0 0.35rem;
+}
+
+.task-overlay__mark-complete {
+  border: none;
+  border-radius: 999px;
+  background: #0ea5e9;
+  color: #fff;
+  font-weight: 600;
+  padding: 0.55rem 1.25rem;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.task-overlay__mark-complete:disabled {
+  background: rgba(14, 165, 233, 0.35);
+  color: rgba(255, 255, 255, 0.85);
+  cursor: not-allowed;
+}
+
+.task-overlay__close-secondary {
+  border: 1px solid rgba(15, 23, 42, 0.2);
+  border-radius: 999px;
+  background: #fff;
+  color: #0f172a;
+  font-weight: 600;
+  padding: 0.55rem 1.1rem;
+  cursor: pointer;
+}
+
+.task-overlay__mark-message {
+  margin: 0.25rem 0 0;
+  font-size: 0.85rem;
+  color: #03644e;
+}
+
+.task-overlay__mark-message--error {
+  color: #b91c1c;
 }
 
 .task-guide__section {
