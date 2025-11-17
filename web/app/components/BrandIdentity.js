@@ -6,7 +6,7 @@ export default function BrandIdentity() {
       </div>
       <div className="brand-copy">
         <span className="brand-title">Local Paint Pilot</span>
-        <span className="brand-subtitle">Boosting you Google Profile</span>
+        <span className="brand-subtitle">Boosting your Google Profile</span>
       </div>
     </>
   );

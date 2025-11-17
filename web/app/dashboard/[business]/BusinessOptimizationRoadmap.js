@@ -240,7 +240,7 @@ export default function BusinessOptimizationRoadmap({ roadmap, error, placeId, e
             }`}
           >
             <div className="business-optimization-roadmap__summary-header">
-              <strong className="business-optimization-roadmap__summary-heading">Optimization readiness</strong>
+              <strong className="business-optimization-roadmap__summary-heading">Optimization progress</strong>
               <span className="business-optimization-roadmap__summary-progress">{roadmap.progressPercent}% complete</span>
             </div>
             <div aria-hidden="true" className="business-optimization-roadmap__progress-track">
@@ -258,10 +258,9 @@ export default function BusinessOptimizationRoadmap({ roadmap, error, placeId, e
                   <span className="business-optimization-roadmap__section-summary-card-title">
                     {section.title}
                   </span>
-                  <strong className="business-optimization-roadmap__section-summary-card-grade">{section.grade ?? '—'}</strong>
-                  <span className="business-optimization-roadmap__section-summary-card-completion">
+                  <strong className="business-optimization-roadmap__section-summary-card-completion">
                     {section.completion === null ? 'No score yet' : `${section.completion}% complete`}
-                  </span>
+                  </strong>
                 </div>
               ))}
             </div>
@@ -283,10 +282,9 @@ export default function BusinessOptimizationRoadmap({ roadmap, error, placeId, e
                 ) : null}
               </div>
               <div className="business-optimization-roadmap__section-score">
-                <strong className="business-optimization-roadmap__section-score-value">{section.grade ?? '—'}</strong>
-                <div className="business-optimization-roadmap__section-completion">
+                <strong className="business-optimization-roadmap__section-completion">
                   {section.completion === null ? 'No score yet' : `${section.completion}% complete`}
-                </div>
+                </strong>
               </div>
             </div>
 

@@ -66,7 +66,7 @@ export default function OptimizationRoadmapClient({ placeId, editHref }) {
         <div className="section-header">
           <div>
             <h2 className="section-title">Optimization roadmap</h2>
-            <p className="section-caption">Gathering Google Business Profile insights…</p>
+            <p className="section-caption">Gathering Google Profile insights…</p>
           </div>
         </div>
         <p className="business-optimization-roadmap__connect-message">

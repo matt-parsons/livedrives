@@ -139,7 +139,6 @@ textarea {
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
-  padding-bottom: clamp(24px, 3vw, 56px);
 }
 
 .app-header {
@@ -155,6 +154,7 @@ textarea {
   min-height: var(--app-header-height);
   position: relative;
   z-index: 30;
+  display: none;
 }
 
 .app-header__left {
@@ -668,7 +668,7 @@ textarea {
   flex-direction: column;
   align-items: center;
   overflow-x: hidden;
-  margin: 2rem 0;
+  margin: 0 0 2rem;
 }
 
 .dashboard-layout__content {
@@ -3675,6 +3675,7 @@ textarea {
   .app-header {
     padding: 14px 18px;
     gap: 12px;
+    display: flex;
   }
 
   .app-header__menu-toggle {
