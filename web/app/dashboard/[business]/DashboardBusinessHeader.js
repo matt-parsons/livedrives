@@ -1,3 +1,5 @@
+'use client';
+
 import BusinessSettingsShortcut from './BusinessSettingsShortcut';
 import BusinessSwitcher from './BusinessSwitcher';
 import { useBusinessLayout } from './BusinessLayoutContext';
