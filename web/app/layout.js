@@ -3,6 +3,7 @@ import './globals.css';
 import { Inter } from 'next/font/google';
 import OwnerOperationsMenu from '@/app/components/OwnerOperationsMenu';
 import AuthSessionToggle from '@/app/components/AuthSessionToggle';
+import DashboardNavMobileToggle from '@/app/components/DashboardNavMobileToggle';
 
 
 const inter = Inter({ subsets: ['latin'] });
@@ -28,18 +29,37 @@ export default function RootLayout({ children }) {
         <div className="app-grid" aria-hidden="true" />
         <div className="app-wrapper">
           <header className="app-header">
-            <Link className="app-brand" href="/dashboard">
-              <div className="brand-mark">
-                <MongoozBoostMark />
-              </div>
-              <div className="brand-copy">
-                <span className="brand-title">Local Paint Pilot</span>
-                <span className="brand-subtitle">Boosting you Google Profile</span>
-              </div>
-            </Link>
+            <div className="app-header__left">
+              <DashboardNavMobileToggle />
+              <Link className="app-brand" href="/dashboard">
+                <div className="brand-mark">
+                  <MongoozBoostMark />
+                </div>
+                <div className="brand-copy">
+                  <span className="brand-title">Local Paint Pilot</span>
+                  <span className="brand-subtitle">Boosting you Google Profile</span>
+                </div>
+              </Link>
+            </div>
             <div className="app-header__actions">
-              <AuthSessionToggle />
-              <OwnerOperationsMenu />
+              <div className="app-header__actions-inline">
+                <AuthSessionToggle />
+                <OwnerOperationsMenu />
+              </div>
+              <details className="app-header__actions-menu">
+                <summary className="app-header__actions-summary">
+                  <span className="sr-only">Open account menu</span>
+                  <span aria-hidden="true" className="app-header__actions-dots" />
+                </summary>
+                <div className="app-header__actions-panel">
+                  <div className="app-header__actions-panel-item">
+                    <AuthSessionToggle />
+                  </div>
+                  <div className="app-header__actions-panel-item">
+                    <OwnerOperationsMenu />
+                  </div>
+                </div>
+              </details>
             </div>
           </header>
           <main className="app-main">{children}</main>
