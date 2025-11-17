@@ -391,9 +391,6 @@ export default function NextStepsPanel({ steps = [], optimizationHref = null, lo
               Focus on these tasks to strengthen your local visibility.
             </p>
           </div>
-          <Link className="cta-link" href={optimizationHref ?? '#'}>
-            Explore full roadmap ↗
-          </Link>
         </div>
 
         {loading ? (

@@ -265,7 +265,6 @@ export default function BusinessOptimizationRoadmap({ roadmap, error, placeId, e
               ))}
             </div>
           ) : null}
-
         </div>
 
         {roadmap.profilePreview ? <ProfilePreview preview={roadmap.profilePreview} /> : null}
