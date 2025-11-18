@@ -10,7 +10,7 @@ export default async function OperationsPage({ searchParams }) {
   try {
     const session = await requireAuth();
 
-    if (session.role !== 'owner') {
+    if (session.role !== 'admin') {
       redirect('/dashboard');
     }
 

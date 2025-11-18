@@ -55,7 +55,7 @@ export default async function GeoGridRunPage({ params }) {
 
   const businessIdentifier = business.businessSlug ?? String(business.id);
 
-  if (session.role !== 'owner') {
+  if (session.role !== 'owner' && session.role !== 'admin') {
     redirect(`/dashboard/${encodeURIComponent(businessIdentifier)}/keywords`);
   }
 
@@ -93,7 +93,7 @@ export default async function GeoGridRunPage({ params }) {
     };
   });
 
-  const canRerun = session.role === 'owner';
+  const canRerun = session.role === 'admin';
   const keywordLabel = runSummary.keyword ?? '(no keyword)';
   const runDateLabel = runSummary.runDate ?? null;
   const runSubtitle = [keywordLabel, runDateLabel].filter(Boolean).join(' • ');

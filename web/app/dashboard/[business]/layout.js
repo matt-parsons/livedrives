@@ -35,7 +35,7 @@ export default async function BusinessLayout({ children, params }) {
   const businessIdentifier = business.businessSlug ?? String(business.id);
   const currentBusinessOptionValue = businessIdentifier;
   const showBusinessSwitcher = businessOptions.length > 1;
-  const canManageSettings = session.role === 'owner' || session.role === 'admin';
+  const canManageSettings = session.role === 'admin';
   const businessName = business.businessName || 'Business';
   const destination = business.destinationAddress
     ? `${business.destinationAddress}${business.destinationZip ? `, ${business.destinationZip}` : ''}`

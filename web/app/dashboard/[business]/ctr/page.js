@@ -152,7 +152,7 @@ export default async function CtrDashboardPage({ params, searchParams }) {
   }
 
 
-  if (session.role !== 'owner') {
+  if (session.role !== 'owner' && session.role !== 'admin') {
     redirect(`/dashboard/${encodeURIComponent(identifier)}`);
   }
 

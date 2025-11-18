@@ -164,7 +164,8 @@ export default async function BusinessDashboardPage({ params }) {
     notFound();
   }
 
-  const canManageSettings = session.role === 'owner' || session.role === 'admin';
+  const isAdmin = session.role === 'admin';
+  const canManageSettings = isAdmin;
 
   const geoGridRunsRaw = await loadGeoGridRunSummaries(business.id);
   const geoGridRuns = geoGridRunsRaw.map(mapRunRecord);
@@ -210,7 +211,7 @@ export default async function BusinessDashboardPage({ params }) {
               businessId={business.id}
               optimizationHref={optimizationHref}
               canManageSettings={canManageSettings}
-              isOwner={session.role === 'owner'}
+              isAdmin={isAdmin}
               editHref={editHref}
               mapPoints={mapPoints}
               mapCenter={mapCenter}

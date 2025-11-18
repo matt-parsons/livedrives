@@ -135,7 +135,7 @@ function TrialSummaryCard({ trial }) {
   );
 }
 
-export default async function OwnerUserDirectoryPage() {
+export default async function AdminUserDirectoryPage() {
   let session;
 
   try {
@@ -148,7 +148,7 @@ export default async function OwnerUserDirectoryPage() {
     throw error;
   }
 
-  if (session.actualRole !== 'owner') {
+  if (session.actualRole !== 'admin') {
     redirect('/dashboard');
   }
 

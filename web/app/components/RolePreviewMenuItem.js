@@ -39,7 +39,7 @@ export default function RolePreviewMenuItem({ isPreviewing }) {
       </span>
       <span className="text-xs text-muted-foreground">
         {isPreviewing
-          ? 'Return to your owner workspace view.'
+          ? 'Return to your admin workspace view.'
           : 'Temporarily view the dashboard as a member user.'}
       </span>
     </DropdownMenuItem>
