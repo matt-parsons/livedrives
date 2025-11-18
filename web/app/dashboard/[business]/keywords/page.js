@@ -103,7 +103,7 @@ export default async function BusinessKeywordsPage({ params, searchParams }) {
     notFound();
   }
 
-  const isOwner = session.role === 'owner';
+  const canViewCtr = session.role === 'owner' || session.role === 'admin';
 
   const businessName = business.businessName || 'Business dashboard';
   const businessIdentifier = business.businessSlug ?? String(business.id);
@@ -488,7 +488,7 @@ export default async function BusinessKeywordsPage({ params, searchParams }) {
                 />
             </section>
 
-            {isOwner ? (
+            {canViewCtr ? (
               <section className="section">
                 <div className="surface-card surface-card--muted surface-card--compact">
                   <div className="section-header">

@@ -9,7 +9,7 @@ export default async function GeoGridLauncherPage() {
   try {
     const session = await requireAuth();
 
-    if (session.role !== 'owner') {
+    if (session.role !== 'admin') {
       redirect('/dashboard');
     }
 

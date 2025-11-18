@@ -35,7 +35,7 @@ export async function DELETE(request, { params }) {
     return handleAuthFailure(error);
   }
 
-  if (session.actualRole !== 'owner') {
+  if (session.actualRole !== 'admin') {
     return jsonError('Forbidden', 403);
   }
 

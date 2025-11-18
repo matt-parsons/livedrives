@@ -12,7 +12,7 @@ import {
   DropdownMenuSeparator
 } from '@/components/ui/dropdown-menu';
 
-const OWNER_OPERATION_LINKS = [
+const ADMIN_OPERATION_LINKS = [
   {
     href: '/dashboard/operations',
     label: 'Operations hub',
@@ -50,16 +50,16 @@ const OWNER_OPERATION_LINKS = [
   }
 ];
 
-export default async function OwnerOperationsMenu() {
+export default async function AdminOperationsMenu() {
   const session = await getOptionalSession();
 
   if (!session) {
     return null;
   }
 
-  const hasOwnerAccess = session.actualRole === 'owner';
+  const hasAdminAccess = session.actualRole === 'admin';
 
-  if (!hasOwnerAccess) {
+  if (!hasAdminAccess) {
     return null;
   }
 
@@ -69,17 +69,17 @@ export default async function OwnerOperationsMenu() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="secondary" className="gap-2">
-          {isPreviewing ? 'Member preview' : 'Owner tools'}
+          {isPreviewing ? 'Member preview' : 'Admin tools'}
           <ChevronDown className="h-4 w-4 opacity-70" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-72">
         <DropdownMenuLabel className="text-xs uppercase tracking-wide text-muted-foreground">
-          Owner workspace controls
+          Admin workspace controls
           {isPreviewing ? ' · preview mode' : ''}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        {OWNER_OPERATION_LINKS.map((item) => (
+        {ADMIN_OPERATION_LINKS.map((item) => (
           <DropdownMenuItem key={item.href} asChild className="flex flex-col items-start gap-1">
             <Link href={item.href}>
               <span className="font-semibold leading-tight">{item.label}</span>

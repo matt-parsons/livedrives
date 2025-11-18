@@ -70,7 +70,8 @@ export default async function BusinessSettingsPage({ params }) {
     notFound();
   }
 
-  const canManageSettings = session.role === 'owner' || session.role === 'admin';
+  const isAdmin = session.role === 'admin';
+  const canManageSettings = isAdmin;
 
   if (!canManageSettings) {
     redirect(`/dashboard/${encodeURIComponent(identifier)}`);
@@ -255,7 +256,7 @@ export default async function BusinessSettingsPage({ params }) {
                 schedule={geoGridSchedule}
                 timezone={business.timezone}
                 isBusinessActive={business.isActive === true || business.isActive === 1}
-                canEdit={session.role === 'owner'}
+                canEdit={isAdmin}
               />
             </section>
 

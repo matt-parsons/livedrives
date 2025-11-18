@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import './globals.css';
 import { Inter } from 'next/font/google';
-import OwnerOperationsMenu from '@/app/components/OwnerOperationsMenu';
+import AdminOperationsMenu from '@/app/components/AdminOperationsMenu';
 import AuthSessionToggle from '@/app/components/AuthSessionToggle';
 import DashboardNavMobileToggle from '@/app/components/DashboardNavMobileToggle';
 import BrandIdentity from '@/app/components/BrandIdentity';
@@ -32,7 +32,7 @@ export default function RootLayout({ children }) {
           <footer className="app-footer">
             <p className="app-footer__text">© {currentYear} Local Paint Pilot</p>
             <div className="app-footer__actions">
-              <OwnerOperationsMenu />
+              <AdminOperationsMenu />
               <AuthSessionToggle appearance="link" />
             </div>
           </footer>

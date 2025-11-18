@@ -52,7 +52,7 @@ export async function PATCH(request, { params }) {
   try {
     const session = await requireAuth(request);
 
-    if (session.role !== 'owner') {
+    if (session.role !== 'admin') {
       return Response.json({ error: 'Forbidden' }, { status: 403 });
     }
 

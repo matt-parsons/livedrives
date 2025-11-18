@@ -7,7 +7,7 @@ export function resolveOrganizationScope(input) {
 
     return {
       organizationId,
-      canAccessAllOrganizations: canAccessAllOrganizations || role === 'owner'
+      canAccessAllOrganizations: canAccessAllOrganizations || role === 'admin'
     };
   }
 

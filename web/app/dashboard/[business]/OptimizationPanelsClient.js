@@ -40,7 +40,7 @@ export default function OptimizationPanelsClient({
   latestRunSummary = null,
   keywordsHref = null,
   ctrHref = null,
-  isOwner = false
+  isAdmin = false
 }) {
   const [loading, setLoading] = useState(Boolean(placeId));
   const [error, setError] = useState(null);
@@ -113,7 +113,7 @@ export default function OptimizationPanelsClient({
     ? new Date(meta.nextManualRefreshAt)
     : null;
   const manualCooldownActive =
-    !isOwner &&
+    !isAdmin &&
     Boolean(nextManualRefreshDate && nextManualRefreshDate.getTime() > Date.now());
   const manualCooldownLabel = manualCooldownActive
     ? formatTimestamp(nextManualRefreshDate)
@@ -122,8 +122,8 @@ export default function OptimizationPanelsClient({
     ? formatTimestamp(meta.lastRefreshedAt)
     : 'Not yet refreshed';
   const refreshDisabled = !placeId || refreshing || loading || manualCooldownActive;
-  const manualRefreshHelper = isOwner
-    ? 'Owners can refresh this data without waiting between attempts.'
+  const manualRefreshHelper = isAdmin
+    ? 'Admins can refresh this data without waiting between attempts.'
     : manualCooldownActive
       ? `Next manual refresh available ${manualCooldownLabel}.`
       : 'You can refresh this data once per day when needed.';

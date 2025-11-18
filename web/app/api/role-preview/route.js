@@ -27,7 +27,7 @@ export async function POST(request) {
     return handleAuthFailure(error);
   }
 
-  if (session.actualRole !== 'owner') {
+  if (session.actualRole !== 'admin') {
     return jsonError('Forbidden', 403);
   }
 
@@ -64,7 +64,7 @@ export async function DELETE(request) {
     return handleAuthFailure(error);
   }
 
-  if (session.actualRole !== 'owner') {
+  if (session.actualRole !== 'admin') {
     return jsonError('Forbidden', 403);
   }
 

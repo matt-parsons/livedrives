@@ -47,7 +47,7 @@ function filterToToday(rows, timezone) {
 export async function GET(request) {
   const session = await requireAuth(request);
 
-  if (session.role !== 'owner') {
+  if (session.role !== 'admin') {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 

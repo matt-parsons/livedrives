@@ -68,7 +68,7 @@ export async function POST(request) {
       businessId,
       forceRefresh: true,
       manualTrigger: true,
-      manualRefreshCooldownBypass: session.role === 'owner'
+      manualRefreshCooldownBypass: session.role === 'admin'
     });
     return NextResponse.json({ data });
   } catch (error) {
