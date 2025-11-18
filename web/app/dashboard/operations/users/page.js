@@ -1,7 +1,6 @@
 import { redirect } from 'next/navigation';
 import { AuthError, requireAuth } from '@/lib/authServer';
-import { loadTrialStatus } from '@/app/dashboard/get-started/helpers';
-import { loadOrganizationMembers, loadOrganizationSubscription } from './helpers';
+import { loadAllOrganizationDirectories } from './helpers';
 import UserDirectoryTable from './UserDirectoryTable';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -152,15 +151,14 @@ export default async function AdminUserDirectoryPage() {
     redirect('/dashboard');
   }
 
-  const [members, trial, subscription] = await Promise.all([
-    loadOrganizationMembers(session.organizationId),
-    loadTrialStatus(session.organizationId),
-    loadOrganizationSubscription(session.organizationId)
-  ]);
+  const directories = await loadAllOrganizationDirectories();
 
-  const membersWithContext = members.map((member) => ({
-    ...member,
-    isSelf: member.id === session.userId
+  const directoriesWithContext = directories.map((directory) => ({
+    ...directory,
+    members: directory.members.map((member) => ({
+      ...member,
+      isSelf: member.id === session.userId
+    }))
   }));
 
   return (
@@ -172,19 +170,34 @@ export default async function AdminUserDirectoryPage() {
         </p>
       </section>
 
-      <section className="section">
-        <div className="grid gap-4 lg:grid-cols-2">
-          <SubscriptionSummaryCard subscription={subscription} trial={trial} />
-          <TrialSummaryCard trial={trial} />
-        </div>
-      </section>
-
-      <section className="section">
-        <UserDirectoryTable
-          members={membersWithContext}
-          organizationName={subscription?.name || 'Workspace'}
-        />
-      </section>
+      {directoriesWithContext.length ? (
+        <section className="section space-y-12">
+          {directoriesWithContext.map((directory) => (
+            <div key={directory.organizationId} className="space-y-6">
+              <div>
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">Organization</p>
+                <p className="text-2xl font-semibold text-foreground">{directory.organizationName}</p>
+                <p className="text-sm text-muted-foreground">ID #{directory.organizationId}</p>
+              </div>
+              <div className="grid gap-4 lg:grid-cols-2">
+                <SubscriptionSummaryCard subscription={directory.subscription} trial={directory.trial} />
+                <TrialSummaryCard trial={directory.trial} />
+              </div>
+              <UserDirectoryTable
+                members={directory.members}
+                organizationName={directory.subscription?.name || directory.organizationName}
+              />
+            </div>
+          ))}
+        </section>
+      ) : (
+        <section className="section">
+          <div className="rounded-2xl border border-dashed border-border/70 bg-card/70 p-6 text-sm text-muted-foreground">
+            <p className="font-semibold text-foreground">No organizations detected</p>
+            <p className="mt-2">New workspaces will appear here as soon as they are created.</p>
+          </div>
+        </section>
+      )}
     </div>
   );
 }
