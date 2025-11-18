@@ -66,7 +66,7 @@ export async function POST(request) {
 
     if (!userRecord.emailVerified) {
       try {
-        await sendFirebaseVerificationEmail(userRecord.uid);
+        await sendFirebaseVerificationEmail(userRecord.uid, trimmedEmail);
       } catch (error) {
         console.error('Failed to send Firebase verification email', error);
         return Response.json(

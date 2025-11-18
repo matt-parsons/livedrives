@@ -1076,7 +1076,7 @@ textarea {
   gap: 0.75rem;
   background-color: rgb(249 250 251 / 1);
   padding: 10px;
-   align-items: center;  
+  align-items: center;  
 }
 
 .task-overlay__step-index {
