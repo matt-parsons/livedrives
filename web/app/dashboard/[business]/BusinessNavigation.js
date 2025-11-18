@@ -21,7 +21,7 @@ const NAV_ITEMS = [
   { id: 'optimization-steps', label: 'Optimization steps', buildHref: (base) => `${base}/optimization-steps` },
   { id: 'keywords', label: 'Keywords', buildHref: (base) => `${base}/keywords` },
   { id: 'settings', label: 'Settings', buildHref: (base) => `${base}/settings` },
-  { id: 'logout', label: 'Log out', buildHref: (base) => `${base}/logout` },
+  { id: 'logout', label: 'Log out', buildHref: (base) => `/logout` },
 ];
 
 export default function BusinessNavigation({ businessIdentifier, active = 'dashboard' }) {

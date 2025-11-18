@@ -60,7 +60,7 @@ export default async function AdminOperationsMenu() {
   const hasAdminAccess = session.actualRole === 'admin';
 
   if (!hasAdminAccess) {
-    return null;
+    return <div>{session}</div>;
   }
 
   const isPreviewing = Boolean(session.previewRole);
