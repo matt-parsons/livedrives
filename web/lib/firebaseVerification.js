@@ -49,16 +49,21 @@ async function sendOobCode(payload) {
   }
 }
 
+async function triggerVerificationEmail(idToken, email) {
+  await sendOobCode({ requestType: 'VERIFY_EMAIL', idToken, email });
+}
+
 async function triggerPasswordResetEmail(email) {
   await sendOobCode({ requestType: 'PASSWORD_RESET', email });
 }
 
-export async function sendFirebaseVerificationEmail(email) {
-  if (!email) {
-    throw new Error('An email is required to send a verification email.');
+export async function sendFirebaseVerificationEmail(uid, email) {
+  if (!uid) {
+    throw new Error('A Firebase UID is required to send a verification email.');
   }
 
-  await sendOobCode({ requestType: 'VERIFY_EMAIL', email });
+  const idToken = await exchangeCustomTokenForIdToken(uid);
+  await triggerVerificationEmail(idToken, email);
 }
 
 export async function sendFirebasePasswordResetEmail(email) {
