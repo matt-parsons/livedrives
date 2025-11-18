@@ -19,6 +19,11 @@ const OWNER_OPERATION_LINKS = [
     description: 'Logs, scheduler, and geo operations overview.'
   },
   {
+    href: '/dashboard/operations/users',
+    label: 'User directory',
+    description: 'Reset passwords, review billing, and remove members.'
+  },
+  {
     href: '/dashboard/operations?tab=geosearch',
     label: 'GeoSearch log',
     description: 'Inspect recent GeoSearch service output and errors.'
