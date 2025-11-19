@@ -137,18 +137,10 @@ export default function KeywordPerformanceSpotlight({ items, mapsApiKey = null }
         display: 'flex',
         flexDirection: 'column',
         gap: '1.75rem',
-        padding: '1.75rem'
       }}
     >
-      <div
-        style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: '1rem',
-          justifyContent: 'space-between',
-          alignItems: 'flex-end'
-        }}
-      >
+      <div className="surface-card surface-card--muted surface-card--compact">
+
         <div style={{ flex: '1 1 260px', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
           <label
             htmlFor="keyword-selector"

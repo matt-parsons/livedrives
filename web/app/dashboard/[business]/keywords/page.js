@@ -466,17 +466,17 @@ export default async function BusinessKeywordsPage({ params, searchParams }) {
         <main className="dashboard-layout__main">
           <DashboardBusinessHeader />
           <div className="dashboard-layout__content">
-            <header className="dashboard-page-header">
-              <div className="dashboard-page-header__intro">
-                <h2 className="page-title">Keyword insights</h2>
-                <p className="page-subtitle">
+            <div className="section-header">
+              <div>
+                <h2 className="section-title">Keyword insights</h2>
+                <p className="section-caption">
                   Track the local ranking performance for {businessName}.
                 </p>
               </div>
-            </header>
+            </div>
 
             <section className="section">
-                <KeywordPerformanceSpotlight items={keywordPerformanceItems} mapsApiKey={mapsApiKey} />
+              <KeywordPerformanceSpotlight items={keywordPerformanceItems} mapsApiKey={mapsApiKey} />
             </section>
 
             <section className="section">

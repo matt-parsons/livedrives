@@ -158,7 +158,7 @@ export default async function BusinessSettingsPage({ params }) {
               <div className="dashboard-page-header__intro">
                 <h2 className="page-title">Business settings</h2>
                 <p className="page-subtitle">
-                  Manage contact details, service availability, origin zones, and SOAX proxy credentials for {businessName}.
+                  Manage details for {businessName}.
                 </p>
               </div>
             </header>
