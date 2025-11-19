@@ -21,7 +21,7 @@ const NAV_ITEMS = [
   { id: 'optimization-steps', label: 'Optimization steps', buildHref: (base) => `${base}/optimization-steps` },
   { id: 'keywords', label: 'Keywords', buildHref: (base) => `${base}/keywords` },
   { id: 'settings', label: 'Settings', buildHref: (base) => `${base}/settings` },
-  { id: 'logout', label: 'Log out', buildHref: (base) => `/logout` },
+  { id: 'logout', label: 'Log out', buildHref: () => '/logout', prefetch: false }
 ];
 
 export default function BusinessNavigation({ businessIdentifier, active = 'dashboard' }) {
@@ -119,6 +119,8 @@ export default function BusinessNavigation({ businessIdentifier, active = 'dashb
           {NAV_ITEMS.map((item) => {
             const href = item.buildHref(baseHref);
             const isActive = item.id === active;
+            const prefetch =
+              typeof item.prefetch === 'boolean' ? item.prefetch : undefined;
 
             return (
               <li key={item.id} className="page-subnav__list-item">
@@ -127,7 +129,7 @@ export default function BusinessNavigation({ businessIdentifier, active = 'dashb
                     {item.label}
                   </span>
                 ) : (
-                  <Link href={href} className="page-subnav__item">
+                  <Link prefetch={prefetch} href={href} className="page-subnav__item">
                     {item.label}
                   </Link>
                 )}
