@@ -88,10 +88,6 @@ export default function AuthActionPage({ searchParams }) {
           if (info?.data?.email) {
             setEmail(info.data.email);
           }
-
-          return applyActionCode(auth, oobCode);
-        })
-        .then(() => {
           setScreen('reset');
         })
         .catch((err) => {
