@@ -13,13 +13,13 @@ if (isMainThread) {
     require('dotenv').config({ quiet: true }); 
 }
 
-let recordRankingSnapshot = null;
+let insertGeoGridPoint = null;
 if (isMainThread) {
-  ({ recordRankingSnapshot } = require('../lib/db/ranking_store'));
+  ({ insertGeoGridPoint } = require('../lib/db/geogrid_store'));
 }
 
 const workerConfig = {
-    soaxPassword: process.env.SOAX_PASSWORD ?? '',
+    soaxPassword: process.env.SOAX_PASSWORD_RES ?? '',
 };
 
 const LOCK_FILE = path.join(__dirname, 'workerPool.lock');
@@ -126,13 +126,11 @@ if (!isMainThread) {
           });
           
           rankResult = acquisitionResult; // Store the acquisition object
-          const hasHtml = rankResult.rawHtml && rankResult.rawHtml.trim().length > 0;
-
-          console.log(`[RANKING] Keyword "${keyword}" for "${businessName}" and we have HTML: "${hasHtml}"`);
+          console.log(`[RANKING] Keyword "${keyword}" for "${businessName}" and we have HTML`);
           
           // --- STAGE 2: ANALYSIS (Parse HTML in-memory) ---
           if (rankResult.rawHtml) {
-              const parseResult = parseRankFromString(rankResult.rawHtml, businessName);
+              const parseResult = parseLocalResults(rankResult.rawHtml, businessName);
 
               console.log(`[RANKING] Result ${parseResult.rank} ${parseResult.reason} (total ${parseResult.totalResults ?? parseResult.places?.length ?? 0})`);
 
@@ -207,7 +205,134 @@ if (!isMainThread) {
   
 } else { // Main Thread Code
 
-  let geoGridArtifactColumnsSupported = true;
+  function toNonEmptyString(value) {
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      return trimmed.length ? trimmed : null;
+    }
+    return null;
+  }
+
+  function toFiniteNumber(value) {
+    if (value === null || value === undefined) {
+      return null;
+    }
+    const numeric = typeof value === 'number' ? value : Number(value);
+    return Number.isFinite(numeric) ? numeric : null;
+  }
+
+  function normalizePlaceResult(place, index) {
+    if (!place || typeof place !== 'object') {
+      return null;
+    }
+
+    const normalized = {
+      rank: toFiniteNumber(place.rank) ?? (index + 1)
+    };
+
+    const stringProps = {
+      name: place.name,
+      category: place.category,
+      address: place.address,
+      website: place.website,
+      domain: place.domain,
+      phone: place.phone,
+      reviews_url: place.reviews_url,
+      hours_today: place.hours_today,
+      status_text: place.status_text,
+      place_id: place.place_id,
+      raw_place_id: place.raw_place_id,
+      place_id_source: place.place_id_source,
+      cid: place.cid
+    };
+
+    for (const [key, raw] of Object.entries(stringProps)) {
+      const value = toNonEmptyString(raw);
+      if (value !== null) {
+        normalized[key] = value;
+      }
+    }
+
+    const numberProps = {
+      rating: place.rating,
+      review_count: place.review_count,
+      latitude: place.latitude,
+      longitude: place.longitude
+    };
+
+    for (const [key, raw] of Object.entries(numberProps)) {
+      const value = toFiniteNumber(raw);
+      if (value !== null) {
+        normalized[key] = value;
+      }
+    }
+
+    return normalized;
+  }
+
+  function normalizeMatchedResult(matched) {
+    if (!matched || typeof matched !== 'object') {
+      return null;
+    }
+
+    const normalized = {};
+
+    const numericIndex = toFiniteNumber(matched.index);
+    if (numericIndex !== null) {
+      normalized.index = numericIndex;
+    }
+
+    const numericRank = toFiniteNumber(matched.rank ?? matched.position);
+    if (numericRank !== null) {
+      normalized.rank = numericRank;
+    }
+
+    const stringProps = {
+      place_id: matched.place_id,
+      raw_place_id: matched.raw_place_id,
+      place_id_source: matched.place_id_source,
+      cid: matched.cid,
+      name: matched.name
+    };
+
+    for (const [key, raw] of Object.entries(stringProps)) {
+      const value = toNonEmptyString(raw);
+      if (value !== null) {
+        normalized[key] = value;
+      }
+    }
+
+    return Object.keys(normalized).length ? normalized : null;
+  }
+
+  function buildPointResultsPayload(places, totalResults, matched) {
+    const normalizedPlaces = Array.isArray(places)
+      ? places
+          .map((place, index) => normalizePlaceResult(place, index))
+          .filter(Boolean)
+      : [];
+
+    const normalizedMatched = normalizeMatchedResult(matched);
+    const total = toFiniteNumber(totalResults);
+
+    if (!normalizedPlaces.length && !normalizedMatched && total === null) {
+      return null;
+    }
+
+    const payload = {};
+
+    if (total !== null) {
+      payload.totalResults = total;
+    }
+
+    if (normalizedMatched) {
+      payload.matched = normalizedMatched;
+    }
+
+    payload.places = normalizedPlaces;
+
+    return payload;
+  }
 
   // --- Database Interaction Functions ---
   async function getActiveRuns(conn) {
@@ -217,7 +342,7 @@ if (!isMainThread) {
         r.keyword,
         r.business_id AS businessId,
         b.business_name AS businessName,
-        sc.username AS soax_user,
+        sc.res_username AS soax_user,
         sc.endpoint AS soax_endpoint
       FROM geo_grid_runs r
       JOIN businesses b ON r.business_id = b.id
@@ -230,7 +355,16 @@ if (!isMainThread) {
   }
 
   async function getUnrankedPoints(conn, runId) {
-    const sql = 'SELECT id AS pointId, lat, lng FROM geo_grid_points WHERE run_id = ? AND rank_pos IS NULL';
+    const sql = `
+      SELECT
+        id AS pointId,
+        row_idx AS rowIdx,
+        col_idx AS colIdx,
+        lat,
+        lng
+      FROM geo_grid_points
+      WHERE run_id = ? AND rank_pos IS NULL
+    `;
     const [rows] = await conn.execute(sql, [runId]);
     return rows;
   }
@@ -243,7 +377,10 @@ if (!isMainThread) {
       const maxRetries = 3;
       while (retries < maxRetries) {
         try {
-          await conn.execute('UPDATE geo_grid_runs SET status = ? WHERE id = ?', [status, runId]);
+          const shouldStampFinished = status === 'done' || status === 'error';
+          const finishedAtExpression = shouldStampFinished ? 'UTC_TIMESTAMP()' : 'NULL';
+          const sql = `UPDATE geo_grid_runs SET status = ?, finished_at = ${finishedAtExpression} WHERE id = ?`;
+          await conn.execute(sql, [status, runId]);
           console.log(`Successfully updated run #${runId} status to '${status}'.`);
           return true;
         } catch (updateError) {
@@ -327,10 +464,60 @@ if (!isMainThread) {
         const FAILURE_CHECK_WINDOW = 10; // Check last 10 tasks
         const FAILURE_PAUSE_MS = 300000; // 5 minutes
 
+        let runTerminationRequested = false;
         await new Promise(resolve => {
             const idleWorkers = new Set();
             let isPaused = false;
             let pauseInProgress = false;
+            let activeTaskCount = 0;
+            let lastStatusCheck = 0;
+
+            const maybeResolve = () => {
+                if ((tasks.length === 0 && activeTaskCount === 0) || (runTerminationRequested && activeTaskCount === 0)) {
+                    resolve();
+                }
+            };
+
+            const markRunTermination = (statusLabel) => {
+                if (runTerminationRequested) {
+                    return;
+                }
+                runTerminationRequested = true;
+                tasks.length = 0;
+                console.warn(`[WORKER] Run #${runId} marked as '${statusLabel}'. Halting new tasks.`);
+                maybeResolve();
+            };
+
+            const checkRunStillActive = async (force = false) => {
+                if (runTerminationRequested) {
+                    return false;
+                }
+
+                const now = Date.now();
+                if (!force && now - lastStatusCheck < 5000) {
+                    return true;
+                }
+
+                lastStatusCheck = now;
+
+                try {
+                    const [rows] = await pool.query('SELECT status FROM geo_grid_runs WHERE id = ? LIMIT 1', [runId]);
+                    if (!rows.length) {
+                        markRunTermination('deleted');
+                        return false;
+                    }
+
+                    const currentStatus = rows[0].status;
+                    if (currentStatus !== 'running') {
+                        markRunTermination(currentStatus);
+                        return false;
+                    }
+                } catch (statusError) {
+                    console.error(`[WORKER] Failed to check status for run ${runId}:`, statusError.message || statusError);
+                }
+
+                return !runTerminationRequested;
+            };
 
             const resumeAfterPause = () => {
                 if (!pauseInProgress) {
@@ -342,7 +529,9 @@ if (!isMainThread) {
                 pauseInProgress = false;
                 for (const idleWorker of Array.from(idleWorkers)) {
                     idleWorkers.delete(idleWorker);
-                    startNextTask(idleWorker);
+                    startNextTask(idleWorker).catch((err) => {
+                        console.error('Failed to resume worker task:', err);
+                    });
                 }
             };
 
@@ -356,9 +545,23 @@ if (!isMainThread) {
                 setTimeout(resumeAfterPause, FAILURE_PAUSE_MS);
             };
 
-            const startNextTask = (worker) => {
+            const startNextTask = async (worker) => {
                 if (!worker || worker.hasExited) {
                     idleWorkers.delete(worker);
+                    maybeResolve();
+                    return;
+                }
+
+                if (runTerminationRequested) {
+                    idleWorkers.add(worker);
+                    maybeResolve();
+                    return;
+                }
+
+                const runIsActive = await checkRunStillActive();
+                if (!runIsActive) {
+                    idleWorkers.add(worker);
+                    maybeResolve();
                     return;
                 }
 
@@ -373,9 +576,19 @@ if (!isMainThread) {
                     const task = tasks.shift();
                     const latNum = task.lat != null ? Number(task.lat) : null;
                     const lngNum = task.lng != null ? Number(task.lng) : null;
-                    pointMeta.set(task.pointId, { lat: latNum, lng: lngNum });
+                    const rowIdxNum = task.rowIdx != null ? Number(task.rowIdx) : null;
+                    const colIdxNum = task.colIdx != null ? Number(task.colIdx) : null;
+                    const normalizedTask = {
+                        ...task,
+                        lat: latNum,
+                        lng: lngNum,
+                        rowIdx: rowIdxNum,
+                        colIdx: colIdxNum,
+                    };
+                    pointMeta.set(task.pointId, normalizedTask);
+                    activeTaskCount++;
                     worker.postMessage({
-                        point: { ...task, lat: latNum, lng: lngNum },
+                        point: normalizedTask,
                         runId,
                         keyword,
                         businessId,
@@ -383,12 +596,13 @@ if (!isMainThread) {
                         soaxConfig,
                     });
                 } else {
-                    worker.postMessage({ exit: true });
+                    idleWorkers.add(worker);
+                    maybeResolve();
                 }
             };
 
             const handleWorkerMessage = (worker) => async (message) => {
-                const {
+                const { 
                     status,
                     pointId,
                     rank,
@@ -404,9 +618,31 @@ if (!isMainThread) {
                 } = message;
                 let messageStatus = status;
                 let dbErrorMessage = null;
-                const pointInfo = pointMeta.get(pointId) || { lat: null, lng: null };
+                const pointInfo = pointMeta.get(pointId) || { lat: null, lng: null, rowIdx: null, colIdx: null };
                 const placesArray = Array.isArray(places) ? places : [];
                 const totalReturned = typeof totalResults === 'number' ? totalResults : placesArray.length;
+                const resultsPayload = buildPointResultsPayload(placesArray, totalReturned, matched);
+                let resultsJsonString = null;
+
+                if (activeTaskCount > 0) {
+                    activeTaskCount--;
+                }
+
+                if (runTerminationRequested) {
+                    pointMeta.delete(pointId);
+                    console.log(`[WORKER] Ignoring result for point ${pointId} because run #${runId} is stopping.`);
+                    maybeResolve();
+                    return;
+                }
+
+                if (resultsPayload) {
+                    try {
+                        resultsJsonString = JSON.stringify(resultsPayload);
+                    } catch (stringifyError) {
+                        console.warn(`[WORKER] Failed to stringify results payload for point ${pointId}:`, stringifyError.message);
+                        resultsJsonString = null;
+                    }
+                }
 
                 if (status === 'done') {
                     if (!reason || reason === 'puppeteer_exception') {
@@ -427,34 +663,22 @@ if (!isMainThread) {
                             const normalizedLandingUrl = typeof landingUrl === 'string' && landingUrl.trim().length
                                 ? landingUrl.trim()
                                 : normalizedSearchUrl;
-                            const newSql = `
-                                UPDATE geo_grid_points
-                                SET rank_pos = ?, measured_at = NOW(), screenshot_path = ?, search_url = ?, landing_url = ?
-                                WHERE id = ?
-                            `;
-                            const legacySql = 'UPDATE geo_grid_points SET rank_pos = ?, measured_at = NOW() WHERE id = ?';
+                            const matchedPlaceId = matched?.place_id || matched?.raw_place_id || null;
 
-                            try {
-                                if (geoGridArtifactColumnsSupported) {
-                                    await pointConn.execute(newSql, [
-                                        rankToSave,
-                                        normalizedScreenshotPath,
-                                        normalizedSearchUrl,
-                                        normalizedLandingUrl,
-                                        pointId,
-                                    ]);
-                                } else {
-                                    await pointConn.execute(legacySql, [rankToSave, pointId]);
-                                }
-                            } catch (sqlError) {
-                                if (geoGridArtifactColumnsSupported && sqlError && sqlError.code === 'ER_BAD_FIELD_ERROR') {
-                                    console.warn('[WORKER] geo_grid_points missing artifact columns; using legacy update.');
-                                    geoGridArtifactColumnsSupported = false;
-                                    await pointConn.execute(legacySql, [rankToSave, pointId]);
-                                } else {
-                                    throw sqlError;
-                                }
-                            }
+                            await insertGeoGridPoint({
+                                pointId,
+                                runId,
+                                rowIdx: pointInfo.rowIdx,
+                                colIdx: pointInfo.colIdx,
+                                lat: pointInfo.lat,
+                                lng: pointInfo.lng,
+                                rankPos: rankToSave,
+                                placeId: matchedPlaceId,
+                                resultJson: resultsJsonString ?? resultsPayload,
+                                screenshotPath: normalizedScreenshotPath,
+                                searchUrl: normalizedSearchUrl,
+                                landingUrl: normalizedLandingUrl,
+                            }, pointConn);
                         } catch (dbError) {
                             dbErrorMessage = dbError.message;
                             console.error(`- DB Save failed for point ${pointId}:`, dbError.message);
@@ -462,36 +686,6 @@ if (!isMainThread) {
                         } finally {
                             if (pointConn) {
                                 pointConn.release();
-                            }
-                        }
-
-                        if (
-                            messageStatus === 'done' &&
-                            recordRankingSnapshot &&
-                            placesArray.length &&
-                            Number.isFinite(pointInfo.lat) &&
-                            Number.isFinite(pointInfo.lng)
-                        ) {
-                            try {
-                                const matchedPlaceId = matched?.place_id || null;
-                                const matchedBy = matchedPlaceId ? 'place_id' : (matched ? 'name_addr' : 'none');
-                                await recordRankingSnapshot({
-                                    runId,
-                                    businessId,
-                                    keyword,
-                                    source: 'serp',
-                                    variant: 'text',
-                                    originLat: pointInfo.lat,
-                                    originLng: pointInfo.lng,
-                                    radiusMi: 0,
-                                    sessionId: null,
-                                    requestId: `serp@${runId}:${pointId}:${Date.now()}`,
-                                    places: placesArray,
-                                    targetPlaceId: matchedPlaceId,
-                                    matchedBy,
-                                });
-                            } catch (snapErr) {
-                                console.error(`[WORKER] Failed recording snapshot for point ${pointId}:`, snapErr.message);
                             }
                         }
                     }
@@ -525,18 +719,20 @@ if (!isMainThread) {
                 }
 
                 completedCount++;
-                if (completedCount === allPoints.length) {
-                    resolve();
-                } else {
+                maybeResolve();
+                if (!runTerminationRequested) {
                     await new Promise(res => setTimeout(res, SCRAPE_DELAY_MS));
-                    startNextTask(worker);
+                    startNextTask(worker).catch((err) => {
+                        console.error('Failed to queue next task for worker:', err);
+                    });
                 }
             };
 
             // Initialize the worker pool and start the first batch of jobs
             for (let i = 0; i < MAX_CONCURRENCY && tasks.length > 0; i++) {
               const worker = new Worker(path.join(__dirname, 'geogrid_worker.js'), {
-                  workerData: workerConfig
+                  workerData: workerConfig,
+                  execArgv: ['--experimental-default-type=commonjs']
               });
 
               worker.hasExited = false;
@@ -546,6 +742,7 @@ if (!isMainThread) {
                 worker.hasExited = true;
                 idleWorkers.delete(worker);
                 console.log(`Worker ${worker.threadId} exited with code ${code}`);
+                maybeResolve();
               });
 
               worker.on('error', (err) => {
@@ -553,15 +750,28 @@ if (!isMainThread) {
               });
 
               workers.push(worker);
-              startNextTask(worker);
+              startNextTask(worker).catch((err) => {
+                  console.error('Failed to start worker task:', err);
+              });
             }
         });
 
         // Check if the run is now complete and update the status
-        const remainingPoints = await getUnrankedPoints(conn, runId);
-        if (remainingPoints.length === 0) {
-          await safeUpdateRunStatus(runId, 'done');
-          console.log(`Run #${runId} finished successfully.`);          
+        if (!runTerminationRequested) {
+          const remainingPoints = await getUnrankedPoints(conn, runId);
+          if (remainingPoints.length === 0) {
+            await safeUpdateRunStatus(runId, 'done');
+            console.log(`Run #${runId} finished successfully.`);
+          } else {
+            console.log(`Run #${runId} ended with ${remainingPoints.length} unprocessed point(s).`);
+          }
+        } else {
+          const [statusRows] = await conn.query('SELECT status FROM geo_grid_runs WHERE id = ? LIMIT 1', [runId]);
+          const currentStatus = statusRows?.[0]?.status;
+          if (currentStatus === 'running') {
+            await safeUpdateRunStatus(runId, 'error');
+          }
+          console.log(`Run #${runId} was halted early with status '${currentStatus ?? 'unknown'}'.`);
         }
         // ✅ NEW: Terminate workers only AFTER the run status is confirmed and updated.
         await Promise.all(workers.map(w => requestWorkerExit(w)));

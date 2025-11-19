@@ -9,9 +9,10 @@ const { getZone, isOpenNow, nextOpenAt } = require('./lib/business/businessHours
 const { getPackRank } = require('./lib/core/rankTrack');
 
 const { startRun, finishRun, logResult } = require('./lib/db/logger');
-const { recordRankingSnapshot } = require('./lib/db/ranking_store');
+const { recordRankingSnapshot } = require('./lib/db/ctr_store');
 const { note } = require('./lib/utils/note');
-const { parseRankFromString } = require('./lib/google/counters');
+const { parseLocalBusinesses } = require('./lib/google/counters');
+const { fetchConfigByBusinessId } = require('./lib/db/configLoader');
 
 function randomSessionId(length = 16) {
   const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -42,27 +43,40 @@ function addToRetryQueue(config) {
   console.log('→ Added to Retry Queue');
 }
 
+const normalizeName = (value) =>
+  typeof value === 'string' ? value.toLowerCase().replace(/\s+/g, ' ').trim() : '';
+
+const normalizeIdentifier = (value) =>
+  typeof value === 'string' ? value.trim().toLowerCase() : '';
+
 
 (async () => {
-  if (!process.argv[2]) {
-    console.error('Usage: node index.js <path-to-config.json> or <raw-JSON-string>');
+  const arg = process.argv[2];
+  if (!arg) {
+    console.error('Usage: node index.js <business-id | path-to-config.json | raw-JSON-string>');
     process.exit(1);
   }
 
-  // let config;
-  // try {
-  //   const arg = process.argv[2];
-  //   config = arg.endsWith('.json')
-  //     ? require(path.resolve(arg))
-  //     : JSON.parse(arg);
-  // } catch (err) {
-  //   console.error('Failed to load config:', err.message);
-  //   process.exit(1);
-  // }
   let config = null;
   try {
-    const arg = process.argv[2];
-    config = arg && arg.trim().startsWith('{') ? JSON.parse(arg) : require(arg);
+    const trimmed = arg.trim();
+    if (/^\d+$/.test(trimmed)) {
+      const businessId = Number(trimmed);
+      console.log(`[index] Loading config for business ${businessId}...`);
+      config = await fetchConfigByBusinessId(businessId);
+      if (!config) {
+        console.error(`[index] No active config found for business_id ${businessId}.`);
+        process.exit(1);
+      }
+    } else if (trimmed.startsWith('{')) {
+      config = JSON.parse(trimmed);
+    } else {
+      const resolved = path.isAbsolute(trimmed)
+        ? trimmed
+        : path.resolve(process.cwd(), trimmed);
+      // eslint-disable-next-line global-require, import/no-dynamic-require
+      config = require(resolved);
+    }
   } catch (e) {
     console.error('[index] failed to load config arg:', e.message);
     process.exit(1);

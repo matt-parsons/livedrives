@@ -1,0 +1,24 @@
+import { redirect } from 'next/navigation';
+import { AuthError, requireAuth } from '@/lib/authServer';
+
+export const metadata = {
+  title: 'Ranking report launcher | Local Paint Pilot'
+};
+
+export default async function GeoGridLauncherPage() {
+  try {
+    const session = await requireAuth();
+
+    if (session.role !== 'admin') {
+      redirect('/dashboard');
+    }
+
+    redirect('/dashboard/operations?tab=launcher');
+  } catch (error) {
+    if (error instanceof AuthError && error.statusCode >= 400 && error.statusCode < 500) {
+      redirect('/signin');
+    }
+
+    throw error;
+  }
+}

@@ -1,0 +1,84 @@
+.ctrDashboard {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.navButtons {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.navButtons a {
+  color: #0070f3;
+}
+
+.navDisabled {
+  color: #999;
+}
+
+.sessionCount {
+  font-size: 0.9rem;
+  color: #343434;
+}
+
+.keywordSection {
+  border: 1px solid #e3e3e3;
+  border-radius: 10px;
+  padding: 1.5rem;
+  background-color: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.keywordHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.keywordGrid {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 1100px) {
+  .keywordGrid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+}
+
+.mapPlaceholder {
+  border: 1px dashed #ccc;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 260px;
+  color: #777;
+}
+
+.range {
+  font-size: 0.95rem;
+  color: #444;
+}

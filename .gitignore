@@ -5,3 +5,5 @@ failedQueue.json
 node_modules
 logs/*
 tmp-profile/*
+web/serviceAccountKey.json
+web/logs/*

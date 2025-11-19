@@ -342,7 +342,7 @@ register_rest_route('livedrive', '/keyword-trend', [
           AVG(NULLIF(rs.matched_position,0)) AS avg_rank,
           ROUND(100 * SUM(rs.matched_position IS NOT NULL AND rs.matched_position <= 3) / COUNT(*), 1) AS solv_top3
         FROM ranking_snapshots rs
-          JOIN ranking_queries rq ON rq.run_id = rs.run_id
+          JOIN ranking_queries rq ON rq.id = rs.query_id
         WHERE rq.business_id = ? AND rq.keyword = ?
           AND $tsUtc >= (UTC_TIMESTAMP() - INTERVAL ? DAY)
         GROUP BY day
@@ -408,7 +408,7 @@ register_rest_route('livedrive', '/keyword-trend', [
         SELECT rs.results_json,
                $dayPhx AS day
         FROM ranking_snapshots rs
-        JOIN ranking_queries rq ON rq.run_id = rs.run_id
+        JOIN ranking_queries rq ON rq.id = rs.query_id
         WHERE rq.business_id = ? AND rq.keyword = ?
           AND $tsUtc >= (UTC_TIMESTAMP() - INTERVAL ? DAY)
         ORDER BY rq.timestamp_utc ASC
@@ -571,19 +571,18 @@ add_action('rest_api_init', function () {
                 // Gather snapshot points for the requested period window
                 $sqlRecentSnapshots = "
                     SELECT
-                        COALESCE(rq_run.run_id, rq_id.run_id, rs.run_id) AS resolved_run_id,
+                        rq.run_id AS run_id,
+                        rq.id     AS query_id,
                         rs.origin_lat,
                         rs.origin_lng,
                         rs.matched_position AS rank
                     FROM ranking_snapshots rs
-                    LEFT JOIN ranking_queries rq_run ON rq_run.run_id = rs.run_id
-                    LEFT JOIN ranking_queries rq_id ON rq_id.id = rs.run_id
-                    JOIN runs r ON r.id = COALESCE(rq_run.run_id, rq_id.run_id, rs.run_id)
+                    JOIN ranking_queries rq ON rq.id = rs.query_id
+                    JOIN runs r ON r.id = rq.run_id
                     WHERE r.business_id = ?
-                      AND COALESCE(rq_run.keyword, rq_id.keyword) = ?
-                      AND COALESCE(rq_run.timestamp_utc, rq_id.timestamp_utc) >= ?
-                      AND COALESCE(rq_run.timestamp_utc, rq_id.timestamp_utc) < ?
-                      AND (rq_run.id IS NOT NULL OR rq_id.id IS NOT NULL)
+                      AND rq.keyword = ?
+                      AND rq.timestamp_utc >= ?
+                      AND rq.timestamp_utc < ?
                 ";
                 $stmtRecent = $pdo->prepare($sqlRecentSnapshots);
                 $stmtRecent->execute([$bid, $kw, $windowStartSql, $windowEndSql]);
@@ -595,7 +594,8 @@ add_action('rest_api_init', function () {
                     if (!is_finite($lat) || !is_finite($lng)) continue;
 
                     $points[] = [
-                        'run_id'     => (int)$row['resolved_run_id'],
+                        'run_id'     => isset($row['run_id']) ? (int)$row['run_id'] : null,
+                        'query_id'   => isset($row['query_id']) ? (int)$row['query_id'] : null,
                         'origin_lat' => $lat,
                         'origin_lng' => $lng,
                         'rank'       => isset($row['rank']) ? (int)$row['rank'] : null,
@@ -632,18 +632,17 @@ add_action('rest_api_init', function () {
 
                 $sqlLatestSnapshots = "
                     SELECT
-                        COALESCE(rq_run.run_id, rq_id.run_id, rs.run_id) AS resolved_run_id,
+                        rq.run_id AS run_id,
+                        rq.id     AS query_id,
                         rs.origin_lat,
                         rs.origin_lng,
                         rs.matched_position AS rank
                     FROM ranking_snapshots rs
-                    LEFT JOIN ranking_queries rq_run ON rq_run.run_id = rs.run_id
-                    LEFT JOIN ranking_queries rq_id ON rq_id.id = rs.run_id
-                    JOIN runs r ON r.id = COALESCE(rq_run.run_id, rq_id.run_id, rs.run_id)
-                    WHERE COALESCE(rq_run.run_id, rq_id.run_id, rs.run_id) = ?
+                    JOIN ranking_queries rq ON rq.id = rs.query_id
+                    JOIN runs r ON r.id = rq.run_id
+                    WHERE rq.run_id = ?
                       AND r.business_id = ?
-                      AND COALESCE(rq_run.keyword, rq_id.keyword) = ?
-                      AND (rq_run.id IS NOT NULL OR rq_id.id IS NOT NULL)
+                      AND rq.keyword = ?
                 ";
                 $stmtLatestPoints = $pdo->prepare($sqlLatestSnapshots);
                 $stmtLatestPoints->execute([$latestRunId, $bid, $kw]);
@@ -656,7 +655,8 @@ add_action('rest_api_init', function () {
                     if (!is_finite($lat) || !is_finite($lng)) continue;
 
                     $latestPoints[] = [
-                        'run_id'     => (int)$row['resolved_run_id'],
+                        'run_id'     => isset($row['run_id']) ? (int)$row['run_id'] : null,
+                        'query_id'   => isset($row['query_id']) ? (int)$row['query_id'] : null,
                         'origin_lat' => $lat,
                         'origin_lng' => $lng,
                         'rank'       => isset($row['rank']) ? (int)$row['rank'] : null,

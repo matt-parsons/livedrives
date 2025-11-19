@@ -14,10 +14,49 @@
   }
   .wrap { padding: 20px; max-width: 1400px; margin: auto; }
   .toolbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 20px; }
+  .geo-run-launcher {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background: #fff;
+  }
+  .geo-run-launcher select {
+    padding: 6px 10px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    font-size: 14px;
+    min-width: 150px;
+  }
+  .geo-run-launcher button {
+    white-space: nowrap;
+  }
+  .geo-run-launcher button small {
+    display: block;
+    font-size: 12px;
+    color: var(--muted);
+    font-weight: 500;
+    margin-top: 2px;
+  }
+  .geo-run-status {
+    flex-basis: 100%;
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .geo-run-status.error {
+    color: #c0392b;
+    font-weight: 600;
+  }
+  .geo-run-status.is-hidden {
+    display: none;
+  }
   .search { padding: 6px 10px; border: 1px solid var(--line); border-radius: 6px; font-size: 14px; min-width: 240px; }
   button { padding: 6px 14px; font-size: 14px; cursor: pointer; border: 1px solid #ccc; background-color: #fff; border-radius: 6px; transition: all 0.2s ease; }
   button:hover { background-color: #f0f0f0; border-color: #aaa; }
-  table { border-collapse: collapse; width: 100%; font-size: .92em; background-color: #fff; border-radius: var(--radius); overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+  table { border-collapse: collapse; width: 100%; font-size: .92em; background-color: #fff; border-radius: var(--radius); overflow: hidden; }
   th, td { padding: 8px; border: 1px solid var(--line); vertical-align: top; }
   thead th { position: sticky; top: 0; background: #e9ecef; z-index: 1; }
   .muted { color: var(--muted); font-size: 11px; white-space: pre-wrap; }
@@ -36,7 +75,7 @@
   .overlay { position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,.6);
              display: none; align-items: center; justify-content: center; padding: 20px; }
   .overlay .box { background: #fff; width: min(1100px, 96vw); max-height: 85vh; overflow: auto;
-                  padding: 20px; border-radius: var(--radius); box-shadow: var(--shadow);
+                  padding: 20px; border-radius: var(--radius);
                   font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
   .overlay .close { float: right; cursor: pointer; font-size: 18px; color: #666; }
   .overlay .close:hover { color: #333; }
@@ -61,7 +100,7 @@
   #bizOverlay.biz-inline { position: static; display: none; margin-top: 20px; }
   #bizOverlay.biz-inline.hidden { display: none; }
   #bizOverlay.biz-inline.active { display: block; }
-  #bizOverlay.biz-inline .box { background: #fff; border-radius: 12px; padding: 20px; box-shadow: 0 2px 18px rgba(14, 30, 37, 0.12); }
+  #bizOverlay.biz-inline .box { background: #fff; border-radius: 12px; padding: 20px; }
   #bizOverlay .back { background: transparent; border: 1px solid #ccc; border-radius: 999px; cursor: pointer; font-size: 0.9rem; padding: 6px 16px; display: inline-flex; align-items: center; gap: 6px; }
   #bizOverlay .back:hover { background: #f5f5f5; }
   .biz-detail-grid {
@@ -137,7 +176,7 @@
   .report-item { display: flex; flex-direction: column; justify-content: space-between; align-items: flex-start; padding: 8px 10px; border: 1px solid #e0e0e0; border-radius: 6px; background: #fff; cursor: pointer; transition: background-color 0.2s, border-color 0.2s; width: 100%; gap: 0px; text-align: left; }
   .report-item + .report-item { margin-top: 8px; }
   .report-item:hover { background: #f3f3f5; border-color: #bdbdbd; }
-  .report-item.active { border-color: #0073aa; box-shadow: 0 0 0 2px rgba(0,115,170,0.15); }
+  .report-item.active { border-color: #0073aa; }
 
   /* Keyword list in biz overlay */
   .keyword-scope-controls {
@@ -197,6 +236,12 @@
     .toolbar { flex-direction: column; align-items: stretch; gap: 8px; }
     .toolbar button,
     .toolbar .search { width: 100%; }
+    .geo-run-launcher {
+      width: 100%;
+      padding: 12px;
+    }
+    .geo-run-launcher select,
+    .geo-run-launcher button { width: 100%; }
     .overlay .box { width: 100%; max-height: 92vh; padding: 16px; }
     .biz-keyword-visuals { flex-direction: column; }
     .biz-keyword-chart { order: 1; }

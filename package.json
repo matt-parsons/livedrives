@@ -7,7 +7,11 @@
     "lib": "lib"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "rank:test": "node scripts/test-get-profile-rank.js",
+    "rank:session": "node scripts/manual-rank-session.js 3 --run2captcha=true",
+    "run:business": "node scripts/run-business.js",
+    "scheduler:geogrid": "node workers/geo_grid_scheduler.js"
   },
   "keywords": [],
   "author": "",
@@ -20,6 +24,7 @@
     "chokidar": "^4.0.3",
     "dotenv": "^17.2.0",
     "https-proxy-agent": "^5.0.1",
+    "jsdom": "^27.0.0",
     "mysql2": "^3.14.3",
     "node-schedule": "^2.1.1",
     "playwright": "^1.54.1",
@@ -29,6 +34,7 @@
     "puppeteer-extra": "^3.3.6",
     "puppeteer-extra-plugin-recaptcha": "^3.6.8",
     "puppeteer-extra-plugin-stealth": "^2.11.2",
+    "puppeteer-extra-plugin-user-data-dir": "^2.4.1",
     "undetected-puppeteer": "^1.0.1"
   }
 }
