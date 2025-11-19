@@ -158,10 +158,7 @@ export async function loadAllOrganizationDirectories() {
             name,
             subscription_status      AS subscriptionStatus,
             subscription_plan        AS subscriptionPlan,
-            plan,
             subscription_renews_at   AS subscriptionRenewsAt,
-            renews_at                AS renewsAt,
-            subscription_renews_on   AS subscriptionRenewsOn,
             subscription_cancelled_at AS subscriptionCancelledAt,
             created_at               AS createdAt
        FROM organizations
