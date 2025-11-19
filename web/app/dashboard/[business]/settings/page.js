@@ -154,14 +154,14 @@ export default async function BusinessSettingsPage({ params }) {
         <main className="dashboard-layout__main">
           <DashboardBusinessHeader />
           <div className="dashboard-layout__content">
-            <header className="dashboard-page-header">
+            <div className="section-header">
               <div className="dashboard-page-header__intro">
                 <h2 className="page-title">Business settings</h2>
                 <p className="page-subtitle">
                   Manage details for {businessName}.
                 </p>
               </div>
-            </header>
+            </div>
 
             <section className="section">
               <div className="surface-card surface-card--muted">

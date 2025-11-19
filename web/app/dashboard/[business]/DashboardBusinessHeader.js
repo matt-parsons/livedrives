@@ -27,7 +27,6 @@ export default function DashboardBusinessHeader() {
 
         {canManageSettings || showBusinessSwitcher ? (
           <div className="dashboard-header__actions" aria-label="Business shortcuts">
-            {canManageSettings ? <BusinessSettingsShortcut businessIdentifier={businessIdentifier} /> : null}
             {showBusinessSwitcher ? (
               <BusinessSwitcher businesses={businessOptions} currentValue={currentBusinessOptionValue} />
             ) : null}

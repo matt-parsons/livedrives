@@ -642,25 +642,6 @@ textarea {
   }
 }
 
-@media (max-width: 640px) {
-  .dashboard-sidebar__menu {
-    padding: 14px 14px 20px;
-  }
-
-  .dashboard-sidebar__brand {
-    padding: 16px 14px;
-  }
-
-  .dashboard-nav {
-    gap: 0.5rem;
-  }
-
-  .dashboard-nav--open .page-subnav {
-    padding-top: 0.25rem;
-    border-top: 1px solid rgba(148, 163, 184, 0.25);
-  }
-}
-
 .dashboard-layout__main {
   flex: 1;
   padding: 0;
@@ -679,6 +660,31 @@ textarea {
   flex-direction: column;
   gap: clamp(24px, 3vw, 36px);
 }
+
+
+@media (max-width: 640px) {
+  .dashboard-sidebar__menu {
+    padding: 14px 14px 20px;
+  }
+
+  .dashboard-sidebar__brand {
+    padding: 16px 14px;
+  }
+
+  .dashboard-nav {
+    gap: 0.5rem;
+  }
+
+  .dashboard-nav--open .page-subnav {
+    padding-top: 0.25rem;
+    border-top: 1px solid rgba(148, 163, 184, 0.25);
+  }
+
+  .dashboard-layout__content {
+    padding: 0;
+  }
+}
+
 
 .business-dashboard__hero {
   margin: 0;
@@ -3592,15 +3598,6 @@ textarea {
   color: rgba(3, 60, 87, 0.55);
 }
 
-@media (max-width: 720px) {
-  .business-optimization-roadmap__profile-preview {
-    padding: 1rem;
-  }
-
-  .business-optimization-roadmap__profile-top {
-    align-items: flex-start;
-  }
-}
 
 .business-optimization-roadmap__task-card {
   list-style: none;
@@ -3613,6 +3610,21 @@ textarea {
   flex-direction: column;
   gap: 0.65rem;
   width: 48%;
+}
+
+
+@media (max-width: 720px) {
+  .business-optimization-roadmap__profile-preview {
+    padding: 1rem;
+  }
+
+  .business-optimization-roadmap__profile-top {
+    align-items: flex-start;
+  }
+
+  .business-optimization-roadmap__task-card {
+    width: 100%;
+  }
 }
 
 .business-optimization-roadmap__task-card-header {
@@ -3874,6 +3886,8 @@ textarea {
   .section-header {
     flex-direction: column;
     align-items: flex-start;
+    padding: clamp(24px, 4vw, 24px) clamp(20px, 4vw, 20px) 0;
+
   }
 
   .auth-page {

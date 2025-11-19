@@ -201,21 +201,23 @@ export default function KeywordPerformanceSpotlight({ items, mapsApiKey = null }
             {statusLabel}
           </span>
         ) : null}
-      </div>
+        <div
+          style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: '1rem',
+            fontSize: '0.85rem',
+            color: '#6b7280',
+            paddingTop: '10px',
+            paddingLeft: '5px'
+          }}
+        >
+          <span>
+            Runs tracked <strong style={{ color: '#111827' }}>{activeItem.runCount}</strong>
+          </span>
+          {latestRunDescription ? <span>{latestRunDescription}</span> : null}
+        </div>
 
-      <div
-        style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: '1rem',
-          fontSize: '0.85rem',
-          color: '#6b7280'
-        }}
-      >
-        <span>
-          Runs tracked <strong style={{ color: '#111827' }}>{activeItem.runCount}</strong>
-        </span>
-        {latestRunDescription ? <span>{latestRunDescription}</span> : null}
       </div>
 
       <div
