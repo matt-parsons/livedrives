@@ -55,7 +55,7 @@ export default async function GeoGridRunPage({ params }) {
 
   const businessIdentifier = business.businessSlug ?? String(business.id);
 
-  if (session.role !== 'owner' && session.role !== 'admin') {
+  if (session.role !== 'owner' && session.role !== 'member' && session.role !== 'admin') {
     redirect(`/dashboard/${encodeURIComponent(businessIdentifier)}/keywords`);
   }
 

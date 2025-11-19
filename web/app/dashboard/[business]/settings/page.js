@@ -73,9 +73,9 @@ export default async function BusinessSettingsPage({ params }) {
   const isAdmin = session.role === 'admin';
   const canManageSettings = isAdmin;
 
-  if (!canManageSettings) {
-    redirect(`/dashboard/${encodeURIComponent(identifier)}`);
-  }
+  // if (!canManageSettings) {
+  //   redirect(`/dashboard/${encodeURIComponent(identifier)}`);
+  // }
 
   const [businessHours, originZones, soaxConfig, geoGridSchedule, geoGridRuns] = await Promise.all([
     loadBusinessHours(business.id),
@@ -154,15 +154,15 @@ export default async function BusinessSettingsPage({ params }) {
         <main className="dashboard-layout__main">
           <DashboardBusinessHeader />
           <div className="dashboard-layout__content">
-            <div className="section-header">
-              <div className="dashboard-page-header__intro">
-                <h2 className="page-title">Business settings</h2>
-                <p className="page-subtitle">
-                  Manage details for {businessName}.
-                </p>
-              </div>
+            <div>
+              <h2 className="section-title">Business settings</h2>
+              <p className="section-caption">
+                Manage details for {businessName}.
+              </p>
             </div>
 
+            {canManageSettings ? (
+            <div>
             <section className="section">
               <div className="surface-card surface-card--muted">
                 <div className="section-header">
@@ -276,6 +276,9 @@ export default async function BusinessSettingsPage({ params }) {
                 <SoaxConfigForm businessId={business.id} initialConfig={soaxConfig} />
               </div>
             </section>
+            </div>
+            ) : ( null )
+            }
 
             <section className="section">
               <div className="section-header">

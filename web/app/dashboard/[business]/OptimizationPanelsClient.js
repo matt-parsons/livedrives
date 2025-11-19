@@ -237,12 +237,12 @@ export default function OptimizationPanelsClient({
     <>
       <section className="section business-dashboard__hero">
         <div className="business-dashboard__top-row">
-          <LatestGeoGridSnapshot
-            apiKey={mapsApiKey}
-            center={mapCenter}
-            points={mapPoints}
-            summary={latestRunSummary}
-            keywordsHref={keywordsHref}
+          <NextStepsPanel
+            steps={optimizationSteps}
+            optimizationHref={optimizationHref}
+            loading={loading}
+            error={error}
+            businessId={businessId}
           />
           <div className="business-dashboard__optimization-column">
             <div className="surface-card surface-card--muted dashboard-optimization-card">
@@ -332,14 +332,14 @@ export default function OptimizationPanelsClient({
           </div>
         </div>
       </section>
-
-      <NextStepsPanel
-        steps={optimizationSteps}
-        optimizationHref={optimizationHref}
-        loading={loading}
-        error={error}
-        businessId={businessId}
+      <LatestGeoGridSnapshot
+        apiKey={mapsApiKey}
+        center={mapCenter}
+        points={mapPoints}
+        summary={latestRunSummary}
+        keywordsHref={keywordsHref}
       />
+
     </>
   );
 }

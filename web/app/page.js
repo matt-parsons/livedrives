@@ -591,12 +591,6 @@ export default function IndexPage() {
     return (
       <div className="page-shell">
         <div className="mx-auto flex w-full max-w-3xl flex-col gap-8">
-          <section className="space-y-4">
-            <h1 className="text-3xl font-semibold text-foreground">Where should we send your preview?</h1>
-            <p className="text-base text-muted-foreground">
-              We email a secure link before we start analyzing your Google Business Profile.
-            </p>
-          </section>
 
           <Card className="shadow-lg">
             <CardHeader>
