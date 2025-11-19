@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   applyActionCode,
+  checkActionCode,
   verifyPasswordResetCode,
   confirmPasswordReset,
   signInWithEmailAndPassword
@@ -82,9 +83,16 @@ export default function AuthActionPage({ searchParams }) {
 
     if (mode === 'verifyEmail') {
       setScreen('verifying');
-      applyActionCode(auth, oobCode)
+      checkActionCode(auth, oobCode)
+        .then((info) => {
+          if (info?.data?.email) {
+            setEmail(info.data.email);
+          }
+
+          return applyActionCode(auth, oobCode);
+        })
         .then(() => {
-          setScreen('verified');
+          setScreen('reset');
         })
         .catch((err) => {
           console.error('Failed to verify email', err);
@@ -132,7 +140,21 @@ export default function AuthActionPage({ searchParams }) {
     setSubmitStatus('submitting');
 
     try {
-      await confirmPasswordReset(auth, oobCode, password);
+      if (mode === 'verifyEmail') {
+        const response = await fetch('/api/auth/set-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password, oobCode })
+        });
+
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({}));
+          throw new Error(data?.error || 'Unable to set your password.');
+        }
+      } else {
+        await confirmPasswordReset(auth, oobCode, password);
+      }
+
       const credential = await signInWithEmailAndPassword(auth, email, password);
       const idToken = await credential.user.getIdToken();
       await exchangeSession(idToken);
