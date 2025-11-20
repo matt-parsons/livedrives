@@ -148,16 +148,19 @@ function buildPlacePayload(result, { fallbackPlaceId, timezone = null, sidebarDa
     ? result.reviews.sort((a, b) => b.time - a.time)[0]
     : null;
 
-  
-  const sidebarLocation = {latitude: sidebarData.latitude, longitude: sidebarData.longitude}
+
+  const sidebarLocation =
+    sidebarData && (sidebarData.latitude !== undefined || sidebarData.longitude !== undefined)
+      ? { latitude: sidebarData.latitude, longitude: sidebarData.longitude }
+      : null;
 
   return {
     // --- Core Google Places fields ---
     placeId: result.place_id ?? fallbackPlaceId ?? sidebarData?.placeId ?? null,
     cid: result.cid ?? sidebarData?.cid ?? '',
     name: result.name ?? sidebarData?.name ?? '',
-    formattedAddress: result.formatted_address ?? address ?? '',
-    location: result.coords ?? sidebarLocation ?? '',
+    formattedAddress: result.formatted_address ?? sidebarData?.formattedAddress ?? '',
+    location: location ?? result.coords ?? sidebarLocation ?? null,
     postalCode: extractPostalCode(result.address_components),
     timezone,
     phoneNumber:
