@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 
 const BASE_NAVIGATION_STEPS = [
-  'Visit https://business.google.com/locations and sign in with the owner or manager account for this listing.',
+  'Visit <a href="https://business.google.com/locations" target="_blank">https://business.google.com/locations</a> and sign in with the owner or manager account for this listing.',
   'Select the correct location from the list of profiles or use the search bar to filter by name and address.',
   'In the “See your profile” panel, choose “Edit profile” so the Google Business Profile editor opens on the right side of the screen.'
 ];

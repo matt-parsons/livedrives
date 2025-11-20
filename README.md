@@ -1,0 +1,13 @@
+# Startup Scripts
+
+## PM2
+
+- the user `deploy_user` has pm2s
+  - git repo [production] has an action that updates the live server
+    - it starts/restarts a pm2 process
+    - `pm2 start npm --name "localpaintpilot" -- run start --prefix "/var/www/localpaintpilot.com/public_html"`
+- the user `root` has pm2s
+  - weekly geo grid scheduler
+    - `pm2 start npm --name geogrid-scheduler -- run scheduler:geogrid`
+  - CTR sessions
+    - `pm2 start scheduler-db.js --name drives-db`
