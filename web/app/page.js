@@ -595,7 +595,7 @@ export default function IndexPage() {
           <Card className="shadow-lg">
             <CardHeader>
               <CardTitle>Confirm your profile</CardTitle>
-              <CardDescription>Drop your email to save the preview and kick off the scan.</CardDescription>
+              <CardDescription className="mb-2">Drop your email to save the preview and kick off the scan.</CardDescription>
             </CardHeader>
             <CardContent>
               <form className="space-y-6" onSubmit={handleLeadSubmit}>
@@ -626,7 +626,7 @@ export default function IndexPage() {
                     {leadError}
                   </p>
                 ) : (
-                  <p className="text-sm text-muted-foreground">We&apos;ll send your preview link and onboarding resources.</p>
+                  <p className="text-sm text-muted-foreground"></p>
                 )}
 
                 <div className="flex flex-wrap justify-between gap-3">
@@ -643,7 +643,7 @@ export default function IndexPage() {
                     Pick a different profile
                   </Button>
                   <Button type="submit" disabled={leadStatus === 'submitting'}>
-                    {leadStatus === 'submitting' ? 'Saving your preview…' : 'Send me the preview'}
+                    {leadStatus === 'submitting' ? 'Saving your preview…' : 'Generate your FREE preview'}
                   </Button>
                 </div>
               </form>
