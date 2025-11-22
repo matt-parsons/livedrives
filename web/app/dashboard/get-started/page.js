@@ -238,7 +238,6 @@ export default async function MemberJourneyPage() {
             destLat={primaryBusiness.destLat}
             destLng={primaryBusiness.destLng}
             existingZone={existingZone}
-            manageHref={businessHref}
           />
         )}
       </StepSection>

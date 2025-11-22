@@ -1,7 +1,6 @@
 'use client';
 
-import { useState } from 'react';
-import Link from 'next/link';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,13 +27,15 @@ export default function KeywordOriginZoneForm({
   destinationZip,
   destLat,
   destLng,
-  existingZone,
-  manageHref
+  existingZone
 }) {
   const router = useRouter();
   const [keyword, setKeyword] = useState('');
   const [error, setError] = useState('');
   const [status, setStatus] = useState('');
+  const [suggestionStatus, setSuggestionStatus] = useState('idle');
+  const [suggestionError, setSuggestionError] = useState('');
+  const [suggestions, setSuggestions] = useState([]);
   const [submitting, setSubmitting] = useState(false);
 
   if (existingZone) {
@@ -54,26 +55,60 @@ export default function KeywordOriginZoneForm({
             <p className="mt-1">Coordinates: {coordLabel}</p>
           ) : null}
         </div>
-        {manageHref ? (
-          <Button asChild variant="secondary" size="sm">
-            <Link href={manageHref}>Manage origin zones</Link>
-          </Button>
-        ) : null}
       </div>
     );
   }
 
   const hasCoordinates = Number.isFinite(Number(destLat)) && Number.isFinite(Number(destLng));
 
-  const handleSubmit = async (event) => {
-    event.preventDefault();
+  useEffect(() => {
+    let isActive = true;
+
+    const fetchSuggestions = async () => {
+      setSuggestionStatus('loading');
+      setSuggestionError('');
+
+      try {
+        const response = await fetch(`/api/businesses/${businessId}/keyword-suggestions`);
+        const payload = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+          throw new Error(payload.error || 'Failed to load keyword ideas.');
+        }
+
+        const normalized = Array.isArray(payload.suggestions) ? payload.suggestions : [];
+
+        if (!isActive) {
+          return;
+        }
+
+        setSuggestions(normalized);
+        setSuggestionStatus(normalized.length ? 'ready' : 'empty');
+      } catch (err) {
+        if (!isActive) {
+          return;
+        }
+
+        setSuggestionStatus('error');
+        setSuggestionError(err.message || 'Failed to load keyword ideas.');
+      }
+    };
+
+    fetchSuggestions();
+
+    return () => {
+      isActive = false;
+    };
+  }, [businessId]);
+
+  const createOriginZone = async (keywordValue) => {
     setError('');
     setStatus('');
 
-    const trimmed = keyword.trim();
+    const trimmed = keywordValue.trim();
 
     if (!trimmed) {
-      setError('Enter a keyword to create your origin zone.');
+      setError('Pick one of the suggested keywords or enter your own.');
       return;
     }
 
@@ -89,8 +124,8 @@ export default function KeywordOriginZoneForm({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: 'Primary coverage zone',
-          canonical: destinationAddress || businessName || 'Primary coverage zone',
+          name: 'Initial onboarding zone',
+          canonical: destinationAddress || businessName || 'Initial onboarding zone',
           zip: destinationZip || null,
           lat: Number(destLat),
           lng: Number(destLng),
@@ -116,21 +151,80 @@ export default function KeywordOriginZoneForm({
     }
   };
 
+  const handleSuggestionSelect = (selectedKeyword) => {
+    if (submitting) {
+      return;
+    }
+
+    setKeyword(selectedKeyword);
+    createOriginZone(selectedKeyword);
+  };
+
   return (
-    <form className="grid gap-4" onSubmit={handleSubmit}>
-      <div className="space-y-2">
-        <Label htmlFor="onboarding-keyword">Keyword</Label>
-        <Input
-          id="onboarding-keyword"
-          type="text"
-          value={keyword}
-          onChange={(event) => setKeyword(event.target.value)}
-          placeholder="e.g. house painter near me"
-          disabled={submitting}
-        />
-        <p className="text-xs text-muted-foreground">
-          We'll use this keyword to seed your first origin zone with a 3 mile radius around the business.
-        </p>
+    <div className="grid gap-4">
+      <div className="space-y-3">
+        <div className="flex items-center justify-between gap-3">
+          <Label htmlFor="onboarding-keyword">Top keyword picks</Label>
+          <span className="text-xs text-muted-foreground">
+            {suggestionStatus === 'loading'
+              ? 'Asking ChatGPT for keywords…'
+              : 'Tap a pick or enter your own keyword'}
+          </span>
+        </div>
+
+        {suggestionError ? (
+          <p className="inline-error" role="alert">
+            <strong>Keyword picks unavailable</strong>
+            <span>{suggestionError}</span>
+          </p>
+        ) : null}
+
+        {suggestionStatus === 'empty' ? (
+          <p className="rounded-md border border-border/70 bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
+            We couldn't find ready-made picks. Enter a keyword you'd like us to track first.
+          </p>
+        ) : null}
+
+        {suggestions.length ? (
+          <div className="grid gap-3 sm:grid-cols-3">
+            {suggestions.map((item, index) => (
+              <button
+                key={item.keyword}
+                type="button"
+                onClick={() => handleSuggestionSelect(item.keyword)}
+                className="flex h-full flex-col gap-2 rounded-lg border border-border/70 bg-background px-3 py-3 text-left shadow-sm transition hover:border-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                disabled={submitting}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-sm font-semibold text-foreground">{item.keyword}</span>
+                  <span className="text-xs text-muted-foreground">#{index + 1}</span>
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed">{item.reason}</p>
+                <span className="text-xs font-medium text-primary">Use this keyword</span>
+              </button>
+            ))}
+          </div>
+        ) : null}
+
+        <div className="space-y-2">
+          <Label htmlFor="onboarding-keyword">Or type your own</Label>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <Input
+              id="onboarding-keyword"
+              type="text"
+              value={keyword}
+              onChange={(event) => setKeyword(event.target.value)}
+              placeholder="e.g. house painter near me"
+              disabled={submitting}
+            />
+            <Button type="button" onClick={() => createOriginZone(keyword)} disabled={submitting}>
+              {submitting ? 'Saving keyword…' : 'Save keyword'}
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            We'll auto-create the first origin zone using the business location with a 3 mile radius.
+          </p>
+        </div>
       </div>
 
       {error ? (
@@ -145,10 +239,6 @@ export default function KeywordOriginZoneForm({
           {status}
         </p>
       ) : null}
-
-      <Button type="submit" disabled={submitting}>
-        {submitting ? 'Creating zone…' : 'Create origin zone'}
-      </Button>
-    </form>
+    </div>
   );
 }
