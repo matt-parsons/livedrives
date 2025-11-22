@@ -5,7 +5,6 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { resolveLetterGrade } from '@/app/dashboard/[business]/optimization';
 
 const LOADING_STEPS = [
   {
@@ -27,18 +26,6 @@ const LOADING_STEPS = [
 ];
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-function formatNumber(value) {
-  const numeric = Number(value);
-  if (!Number.isFinite(numeric)) return '—';
-  return numeric.toLocaleString();
-}
-
-function formatRating(value) {
-  const numeric = Number(value);
-  if (!Number.isFinite(numeric)) return '—';
-  return numeric.toFixed(1);
-}
 
 function formatTimestamp(value) {
   if (!value) {
@@ -120,41 +107,23 @@ function StatusList({ currentStep }) {
   );
 }
 
-function SummaryStat({ label, value }) {
-  return (
-    <div className="rounded-xl border border-border/60 bg-card/80 p-4 shadow-sm">
-      <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</dt>
-      <dd className="mt-2 text-xl font-semibold text-foreground">{value}</dd>
-    </div>
-  );
-}
-
 function OpportunityItem({ task }) {
+  const impactLabel = Number.isFinite(Number(task.weight)) ? `${Number(task.weight)}% impact` : null;
+
   return (
-    <li className="rounded-xl border border-border/60 bg-background/80 p-4 shadow-sm">
-      <div className="flex items-start justify-between gap-4">
-        <div className="space-y-2">
-          <p className="text-sm font-semibold text-foreground">{task.label}</p>
-          {task.detail ? <p className="text-sm text-muted-foreground">{task.detail}</p> : null}
+    <li className="business-optimization-roadmap__task-card" aria-label="Optimization task">
+      <div className="business-optimization-roadmap__task-card-header">
+        <div className="business-optimization-roadmap__task-info">
+          <strong className="business-optimization-roadmap__task-title">{task.label}</strong>
+          {task.detail ? <p className="business-optimization-roadmap__task-detail">{task.detail}</p> : null}
         </div>
-        <span
-          className={classNames(
-            'rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide',
-            task.status.key === 'completed'
-              ? 'bg-emerald-500/20 text-emerald-700'
-              : task.status.key === 'in_progress'
-                ? 'bg-secondary/15 text-secondary-foreground'
-                : 'bg-muted/10 text-muted-foreground'
-          )}
-        >
-          {task.status.label}
-        </span>
-      </div>
-      <div className="mt-3 flex items-center justify-end text-xs text-muted-foreground">
-        {Number.isFinite(Number(task.weight)) ? (
-          <span>{Number(task.weight)}% impact</span>
+        {task.status ? (
+          <span className="status-pill" data-status={task.status.key}>
+            {task.status.label}
+          </span>
         ) : null}
       </div>
+      {impactLabel ? <p className="business-optimization-roadmap__task-detail">{impactLabel}</p> : null}
     </li>
   );
 }
@@ -698,7 +667,10 @@ export default function IndexPage() {
   );
 
   const renderPreview = () => {
-    const letterGrade = resolveLetterGrade(roadmap?.progressPercent ?? null);
+    const progressPercent = Number.isFinite(Number(roadmap?.progressPercent))
+      ? Math.max(0, Math.min(100, Number(roadmap.progressPercent)))
+      : null;
+    const sections = Array.isArray(roadmap?.sections) ? roadmap.sections : [];
     const previewTimestampLabel = formatTimestamp(leadPreviewCompletedAt || leadPreviewStartedAt);
 
     return (
@@ -715,8 +687,10 @@ export default function IndexPage() {
                 ) : null}
               </div>
               <div className="flex items-center gap-3 rounded-full border border-secondary/60 bg-secondary/10 px-4 py-2">
-                <span className="text-sm font-medium text-secondary-foreground">Optimization grade</span>
-                <span className="text-2xl font-semibold text-secondary-foreground">{letterGrade}</span>
+                <span className="text-sm font-medium text-secondary-foreground">Overall progress</span>
+                <span className="text-2xl font-semibold text-secondary-foreground">
+                  {progressPercent === null ? 'No score yet' : `${progressPercent}%`}
+                </span>
               </div>
             </div>
             <p className="text-base leading-relaxed text-muted-foreground">
@@ -755,19 +729,63 @@ export default function IndexPage() {
             </div>
           </section>
 
-          <section className="grid grid-cols-1 gap-6 lg:grid-cols-4">
-            <SummaryStat label="GBP rating" value={formatRating(placeDetails?.rating)} />
-            <SummaryStat label="Review count" value={formatNumber(placeDetails?.reviewCount)} />
-            <SummaryStat label="Photos detected" value={formatNumber(placeDetails?.photoCount)} />
-            <SummaryStat label="Business Setup" value={`${roadmap?.progressPercent ?? 0}%`} />
+          <section className="space-y-6">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <h2 className="text-2xl font-semibold text-foreground">Overall progress</h2>
+                <p className="text-sm text-muted-foreground">
+                  We use the same optimization model as your business dashboard to score this preview.
+                </p>
+              </div>
+              <span className="text-sm font-semibold text-secondary-foreground">
+                {progressPercent === null ? 'No score yet' : `${progressPercent}% complete`}
+              </span>
+            </div>
+
+            <div
+              className={`business-optimization-roadmap__sections-summary ${
+                sections.length
+                  ? 'business-optimization-roadmap__sections-summary--with-sections'
+                  : 'business-optimization-roadmap__sections-summary--without-sections'
+              }`}
+            >
+              <div className="business-optimization-roadmap__summary-header">
+                <strong className="business-optimization-roadmap__summary-heading">Optimization progress</strong>
+                <span className="business-optimization-roadmap__summary-progress">
+                  {progressPercent === null ? 'No score yet' : `${progressPercent}% complete`}
+                </span>
+              </div>
+              <div aria-hidden="true" className="business-optimization-roadmap__progress-track">
+                <div
+                  className="business-optimization-roadmap__progress-fill"
+                  style={{ width: `${progressPercent === null ? 0 : progressPercent}%` }}
+                />
+              </div>
+            </div>
+
+            {sections.length ? (
+              <div className="business-optimization-roadmap__section-summary-grid">
+                {sections.map((section) => (
+                  <div key={section.id} className="business-optimization-roadmap__section-summary-card">
+                    <span className="business-optimization-roadmap__section-summary-card-title">{section.title}</span>
+                    <strong className="business-optimization-roadmap__section-summary-card-completion">
+                      {section.completion === null ? 'No score yet' : `${section.completion}% complete`}
+                    </strong>
+                  </div>
+                ))}
+              </div>
+            ) : null}
           </section>
 
           <section className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-semibold text-foreground">Top opportunities</h2>
+            <div className="space-y-2">
+              <h2 className="text-2xl font-semibold text-foreground">Next steps to improve your profile</h2>
+              <p className="text-sm text-muted-foreground">
+                We highlighted your top 3 recommendations. Start a free trial to sign in and review the rest.
+              </p>
             </div>
             {topOpportunities.length ? (
-              <ul className="grid gap-4 lg:grid-cols-3">
+              <ul className="business-optimization-roadmap__section-task-list">
                 {topOpportunities.map((task) => (
                   <OpportunityItem key={task.id} task={task} />
                 ))}
