@@ -9,5 +9,13 @@
 - the user `root` has pm2s
   - weekly geo grid scheduler
     - `pm2 start npm --name geogrid-scheduler -- run scheduler:geogrid`
-  - CTR sessions
-    - `pm2 start scheduler-db.js --name drives-db`
+- CTR sessions
+  - `pm2 start scheduler-db.js --name drives-db`
+
+## Keyword suggestion service
+
+Onboarding now asks ChatGPT for the top three trackable keywords for a new business. Set the following environment
+variable so the suggestions API can call OpenAI:
+
+- `OPENAI_API_KEY` – required
+- `OPENAI_MODEL` – optional model override (defaults to `gpt-4o-mini`)
