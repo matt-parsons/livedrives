@@ -7,3 +7,5 @@ logs/*
 tmp-profile/*
 web/serviceAccountKey.json
 web/logs/*
+.env
+web/.env.local
