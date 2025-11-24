@@ -9,6 +9,116 @@ const FIELD_MAP = {
   keywords: 'keywords'
 };
 
+function toKeywordEntries(raw) {
+  const entries = [];
+
+  const addEntry = (termValue, weightValue) => {
+    if (termValue === null || termValue === undefined) {
+      return;
+    }
+
+    const term = String(termValue).trim();
+
+    if (!term) {
+      return;
+    }
+
+    const weightNumber = Number(weightValue);
+    const weight = Number.isFinite(weightNumber) && weightNumber > 0 ? weightNumber : 1;
+
+    entries.push({ term, weight });
+  };
+
+  const consumeArray = (list) => {
+    for (const entry of list) {
+      if (!entry && entry !== 0) {
+        continue;
+      }
+
+      if (typeof entry === 'string' || typeof entry === 'number') {
+        addEntry(entry, 1);
+        continue;
+      }
+
+      if (typeof entry === 'object') {
+        const candidateTerm = entry.term ?? entry.keyword ?? entry.value ?? entry.name ?? entry.label;
+        const candidateWeight = entry.weight ?? entry.score ?? entry.boost;
+        addEntry(candidateTerm, candidateWeight);
+      }
+    }
+  };
+
+  if (raw === null || raw === undefined) {
+    return entries;
+  }
+
+  if (typeof raw === 'string') {
+    const trimmed = raw.trim();
+
+    if (!trimmed) {
+      return entries;
+    }
+
+    if (trimmed.startsWith('[')) {
+      try {
+        const parsed = JSON.parse(trimmed);
+
+        if (Array.isArray(parsed)) {
+          consumeArray(parsed);
+          return entries;
+        }
+      } catch (error) {
+        console.warn('Failed to parse keywords JSON, falling back to delimiter parsing', error);
+      }
+    }
+
+    trimmed
+      .split(/[,;\n]+/)
+      .map((part) => part.trim())
+      .filter(Boolean)
+      .forEach((term) => addEntry(term, 1));
+
+    return entries;
+  }
+
+  if (Array.isArray(raw)) {
+    consumeArray(raw);
+    return entries;
+  }
+
+  if (typeof raw === 'object') {
+    const candidateTerm = raw.term ?? raw.keyword ?? raw.value ?? raw.name ?? raw.label;
+    const candidateWeight = raw.weight ?? raw.score ?? raw.boost;
+    addEntry(candidateTerm, candidateWeight);
+  }
+
+  return entries;
+}
+
+function normalizeKeywords(raw) {
+  const entries = toKeywordEntries(raw);
+
+  if (!entries.length) {
+    return { errors: ['Provide at least one keyword.'], value: null };
+  }
+
+  const deduped = [];
+  const seen = new Set();
+
+  for (const entry of entries) {
+    const key = entry.term.toLowerCase();
+
+    if (seen.has(key)) {
+      continue;
+    }
+
+    seen.add(key);
+    deduped.push(entry);
+  }
+
+  return { errors: [], value: JSON.stringify(deduped) };
+}
+
 function hasOwn(obj, key) {
   return Object.prototype.hasOwnProperty.call(obj, key);
 }
@@ -100,7 +210,9 @@ export function normalizeOriginZonePayload(input, { partial = false } = {}) {
   }
 
   if (!partial || hasOwn(input, 'keywords')) {
-    values.keywords = toNullableString(input.keywords);
+    const { errors: keywordErrors, value } = normalizeKeywords(input.keywords);
+    errors.push(...keywordErrors);
+    values.keywords = value;
   }
 
   return { errors, values };

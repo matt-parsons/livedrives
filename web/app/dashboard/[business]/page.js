@@ -9,11 +9,13 @@ import {
   toTimestamp,
   loadBusiness,
   loadGeoGridRunSummaries,
-  loadGeoGridRunWithPoints
+  loadGeoGridRunWithPoints,
+  loadOriginZones
 } from './helpers';
 import { buildRunTrendIndicator } from './trendIndicators';
 import { buildMapPoints, resolveCenter } from './runs/formatters';
 import OptimizationPanelsClient from './OptimizationPanelsClient';
+import KeywordOriginZoneForm from '../get-started/KeywordOriginZoneForm';
 
 function resolveStatus(status) {
   if (!status) {
@@ -164,6 +166,9 @@ export default async function BusinessDashboardPage({ params }) {
     notFound();
   }
 
+  const originZones = await loadOriginZones(business.id);
+  const primaryOriginZone = originZones[0] ?? null;
+
   const isAdmin = session.role === 'admin';
   const canManageSettings = isAdmin;
 
@@ -182,46 +187,70 @@ export default async function BusinessDashboardPage({ params }) {
   const businessIdentifier = business.businessSlug ?? String(business.id);
   return (
     <div className="dashboard-layout__body">
-        <aside className="dashboard-layout__sidebar" aria-label="Workspace navigation">
-          <SidebarBrand />
-          <div className="dashboard-sidebar__menu">
-            <BusinessNavigation businessIdentifier={businessIdentifier} active="dashboard" />
-          </div>
-        </aside>
+      <aside className="dashboard-layout__sidebar" aria-label="Workspace navigation">
+        <SidebarBrand />
+        <div className="dashboard-sidebar__menu">
+          <BusinessNavigation businessIdentifier={businessIdentifier} active="dashboard" />
+        </div>
+      </aside>
 
-        <main className="dashboard-layout__main">
-          <DashboardBusinessHeader />
-          <div className="dashboard-layout__content">
-            <div className="section-header latest-geogrid-card__header">
-              <div>
-                <h2 className="section-title">Profile Overview</h2>
-                
-                <p className="section-caption">
-                  Review your freshest keyword coverage snapshot across the map.
+      <main className="dashboard-layout__main">
+        <DashboardBusinessHeader />
+        <div className="dashboard-layout__content">
+          <section className="rounded-2xl border border-border/60 bg-card/90 p-6 shadow-sm">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div className="space-y-1">
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">Origin keyword</p>
+                <p className="text-lg font-semibold text-foreground">Confirm your first origin zone keyword</p>
+                <p className="text-sm text-muted-foreground">
+                  We'll pin the keyword to your business address with a 3 mile radius so rank tracking can begin.
                 </p>
-
-                <div className="section-caption">
-                  <span>Last Report Run: </span>
-                  <strong>{latestRunSummary?.runDate ?? 'No runs yet'}</strong>
-                </div>
               </div>
-            </div>            
-            <OptimizationPanelsClient
-              placeId={business.gPlaceId ?? null}
-              businessId={business.id}
-              optimizationHref={optimizationHref}
-              canManageSettings={canManageSettings}
-              isAdmin={isAdmin}
-              editHref={editHref}
-              mapPoints={mapPoints}
-              mapCenter={mapCenter}
-              mapsApiKey={mapsApiKey}
-              latestRunSummary={latestRunSummary}
-              keywordsHref={keywordsHref}
-              ctrHref={ctrHref}
-            />
+            </div>
+
+            <div className="mt-4">
+              <KeywordOriginZoneForm
+                businessId={business.id}
+                businessName={business.businessName}
+                destinationAddress={business.destinationAddress}
+                destinationZip={business.destinationZip}
+                destLat={business.destLat}
+                destLng={business.destLng}
+                existingZone={primaryOriginZone}
+              />
+            </div>
+          </section>
+
+          <div className="section-header latest-geogrid-card__header">
+            <div>
+              <h2 className="section-title">Profile Overview</h2>
+
+              <p className="section-caption">
+                Review your freshest keyword coverage snapshot across the map.
+              </p>
+
+              <div className="section-caption">
+                <span>Last Report Run: </span>
+                <strong>{latestRunSummary?.runDate ?? 'No runs yet'}</strong>
+              </div>
+            </div>
           </div>
-        </main>
-      </div>
+          <OptimizationPanelsClient
+            placeId={business.gPlaceId ?? null}
+            businessId={business.id}
+            optimizationHref={optimizationHref}
+            canManageSettings={canManageSettings}
+            isAdmin={isAdmin}
+            editHref={editHref}
+            mapPoints={mapPoints}
+            mapCenter={mapCenter}
+            mapsApiKey={mapsApiKey}
+            latestRunSummary={latestRunSummary}
+            keywordsHref={keywordsHref}
+            ctrHref={ctrHref}
+          />
+        </div>
+      </main>
+    </div>
   );
 }
