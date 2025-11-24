@@ -1,10 +1,87 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+
+function extractKeywordTerms(raw) {
+  if (!raw) {
+    return [];
+  }
+
+  const terms = [];
+
+  const addTerm = (value) => {
+    if (value === null || value === undefined) {
+      return;
+    }
+
+    const str = String(value).trim();
+
+    if (str) {
+      terms.push(str);
+    }
+  };
+
+  const consumeArray = (list) => {
+    for (const entry of list) {
+      if (!entry && entry !== 0) {
+        continue;
+      }
+
+      if (typeof entry === 'string' || typeof entry === 'number') {
+        addTerm(entry);
+        continue;
+      }
+
+      if (typeof entry === 'object') {
+        addTerm(entry.term ?? entry.keyword ?? entry.value ?? entry.name ?? entry.label);
+      }
+    }
+  };
+
+  if (typeof raw === 'string') {
+    const trimmed = raw.trim();
+
+    if (!trimmed) {
+      return [];
+    }
+
+    if (trimmed.startsWith('[')) {
+      try {
+        const parsed = JSON.parse(trimmed);
+
+        if (Array.isArray(parsed)) {
+          consumeArray(parsed);
+          return Array.from(new Set(terms));
+        }
+      } catch {
+        // fall back to delimiter parsing
+      }
+    }
+
+    trimmed
+      .split(/[,;\n]+/)
+      .map((part) => part.trim())
+      .filter(Boolean)
+      .forEach(addTerm);
+
+    return Array.from(new Set(terms));
+  }
+
+  if (Array.isArray(raw)) {
+    consumeArray(raw);
+    return Array.from(new Set(terms));
+  }
+
+  if (typeof raw === 'object') {
+    addTerm(raw.term ?? raw.keyword ?? raw.value ?? raw.name ?? raw.label);
+  }
+
+  return Array.from(new Set(terms));
+}
 
 function formatCoordinate(value) {
   if (value === null || value === undefined) {
@@ -38,6 +115,20 @@ export default function KeywordOriginZoneForm({
   const [suggestions, setSuggestions] = useState([]);
   const [submitting, setSubmitting] = useState(false);
 
+  const formattedKeywords = useMemo(() => {
+    if (!existingZone?.keywords) {
+      return '—';
+    }
+
+    const terms = extractKeywordTerms(existingZone.keywords);
+
+    if (!terms.length) {
+      return String(existingZone.keywords);
+    }
+
+    return terms.join(', ');
+  }, [existingZone]);
+
   if (existingZone) {
     const coordLabel = existingZone.lat !== null && existingZone.lng !== null
       ? `${formatCoordinate(existingZone.lat)}, ${formatCoordinate(existingZone.lng)}`
@@ -48,7 +139,7 @@ export default function KeywordOriginZoneForm({
         <div className="rounded-lg border border-border/70 bg-muted/40 p-4 text-sm text-muted-foreground">
           <p className="font-medium text-foreground">Origin zone created</p>
           <p className="mt-1">
-            You're all set. The keyword <strong>{existingZone.keywords || '—'}</strong> is tied to
+            You're all set. The keyword <strong>{formattedKeywords}</strong> is tied to
             "{existingZone.name || 'Primary coverage'}" with a {existingZone.radiusMi ?? 0} mile radius.
           </p>
           {coordLabel ? (
@@ -131,7 +222,7 @@ export default function KeywordOriginZoneForm({
           lng: Number(destLng),
           radiusMi: 3,
           weight: 1,
-          keywords: trimmed
+          keywords: [{ term: trimmed, weight: 1 }]
         })
       });
 
