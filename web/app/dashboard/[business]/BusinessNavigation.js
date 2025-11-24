@@ -20,6 +20,7 @@ const NAV_ITEMS = [
   { id: 'dashboard', label: 'Dashboard', buildHref: (base) => base },
   { id: 'optimization-steps', label: 'Optimization steps', buildHref: (base) => `${base}/optimization-steps` },
   { id: 'keywords', label: 'Keywords', buildHref: (base) => `${base}/keywords` },
+  { id: 'reviews', label: 'Reviews', buildHref: (base) => `${base}/reviews` },
   { id: 'settings', label: 'Settings', buildHref: (base) => `${base}/settings` },
   { id: 'logout', label: 'Log out', buildHref: () => '/logout', prefetch: false }
 ];
