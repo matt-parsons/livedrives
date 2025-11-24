@@ -60,6 +60,83 @@ function formatCoordinatePair(lat, lng, digits = 5) {
   return `${latStr}, ${lngStr}`;
 }
 
+function extractKeywordTerms(raw) {
+  if (!raw) {
+    return [];
+  }
+
+  const terms = [];
+
+  const addTerm = (value) => {
+    if (value === null || value === undefined) {
+      return;
+    }
+
+    const str = String(value).trim();
+
+    if (str) {
+      terms.push(str);
+    }
+  };
+
+  const consumeArray = (list) => {
+    for (const entry of list) {
+      if (!entry && entry !== 0) {
+        continue;
+      }
+
+      if (typeof entry === 'string' || typeof entry === 'number') {
+        addTerm(entry);
+        continue;
+      }
+
+      if (typeof entry === 'object') {
+        addTerm(entry.term ?? entry.keyword ?? entry.value ?? entry.name ?? entry.label);
+      }
+    }
+  };
+
+  if (typeof raw === 'string') {
+    const trimmed = raw.trim();
+
+    if (!trimmed) {
+      return [];
+    }
+
+    if (trimmed.startsWith('[')) {
+      try {
+        const parsed = JSON.parse(trimmed);
+
+        if (Array.isArray(parsed)) {
+          consumeArray(parsed);
+          return Array.from(new Set(terms));
+        }
+      } catch {
+        // fall back to delimiter parsing
+      }
+    }
+
+    trimmed
+      .split(/[,;\n]+/)
+      .map((part) => part.trim())
+      .filter(Boolean)
+      .forEach(addTerm);
+
+    return Array.from(new Set(terms));
+  }
+
+  if (Array.isArray(raw)) {
+    consumeArray(raw);
+    return Array.from(new Set(terms));
+  }
+
+  if (typeof raw === 'object') {
+    addTerm(raw.term ?? raw.keyword ?? raw.value ?? raw.name ?? raw.label);
+  }
+
+  return Array.from(new Set(terms));
+}
+
 const EMPTY_FORM = {
   name: '',
   canonical: '',
@@ -251,11 +328,14 @@ export default function OriginZonesManager({ businessId, initialZones = [], capt
       ? `${formatDecimal(zone.radiusMi, 1) ?? zone.radiusMi} mi radius`
       : null;
     const coordLabel = formatCoordinatePair(zone.lat, zone.lng);
+    const keywordTerms = extractKeywordTerms(zone.keywords);
+    const keywordLabel = keywordTerms.length ? keywordTerms.join(', ') : zone.keywords || null;
 
     return {
       ...zone,
       radiusLabel,
       coordLabel,
+      keywordLabel,
       createdLabel: zone.createdAt ? new Date(zone.createdAt).toISOString() : null
     };
   });
@@ -309,7 +389,7 @@ export default function OriginZonesManager({ businessId, initialZones = [], capt
 
                   <div className="grid gap-2 text-sm text-muted-foreground">
                     {zone.coordLabel ? <div>Coordinates: {zone.coordLabel}</div> : null}
-                    {zone.keywords ? <div>Keywords: {zone.keywords}</div> : null}
+                    {zone.keywordLabel ? <div>Keywords: {zone.keywordLabel}</div> : null}
                     {zone.createdLabel ? <div>Created: {zone.createdLabel}</div> : null}
                   </div>
                 </div>
