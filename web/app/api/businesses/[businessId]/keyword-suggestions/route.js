@@ -79,7 +79,6 @@ async function fetchKeywordSuggestions(prompt) {
     body: JSON.stringify({
       model: OPENAI_MODEL,
       response_format: { type: 'json_object' },
-      temperature: 0.25,
       messages: [
         { role: 'system', content: 'You are a helpful assistant for local service businesses.' },
         { role: 'user', content: prompt }

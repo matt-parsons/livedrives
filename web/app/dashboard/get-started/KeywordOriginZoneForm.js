@@ -296,7 +296,7 @@ export default function KeywordOriginZoneForm({
             ))}
           </div>
         ) : null}
-
+        {suggestionStatus === 'loading' ? (<div></div>) : (
         <div className="space-y-2">
           <Label htmlFor="onboarding-keyword">Or type your own</Label>
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
@@ -316,6 +316,7 @@ export default function KeywordOriginZoneForm({
             We'll auto-create the first origin zone using the business location with a 3 mile radius.
           </p>
         </div>
+        )}
       </div>
 
       {error ? (
