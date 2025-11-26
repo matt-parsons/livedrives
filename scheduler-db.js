@@ -19,20 +19,21 @@ const logDir = path.resolve(__dirname, 'logs');
 if (!fs.existsSync(logDir)) fs.mkdirSync(logDir, { recursive: true });
 let scheduleLog = path.join(logDir, 'schedule-log.jsonl');
 
+function resetScheduleLog(reason = '') {
+  scheduleLog = path.join(logDir, 'schedule-log.jsonl');
+  fs.writeFileSync(scheduleLog, '', 'utf8');
+  const suffix = reason ? ` (${reason})` : '';
+  console.log(`[schedule-log] Reset${suffix}`);
+}
+
 function logSchedule(entry){
   fs.appendFileSync(scheduleLog, JSON.stringify(entry) + '\n', 'utf8');
 }
-
-// rotate the log at midnight
-schedule.scheduleJob('0 0 * * *', () => {
-  scheduleLog = path.join(logDir, 'schedule-log.jsonl'); // overwrite
-  fs.writeFileSync(scheduleLog, '[]', 'utf8');
-  console.log('[schedule-log] New day – file reset');
-});
 /* ------------------------------------- */
 
 // Track scheduled jobs per business_id
 const scheduledJobs = new Map();
+const scheduledConfigFingerprints = new Map();
 
 // Cancel jobs for a business
 function unloadBusiness(businessId) {
@@ -124,34 +125,56 @@ function scheduleDrives(config) {
 
 /* ---------- Loader & refresh loops ---------- */
 
-async function loadAllFromDb() {
+async function loadAllFromDb({ forceReload = false, resetLog = false } = {}) {
+  let logWasReset = false;
+  if (resetLog) {
+    resetScheduleLog('forced reload');
+    logWasReset = true;
+  }
   const configs = await fetchActiveConfigs();
 
   // cancel and reschedule per business
   const seen = new Set();
   for (const cfg of configs) {
     seen.add(cfg.business_id);
+    const fingerprint = JSON.stringify(cfg);
+    const prevFingerprint = scheduledConfigFingerprints.get(cfg.business_id);
+
+    if (!forceReload && prevFingerprint === fingerprint && scheduledJobs.has(cfg.business_id)) {
+      continue; // skip unchanged configs to avoid duplicating schedule log entries
+    }
+
+    if (!logWasReset && !resetLog) {
+      resetScheduleLog('config change detected');
+      logWasReset = true;
+    }
+
     unloadBusiness(cfg.business_id);
     const jobs = scheduleDrives(cfg);
     scheduledJobs.set(cfg.business_id, jobs);
+    scheduledConfigFingerprints.set(cfg.business_id, fingerprint);
   }
 
   // clean up any businesses no longer active/present
   for (const oldId of Array.from(scheduledJobs.keys())) {
-    if (!seen.has(oldId)) unloadBusiness(oldId);
+    if (!seen.has(oldId)) {
+      unloadBusiness(oldId);
+      scheduledConfigFingerprints.delete(oldId);
+    }
   }
 }
 
 // INITIAL LOAD
-loadAllFromDb().catch(err => {
+loadAllFromDb({ forceReload: true, resetLog: true }).catch(err => {
   console.error('[scheduler] initial load failed:', err.message);
   process.exit(1);
 });
 
 // Nightly full refresh (slight delay past midnight to avoid TZ edge cases)
 schedule.scheduleJob('5 0 * * *', () => {
-  console.log('[daily-reset] Midnight — reloading all configs from DB');
-  loadAllFromDb().catch(err => console.error('[scheduler] nightly reload:', err.message));
+  console.log('[daily-reset] Midnight — resetting log and reloading all configs from DB');
+  loadAllFromDb({ forceReload: true, resetLog: true })
+    .catch(err => console.error('[scheduler] nightly reload:', err.message));
 });
 
 // Light poll to pick up DB edits every 30 minutes
