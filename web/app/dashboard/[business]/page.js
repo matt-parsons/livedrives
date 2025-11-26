@@ -168,6 +168,9 @@ export default async function BusinessDashboardPage({ params }) {
 
   const originZones = await loadOriginZones(business.id);
   const primaryOriginZone = originZones[0] ?? null;
+  const hasSelectedKeyword = Array.isArray(primaryOriginZone?.keywords)
+    ? primaryOriginZone.keywords.length > 0
+    : Boolean(primaryOriginZone?.keywords);
 
   const isAdmin = session.role === 'admin';
   const canManageSettings = isAdmin;
@@ -197,29 +200,31 @@ export default async function BusinessDashboardPage({ params }) {
       <main className="dashboard-layout__main">
         <DashboardBusinessHeader />
         <div className="dashboard-layout__content">
-          <section className="rounded-2xl border border-border/60 bg-card/90 p-6 shadow-sm">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <div className="space-y-1">
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">Origin keyword</p>
-                <p className="text-lg font-semibold text-foreground">Confirm your first origin zone keyword</p>
-                <p className="text-sm text-muted-foreground">
-                  We'll pin the keyword to your business address with a 3 mile radius so rank tracking can begin.
-                </p>
+          {!hasSelectedKeyword ? (
+            <section className="rounded-2xl border border-border/60 bg-card/90 p-6 shadow-sm">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div className="space-y-1">
+                  <p className="text-xs uppercase tracking-wide text-muted-foreground">Origin keyword</p>
+                  <p className="text-lg font-semibold text-foreground">Confirm your first origin zone keyword</p>
+                  <p className="text-sm text-muted-foreground">
+                    We'll pin the keyword to your business address with a 3 mile radius so rank tracking can begin.
+                  </p>
+                </div>
               </div>
-            </div>
 
-            <div className="mt-4">
-              <KeywordOriginZoneForm
-                businessId={business.id}
-                businessName={business.businessName}
-                destinationAddress={business.destinationAddress}
-                destinationZip={business.destinationZip}
-                destLat={business.destLat}
-                destLng={business.destLng}
-                existingZone={primaryOriginZone}
-              />
-            </div>
-          </section>
+              <div className="mt-4">
+                <KeywordOriginZoneForm
+                  businessId={business.id}
+                  businessName={business.businessName}
+                  destinationAddress={business.destinationAddress}
+                  destinationZip={business.destinationZip}
+                  destLat={business.destLat}
+                  destLng={business.destLng}
+                  existingZone={primaryOriginZone}
+                />
+              </div>
+            </section>
+          ) : null}
 
           <div className="section-header latest-geogrid-card__header">
             <div>
