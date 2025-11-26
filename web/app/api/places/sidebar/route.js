@@ -1,4 +1,8 @@
 // /app/api/sidebar/route.js
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+export const fetchCache = "force-no-store";
+
 import { NextResponse } from 'next/server';
 
 export async function POST(req) {
