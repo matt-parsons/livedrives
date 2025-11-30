@@ -453,188 +453,203 @@ export default function OperationsConsole({ timezone: initialTimezone, initialTa
   }, [ctrPaused]);
 
   return (
-    <div className="operations-layout">
-      <div className="operations-tabs" role="presentation">
-        <div className="operations-tablist" role="tablist" aria-label="Operations views">
-          {TAB_OPTIONS.map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              role="tab"
-              id={`operations-tab-${tab.id}`}
-              aria-controls={`operations-panel-${tab.id}`}
-              className={tab.id === activeTab ? 'operations-tab operations-tab--active' : 'operations-tab'}
-              aria-selected={tab.id === activeTab}
-              tabIndex={tab.id === activeTab ? 0 : -1}
-              onClick={() => setActiveTab(tab.id)}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {activeTab === 'logs' ? (
-        <section
-          id="operations-panel-logs"
-          className="section"
-          role="tabpanel"
-          aria-labelledby="operations-tab-logs"
-        >
-        <div className="section-header">
-          <div>
-            <h2 className="section-title">Run logs</h2>
-            <p className="section-caption">
-              Inspect automated drive sessions for the current day or the full historical backlog.
-            </p>
-          </div>
-          <div className="log-scope-control" role="group" aria-label="Log scope">
-            {LOG_SCOPE_OPTIONS.map((option) => (
-              <button
-                key={option.id}
-                type="button"
-                className={option.id === logsScope ? 'segmented-button segmented-button--active' : 'segmented-button'}
-                onClick={() => setLogsScope(option.id)}
-                disabled={logsLoading && option.id === logsScope}
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="surface-card">
-          <div className="logs-toolbar">
-            <div className="logs-toolbar__meta">
-              <span className="status-pill">
-                {logsLoading ? 'Loading…' : `${logsData?.rows?.length ?? 0} log entries`}
-              </span>
-              <span className="status-pill status-pill--muted">Timezone: {activeLogsTimezone}</span>
-            </div>
-            <div className="logs-toolbar__actions">
-              <Link className="toolbar-link" href="/runs">
-                View run dashboard
+    <div className="page-shell__body operations-layout">
+      <aside className="page-shell__sidebar" aria-label="Operations navigation">
+        <nav className="page-subnav" aria-label="Operations sections">
+          <ul className="page-subnav__list">
+            <li className="page-subnav__list-item">
+              <Link href="/dashboard" className="page-subnav__item">
+                Back to dashboard
               </Link>
-              <button
-                type="button"
-                className="refresh-button"
-                onClick={() => loadLogs(logsScope)}
-                disabled={logsLoading}
-              >
-                Refresh
-              </button>
+            </li>
+            {TAB_OPTIONS.map((tab) => (
+              <li key={tab.id} className="page-subnav__list-item">
+                {tab.id === activeTab ? (
+                  <span
+                    id={`operations-tab-${tab.id}`}
+                    aria-current="page"
+                    className="page-subnav__item page-subnav__item--active"
+                  >
+                    {tab.label}
+                  </span>
+                ) : (
+                  <button
+                    id={`operations-tab-${tab.id}`}
+                    type="button"
+                    className="page-subnav__item operations-nav__button"
+                    onClick={() => setActiveTab(tab.id)}
+                  >
+                    {tab.label}
+                  </button>
+                )}
+              </li>
+            ))}
+          </ul>
+        </nav>
+      </aside>
+
+      <div className="page-shell__content operations-layout__content">
+        {activeTab === 'logs' ? (
+          <section
+            id="operations-panel-logs"
+            className="section"
+            role="tabpanel"
+            aria-labelledby="operations-tab-logs"
+          >
+            <div className="section-header">
+              <div>
+                <h2 className="section-title">Run logs</h2>
+                <p className="section-caption">
+                  Inspect automated drive sessions for the current day or the full historical backlog.
+                </p>
+              </div>
+              <div className="log-scope-control" role="group" aria-label="Log scope">
+                {LOG_SCOPE_OPTIONS.map((option) => (
+                  <button
+                    key={option.id}
+                    type="button"
+                    className={option.id === logsScope ? 'segmented-button segmented-button--active' : 'segmented-button'}
+                    onClick={() => setLogsScope(option.id)}
+                    disabled={logsLoading && option.id === logsScope}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
 
-          {logsError ? (
-            <div className="inline-error" role="alert">
-              <strong>Unable to load logs.</strong>
-              <span>{logsError.message}</span>
-            </div>
-          ) : null}
+            <div className="surface-card">
+              <div className="logs-toolbar">
+                <div className="logs-toolbar__meta">
+                  <span className="status-pill">
+                    {logsLoading ? 'Loading…' : `${logsData?.rows?.length ?? 0} log entries`}
+                  </span>
+                  <span className="status-pill status-pill--muted">Timezone: {activeLogsTimezone}</span>
+                </div>
+                <div className="logs-toolbar__actions">
+                  <Link className="toolbar-link" href="/runs">
+                    View run dashboard
+                  </Link>
+                  <button
+                    type="button"
+                    className="refresh-button"
+                    onClick={() => loadLogs(logsScope)}
+                    disabled={logsLoading}
+                  >
+                    Refresh
+                  </button>
+                </div>
+              </div>
 
-          <div className="table-scroll">
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th style={{ minWidth: 180 }}>Timestamp</th>
-                  <th style={{ minWidth: 120 }}>Status</th>
-                  <th style={{ minWidth: 160 }}>Business</th>
-                  <th style={{ minWidth: 160 }}>Keyword</th>
-                  <th style={{ minWidth: 80 }}>Rank</th>
-                  <th style={{ minWidth: 140 }}>Origin</th>
-                  <th style={{ minWidth: 120 }}>Device</th>
-                  <th style={{ minWidth: 140 }}>CTR IP</th>
-                  <th style={{ minWidth: 140 }}>Drive IP</th>
-                  <th style={{ minWidth: 120 }}>Duration (min)</th>
-                  <th style={{ minWidth: 180 }}>Events</th>
-                  <th style={{ minWidth: 180 }}>Steps</th>
-                </tr>
-              </thead>
-              <tbody>
-                {logsLoading && (!logsData?.rows || logsData.rows.length === 0) ? (
-                  <tr>
-                    <td colSpan={12} className="table-placeholder">
-                      Loading log entries…
-                    </td>
-                  </tr>
-                ) : null}
+              {logsError ? (
+                <div className="inline-error" role="alert">
+                  <strong>Unable to load logs.</strong>
+                  <span>{logsError.message}</span>
+                </div>
+              ) : null}
 
-                {!logsLoading && (!logsData?.rows || logsData.rows.length === 0) ? (
-                  <tr>
-                    <td colSpan={12} className="table-placeholder">
-                      No log entries found for the selected scope.
-                    </td>
-                  </tr>
-                ) : null}
-
-                {(logsData?.rows ?? []).map((row) => {
-                  const status = getLogStatus(row);
-                  const events = normalizeEvents(row.events);
-
-                  return (
-                    <tr key={row.id} className={`log-row log-row--${status.tone}`}>
-                      <td>{formatDateTime(row.timestamp_utc || row.created_at, activeLogsTimezone)}</td>
-                      <td>
-                        <span className={`log-status log-status--${status.tone}`}>{status.label}</span>
-                      </td>
-                      <td>{row.business_name ?? row.business_id ?? '—'}</td>
-                      <td>{row.keyword ?? '—'}</td>
-                      <td>{row.rank ?? '—'}</td>
-                      <td>
-                        {typeof row.origin === 'object' && row.origin !== null
-                          ? `${row.origin.lat ?? ''}, ${row.origin.lng ?? ''}`.trim()
-                          : row.origin ?? '—'}
-                      </td>
-                      <td>{row.device ?? '—'}</td>
-                      <td>{row.ctr_ip_address ?? '—'}</td>
-                      <td>{row.drive_ip_address ?? '—'}</td>
-                      <td>{row.duration_min != null ? row.duration_min : '—'}</td>
-                      <td>
-                        {events.length === 0 ? (
-                          <span className="muted">No events</span>
-                        ) : (
-                          <button
-                            type="button"
-                            className="log-events-button"
-                            onClick={() => {
-                              setActiveEventsLog({
-                                id: row.id,
-                                businessName: row.business_name ?? row.business_id ?? '—',
-                                keyword: row.keyword ?? null,
-                                status: status.label,
-                                timestamp: row.timestamp_utc || row.created_at,
-                                events
-                              });
-                            }}
-                          >
-                            View {events.length} event{events.length === 1 ? '' : 's'}
-                          </button>
-                        )}
-                      </td>
-                      <td>
-                        {Array.isArray(row.steps) && row.steps.length > 0 ? (
-                          <details>
-                            <summary>{row.steps.length} step{row.steps.length === 1 ? '' : 's'}</summary>
-                            <ul className="log-step-list">
-                              {row.steps.map((step, index) => (
-                                <li key={index}>{typeof step === 'string' ? step : JSON.stringify(step)}</li>
-                              ))}
-                            </ul>
-                          </details>
-                        ) : (
-                          <span className="muted">No steps</span>
-                        )}
-                      </td>
+              <div className="table-scroll">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th style={{ minWidth: 180 }}>Timestamp</th>
+                      <th style={{ minWidth: 120 }}>Status</th>
+                      <th style={{ minWidth: 160 }}>Business</th>
+                      <th style={{ minWidth: 160 }}>Keyword</th>
+                      <th style={{ minWidth: 80 }}>Rank</th>
+                      <th style={{ minWidth: 140 }}>Origin</th>
+                      <th style={{ minWidth: 120 }}>Device</th>
+                      <th style={{ minWidth: 140 }}>CTR IP</th>
+                      <th style={{ minWidth: 140 }}>Drive IP</th>
+                      <th style={{ minWidth: 120 }}>Duration (min)</th>
+                      <th style={{ minWidth: 180 }}>Events</th>
+                      <th style={{ minWidth: 180 }}>Steps</th>
                     </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
-        </section>
-      ) : null}
+                  </thead>
+                  <tbody>
+                    {logsLoading && (!logsData?.rows || logsData.rows.length === 0) ? (
+                      <tr>
+                        <td colSpan={12} className="table-placeholder">
+                          Loading log entries…
+                        </td>
+                      </tr>
+                    ) : null}
+
+                    {!logsLoading && (!logsData?.rows || logsData.rows.length === 0) ? (
+                      <tr>
+                        <td colSpan={12} className="table-placeholder">
+                          No log entries found for the selected scope.
+                        </td>
+                      </tr>
+                    ) : null}
+
+                    {(logsData?.rows ?? []).map((row) => {
+                      const status = getLogStatus(row);
+                      const events = normalizeEvents(row.events);
+
+                      return (
+                        <tr key={row.id} className={`log-row log-row--${status.tone}`}>
+                          <td>{formatDateTime(row.timestamp_utc || row.created_at, activeLogsTimezone)}</td>
+                          <td>
+                            <span className={`log-status log-status--${status.tone}`}>{status.label}</span>
+                          </td>
+                          <td>{row.business_name ?? row.business_id ?? '—'}</td>
+                          <td>{row.keyword ?? '—'}</td>
+                          <td>{row.rank ?? '—'}</td>
+                          <td>
+                            {typeof row.origin === 'object' && row.origin !== null
+                              ? `${row.origin.lat ?? ''}, ${row.origin.lng ?? ''}`.trim()
+                              : row.origin ?? '—'}
+                          </td>
+                          <td>{row.device ?? '—'}</td>
+                          <td>{row.ctr_ip_address ?? '—'}</td>
+                          <td>{row.drive_ip_address ?? '—'}</td>
+                          <td>{row.duration_min != null ? row.duration_min : '—'}</td>
+                          <td>
+                            {events.length === 0 ? (
+                              <span className="muted">No events</span>
+                            ) : (
+                              <button
+                                type="button"
+                                className="log-events-button"
+                                onClick={() => {
+                                  setActiveEventsLog({
+                                    id: row.id,
+                                    businessName: row.business_name ?? row.business_id ?? '—',
+                                    keyword: row.keyword ?? null,
+                                    status: status.label,
+                                    timestamp: row.timestamp_utc || row.created_at,
+                                    events
+                                  });
+                                }}
+                              >
+                                View {events.length} event{events.length === 1 ? '' : 's'}
+                              </button>
+                            )}
+                          </td>
+                          <td>
+                            {Array.isArray(row.steps) && row.steps.length > 0 ? (
+                              <details>
+                                <summary>{row.steps.length} step{row.steps.length === 1 ? '' : 's'}</summary>
+                                <ul className="log-step-list">
+                                  {row.steps.map((step, index) => (
+                                    <li key={index}>{typeof step === 'string' ? step : JSON.stringify(step)}</li>
+                                  ))}
+                                </ul>
+                              </details>
+                            ) : (
+                              <span className="muted">No steps</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+        ) : null}
 
       {activeTab === 'geosearch' ? (
         <section
@@ -1211,6 +1226,7 @@ export default function OperationsConsole({ timezone: initialTimezone, initialTa
           </DialogContent>
         ) : null}
       </Dialog>
+      </div>
     </div>
   );
 }
