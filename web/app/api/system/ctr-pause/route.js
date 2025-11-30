@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/authServer';
-import { readCtrPauseState, writeCtrPauseState } from '@/lib/utils/ctrPause';
+import { readCtrPauseState, writeCtrPauseState } from '@lib/utils/ctrPause';
 
 export async function GET(request) {
   const session = await requireAuth(request);
