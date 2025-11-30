@@ -12,6 +12,12 @@
 - CTR sessions
   - `pm2 start scheduler-db.js --name drives-db`
 
+### CTR pause control
+
+- The admin dashboard exposes a global pause toggle for CTR automation under **Operations → Today’s scheduled drives**.
+- The paused state is stored on-disk at `CTR_PAUSE_PATH`/`CTR_PAUSE_FILE` (defaults to `ctr-pause-state.json` in the repo
+  root) so the scheduler and dashboard share the same source of truth.
+
 ## Keyword suggestion service
 
 Onboarding now asks ChatGPT for the top three trackable keywords for a new business. Set the following environment

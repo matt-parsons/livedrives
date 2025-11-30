@@ -7,6 +7,7 @@ const { pickOrigin, pickOriginWithAddress }  = require('./lib/business/originGen
 const { DateTime } = require('luxon');
 const { getZone, isOpenNow, nextOpenAt } = require('./lib/business/businessHours');
 const { getPackRank } = require('./lib/core/rankTrack');
+const { isCtrPausedSync } = require('./lib/utils/ctrPause');
 
 const { startRun, finishRun, logResult } = require('./lib/db/logger');
 const { recordRankingSnapshot } = require('./lib/db/ctr_store');
@@ -55,6 +56,11 @@ const normalizeIdentifier = (value) =>
   if (!arg) {
     console.error('Usage: node index.js <business-id | path-to-config.json | raw-JSON-string>');
     process.exit(1);
+  }
+
+  if (isCtrPausedSync()) {
+    console.log('⏸ CTR automation is paused. Exiting without starting a session.');
+    process.exit(0);
   }
 
   let config = null;

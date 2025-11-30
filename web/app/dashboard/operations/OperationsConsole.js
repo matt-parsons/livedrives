@@ -142,6 +142,10 @@ export default function OperationsConsole({ timezone: initialTimezone, initialTa
   const [activeEventsLog, setActiveEventsLog] = useState(null);
   const [activeScheduleGroup, setActiveScheduleGroup] = useState(null);
 
+  const [ctrPauseState, setCtrPauseState] = useState({ paused: false, updatedAt: null });
+  const [ctrPauseLoading, setCtrPauseLoading] = useState(false);
+  const [ctrPauseError, setCtrPauseError] = useState(null);
+
   const [geoRunsLoading, setGeoRunsLoading] = useState(false);
   const [geoRunsError, setGeoRunsError] = useState(null);
   const [geoRunsData, setGeoRunsData] = useState({ timezone: fallbackTimezone, runs: [] });
@@ -282,6 +286,30 @@ export default function OperationsConsole({ timezone: initialTimezone, initialTa
     }
   }, []);
 
+  const refreshCtrPause = useCallback(async () => {
+    setCtrPauseLoading(true);
+    setCtrPauseError(null);
+
+    try {
+      const response = await fetch('/api/system/ctr-pause', {
+        method: 'GET',
+        headers: { Accept: 'application/json' },
+        cache: 'no-store'
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to load CTR pause state (status ${response.status})`);
+      }
+
+      const payload = await response.json();
+      setCtrPauseState(payload);
+    } catch (error) {
+      setCtrPauseError(error);
+    } finally {
+      setCtrPauseLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     loadLogs(logsScope);
   }, [loadLogs, logsScope]);
@@ -289,6 +317,10 @@ export default function OperationsConsole({ timezone: initialTimezone, initialTa
   useEffect(() => {
     refreshSchedule();
   }, [refreshSchedule]);
+
+  useEffect(() => {
+    refreshCtrPause();
+  }, [refreshCtrPause]);
 
   useEffect(() => {
     if (activeTab === 'geosearch' && !geoLogInitialized && !geoLogLoading) {
@@ -387,6 +419,38 @@ export default function OperationsConsole({ timezone: initialTimezone, initialTa
   const geoRuns = useMemo(() => {
     return Array.isArray(geoRunsData?.runs) ? geoRunsData.runs : [];
   }, [geoRunsData]);
+
+  const ctrPaused = Boolean(ctrPauseState?.paused);
+  const ctrPauseUpdatedLabel = ctrPauseState?.updatedAt
+    ? formatDateTime(ctrPauseState.updatedAt, activeScheduleTimezone, { timeStyle: 'medium' })
+    : null;
+
+  const toggleCtrPause = useCallback(async () => {
+    setCtrPauseLoading(true);
+    setCtrPauseError(null);
+
+    try {
+      const response = await fetch('/api/system/ctr-pause', {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ paused: !ctrPaused })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to update CTR pause state (status ${response.status})`);
+      }
+
+      const payload = await response.json();
+      setCtrPauseState(payload);
+    } catch (error) {
+      setCtrPauseError(error);
+    } finally {
+      setCtrPauseLoading(false);
+    }
+  }, [ctrPaused]);
 
   return (
     <div className="operations-layout">
@@ -663,71 +727,105 @@ export default function OperationsConsole({ timezone: initialTimezone, initialTa
           role="tabpanel"
           aria-labelledby="operations-tab-schedule"
         >
-        <div className="section-header">
-          <div>
-            <h2 className="section-title">Today’s scheduled drives</h2>
-            <p className="section-caption">
-              Review the jobs queued for execution today. Data is sourced from the scheduler log feed.
-            </p>
-          </div>
-          <button
-            type="button"
-            className="refresh-button"
-            onClick={refreshSchedule}
-            disabled={scheduleLoading}
-          >
-            Refresh
-          </button>
-        </div>
-
-        <div className="surface-card">
-          <div className="logs-toolbar">
-            <div className="logs-toolbar__meta">
-              <span className="status-pill">
-                {scheduleLoading
-                  ? 'Loading…'
-                  : `${scheduleEntries.length} scheduled session${scheduleEntries.length === 1 ? '' : 's'}`}
-              </span>
-              <span className="status-pill status-pill--muted">Timezone: {activeScheduleTimezone}</span>
+          <div className="section-header">
+            <div>
+              <h2 className="section-title">Today’s scheduled drives</h2>
+              <p className="section-caption">
+                Review the jobs queued for execution today. Data is sourced from the scheduler log feed.
+              </p>
             </div>
-            <div className="logs-toolbar__actions">
-              <div className="log-scope-control" role="group" aria-label="Schedule scope">
-                {SCHEDULE_SCOPE_OPTIONS.map((option) => (
-                  <button
-                    key={option.id}
-                    type="button"
-                    className={
-                      option.id === scheduleScope
-                        ? 'segmented-button segmented-button--active'
-                        : 'segmented-button'
-                    }
-                    onClick={() => setScheduleScope(option.id)}
-                    disabled={scheduleLoading && option.id === scheduleScope}
-                  >
-                    {option.label}
-                  </button>
-                ))}
-              </div>
-              <div className="log-scope-control" role="group" aria-label="Schedule view mode">
-                {SCHEDULE_VIEW_OPTIONS.map((option) => (
-                  <button
-                    key={option.id}
-                    type="button"
-                    className={
-                      option.id === scheduleView
-                        ? 'segmented-button segmented-button--active'
-                        : 'segmented-button'
-                    }
-                    onClick={() => setScheduleView(option.id)}
-                    disabled={scheduleLoading && option.id === scheduleView}
-                  >
-                    {option.label}
-                  </button>
-                ))}
-              </div>
+            <div className="logs-toolbar__actions" style={{ gap: 12 }}>
+              <button
+                type="button"
+                className="refresh-button"
+                onClick={toggleCtrPause}
+                disabled={ctrPauseLoading}
+              >
+                {ctrPaused ? 'Resume sessions' : 'Pause all sessions'}
+              </button>
+              <button
+                type="button"
+                className="refresh-button"
+                onClick={refreshSchedule}
+                disabled={scheduleLoading}
+              >
+                Refresh
+              </button>
             </div>
           </div>
 
+          <div className="surface-card">
+            <div className="logs-toolbar">
+              <div className="logs-toolbar__meta" style={{ flexWrap: 'wrap', rowGap: 8 }}>
+                <span className="status-pill" data-status={ctrPaused ? 'inactive' : 'active'}>
+                  {ctrPaused ? 'CTR sessions paused' : 'CTR sessions active'}
+                </span>
+                {ctrPauseUpdatedLabel ? (
+                  <span className="status-pill status-pill--muted">Updated {ctrPauseUpdatedLabel}</span>
+                ) : null}
+                {ctrPauseError ? (
+                  <span className="status-pill status-pill--muted">{ctrPauseError.message}</span>
+                ) : null}
+              </div>
+              <div className="logs-toolbar__actions">
+                <button
+                  type="button"
+                  className="refresh-button"
+                  onClick={refreshCtrPause}
+                  disabled={ctrPauseLoading}
+                >
+                  Check status
+                </button>
+              </div>
+            </div>
+
+            <div className="logs-toolbar">
+              <div className="logs-toolbar__meta">
+                <span className="status-pill">
+                  {scheduleLoading
+                    ? 'Loading…'
+                    : `${scheduleEntries.length} scheduled session${scheduleEntries.length === 1 ? '' : 's'}`}
+                </span>
+                <span className="status-pill status-pill--muted">Timezone: {activeScheduleTimezone}</span>
+              </div>
+              <div className="logs-toolbar__actions">
+                <div className="log-scope-control" role="group" aria-label="Schedule scope">
+                  {SCHEDULE_SCOPE_OPTIONS.map((option) => (
+                    <button
+                      key={option.id}
+                      type="button"
+                      className={
+                        option.id === scheduleScope
+                          ? 'segmented-button segmented-button--active'
+                          : 'segmented-button'
+                      }
+                      onClick={() => setScheduleScope(option.id)}
+                      disabled={scheduleLoading && option.id === scheduleScope}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+                <div className="log-scope-control" role="group" aria-label="Schedule view mode">
+                  {SCHEDULE_VIEW_OPTIONS.map((option) => (
+                    <button
+                      key={option.id}
+                      type="button"
+                      className={
+                        option.id === scheduleView
+                          ? 'segmented-button segmented-button--active'
+                          : 'segmented-button'
+                      }
+                      onClick={() => setScheduleView(option.id)}
+                      disabled={scheduleLoading && option.id === scheduleView}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          
           {scheduleError ? (
             <div className="inline-error" role="alert">
               <strong>Unable to load the scheduler feed.</strong>
