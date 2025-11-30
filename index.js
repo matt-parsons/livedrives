@@ -7,7 +7,7 @@ const { pickOrigin, pickOriginWithAddress }  = require('./lib/business/originGen
 const { DateTime } = require('luxon');
 const { getZone, isOpenNow, nextOpenAt } = require('./lib/business/businessHours');
 const { getPackRank } = require('./lib/core/rankTrack');
-const { isCtrPausedSync } = require('./lib/utils/ctrPause');
+const { isCtrPausedSync } = require('@/lib/utils/ctrPause');
 
 const { startRun, finishRun, logResult } = require('./lib/db/logger');
 const { recordRankingSnapshot } = require('./lib/db/ctr_store');
