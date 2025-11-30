@@ -126,12 +126,25 @@ function scheduleDrives(config) {
 /* ---------- Loader & refresh loops ---------- */
 
 async function loadAllFromDb({ forceReload = false, resetLog = false } = {}) {
-  let logWasReset = false;
-  if (resetLog) {
-    resetScheduleLog('forced reload');
-    logWasReset = true;
-  }
   const configs = await fetchActiveConfigs();
+
+  // Only treat as a live reload if a new business appears; edits wait for nightly refresh
+  const newBusinessIds = configs
+    .filter(cfg => !scheduledConfigFingerprints.has(cfg.business_id))
+    .map(cfg => cfg.business_id);
+  const hasNewBusiness = newBusinessIds.length > 0;
+  const effectiveForceReload = forceReload || hasNewBusiness;
+
+  if (resetLog || effectiveForceReload) {
+    const reason = resetLog
+      ? 'forced reload'
+      : hasNewBusiness
+        ? 'new business detected'
+        : 'reload';
+    resetScheduleLog(reason);
+  }
+
+  const newBusinessSet = new Set(newBusinessIds);
 
   // cancel and reschedule per business
   const seen = new Set();
@@ -140,13 +153,16 @@ async function loadAllFromDb({ forceReload = false, resetLog = false } = {}) {
     const fingerprint = JSON.stringify(cfg);
     const prevFingerprint = scheduledConfigFingerprints.get(cfg.business_id);
 
-    if (!forceReload && prevFingerprint === fingerprint && scheduledJobs.has(cfg.business_id)) {
-      continue; // skip unchanged configs to avoid duplicating schedule log entries
-    }
+    if (!forceReload && !newBusinessSet.has(cfg.business_id)) {
+      if (prevFingerprint === fingerprint && scheduledJobs.has(cfg.business_id)) {
+        continue; // unchanged configs stay as-is
+      }
 
-    if (!logWasReset && !resetLog) {
-      resetScheduleLog('config change detected');
-      logWasReset = true;
+      if (prevFingerprint && prevFingerprint !== fingerprint) {
+        console.log(`[biz:${cfg.business_id}] Config updated; keeping existing schedule until nightly reload`);
+        scheduledConfigFingerprints.set(cfg.business_id, fingerprint);
+        continue;
+      }
     }
 
     unloadBusiness(cfg.business_id);
