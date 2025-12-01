@@ -1,6 +1,7 @@
 import { notFound, redirect } from 'next/navigation';
 import { AuthError, requireAuth } from '@/lib/authServer';
 import { buildGbpAuthUrl, deriveLocationName, fetchGbpReviews } from '@/lib/googleBusinessProfile';
+import { listScheduledPostsForBusiness } from '@/lib/gbpPostScheduler';
 import { loadBusiness } from '../helpers';
 import BusinessNavigation from '../BusinessNavigation';
 import SidebarBrand from '../SidebarBrand';
@@ -174,6 +175,7 @@ export default async function BusinessReviewsPage({ params }) {
 
   const businessIdentifier = business.businessSlug ?? String(business.id);
   const { snapshot, authorizationUrl } = await loadReviewSnapshot(business);
+  const scheduledPosts = await listScheduledPostsForBusiness(business.id);
 
   return (
     <div className="dashboard-layout__body">
@@ -188,7 +190,12 @@ export default async function BusinessReviewsPage({ params }) {
         <DashboardBusinessHeader />
         <div className="dashboard-layout__content">
           {snapshot ? (
-            <ReviewOverview snapshot={snapshot} />
+            <ReviewOverview
+              snapshot={snapshot}
+              scheduledPosts={scheduledPosts}
+              businessId={business.id}
+              timezone={business.timezone}
+            />
           ) : (
             <ReviewPermissionsGate authorizationUrl={authorizationUrl} />
           )}
