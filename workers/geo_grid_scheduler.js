@@ -269,7 +269,9 @@ async function processScheduleRow(row) {
     const originLng = primaryZone?.lng ?? config.destination_coords?.lng;
 
     if (!Number.isFinite(originLat) || !Number.isFinite(originLng)) {
-      throw new Error('No origin coordinates available for scheduled geo grid run.');
+      console.warn(`[scheduler] Skipping geo grid run for business ${businessId}: missing origin coordinates`);
+      await geoGridSchedules.markScheduleRunComplete(businessId, scheduledAt);
+      return;
     }
 
     const radiusMiles = Number.isFinite(primaryZone?.radius) && primaryZone.radius > 0

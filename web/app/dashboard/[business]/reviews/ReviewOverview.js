@@ -10,6 +10,7 @@ import {
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { ResponsiveContainer, LineChart, Line, CartesianGrid, XAxis, YAxis } from 'recharts';
 import SummaryMetricCard from '../SummaryMetricCard';
+import GbpPostScheduler from './GbpPostScheduler';
 
 function buildTrendIndicator(delta, { unit = '', invert = false, digits = 1 } = {}) {
   if (delta === null || delta === undefined) {
@@ -99,7 +100,7 @@ function VelocityRow({ label, count, helper }) {
   );
 }
 
-export default function ReviewOverview({ snapshot }) {
+export default function ReviewOverview({ snapshot, scheduledPosts = [], businessId, timezone }) {
   const ratingDelta = snapshot.averageRating.current - snapshot.averageRating.previous;
   const reviewDelta = snapshot.newReviewsThisWeek - snapshot.lastWeekReviews;
   const ratingIndicator = buildTrendIndicator(ratingDelta, { unit: '', digits: 2 });
@@ -222,6 +223,12 @@ export default function ReviewOverview({ snapshot }) {
           />
         </CardContent>
       </Card>
+
+      <GbpPostScheduler
+        businessId={businessId}
+        timezone={timezone}
+        initialPosts={scheduledPosts}
+      />
     </div>
   );
 }
