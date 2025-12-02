@@ -1621,6 +1621,24 @@ textarea {
   font-size: 0.85rem;
 }
 
+.geo-schedule-card__keywords {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.geo-schedule-card__keyword {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.95rem;
+}
+
+.geo-schedule-card__keyword input {
+  width: 16px;
+  height: 16px;
+}
+
 .geo-schedule-card__actions {
   display: flex;
   gap: 12px;

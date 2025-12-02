@@ -55,6 +55,8 @@ export default function GeoGridScheduleCard({
   const router = useRouter();
   const [currentSchedule, setCurrentSchedule] = useState(() => schedule ?? null);
   const [startTime, setStartTime] = useState(() => normalizeTimeValue(schedule?.startTimeLocal));
+  const [availableKeywords, setAvailableKeywords] = useState(() => schedule?.availableKeywords ?? []);
+  const [selectedKeywords, setSelectedKeywords] = useState(() => schedule?.selectedKeywords ?? []);
   const [status, setStatus] = useState({ message: '', tone: 'muted' });
   const [submitting, setSubmitting] = useState(false);
 
@@ -110,6 +112,8 @@ export default function GeoGridScheduleCard({
       return;
     }
 
+    const keywordSelection = availableKeywords.length === 1 ? [availableKeywords[0]] : selectedKeywords;
+
     setSubmitting(true);
     setStatus({ message: '', tone: 'muted' });
 
@@ -117,7 +121,7 @@ export default function GeoGridScheduleCard({
       const response = await fetch(`/api/businesses/${businessId}/geo-grid/schedule`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ startTime })
+        body: JSON.stringify({ startTime, keywords: keywordSelection })
       });
 
       const data = await response.json().catch(() => ({}));
@@ -129,6 +133,16 @@ export default function GeoGridScheduleCard({
       if (data.schedule) {
         setCurrentSchedule(data.schedule);
         setStartTime(normalizeTimeValue(data.schedule.startTimeLocal));
+      }
+
+      if (data.keywords) {
+        if (Array.isArray(data.keywords.available)) {
+          setAvailableKeywords(data.keywords.available);
+        }
+
+        if (Array.isArray(data.keywords.selected)) {
+          setSelectedKeywords(data.keywords.selected);
+        }
       }
 
       setStatus({ message: 'Ranking report schedule updated.', tone: 'success' });
@@ -179,6 +193,48 @@ export default function GeoGridScheduleCard({
             <p className="muted geo-schedule-card__hint">
               Runs must begin at least {currentSchedule?.leadMinutes ?? 120} minutes before closing.
             </p>
+          </div>
+
+          <div className="geo-schedule-card__field">
+            <Label>Auto-scheduled keywords</Label>
+            {availableKeywords.length === 0 ? (
+              <p className="muted">Add an origin zone keyword to enable weekly ranking runs.</p>
+            ) : (
+              <div className="geo-schedule-card__keywords">
+                {availableKeywords.map((keyword) => {
+                  const checked = selectedKeywords.includes(keyword);
+                  return (
+                    <label key={keyword} className="geo-schedule-card__keyword" aria-label={`Schedule ${keyword}`}>
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={(event) => {
+                          const { checked: isChecked } = event.target;
+                          setSelectedKeywords((prev) => {
+                            if (availableKeywords.length === 1) {
+                              return [availableKeywords[0]];
+                            }
+
+                            const next = new Set(prev);
+                            if (isChecked) {
+                              next.add(keyword);
+                            } else {
+                              next.delete(keyword);
+                            }
+                            return Array.from(next);
+                          });
+                        }}
+                        disabled={!canEdit || !isBusinessActive || submitting || availableKeywords.length === 1}
+                      />
+                      <span>{keyword}</span>
+                    </label>
+                  );
+                })}
+                <p className="muted geo-schedule-card__hint">
+                  Only admins can select which keywords run each week. Choose one or more keywords to auto-schedule.
+                </p>
+              </div>
+            )}
           </div>
 
           <div className="geo-schedule-card__actions">
