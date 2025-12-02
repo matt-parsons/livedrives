@@ -468,7 +468,7 @@ export default async function BusinessKeywordsPage({ params, searchParams }) {
           <div className="dashboard-layout__content">
             <div className="section-header">
               <div>
-                <h2 className="section-title">Keyword insights</h2>
+                <h2 className="section-title">Ranking Reports</h2>
                 <p className="section-caption">
                   Track the local ranking performance for {businessName}.
                 </p>

@@ -7,7 +7,7 @@ import SidebarBrand from '../SidebarBrand';
 import DashboardBusinessHeader from '../DashboardBusinessHeader';
 
 export const metadata = {
-  title: 'Optimization steps · Local Paint Pilot'
+  title: 'Profile Tasks · Local Paint Pilot'
 };
 
 export default async function BusinessOptimizationStepsPage({ params }) {

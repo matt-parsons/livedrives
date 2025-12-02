@@ -692,9 +692,7 @@ textarea {
 }
 
 .business-dashboard__top-row {
-  display: grid;
-  grid-template-columns: minmax(0, 4fr) minmax(0, 2fr);
-  gap: clamp(16px, 2vw, 28px);
+  display: flex;
   align-items: start;
 }
 
@@ -704,6 +702,11 @@ textarea {
   gap: 1rem;
 }
 
+.business-dashboard__optimization-row {
+  display: grid;
+  grid-template-columns: minmax(0, 4fr) minmax(0, 2fr);
+  gap: clamp(16px, 2vw, 28px);
+}
 .dashboard-optimization-card {
   display: flex;
   flex-direction: column;
@@ -3626,60 +3629,93 @@ textarea {
   line-height: 1.4;
 }
 
+.business-optimization-roadmap__checklist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.business-optimization-roadmap__checklist-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(3, 60, 87, 0.1);
+}
+
+.business-optimization-roadmap__checklist-item:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.business-optimization-roadmap__checklist-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  min-width: 1.25rem;
+  border-radius: 999px;
+  border: 1px solid rgba(3, 60, 87, 0.25);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: rgba(3, 60, 87, 0.5);
+  background: #fff;
+}
+
+.business-optimization-roadmap__checklist-icon--completed {
+  border-color: transparent;
+  background: #1a9f54;
+  color: #fff;
+}
+
+.business-optimization-roadmap__checklist-icon--pending {
+  border-color: transparent;
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.business-optimization-roadmap__checklist-icon--in-progress,
+.business-optimization-roadmap__checklist-icon--unknown {
+  border-color: rgba(3, 60, 87, 0.25);
+  background: #f8fafc;
+  color: rgba(3, 60, 87, 0.4);
+}
+
+.business-optimization-roadmap__checklist-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.business-optimization-roadmap__checklist-title {
+  font-size: 0.95rem;
+  color: var(--color-heading);
+  font-weight: 600;
+}
+
+.business-optimization-roadmap__checklist-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.business-optimization-roadmap__checklist-detail {
+  margin: 0;
+  font-size: 0.85rem;
+  color: rgba(3, 60, 87, 0.6);
+  line-height: 1.4;
+}
+
 .business-optimization-roadmap__connect-message {
   margin-top: 0.75rem;
   color: rgba(3, 60, 87, 0.66);
   font-size: 0.9rem;
-}
-
-.business-optimization-roadmap__section-summary-grid {
-  margin-top: 0.75rem;
-  display: grid;
-  gap: 0.75rem;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-}
-
-.business-optimization-roadmap__section-summary-card {
-  border: 1px solid rgba(3, 60, 87, 0.12);
-  border-radius: 12px;
-  padding: 0.9rem 1rem;
-  background: #fff;
-  box-shadow: 0 4px 8px rgba(3, 60, 87, 0.05);
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-  justify-content: space-between;
-}
-
-.business-optimization-roadmap__section-summary-card-title {
-  font-size: 0.8rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: rgba(3, 60, 87, 0.55);
-}
-
-.business-optimization-roadmap__section-summary-card-grade {
-  font-size: 1.6rem;
-  color: var(--color-heading);
-}
-
-.business-optimization-roadmap__section-summary-card-completion {
-  font-size: 0.85rem;
-  color: rgba(3, 60, 87, 0.66);
-}
-
-.business-optimization-roadmap__sections-summary {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.business-optimization-roadmap__sections-summary--with-sections {
-  margin-top: 1.25rem;
-}
-
-.business-optimization-roadmap__sections-summary--without-sections {
-  margin-top: 0.5rem;
 }
 
 .business-optimization-roadmap__summary-header {
@@ -3754,17 +3790,47 @@ textarea {
 
 .business-optimization-roadmap__section-score {
   text-align: right;
-  min-width: 72px;
-}
-
-.business-optimization-roadmap__section-score-value {
-  font-size: 1.4rem;
-  color: var(--color-heading);
+  min-width: 80px;
 }
 
 .business-optimization-roadmap__section-completion {
-  font-size: 0.82rem;
-  color: rgba(3, 60, 87, 0.6);
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--color-heading);
+}
+
+.business-optimization-roadmap__section-checklist {
+  margin-top: 0.25rem;
+  padding-left: 0.5rem;
+  border-left: 2px solid rgba(3, 60, 87, 0.15);
+}
+
+.business-optimization-roadmap__section-toggle-row {
+  display: flex;
+  justify-content: center;
+}
+
+.business-optimization-roadmap__section-toggle-link {
+  border: none;
+  background: none;
+  color: rgba(3, 60, 87, 0.65);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  letter-spacing: 0.03em;
+}
+
+.business-optimization-roadmap__section-toggle-link:hover,
+.business-optimization-roadmap__section-toggle-link:focus-visible {
+  color: var(--color-heading);
+  text-decoration: none;
+}
+
+.business-optimization-roadmap__section-toggle-icon {
+  font-size: 0.7rem;
 }
 
 .business-optimization-roadmap__section-task-list {

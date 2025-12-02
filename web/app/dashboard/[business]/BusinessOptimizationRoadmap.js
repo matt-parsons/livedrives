@@ -1,3 +1,6 @@
+'use client';
+
+import { useState } from 'react';
 import Link from 'next/link';
 
 function formatImpact(weight) {
@@ -160,25 +163,63 @@ function ProfilePreview({ preview }) {
   );
 }
 
-function RoadmapTaskCard({ task }) {
-  const impactLabel = formatImpact(task.weight);
+const CHECKLIST_SYMBOLS = {
+  completed: '✓',
+  pending: '✕',
+  in_progress: '✕',
+  unknown: '✕'
+};
+
+function RoadmapChecklist({ tasks }) {
+  if (!tasks?.length) {
+    return null;
+  }
 
   return (
-    <li key={task.id} className="business-optimization-roadmap__task-card">
-      <div className="business-optimization-roadmap__task-card-header">
-        <div className="business-optimization-roadmap__task-info">
-          <strong className="business-optimization-roadmap__task-title">{task.label}</strong>
-          {task.detail ? <p className="business-optimization-roadmap__task-detail">{task.detail}</p> : null}
-        </div>
-        <span className="status-pill" data-status={task.status.key}>
-          {task.status.label}
-        </span>
-      </div>
-    </li>
+    <ul className="business-optimization-roadmap__checklist">
+      {tasks.map((task) => {
+        const statusKey = task.status?.key ?? 'unknown';
+        const symbol = CHECKLIST_SYMBOLS[statusKey] ?? '';
+        const iconClassName = [
+          'business-optimization-roadmap__checklist-icon',
+          `business-optimization-roadmap__checklist-icon--${statusKey}`
+        ].join(' ');
+
+        return (
+          <li key={task.id} className="business-optimization-roadmap__checklist-item">
+            <span className={iconClassName} aria-hidden="true">
+              {symbol}
+            </span>
+            <div className="business-optimization-roadmap__checklist-info">
+              <div className="business-optimization-roadmap__checklist-meta">
+                <span className="business-optimization-roadmap__checklist-title">{task.label}</span>
+                {task.status ? (
+                  <span className="status-pill" data-status={statusKey}>
+                    {task.status.label}
+                  </span>
+                ) : null}
+              </div>
+              {task.detail ? (
+                <p className="business-optimization-roadmap__checklist-detail">{task.detail}</p>
+              ) : null}
+            </div>
+          </li>
+        );
+      })}
+    </ul>
   );
 }
 
 export default function BusinessOptimizationRoadmap({ roadmap, error, placeId, editHref }) {
+  const [expandedSectionIds, setExpandedSectionIds] = useState([]);
+  const toggleSectionExpansion = (sectionId) => {
+    setExpandedSectionIds((previous) =>
+      previous.includes(sectionId)
+        ? previous.filter((id) => id !== sectionId)
+        : [...previous, sectionId]
+    );
+  };
+
   if (!placeId) {
     return (
       <div className="surface-card surface-card--muted surface-card--compact">
@@ -231,75 +272,74 @@ export default function BusinessOptimizationRoadmap({ roadmap, error, placeId, e
         }`}
       >
         <div className="business-optimization-roadmap__overview-main">
-
-          <div
-            className={`business-optimization-roadmap__sections-summary ${
-              hasSections
-                ? 'business-optimization-roadmap__sections-summary--with-sections'
-                : 'business-optimization-roadmap__sections-summary--without-sections'
-            }`}
-          >
-            <div className="business-optimization-roadmap__summary-header">
-              <strong className="business-optimization-roadmap__summary-heading">Optimization progress</strong>
-              <span className="business-optimization-roadmap__summary-progress">{roadmap.progressPercent}% complete</span>
-            </div>
-            <div aria-hidden="true" className="business-optimization-roadmap__progress-track">
-              <div
-                className="business-optimization-roadmap__progress-fill"
-                style={{ width: `${Math.min(100, Math.max(0, roadmap.progressPercent))}%` }}
-              />
-            </div>
+          <div className="business-optimization-roadmap__summary-header">
+            <strong className="business-optimization-roadmap__summary-heading">Optimization progress</strong>
+            <span className="business-optimization-roadmap__summary-progress">{roadmap.progressPercent}% complete</span>
           </div>
-                    
+          <div aria-hidden="true" className="business-optimization-roadmap__progress-track">
+            <div
+              className="business-optimization-roadmap__progress-fill"
+              style={{ width: `${Math.min(100, Math.max(0, roadmap.progressPercent))}%` }}
+            />
+          </div>
+
           {hasSections ? (
-            <div className="business-optimization-roadmap__section-summary-grid">
-              {sections.map((section) => (
-                <div key={section.id} className="business-optimization-roadmap__section-summary-card">
-                  <span className="business-optimization-roadmap__section-summary-card-title">
-                    {section.title}
-                  </span>
-                  <strong className="business-optimization-roadmap__section-summary-card-completion">
-                    {section.completion === null ? 'No score yet' : `${section.completion}% complete`}
-                  </strong>
-                </div>
-              ))}
+            <div className="business-optimization-roadmap__section-list-wrapper">
+              {sections.map((section) => {
+                const isExpanded = expandedSectionIds.includes(section.id);
+                const completionLabel =
+                  section.completion === null ? 'No score yet' : `${section.completion}% complete`;
+
+                return (
+                  <section key={section.id} className="business-optimization-roadmap__section-item">
+                    <div className="business-optimization-roadmap__section-header">
+                      <div className="business-optimization-roadmap__section-info">
+                        <h3 className="business-optimization-roadmap__section-heading">{section.title}</h3>
+                        {section.description ? (
+                          <p className="business-optimization-roadmap__section-description">{section.description}</p>
+                        ) : null}
+                      </div>
+                      <div className="business-optimization-roadmap__section-score">
+                        <strong className="business-optimization-roadmap__section-completion">
+                          {completionLabel}
+                        </strong>
+                      </div>
+                    </div>
+                    <div className="business-optimization-roadmap__section-toggle-row">
+                      <button
+                        type="button"
+                        className="business-optimization-roadmap__section-toggle-link"
+                        onClick={() => toggleSectionExpansion(section.id)}
+                        aria-expanded={isExpanded}
+                        aria-controls={`section-${section.id}-tasks`}
+                      >
+                        <span>{isExpanded ? 'Hide checklist' : 'View checklist'}</span>
+                        <span aria-hidden="true" className="business-optimization-roadmap__section-toggle-icon">
+                          {isExpanded ? '▲' : '▼'}
+                        </span>
+                      </button>
+                    </div>
+
+                    {section.tasks.length ? (
+                      <div
+                        id={`section-${section.id}-tasks`}
+                        className="business-optimization-roadmap__section-checklist"
+                      >
+                        {isExpanded ? <RoadmapChecklist tasks={section.tasks} /> : null}
+                      </div>
+                    ) : (
+                      <p className="business-optimization-roadmap__section-empty-message">
+                        No tasks mapped to this section yet.
+                      </p>
+                    )}
+                  </section>
+                );
+              })}
             </div>
           ) : null}
         </div>
 
         {roadmap.profilePreview ? <ProfilePreview preview={roadmap.profilePreview} /> : null}
-      </div>
-
-      <div className="business-optimization-roadmap__section-list-wrapper">
-        {sections.map((section) => (
-          <section key={section.id} className="business-optimization-roadmap__section-item">
-            <div className="business-optimization-roadmap__section-header">
-              <div className="business-optimization-roadmap__section-info">
-                <h3 className="business-optimization-roadmap__section-heading">{section.title}</h3>
-                {section.description ? (
-                  <p className="business-optimization-roadmap__section-description">{section.description}</p>
-                ) : null}
-              </div>
-              <div className="business-optimization-roadmap__section-score">
-                <strong className="business-optimization-roadmap__section-completion">
-                  {section.completion === null ? 'No score yet' : `${section.completion}% complete`}
-                </strong>
-              </div>
-            </div>
-
-            {section.tasks.length ? (
-              <ul className="business-optimization-roadmap__section-task-list">
-                {section.tasks.map((task) => (
-                  <RoadmapTaskCard key={task.id} task={task} />
-                ))}
-              </ul>
-            ) : (
-              <p className="business-optimization-roadmap__section-empty-message">
-                No tasks mapped to this section yet.
-              </p>
-            )}
-          </section>
-        ))}
       </div>
     </div>
   );
