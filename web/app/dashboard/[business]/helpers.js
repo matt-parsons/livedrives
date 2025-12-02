@@ -1,4 +1,5 @@
 import pool from '@lib/db/db.js';
+import geoGridKeywords from '@lib/business/geoGridKeywords.js';
 import geoGridSchedules from '@lib/db/geoGridSchedules.js';
 import { buildOrganizationScopeClause } from '@/lib/organizations';
 import { formatDate, formatDecimal, toTimestamp } from './runs/formatters.js';
@@ -347,13 +348,24 @@ export async function loadGeoGridSchedule(businessId) {
   const leadMinutesRaw = schedule.minLeadMinutes ?? schedule.leadMinutes;
   const leadMinutes = Number.isFinite(leadMinutesRaw) ? leadMinutesRaw : 120;
 
+  const availableKeywords = await geoGridSchedules.loadAvailableKeywords(businessId);
+  const availableSet = new Set(availableKeywords.map((keyword) => keyword.toLowerCase()));
+  const persistedSelection = geoGridKeywords.normalizeKeywordSelections(context.selectedKeywords || []);
+  const selectedKeywords = persistedSelection.filter((keyword) => availableSet.has(keyword.toLowerCase()));
+
+  if (!selectedKeywords.length && availableKeywords.length > 0) {
+    selectedKeywords.push(availableKeywords[0]);
+  }
+
   return {
     dayOfWeek: Number(schedule.dayOfWeek ?? 0),
     startTimeLocal: `${pad(schedule.hour, 15, 23)}:${pad(schedule.minute, 0)}`,
     leadMinutes,
     nextRunAt: toIso(schedule.nextRunAt),
     lastRunAt: toIso(schedule.lastRunAt),
-    isActive: Boolean(schedule.isActive)
+    isActive: Boolean(schedule.isActive),
+    availableKeywords,
+    selectedKeywords
   };
 }
 
