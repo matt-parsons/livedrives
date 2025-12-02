@@ -721,19 +721,13 @@ textarea {
 }
 
 .dashboard-optimization-card__refresh {
-  border-radius: 999px;
-  border: 1px solid rgba(3, 60, 87, 0.2);
-  padding: 0.35rem 1rem;
   font-size: 0.9rem;
   font-weight: 600;
-  background: #033c57;
-  color: #fff;
+  color: #033c57;
   cursor: pointer;
-  transition: background-color 120ms ease;
 }
 
 .dashboard-optimization-card__refresh:disabled {
-  background: #e5e7eb;
   color: #6b7280;
   cursor: not-allowed;
 }
@@ -748,6 +742,11 @@ textarea {
   flex-direction: column;
   gap: 1rem;
   margin-top: 0.75rem;
+}
+
+.dashboard-optimization-card__cta {
+  display: flex;
+  align-items: flex-end;
 }
 
 .dashboard-optimization-card__scores {

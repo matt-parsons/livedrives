@@ -275,8 +275,14 @@ export default function OptimizationPanelsClient({
                       }}
                     />
                   </div>
-                <div className="dashboard-optimization-card__actions">
-                  {placeId && !isAdmin ? (
+                  <div className="dashboard-optimization-card__cta">
+                    <Link className="cta-link" href="/optimization-steps">
+                      View Pending Tasks ↗
+                    </Link>
+                  </div>
+                  <div className="dashboard-optimization-card__meta">
+                    {/* <p>{manualRefreshHelper}</p> */}
+                    <p>Progress Last checked: {lastRefreshedLabel}.                  {placeId && isAdmin ? (
                     <button
                       type="button"
                       onClick={handleRefreshClick}
@@ -286,11 +292,7 @@ export default function OptimizationPanelsClient({
                       {refreshing ? 'Refreshing…' : 'Refresh data'}
                     </button>
                   ) : null}
-                </div>
-
-                  <div className="dashboard-optimization-card__meta">
-                    {/* <p>{manualRefreshHelper}</p> */}
-                    <p>Last refreshed {lastRefreshedLabel}.</p>
+                      </p>
                     {refreshNotice ? (
                       <p className={`dashboard-optimization-card__notice dashboard-optimization-card__notice--${refreshNotice.tone}`}>
                         {refreshNotice.text}
@@ -301,6 +303,7 @@ export default function OptimizationPanelsClient({
                         {meta.warning}
                       </p>
                     ) : null}
+
                   </div>
                 </div>
               ) : (
