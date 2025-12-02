@@ -41,6 +41,13 @@ export default function LatestGeoGridSnapshot({
         <div>
           <div className="section-title">Keyword:</div> <strong className="latest-geogrid-card__keyword">"{keywordLabel}"</strong>
         </div>
+      {keywordsHref ? (
+        <Link className="cta-link" href={keywordsHref}>
+          View keyword insights ↗
+        </Link>
+      ) : null}
+
+
       </div>
       <div className="latest-geogrid-card__stats">
         {summaryCards.map((card) => (
@@ -70,12 +77,6 @@ export default function LatestGeoGridSnapshot({
           </div>
         )}
       </div>
-
-      {keywordsHref ? (
-        <Link className="cta-link" href={keywordsHref}>
-          View keyword insights ↗
-        </Link>
-      ) : null}
 
     </section>
   );
