@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import GeoGridLauncher from '../geo-grid-launcher/GeoGridLauncher';
+import OperationsNavigation from './OperationsNavigation';
 
 const LOG_SCOPE_OPTIONS = [
   { id: 'today', label: "Today's logs" },
@@ -455,37 +456,7 @@ export default function OperationsConsole({ timezone: initialTimezone, initialTa
   return (
     <div className="page-shell__body operations-layout">
       <aside className="page-shell__sidebar" aria-label="Operations navigation">
-        <nav className="page-subnav" aria-label="Operations sections">
-          <ul className="page-subnav__list">
-            <li className="page-subnav__list-item">
-              <Link href="/dashboard" className="page-subnav__item">
-                Back to dashboard
-              </Link>
-            </li>
-            {TAB_OPTIONS.map((tab) => (
-              <li key={tab.id} className="page-subnav__list-item">
-                {tab.id === activeTab ? (
-                  <span
-                    id={`operations-tab-${tab.id}`}
-                    aria-current="page"
-                    className="page-subnav__item page-subnav__item--active"
-                  >
-                    {tab.label}
-                  </span>
-                ) : (
-                  <button
-                    id={`operations-tab-${tab.id}`}
-                    type="button"
-                    className="page-subnav__item operations-nav__button"
-                    onClick={() => setActiveTab(tab.id)}
-                  >
-                    {tab.label}
-                  </button>
-                )}
-              </li>
-            ))}
-          </ul>
-        </nav>
+        <OperationsNavigation activeTab={activeTab} onTabSelect={setActiveTab} tabOptions={TAB_OPTIONS} />
       </aside>
 
       <div className="page-shell__content operations-layout__content">

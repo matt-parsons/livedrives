@@ -707,6 +707,17 @@ textarea {
   grid-template-columns: minmax(0, 4fr) minmax(0, 2fr);
   gap: clamp(16px, 2vw, 28px);
 }
+
+@media (max-width: 960px) {
+  .business-dashboard__top-row {
+    flex-direction: column;
+    gap: clamp(16px, 3vw, 28px);
+  }
+
+  .business-dashboard__optimization-row {
+    grid-template-columns: 1fr;
+  }
+}
 .dashboard-optimization-card {
   display: flex;
   flex-direction: column;
@@ -1619,6 +1630,24 @@ textarea {
 .geo-schedule-card__hint {
   margin: 0;
   font-size: 0.85rem;
+}
+
+.geo-schedule-card__keywords {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.geo-schedule-card__keyword {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.95rem;
+}
+
+.geo-schedule-card__keyword input {
+  width: 16px;
+  height: 16px;
 }
 
 .geo-schedule-card__actions {

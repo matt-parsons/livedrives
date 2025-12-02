@@ -176,6 +176,20 @@ CREATE TABLE `geo_grid_schedules` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `geo_grid_schedule_keywords`
+--
+
+CREATE TABLE `geo_grid_schedule_keywords` (
+  `business_id` bigint(20) UNSIGNED NOT NULL,
+  `keyword` varchar(255) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`business_id`,`keyword`),
+  KEY `idx_geo_grid_schedule_keywords_keyword` (`keyword`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `organizations`
 --
 
@@ -432,6 +446,13 @@ ALTER TABLE `geo_grid_schedules`
   ADD KEY `idx_geo_grid_schedules_active` (`is_active`);
 
 --
+-- Indexes for table `geo_grid_schedule_keywords`
+--
+ALTER TABLE `geo_grid_schedule_keywords`
+  ADD PRIMARY KEY (`business_id`,`keyword`),
+  ADD KEY `idx_geo_grid_schedule_keywords_keyword` (`keyword`);
+
+--
 -- Indexes for table `organizations`
 --
 ALTER TABLE `organizations`
@@ -644,6 +665,12 @@ ALTER TABLE `geo_grid_runs`
 --
 ALTER TABLE `geo_grid_schedules`
   ADD CONSTRAINT `fk_geo_grid_schedule_business` FOREIGN KEY (`business_id`) REFERENCES `businesses` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Constraints for table `geo_grid_schedule_keywords`
+--
+ALTER TABLE `geo_grid_schedule_keywords`
+  ADD CONSTRAINT `fk_geo_grid_schedule_keywords_business` FOREIGN KEY (`business_id`) REFERENCES `businesses` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
 -- Constraints for table `organization_trials`
