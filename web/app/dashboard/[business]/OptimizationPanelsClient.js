@@ -276,7 +276,7 @@ export default function OptimizationPanelsClient({
                     />
                   </div>
                   <div className="dashboard-optimization-card__cta">
-                    <Link className="cta-link" href="/optimization-steps">
+                    <Link className="cta-link" href={summaryLink}>
                       View Pending Tasks ↗
                     </Link>
                   </div>
