@@ -707,6 +707,17 @@ textarea {
   grid-template-columns: minmax(0, 4fr) minmax(0, 2fr);
   gap: clamp(16px, 2vw, 28px);
 }
+
+@media (max-width: 960px) {
+  .business-dashboard__top-row {
+    flex-direction: column;
+    gap: clamp(16px, 3vw, 28px);
+  }
+
+  .business-dashboard__optimization-row {
+    grid-template-columns: 1fr;
+  }
+}
 .dashboard-optimization-card {
   display: flex;
   flex-direction: column;
