@@ -483,11 +483,11 @@ export default function IndexPage() {
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-8 lg:gap-12">
         <section className="space-y-4">
           <span className="inline-flex items-center rounded-full border border-secondary/40 bg-secondary/10 px-3 py-1 text-xs font-medium uppercase tracking-wide text-secondary-foreground">
-            New: Guided preview
+            Special Offer
           </span>
-          <h1 className="text-4xl font-semibold text-foreground">Preview your Local Paint Pilot dashboard</h1>
+          <h1 className="text-4xl font-semibold text-foreground">Sign up - Try Local Paint Pilot for free</h1>
           <p className="text-lg leading-relaxed text-muted-foreground">
-            Enter your Google Business Profile name and we&apos;ll pull live Google Places data, map optimization wins, and show how the dashboard guides your rankings.
+            Enter your Google Business Profile name and we&apos;ll pull live ata, map optimization wins, and show how the dashboard guides your rankings.
           </p>
         </section>
 
