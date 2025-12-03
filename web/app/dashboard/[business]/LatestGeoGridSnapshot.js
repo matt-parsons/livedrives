@@ -15,7 +15,7 @@ export default function LatestGeoGridSnapshot({
   const solvLabel = summary?.solvLabel ?? '—';
   const avgLabel = summary?.avgLabel ?? '—';
   const runDateLabel = summary?.runDate ?? 'No runs yet';
-  const keywordLabel = summary?.keyword ?? 'Latest snapshot';
+  const keywordLabel = summary?.keyword ?? '';
   const statusKey = summary?.status?.key ?? 'unknown';
   const statusLabel = summary?.status?.label ?? 'Unknown';
   const summaryCards = [
@@ -73,7 +73,7 @@ export default function LatestGeoGridSnapshot({
           />
         ) : (
           <div className="latest-geogrid-card__placeholder">
-            <p>{summary ? 'Local ranking report map preview unavailable.' : 'Once your first ranking report is done it will unlock this map preview.'}</p>
+            <p>{summary ? 'Local ranking report map preview unavailable.' : 'We\'re running your your first ranking report now, once it is done it will unlock this map preview.'}</p>
           </div>
         )}
       </div>

@@ -3788,7 +3788,10 @@ textarea {
 .business-optimization-roadmap__section-item {
   display: flex;
   flex-direction: column;
-  gap: 0.85rem;
+  border: 1px solid rgba(3, 60, 87, 0.12);
+  border-radius: 12px;
+  background: #fff;
+  padding: 0.85rem 1rem;  
 }
 
 .business-optimization-roadmap__section-header {
@@ -3836,14 +3839,15 @@ textarea {
 
 .business-optimization-roadmap__section-toggle-row {
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
+  padding-top: 10px;
 }
 
 .business-optimization-roadmap__section-toggle-link {
   border: none;
   background: none;
   color: rgba(3, 60, 87, 0.65);
-  font-size: 0.85rem;
+  font-size: 0.65rem;
   font-weight: 600;
   cursor: pointer;
   display: inline-flex;
