@@ -13,15 +13,34 @@ const FIELD_MAP = {
   gPlaceId: 'g_place_id'
 };
 
-export const BUSINESS_HOURS_KEYS = [
-  'monday',
-  'tuesday',
-  'wednesday',
-  'thursday',
-  'friday',
-  'saturday',
-  'sunday'
-];
+export const BUSINESS_HOURS_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+
+const DAY_KEY_MAP = {
+  sun: 'sun',
+  sunday: 'sun',
+  mon: 'mon',
+  monday: 'mon',
+  tue: 'tue',
+  tuesday: 'tue',
+  wed: 'wed',
+  wednesday: 'wed',
+  thu: 'thu',
+  thursday: 'thu',
+  fri: 'fri',
+  friday: 'fri',
+  sat: 'sat',
+  saturday: 'sat'
+};
+
+const DAY_LABELS = {
+  sun: 'Sunday',
+  mon: 'Monday',
+  tue: 'Tuesday',
+  wed: 'Wednesday',
+  thu: 'Thursday',
+  fri: 'Friday',
+  sat: 'Saturday'
+};
 
 const HOURS_SEGMENT_PATTERN = /^([01]\d|2[0-3]):[0-5]\d-([01]\d|2[0-3]):[0-5]\d$/;
 
@@ -43,7 +62,7 @@ function toRequiredString(value) {
   return str && str.length ? str : null;
 }
 
-function toSlug(value) {
+export function toSlug(value) {
   const str = toNullableString(value);
   if (!str) {
     return null;
@@ -56,6 +75,34 @@ function toSlug(value) {
     .slice(0, 120);
 
   return slug.length ? slug : null;
+}
+
+export async function ensureUniqueBusinessSlug(db, baseSlug, { excludeId = null } = {}) {
+  const startingSlug = toSlug(baseSlug) ?? 'business';
+  let slug = startingSlug;
+  let attempt = 0;
+
+  while (attempt < 6) {
+    const params = [slug];
+    let sql = 'SELECT 1 FROM businesses WHERE business_slug = ? LIMIT 1';
+
+    if (excludeId !== null) {
+      sql = 'SELECT 1 FROM businesses WHERE business_slug = ? AND id != ? LIMIT 1';
+      params.push(excludeId);
+    }
+
+    const [rows] = await db.query(sql, params);
+
+    if (!rows.length) {
+      return slug;
+    }
+
+    const suffix = Math.floor(1000 + Math.random() * 9000);
+    slug = `${startingSlug}-${suffix}`;
+    attempt += 1;
+  }
+
+  return `${startingSlug}-${Date.now()}`;
 }
 
 function toNullableInt(value, { min = null, max = null } = {}) {
@@ -265,10 +312,16 @@ export function normalizeBusinessHoursPayload(input) {
   }
 
   const errors = [];
-  const values = {};
+  const values = BUSINESS_HOURS_KEYS.reduce((acc, key) => ({ ...acc, [key]: [] }), {});
 
-  for (const day of BUSINESS_HOURS_KEYS) {
-    const segments = toHourSegments(rawHours[day]);
+  for (const [rawKey, rawValue] of Object.entries(rawHours)) {
+    const normalizedKey = DAY_KEY_MAP[String(rawKey).toLowerCase()] ?? null;
+
+    if (!normalizedKey || !DAY_KEY_MAP[normalizedKey]) {
+      continue;
+    }
+
+    const segments = toHourSegments(rawValue);
     const normalized = [];
 
     segmentLoop: for (const rawSegment of segments) {
@@ -299,14 +352,15 @@ export function normalizeBusinessHoursPayload(input) {
       }
 
       if (!HOURS_SEGMENT_PATTERN.test(segment)) {
-        errors.push(`Invalid hours segment '${segment}' for ${day}. Use HH:MM-HH:MM in 24-hour time.`);
+        errors.push(`Invalid hours segment '${segment}' for ${DAY_LABELS[normalizedKey] || normalizedKey}. Use HH:MM-HH:MM in 24-hour time.`);
         continue;
       }
 
-      normalized.push(segment);
+      const [openTime, closeTime] = segment.split('-');
+      normalized.push({ open: openTime, close: closeTime });
     }
 
-    values[day] = normalized;
+    values[normalizedKey] = normalized;
   }
 
   return { errors, values };

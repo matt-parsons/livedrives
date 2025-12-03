@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
@@ -8,26 +8,7 @@ import {
   DASHBOARD_NAV_TOGGLE_EVENT
 } from '@/app/dashboard/navEvents';
 
-function encodeIdentifier(value) {
-  if (!value) {
-    return '';
-  }
-
-  return encodeURIComponent(value);
-}
-
-const NAV_ITEMS = [
-  { id: 'dashboard', label: 'Dashboard', buildHref: (base) => base },
-  { id: 'optimization-steps', label: 'Profile Tasks', buildHref: (base) => `${base}/optimization-steps` },
-  { id: 'keywords', label: 'Ranking Reports', buildHref: (base) => `${base}/keywords` },
-  { id: 'reviews', label: 'Reviews', buildHref: (base) => `${base}/reviews` },
-  { id: 'settings', label: 'Settings', buildHref: (base) => `${base}/settings` },
-  { id: 'logout', label: 'Log out', buildHref: () => '/logout', prefetch: false }
-];
-
-export default function BusinessNavigation({ businessIdentifier, active = 'dashboard' }) {
-  const safeIdentifier = businessIdentifier ? String(businessIdentifier) : '';
-  const baseHref = `/dashboard/${encodeIdentifier(safeIdentifier)}`;
+export default function OperationsNavigation({ activeTab, onTabSelect, tabOptions = [] }) {
   const [isOpen, setIsOpen] = useState(false);
 
   const toggleMenu = () => {
@@ -86,6 +67,14 @@ export default function BusinessNavigation({ businessIdentifier, active = 'dashb
     };
   }, [isOpen]);
 
+  const handleTabSelect = (tabId) => {
+    if (typeof onTabSelect === 'function') {
+      onTabSelect(tabId);
+    }
+
+    setIsOpen(false);
+  };
+
   return (
     <div className={`dashboard-nav ${isOpen ? 'dashboard-nav--open' : ''}`}>
       <button
@@ -115,28 +104,35 @@ export default function BusinessNavigation({ businessIdentifier, active = 'dashb
         </svg>
       </button>
 
-      <nav id={DASHBOARD_NAV_ID} className="page-subnav" aria-label="Business sections">
+      <nav id={DASHBOARD_NAV_ID} className="page-subnav" aria-label="Operations sections">
         <ul className="page-subnav__list">
-          {NAV_ITEMS.map((item) => {
-            const href = item.buildHref(baseHref);
-            const isActive = item.id === active;
-            const prefetch =
-              typeof item.prefetch === 'boolean' ? item.prefetch : undefined;
-
-            return (
-              <li key={item.id} className="page-subnav__list-item">
-                {isActive ? (
-                  <span aria-current="page" className="page-subnav__item page-subnav__item--active">
-                    {item.label}
-                  </span>
-                ) : (
-                  <Link prefetch={prefetch} href={href} className="page-subnav__item">
-                    {item.label}
-                  </Link>
-                )}
-              </li>
-            );
-          })}
+          <li className="page-subnav__list-item">
+            <Link href="/dashboard" className="page-subnav__item">
+              Back to dashboard
+            </Link>
+          </li>
+          {tabOptions.map((tab) => (
+            <li key={tab.id} className="page-subnav__list-item">
+              {tab.id === activeTab ? (
+                <span
+                  id={`operations-tab-${tab.id}`}
+                  aria-current="page"
+                  className="page-subnav__item page-subnav__item--active"
+                >
+                  {tab.label}
+                </span>
+              ) : (
+                <button
+                  id={`operations-tab-${tab.id}`}
+                  type="button"
+                  className="page-subnav__item operations-nav__button"
+                  onClick={() => handleTabSelect(tab.id)}
+                >
+                  {tab.label}
+                </button>
+              )}
+            </li>
+          ))}
         </ul>
       </nav>
     </div>

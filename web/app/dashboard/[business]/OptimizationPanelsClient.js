@@ -237,18 +237,11 @@ export default function OptimizationPanelsClient({
     <>
       <section className="section business-dashboard__hero">
         <div className="business-dashboard__top-row">
-          <NextStepsPanel
-            steps={optimizationSteps}
-            optimizationHref={optimizationHref}
-            loading={loading}
-            error={error}
-            businessId={businessId}
-          />
-          <div className="business-dashboard__optimization-column">
+          <div className="business-dashboard__optimization-row">
             <div className="surface-card surface-card--muted dashboard-optimization-card">
               <div className="section-header">
                 <div>
-                  <h2 className="section-title">Overall Progress</h2>
+                  <h2 className="section-title">GBP Score Optimization</h2>
                   <p className="section-caption">Complete all tasks to maximize your ranking potential</p>
                 </div>
                 <div className="dashboard-optimization-card__scores">
@@ -282,8 +275,14 @@ export default function OptimizationPanelsClient({
                       }}
                     />
                   </div>
-                <div className="dashboard-optimization-card__actions">
-                  {placeId ? (
+                  <div className="dashboard-optimization-card__cta">
+                    <Link className="cta-link" href={summaryLink}>
+                      View Pending Tasks ↗
+                    </Link>
+                  </div>
+                  <div className="dashboard-optimization-card__meta">
+                    {/* <p>{manualRefreshHelper}</p> */}
+                    <p>Progress Last checked: {lastRefreshedLabel}.                  {placeId && isAdmin ? (
                     <button
                       type="button"
                       onClick={handleRefreshClick}
@@ -293,11 +292,7 @@ export default function OptimizationPanelsClient({
                       {refreshing ? 'Refreshing…' : 'Refresh data'}
                     </button>
                   ) : null}
-                </div>
-
-                  <div className="dashboard-optimization-card__meta">
-                    <p>{manualRefreshHelper}</p>
-                    <p>Last refreshed {lastRefreshedLabel}.</p>
+                      </p>
                     {refreshNotice ? (
                       <p className={`dashboard-optimization-card__notice dashboard-optimization-card__notice--${refreshNotice.tone}`}>
                         {refreshNotice.text}
@@ -308,6 +303,7 @@ export default function OptimizationPanelsClient({
                         {meta.warning}
                       </p>
                     ) : null}
+
                   </div>
                 </div>
               ) : (

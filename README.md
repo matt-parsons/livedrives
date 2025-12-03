@@ -25,3 +25,11 @@ variable so the suggestions API can call OpenAI:
 
 - `OPENAI_API_KEY` – required
 - `OPENAI_MODEL` – optional model override (defaults to `gpt-4o-mini`)
+
+## Google Business Profile OAuth
+
+- `GOOGLE_BUSINESS_PROFILE_OAUTH_CLIENT_ID` – OAuth client ID for your Google Business Profile project.
+- `GOOGLE_BUSINESS_PROFILE_OAUTH_CLIENT_SECRET` – Client secret used to exchange authorization codes.
+- `GOOGLE_BUSINESS_PROFILE_OAUTH_REDIRECT_URI` – Must match the callback route (`/api/google-business-profile/oauth`).
+- The new `GET /api/google-business-profile/oauth` route handles Google's redirect, exchanges the authorization code, stores the refresh/access tokens in the `gbp_authorizations` table, and redirects back to `/dashboard/<business-slug>/reviews`.
+- Review data is now fetched via stored tokens (automatically refreshed when needed) so a single refresh token can serve each business instead of relying on a global env var.

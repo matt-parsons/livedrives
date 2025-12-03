@@ -7,6 +7,7 @@ const { spawn } = require('child_process');
 const { DateTime } = require('luxon');
 const pool = require('../lib/db/db');
 const geoGridSchedules = require('../lib/db/geoGridSchedules');
+const geoGridKeywords = require('../lib/business/geoGridKeywords');
 const { fetchConfigByBusinessId } = require('../lib/db/configLoader');
 
 const DEFAULT_SPACING_MILES = 3;
@@ -141,6 +142,30 @@ function selectKeyword(zone, config) {
   return null;
 }
 
+function resolveScheduledKeywords(config, selectedKeywords) {
+  const availableKeywords = geoGridKeywords.collectAvailableKeywordsFromZones(config.origin_zones || []);
+  const availableSet = new Set(availableKeywords.map((value) => value.toLowerCase()));
+  const normalizedSelection = geoGridKeywords.normalizeKeywordSelections(selectedKeywords || []);
+  const filteredSelection = normalizedSelection.filter((keyword) => availableSet.has(keyword.toLowerCase()));
+
+  if (filteredSelection.length) {
+    return { keywords: filteredSelection, availableKeywords };
+  }
+
+  if (availableKeywords.length === 1) {
+    return { keywords: [availableKeywords[0]], availableKeywords };
+  }
+
+  if (availableKeywords.length > 1) {
+    return { keywords: [availableKeywords[0]], availableKeywords };
+  }
+
+  const primaryZone = selectPrimaryZone(config.origin_zones || []);
+  const fallback = selectKeyword(primaryZone, config);
+
+  return { keywords: fallback ? [fallback] : [], availableKeywords };
+}
+
 async function insertGeoGridRun({ businessId, keyword, origin, radiusMiles, gridRows, gridCols, spacingMiles }) {
   const connection = await pool.getConnection();
 
@@ -259,9 +284,10 @@ async function processScheduleRow(row) {
     }
 
     const primaryZone = selectPrimaryZone(config.origin_zones || []);
-    const keyword = selectKeyword(primaryZone, config);
+    const selectedKeywords = await geoGridSchedules.loadScheduleKeywords(businessId);
+    const { keywords: keywordsToRun } = resolveScheduledKeywords(config, selectedKeywords);
 
-    if (!keyword) {
+    if (!keywordsToRun.length) {
       throw new Error('Unable to select keyword for scheduled geo grid run.');
     }
 
@@ -269,7 +295,9 @@ async function processScheduleRow(row) {
     const originLng = primaryZone?.lng ?? config.destination_coords?.lng;
 
     if (!Number.isFinite(originLat) || !Number.isFinite(originLng)) {
-      throw new Error('No origin coordinates available for scheduled geo grid run.');
+      console.warn(`[scheduler] Skipping geo grid run for business ${businessId}: missing origin coordinates`);
+      await geoGridSchedules.markScheduleRunComplete(businessId, scheduledAt);
+      return;
     }
 
     const radiusMiles = Number.isFinite(primaryZone?.radius) && primaryZone.radius > 0
@@ -278,19 +306,30 @@ async function processScheduleRow(row) {
 
     const spacingMiles = calculateSpacingMiles(radiusMiles, DEFAULT_GRID_ROWS, DEFAULT_GRID_COLS);
 
-    const runId = await insertGeoGridRun({
-      businessId,
-      keyword,
-      origin: { lat: originLat, lng: originLng },
-      radiusMiles,
-      gridRows: DEFAULT_GRID_ROWS,
-      gridCols: DEFAULT_GRID_COLS,
-      spacingMiles
-    });
+    const runIds = [];
+
+    for (const keyword of keywordsToRun) {
+      // eslint-disable-next-line no-await-in-loop
+      const runId = await insertGeoGridRun({
+        businessId,
+        keyword,
+        origin: { lat: originLat, lng: originLng },
+        radiusMiles,
+        gridRows: DEFAULT_GRID_ROWS,
+        gridCols: DEFAULT_GRID_COLS,
+        spacingMiles
+      });
+      runIds.push({ runId, keyword });
+    }
 
     await geoGridSchedules.markScheduleRunComplete(businessId, scheduledAt);
-    launchGeoGridWorker();
-    console.log(`[scheduler] Queued weekly geo grid run ${runId} for business ${businessId}`);
+
+    if (runIds.length) {
+      launchGeoGridWorker();
+      for (const entry of runIds) {
+        console.log(`[scheduler] Queued weekly geo grid run ${entry.runId} for business ${businessId} (${entry.keyword})`);
+      }
+    }
   } catch (error) {
     console.error(`[scheduler] Failed to queue scheduled geo grid run for business ${businessId}`, error);
     await geoGridSchedules.releaseScheduleLock(businessId);

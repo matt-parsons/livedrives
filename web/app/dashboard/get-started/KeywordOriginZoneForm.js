@@ -154,6 +154,37 @@ export default function KeywordOriginZoneForm({
 
   useEffect(() => {
     let isActive = true;
+    const cacheKey = `keywordSuggestions:${businessId}`;
+
+    const cachedPayload = (() => {
+      try {
+        const raw = localStorage.getItem(cacheKey);
+
+        if (!raw) {
+          return null;
+        }
+
+        const parsed = JSON.parse(raw);
+
+        if (!Array.isArray(parsed?.suggestions)) {
+          return null;
+        }
+
+        return parsed;
+      } catch {
+        return null;
+      }
+    })();
+
+    if (cachedPayload) {
+      setSuggestions(cachedPayload.suggestions);
+      setSuggestionError(cachedPayload.error || '');
+      setSuggestionStatus(cachedPayload.suggestions.length ? 'ready' : 'empty');
+
+      return () => {
+        isActive = false;
+      };
+    }
 
     const fetchSuggestions = async () => {
       setSuggestionStatus('loading');
@@ -175,6 +206,12 @@ export default function KeywordOriginZoneForm({
 
         setSuggestions(normalized);
         setSuggestionStatus(normalized.length ? 'ready' : 'empty');
+
+        try {
+          localStorage.setItem(cacheKey, JSON.stringify({ suggestions: normalized }));
+        } catch {
+          // Ignore caching failures so we don't block the UX.
+        }
       } catch (err) {
         if (!isActive) {
           return;
@@ -258,7 +295,7 @@ export default function KeywordOriginZoneForm({
           <Label htmlFor="onboarding-keyword">Top keyword picks</Label>
           <span className="text-xs text-muted-foreground">
             {suggestionStatus === 'loading'
-              ? 'Asking ChatGPT for keywords…'
+              ? 'Generating your top search keywords…'
               : 'Tap a pick or enter your own keyword'}
           </span>
         </div>
