@@ -185,6 +185,7 @@ export default async function AdminUserDirectoryPage() {
               </div>
               <UserDirectoryTable
                 members={directory.members}
+                organizationId={directory.organizationId}
                 organizationName={directory.subscription?.name || directory.organizationName}
               />
             </div>
