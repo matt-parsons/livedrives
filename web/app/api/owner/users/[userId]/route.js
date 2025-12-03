@@ -26,6 +26,15 @@ function parseUserId(raw) {
   return value;
 }
 
+function parseOrganizationId(raw) {
+  const value = Number(raw);
+  if (!Number.isFinite(value) || value <= 0) {
+    return null;
+  }
+
+  return value;
+}
+
 export async function DELETE(request, { params }) {
   let session;
 
@@ -45,6 +54,9 @@ export async function DELETE(request, { params }) {
     return jsonError('Invalid user id.', 400);
   }
 
+  const { searchParams } = new URL(request.url);
+  const organizationId = parseOrganizationId(searchParams.get('organizationId')) || session.organizationId;
+
   const connection = await pool.getConnection();
 
   try {
@@ -56,11 +68,11 @@ export async function DELETE(request, { params }) {
               u.email,
               m.role AS memberRole
          FROM user_org_members m
-         JOIN users u ON u.id = m.user_id
+        JOIN users u ON u.id = m.user_id
         WHERE m.organization_id = ?
           AND u.id = ?
         FOR UPDATE`,
-      [session.organizationId, userId]
+      [organizationId, userId]
     );
 
     if (!memberRows.length) {
@@ -72,10 +84,10 @@ export async function DELETE(request, { params }) {
 
     const [countRows] = await connection.query(
       `SELECT COUNT(*) AS memberCount
-         FROM user_org_members
+        FROM user_org_members
         WHERE organization_id = ?
         FOR UPDATE`,
-      [session.organizationId]
+      [organizationId]
     );
 
     const memberCount = Number(countRows[0]?.memberCount ?? 0);
@@ -84,17 +96,17 @@ export async function DELETE(request, { params }) {
 
     await connection.query(
       'DELETE FROM user_org_members WHERE user_id = ? AND organization_id = ?',
-      [userId, session.organizationId]
+      [userId, organizationId]
     );
 
     if (shouldDeleteOrganization) {
-      await connection.query('DELETE FROM businesses WHERE organization_id = ?', [session.organizationId]);
+      await connection.query('DELETE FROM businesses WHERE organization_id = ?', [organizationId]);
     }
 
     await connection.query('DELETE FROM users WHERE id = ?', [userId]);
 
     if (shouldDeleteOrganization) {
-      await connection.query('DELETE FROM organizations WHERE id = ?', [session.organizationId]);
+      await connection.query('DELETE FROM organizations WHERE id = ?', [organizationId]);
     }
 
     try {
