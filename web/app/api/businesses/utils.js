@@ -13,33 +13,41 @@ const FIELD_MAP = {
   gPlaceId: 'g_place_id'
 };
 
-export const BUSINESS_HOURS_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+export const BUSINESS_HOURS_KEYS = [
+  'monday',
+  'tuesday',
+  'wednesday',
+  'thursday',
+  'friday',
+  'saturday',
+  'sunday'
+];
 
 const DAY_KEY_MAP = {
-  sun: 'sun',
-  sunday: 'sun',
-  mon: 'mon',
-  monday: 'mon',
-  tue: 'tue',
-  tuesday: 'tue',
-  wed: 'wed',
-  wednesday: 'wed',
-  thu: 'thu',
-  thursday: 'thu',
-  fri: 'fri',
-  friday: 'fri',
-  sat: 'sat',
-  saturday: 'sat'
+  sun: 'sunday',
+  sunday: 'sunday',
+  mon: 'monday',
+  monday: 'monday',
+  tue: 'tuesday',
+  tuesday: 'tuesday',
+  wed: 'wednesday',
+  wednesday: 'wednesday',
+  thu: 'thursday',
+  thursday: 'thursday',
+  fri: 'friday',
+  friday: 'friday',
+  sat: 'saturday',
+  saturday: 'saturday'
 };
 
 const DAY_LABELS = {
-  sun: 'Sunday',
-  mon: 'Monday',
-  tue: 'Tuesday',
-  wed: 'Wednesday',
-  thu: 'Thursday',
-  fri: 'Friday',
-  sat: 'Saturday'
+  sunday: 'Sunday',
+  monday: 'Monday',
+  tuesday: 'Tuesday',
+  wednesday: 'Wednesday',
+  thursday: 'Thursday',
+  friday: 'Friday',
+  saturday: 'Saturday'
 };
 
 const HOURS_SEGMENT_PATTERN = /^([01]\d|2[0-3]):[0-5]\d-([01]\d|2[0-3]):[0-5]\d$/;
