@@ -183,7 +183,7 @@ export default async function MemberJourneyPage() {
           </div>
         ) : (
           <div className="rounded-lg border border-dashed border-border/70 bg-background/40 p-4 shadow-sm">
-            <BusinessForm mode="create" />
+            <BusinessForm mode="create" searchOnly redirectPath="/dashboard/get-started" />
           </div>
         )}
       </StepSection>
