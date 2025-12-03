@@ -172,6 +172,9 @@ export default function IndexPage() {
   const [leadPreviewStartedAt, setLeadPreviewStartedAt] = useState(null);
   const [leadPreviewCompletedAt, setLeadPreviewCompletedAt] = useState(null);
   const [activeOpportunity, setActiveOpportunity] = useState(null);
+  const [overviewStatus, setOverviewStatus] = useState('idle');
+  const [overviewSummary, setOverviewSummary] = useState('');
+  const [overviewError, setOverviewError] = useState('');
 
   const inputRef = useRef(null);
 
@@ -287,6 +290,9 @@ export default function IndexPage() {
     setExistingPreview(false);
     setLeadPreviewStartedAt(null);
     setLeadPreviewCompletedAt(null);
+    setOverviewStatus('idle');
+    setOverviewSummary('');
+    setOverviewError('');
   }, []);
 
   const startLeadCapture = useCallback((place) => {
@@ -306,6 +312,9 @@ export default function IndexPage() {
     setLeadPreviewStartedAt(null);
     setLeadPreviewCompletedAt(null);
     setLeadId(null);
+    setOverviewStatus('idle');
+    setOverviewSummary('');
+    setOverviewError('');
   }, []);
 
   const beginAnalysis = useCallback(
@@ -320,6 +329,9 @@ export default function IndexPage() {
       setAnalysisError('');
       setPlaceDetails(null);
       setRoadmap(null);
+      setOverviewStatus('idle');
+      setOverviewSummary('');
+      setOverviewError('');
 
       try {
         setLoadingStep(1);
@@ -338,6 +350,9 @@ export default function IndexPage() {
 
         setPlaceDetails(details);
         setRoadmap(roadmapResult);
+        setOverviewStatus('idle');
+        setOverviewSummary('');
+        setOverviewError('');
         setLoadingStep(3);
 
         await new Promise((resolve) => setTimeout(resolve, 500));
@@ -354,6 +369,50 @@ export default function IndexPage() {
     },
     []
   );
+
+  useEffect(() => {
+    if (!placeDetails?.placeId) {
+      setOverviewStatus('idle');
+      setOverviewSummary('');
+      setOverviewError('');
+      return;
+    }
+
+    let aborted = false;
+
+    const loadOverview = async () => {
+      setOverviewStatus('loading');
+      setOverviewError('');
+      setOverviewSummary('');
+
+      try {
+        const response = await fetch(
+          `/api/places/${encodeURIComponent(placeDetails.placeId)}/overview`
+        );
+        const payload = await response.json().catch(() => ({}));
+
+        if (!response.ok || !payload?.overview) {
+          throw new Error(payload.error || 'Failed to summarize the profile.');
+        }
+
+        if (!aborted) {
+          setOverviewSummary(payload.overview);
+          setOverviewStatus('success');
+        }
+      } catch (error) {
+        if (!aborted) {
+          setOverviewStatus('error');
+          setOverviewError(error.message || 'Failed to summarize the profile.');
+        }
+      }
+    };
+
+    loadOverview();
+
+    return () => {
+      aborted = true;
+    };
+  }, [placeDetails?.placeId]);
 
   const handleSubmitLookup = useCallback(
     (event) => {
@@ -810,6 +869,21 @@ export default function IndexPage() {
                   Complete all tasks to maximize your ranking potential
                 </p>
               </div>
+            </div>
+
+            <div className="space-y-2 rounded-lg border border-border/60 bg-background/80 p-4">
+              <p className="text-sm font-semibold text-foreground">Profile rundown</p>
+              {overviewStatus === 'loading' ? (
+                <p className="text-sm text-muted-foreground">Getting a blue-collar read on your profile…</p>
+              ) : null}
+              {overviewStatus === 'error' && overviewError ? (
+                <p className="text-sm text-destructive">{overviewError}</p>
+              ) : null}
+              {overviewStatus === 'success' && overviewSummary ? (
+                <p className="whitespace-pre-line text-base leading-relaxed text-muted-foreground">
+                  {overviewSummary}
+                </p>
+              ) : null}
             </div>
 
             <div
