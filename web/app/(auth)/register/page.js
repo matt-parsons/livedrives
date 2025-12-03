@@ -91,19 +91,11 @@ export default function RegisterPage() {
     <div className="page-shell">
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-10 lg:grid lg:grid-cols-[1.1fr_1fr] lg:items-start">
         <section className="space-y-4 rounded-xl border border-border/60 bg-card/80 p-8 shadow-sm backdrop-blur">
-          <h1 className="text-3xl font-semibold text-foreground">Sign up - Try LocalPaintPilot for free</h1>
+          <h1 className="text-3xl font-semibold text-foreground">Sign up<br />Try LocalPaintPilot for free</h1>
           <p className="text-base leading-relaxed text-muted-foreground">
-            Create your account with a secure password to unlock your dashboard and the guided get started flow. You&apos;ll
-            receive an authentication email for verification while keeping immediate access to your workspace.
+Let's get you started<br></br>
+Securely create your account in seconds.
           </p>
-          <div className="rounded-lg border border-border/60 bg-background/80 p-4 text-sm text-muted-foreground">
-            <p className="font-semibold text-foreground">What to expect</p>
-            <ul className="mt-2 list-disc space-y-2 pl-5">
-              <li>Choose an email and password to create your Local Paint Pilot account.</li>
-              <li>We&apos;ll send the Firebase authentication email automatically.</li>
-              <li>After sign-up, you&apos;ll land in your dashboard and the /get-started flow.</li>
-            </ul>
-          </div>
         </section>
 
         <Card className="shadow-lg">
