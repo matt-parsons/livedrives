@@ -874,7 +874,7 @@ export default function IndexPage() {
             <div className="space-y-2 rounded-lg border border-border/60 bg-background/80 p-4">
               <p className="text-sm font-semibold text-foreground">Profile rundown</p>
               {overviewStatus === 'loading' ? (
-                <p className="text-sm text-muted-foreground">Getting a blue-collar read on your profile…</p>
+                <p className="text-sm text-muted-foreground">Reviewing your data…</p>
               ) : null}
               {overviewStatus === 'error' && overviewError ? (
                 <p className="text-sm text-destructive">{overviewError}</p>
@@ -1043,7 +1043,7 @@ export default function IndexPage() {
                       </span>
                     ) : (
                       <span className="text-sm text-muted-foreground">
-                        We&apos;ll send onboarding resources and confirm your account instantly.
+                        Create a password and get instant access. No credit card required.
                       </span>
                     )}
                   </div>

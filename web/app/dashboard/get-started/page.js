@@ -191,7 +191,7 @@ export default async function MemberJourneyPage() {
       <StepSection
         step="3"
         title="Review your GBP optimization roadmap"
-        intro="Connect your Google Place ID to unlock guided profile improvements."
+        intro="We'll lay out the steps you need to take to start improving your rankings right away."
       >
         {!primaryBusiness ? (
           <p className="text-sm text-muted-foreground">
@@ -222,7 +222,7 @@ export default async function MemberJourneyPage() {
 
       <StepSection
         step="4"
-        title="Create your first origin zone keyword"
+        title="Select your business keyword to track"
         intro="Seed geo coverage with one high-impact keyword. We'll pin it to the business location with a 3 mile radius."
       >
         {!primaryBusiness ? (

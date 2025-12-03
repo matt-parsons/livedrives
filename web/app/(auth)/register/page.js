@@ -298,7 +298,7 @@ export default function RegisterPage() {
               <div className="space-y-3 rounded-md border border-emerald-400/60 bg-emerald-500/10 p-4 text-sm text-emerald-700">
                 <p className="font-semibold">Check your email to confirm</p>
                 <p>
-                  We sent a Firebase authentication email to <strong>{email}</strong>. Click the link to finish onboarding
+                  We sent an authentication email to <strong>{email}</strong>. Click the link to finish onboarding
                   with your selected business.
                 </p>
                 {leadId ? (

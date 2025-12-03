@@ -274,7 +274,7 @@ export default function BusinessOptimizationRoadmap({ roadmap, error, placeId, e
         <div className="business-optimization-roadmap__overview-main">
           <div className="business-optimization-roadmap__summary-header">
             <strong className="business-optimization-roadmap__summary-heading">Optimization progress</strong>
-            <span className="business-optimization-roadmap__summary-progress">{roadmap.progressPercent}% complete</span>
+            <strong className="business-optimization-roadmap__summary-progress">{roadmap.progressPercent}%</strong>
           </div>
           <div aria-hidden="true" className="business-optimization-roadmap__progress-track">
             <div
@@ -288,7 +288,7 @@ export default function BusinessOptimizationRoadmap({ roadmap, error, placeId, e
               {sections.map((section) => {
                 const isExpanded = expandedSectionIds.includes(section.id);
                 const completionLabel =
-                  section.completion === null ? 'No score yet' : `${section.completion}% complete`;
+                  section.completion === null ? 'No score yet' : `${section.completion}%`;
 
                 return (
                   <section key={section.id} className="business-optimization-roadmap__section-item">
