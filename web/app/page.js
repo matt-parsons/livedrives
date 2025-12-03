@@ -1,10 +1,17 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import {
+  auth,
+  createUserWithEmailAndPassword,
+  sendEmailVerification,
+  signInWithEmailAndPassword
+} from '@/lib/firebaseClient';
 
 const LOADING_STEPS = [
   {
@@ -25,7 +32,11 @@ const LOADING_STEPS = [
   }
 ];
 
+const GEO_GRID_SAMPLE = [7, 4, 3, 2, 5, 6, 9, 12, 8, 5, 4, 7, 16, 11, 6, 3, 6, 9, 13, 7, 5, 7, 8, 6, 4];
+const GEO_GRID_COLUMNS = 5;
+
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const MIN_PASSWORD_LENGTH = 8;
 
 function formatTimestamp(value) {
   if (!value) {
@@ -107,6 +118,34 @@ function StatusList({ currentStep }) {
   );
 }
 
+async function exchangeSession(idToken) {
+  const response = await fetch('/api/auth/session', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ idToken })
+  });
+
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new Error(data.error || 'Unable to start your session.');
+  }
+}
+
+async function bootstrapSession() {
+  const response = await fetch('/api/auth/bootstrap', {
+    method: 'POST',
+    credentials: 'include'
+  });
+
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new Error(data.error || 'Unable to finish bootstrapping your account.');
+  }
+
+  return response.json();
+}
+
 function OpportunityItem({ task }) {
   const impactLabel = Number.isFinite(Number(task.weight)) ? `${Number(task.weight)}% impact` : null;
 
@@ -129,6 +168,7 @@ function OpportunityItem({ task }) {
 }
 
 export default function IndexPage() {
+  const router = useRouter();
   const [phase, setPhase] = useState('search');
   const [query, setQuery] = useState('');
   const [suggestions, setSuggestions] = useState([]);
@@ -142,6 +182,7 @@ export default function IndexPage() {
   const [roadmap, setRoadmap] = useState(null);
   const [trialName, setTrialName] = useState('');
   const [trialEmail, setTrialEmail] = useState('');
+  const [trialPassword, setTrialPassword] = useState('');
   const [trialStatus, setTrialStatus] = useState('idle');
   const [trialError, setTrialError] = useState('');
   const [leadEmail, setLeadEmail] = useState('');
@@ -256,6 +297,7 @@ export default function IndexPage() {
     setRoadmap(null);
     setTrialName('');
     setTrialEmail('');
+    setTrialPassword('');
     setTrialStatus('idle');
     setTrialError('');
     setLeadEmail('');
@@ -450,14 +492,45 @@ export default function IndexPage() {
         return;
       }
 
+      if (trialPassword.length < MIN_PASSWORD_LENGTH) {
+        setTrialError(`Password must be at least ${MIN_PASSWORD_LENGTH} characters long.`);
+        return;
+      }
+
       setTrialStatus('submitting');
 
       try {
+        let credential;
+
+        try {
+        credential = await createUserWithEmailAndPassword(trimmedEmail, trialPassword);
+      } catch (error) {
+        if (error.code === 'auth/email-already-in-use') {
+            credential = await signInWithEmailAndPassword(trimmedEmail, trialPassword);
+          } else {
+            throw error;
+          }
+        }
+
+        if (!credential?.user) {
+          throw new Error('Unable to set up your account right now.');
+        }
+
+        try {
+          if (!credential.user.emailVerified) {
+            await sendEmailVerification(credential.user);
+          }
+        } catch (emailError) {
+          console.warn('Failed to send Firebase verification email', emailError);
+        }
+
+        const idToken = await credential.user.getIdToken();
+
         const response = await fetch('/api/public/register', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            name: trialName.trim(),
+            name: trialName?.trim?.() || trialName,
             email: trimmedEmail
           })
         });
@@ -468,86 +541,94 @@ export default function IndexPage() {
           throw new Error(payload.error || 'Unable to start your trial right now.');
         }
 
+        await exchangeSession(idToken);
+        await bootstrapSession();
+        await auth.signOut();
+
         setTrialStatus('success');
+        router.push('/dashboard');
+        router.refresh();
       } catch (error) {
         console.error('Trial registration failed', error);
         setTrialStatus('idle');
         setTrialError(error.message || 'We could not process your trial request.');
       }
     },
-    [trialEmail, trialName]
+    [trialEmail, trialName, trialPassword, router]
   );
 
   const renderSearch = () => (
-    <div className="page-shell">
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-8 lg:gap-12">
-        <section className="space-y-4">
-          <span className="inline-flex items-center rounded-full border border-secondary/40 bg-secondary/10 px-3 py-1 text-xs font-medium uppercase tracking-wide text-secondary-foreground">
-            Special Offer
-          </span>
-          <h1 className="text-4xl font-semibold text-foreground">Sign up - Try Local Paint Pilot for free</h1>
-          <p className="text-lg leading-relaxed text-muted-foreground">
-            Enter your Google Business Profile name and we&apos;ll pull live ata, map optimization wins, and show how the dashboard guides your rankings.
-          </p>
-        </section>
+    <div className="trial-preview-page">
+      <div className="page-shell">
+        <div className="mx-auto flex w-full max-w-5xl flex-col gap-8 lg:gap-12">
+          <section className="trial-preview-hero space-y-4">
+            <span className="trial-preview-badge inline-flex items-center rounded-full border border-secondary/40 bg-secondary/10 px-3 py-1 text-xs font-medium uppercase tracking-wide text-secondary-foreground">
+              Special Offer
+            </span>
+            <h1 className="text-4xl font-semibold text-foreground">Sign up - Try Local Paint Pilot for free</h1>
+            <p className="text-lg leading-relaxed text-muted-foreground">
+              Enter your Google Business Profile name and we&apos;ll pull live ata, map optimization wins, and show how the dashboard guides your rankings.
+            </p>
+          </section>
 
-        <Card className="shadow-lg">
-          <CardHeader>
-            <CardTitle>Find your Google Business Profile</CardTitle>
-            <CardDescription>Start typing your business name—we&apos;ll search Google automatically.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form className="flex flex-col gap-4" onSubmit={handleSubmitLookup}>
-              <div className="space-y-2">
-                <Label htmlFor="profile-search">Business name</Label>
-                <Input
-                  id="profile-search"
-                  ref={inputRef}
-                  type="text"
-                  value={query}
-                  placeholder="e.g. Local Paint Pros Austin"
-                  onChange={(event) => setQuery(event.target.value)}
-                  onKeyDown={handleLookupKeyDown}
-                  autoComplete="off"
-                />
-              </div>
-
-              {lookupState === 'loading' ? (
-                <p className="text-sm text-muted-foreground">Searching Google Places…</p>
-              ) : null}
-
-              {lookupState === 'error' && lookupError ? (
-                <p className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive" role="alert">
-                  {lookupError}
-                </p>
-              ) : null}
-
-              {lookupState === 'empty' ? (
-                <p className="text-sm text-muted-foreground">No Google profiles matched that search yet.</p>
-              ) : null}
-
-              {suggestions.length ? (
-                <div className="flex flex-col gap-2">
-                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Suggestions</p>
-                  <div className="flex flex-col gap-2">
-                    {suggestions.map((suggestion, index) => (
-                      <LookupSuggestion
-                        key={suggestion.placeId}
-                        suggestion={suggestion}
-                        isActive={index === activeIndex}
-                        onSelect={(choice) => startLeadCapture(choice)}
-                      />
-                    ))}
-                  </div>
+          <Card className="shadow-lg trial-preview-card">
+            <CardHeader>
+              <CardTitle>Find your Google Business Profile</CardTitle>
+              <CardDescription>Start typing your business name—we&apos;ll search Google automatically.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form className="flex flex-col gap-4" onSubmit={handleSubmitLookup}>
+                <div className="space-y-2">
+                  <Label htmlFor="profile-search">Business name</Label>
+                  <Input
+                    id="profile-search"
+                    ref={inputRef}
+                    type="text"
+                    value={query}
+                    placeholder="e.g. Local Paint Pros Austin"
+                    onChange={(event) => setQuery(event.target.value)}
+                    onKeyDown={handleLookupKeyDown}
+                    autoComplete="off"
+                  />
                 </div>
-              ) : null}
 
-              <div className="flex flex-wrap justify-end gap-3">
-                <Button type="submit" disabled={!suggestions.length}>Analyze my profile</Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
+                {lookupState === 'loading' ? (
+                  <p className="text-sm text-muted-foreground">Searching Google Places…</p>
+                ) : null}
+
+                {lookupState === 'error' && lookupError ? (
+                  <p className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive" role="alert">
+                    {lookupError}
+                  </p>
+                ) : null}
+
+                {lookupState === 'empty' ? (
+                  <p className="text-sm text-muted-foreground">No Google profiles matched that search yet.</p>
+                ) : null}
+
+                {suggestions.length ? (
+                  <div className="flex flex-col gap-2">
+                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Suggestions</p>
+                    <div className="flex flex-col gap-2">
+                      {suggestions.map((suggestion, index) => (
+                        <LookupSuggestion
+                          key={suggestion.placeId}
+                          suggestion={suggestion}
+                          isActive={index === activeIndex}
+                          onSelect={(choice) => startLeadCapture(choice)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+
+                <div className="flex flex-wrap justify-end gap-3">
+                  <Button type="submit" disabled={!suggestions.length}>Analyze my profile</Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );
@@ -558,15 +639,16 @@ export default function IndexPage() {
     }
 
     return (
-      <div className="page-shell">
-        <div className="mx-auto flex w-full max-w-3xl flex-col gap-8">
+      <div className="trial-preview-page">
+        <div className="page-shell">
+          <div className="mx-auto flex w-full max-w-3xl flex-col gap-8">
 
-          <Card className="shadow-lg">
-            <CardHeader>
-              <CardTitle>Confirm your profile</CardTitle>
-              <CardDescription className="mb-2">Drop your email to save the preview and kick off the scan.</CardDescription>
-            </CardHeader>
-            <CardContent>
+            <Card className="shadow-lg trial-preview-card">
+              <CardHeader>
+                <CardTitle>Confirm your profile</CardTitle>
+                <CardDescription className="mb-2">Drop your email to save the preview and kick off the scan.</CardDescription>
+              </CardHeader>
+              <CardContent>
               <form className="space-y-6" onSubmit={handleLeadSubmit}>
                 <div className="rounded-xl border border-border/60 bg-muted/10 p-4">
                   <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Google profile</p>
@@ -598,12 +680,12 @@ export default function IndexPage() {
                   <p className="text-sm text-muted-foreground"></p>
                 )}
 
-                <div className="flex flex-wrap justify-between gap-3">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={() => {
-                      setPhase('search');
+                  <div className="flex flex-wrap justify-between gap-3">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={() => {
+                        setPhase('search');
                       setSelectedPlace(null);
                       setLeadStatus('idle');
                       setLeadError('');
@@ -619,48 +701,53 @@ export default function IndexPage() {
             </CardContent>
           </Card>
         </div>
+        </div>
       </div>
     );
   };
 
   const renderLoading = () => (
-    <div className="page-shell">
-      <div className="mx-auto flex w-full max-w-3xl flex-col gap-8">
-        <section className="space-y-3">
-          <h1 className="text-3xl font-semibold text-foreground">Building your preview dashboard</h1>
-          <p className="text-base text-muted-foreground">
-            Hang tight while we pull fresh data from Google and assemble your optimization roadmap.
-          </p>
-        </section>
+    <div className="trial-preview-page">
+      <div className="page-shell">
+        <div className="mx-auto flex w-full max-w-3xl flex-col gap-8">
+          <section className="space-y-3">
+            <h1 className="text-3xl font-semibold text-foreground">Building your preview dashboard</h1>
+            <p className="text-base text-muted-foreground">
+              Hang tight while we pull fresh data from Google and assemble your optimization roadmap.
+            </p>
+          </section>
 
-        <Card className="shadow-lg">
-          <CardHeader>
-            <CardTitle>What&apos;s happening</CardTitle>
-            <CardDescription>We keep you posted as each step completes.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <StatusList currentStep={loadingStep} />
-          </CardContent>
-        </Card>
+          <Card className="shadow-lg trial-preview-card">
+            <CardHeader>
+              <CardTitle>What&apos;s happening</CardTitle>
+              <CardDescription>We keep you posted as each step completes.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <StatusList currentStep={loadingStep} />
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );
 
   const renderError = () => (
-    <div className="page-shell">
-      <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
-        <section className="space-y-3">
-          <h1 className="text-3xl font-semibold text-foreground">We couldn&apos;t build the preview</h1>
-          <p className="text-base text-muted-foreground">{analysisError || 'Something unexpected happened.'}</p>
-        </section>
+    <div className="trial-preview-page">
+      <div className="page-shell">
+        <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
+          <section className="space-y-3">
+            <h1 className="text-3xl font-semibold text-foreground">We couldn&apos;t build the preview</h1>
+            <p className="text-base text-muted-foreground">{analysisError || 'Something unexpected happened.'}</p>
+          </section>
 
-        <div className="flex flex-wrap gap-3">
-          <Button onClick={() => (selectedPlace ? beginAnalysis(selectedPlace) : resetFlow())}>
-            Try again
-          </Button>
-          <Button variant="ghost" onClick={resetFlow}>
-            Search a different profile
-          </Button>
+          <div className="flex flex-wrap gap-3">
+            <Button onClick={() => (selectedPlace ? beginAnalysis(selectedPlace) : resetFlow())}>
+              Try again
+            </Button>
+            <Button variant="ghost" onClick={resetFlow}>
+              Search a different profile
+            </Button>
+          </div>
         </div>
       </div>
     </div>
@@ -672,10 +759,12 @@ export default function IndexPage() {
       : null;
     const sections = Array.isArray(roadmap?.sections) ? roadmap.sections : [];
     const previewTimestampLabel = formatTimestamp(leadPreviewCompletedAt || leadPreviewStartedAt);
+    const geoGridMaxValue = Math.max(...GEO_GRID_SAMPLE);
 
     return (
-      <div className="page-shell">
-        <div className="mx-auto flex w-full max-w-6xl flex-col gap-10 lg:gap-12">
+      <div className="trial-preview-page">
+        <div className="page-shell">
+          <div className="mx-auto flex w-full max-w-6xl flex-col gap-10 lg:gap-12">
           <section className="flex flex-col gap-4">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div className="space-y-2">
@@ -686,7 +775,7 @@ export default function IndexPage() {
                   <p className="text-base text-muted-foreground">{placeDetails.formattedAddress}</p>
                 ) : null}
               </div>
-              <div className="flex items-center gap-3 rounded-full border border-secondary/60 bg-secondary/10 px-4 py-2">
+              <div className="trial-preview-kpi flex items-center gap-3 rounded-full border border-secondary/60 bg-secondary/10 px-4 py-2">
                 <span className="text-sm font-medium text-secondary-foreground">Overall progress</span>
                 <span className="text-2xl font-semibold text-secondary-foreground">
                   {progressPercent === null ? 'No score yet' : `${progressPercent}%`}
@@ -729,7 +818,7 @@ export default function IndexPage() {
             </div>
           </section>
 
-          <section className="space-y-6">
+          <section className="space-y-6 trial-preview-section">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div>
                 <h2 className="text-2xl font-semibold text-foreground">Overall progress</h2>
@@ -777,7 +866,7 @@ export default function IndexPage() {
             ) : null}
           </section>
 
-          <section className="space-y-4">
+          <section className="space-y-4 trial-preview-section">
             <div className="space-y-2">
               <h2 className="text-2xl font-semibold text-foreground">Next steps to improve your profile</h2>
               <p className="text-sm text-muted-foreground">
@@ -797,7 +886,56 @@ export default function IndexPage() {
             )}
           </section>
 
-          <Card className="shadow-lg">
+          <Card className="shadow-lg trial-preview-card">
+            <CardHeader>
+              <CardTitle>See your geo grid coverage</CardTitle>
+              <CardDescription>
+                We track how you rank across your service area. Start a free trial to unlock the interactive map and alerts.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="geo-grid-preview">
+                <div
+                  className="geo-grid-preview__grid"
+                  style={{ gridTemplateColumns: `repeat(${GEO_GRID_COLUMNS}, minmax(0, 1fr))` }}
+                  aria-hidden="true"
+                >
+                  {GEO_GRID_SAMPLE.map((rank, index) => {
+                    const intensity = Math.max(0, Math.min(1, rank / (geoGridMaxValue || 1)));
+                    return (
+                      <div
+                        key={index}
+                        className="geo-grid-preview__cell"
+                        style={{
+                          background: `linear-gradient(135deg, rgba(34, 174, 209, ${0.12 + intensity * 0.4}), rgba(255, 149, 56, ${0.08 + (1 - intensity) * 0.22}))`
+                        }}
+                      >
+                        <span className="geo-grid-preview__cell-rank">#{rank}</span>
+                      </div>
+                    );
+                  })}
+                  <div className="geo-grid-preview__overlay">
+                    <p className="geo-grid-preview__overlay-title">Geo grid preview locked</p>
+                    <p className="geo-grid-preview__overlay-copy">
+                      Start your 7 day trial to reveal live rankings, coverage gaps, and weekly change alerts.
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div className="grid gap-2 text-sm text-muted-foreground md:grid-cols-2">
+                <div className="rounded-lg border border-border/60 bg-muted/10 p-3">
+                  <p className="font-semibold text-foreground">Track coverage by neighborhood</p>
+                  <p>We map rankings across a 5x5 grid so you can see where you win and where to improve.</p>
+                </div>
+                <div className="rounded-lg border border-border/60 bg-muted/10 p-3">
+                  <p className="font-semibold text-foreground">Alerts for movement</p>
+                  <p>Trial access includes weekly geo grid refreshes plus notifications when positions shift.</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-lg trial-preview-card">
             <CardHeader>
               <CardTitle>Start your 7 day Local Paint Pilot trial</CardTitle>
               <CardDescription>
@@ -805,34 +943,29 @@ export default function IndexPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {trialStatus === 'success' ? (
-                <div className="space-y-3 rounded-md border border-emerald-400/60 bg-emerald-500/10 p-4 text-sm text-emerald-700">
-                  <p className="font-semibold">You&apos;re all set!</p>
-                  <p>
-                    Check your email for a verification email. Once confirmed you&apos;ll have full access to Local Paint Pilot.
-                  </p>
-                </div>
-              ) : (
+                {trialStatus === 'success' ? (
+                  <div className="space-y-3 rounded-md border border-emerald-400/60 bg-emerald-500/10 p-4 text-sm text-emerald-700">
+                    <p className="font-semibold">You&apos;re all set!</p>
+                    <p>
+                      We emailed a verification link. Your 7 day trial is active—feel free to explore the dashboard now while
+                      you confirm your email.
+                    </p>
+                  </div>
+                ) : (
                 <form className="grid gap-4 md:grid-cols-2" onSubmit={handleTrialSubmit}>
                   <div className="md:col-span-1 space-y-2">
-                    <Label htmlFor="trial-name">Your name</Label>
-                    <Input
-                      id="trial-name"
-                      type="text"
-                      value={trialName}
-                      onChange={(event) => setTrialName(event.target.value)}
-                      placeholder="Ada Lovelace"
-                      disabled={trialStatus === 'submitting'}
-                    />
+                    <Label htmlFor="trial-email">Work email</Label>
+                    <Input id="trial-email" type="email" value={trialEmail} disabled required />
                   </div>
                   <div className="md:col-span-1 space-y-2">
-                    <Label htmlFor="trial-email">Work email</Label>
+                    <Label htmlFor="trial-password">Password</Label>
                     <Input
-                      id="trial-email"
-                      type="email"
-                      value={trialEmail}
-                      onChange={(event) => setTrialEmail(event.target.value)}
-                      placeholder="you@company.com"
+                      id="trial-password"
+                      type="password"
+                      value={trialPassword}
+                      onChange={(event) => setTrialPassword(event.target.value)}
+                      placeholder="Create a password"
+                      autoComplete="new-password"
                       disabled={trialStatus === 'submitting'}
                       required
                     />
@@ -864,6 +997,7 @@ export default function IndexPage() {
           </Card>
         </div>
       </div>
+    </div>
     );
   };
 
