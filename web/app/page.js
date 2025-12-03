@@ -146,27 +146,6 @@ async function bootstrapSession() {
   return response.json();
 }
 
-function OpportunityItem({ task }) {
-  const impactLabel = Number.isFinite(Number(task.weight)) ? `${Number(task.weight)}% impact` : null;
-
-  return (
-    <li className="business-optimization-roadmap__task-card" aria-label="Optimization task">
-      <div className="business-optimization-roadmap__task-card-header">
-        <div className="business-optimization-roadmap__task-info">
-          <strong className="business-optimization-roadmap__task-title">{task.label}</strong>
-          {task.detail ? <p className="business-optimization-roadmap__task-detail">{task.detail}</p> : null}
-        </div>
-        {task.status ? (
-          <span className="status-pill" data-status={task.status.key}>
-            {task.status.label}
-          </span>
-        ) : null}
-      </div>
-      {impactLabel ? <p className="business-optimization-roadmap__task-detail">{impactLabel}</p> : null}
-    </li>
-  );
-}
-
 export default function IndexPage() {
   const router = useRouter();
   const [phase, setPhase] = useState('search');
@@ -192,6 +171,7 @@ export default function IndexPage() {
   const [existingPreview, setExistingPreview] = useState(false);
   const [leadPreviewStartedAt, setLeadPreviewStartedAt] = useState(null);
   const [leadPreviewCompletedAt, setLeadPreviewCompletedAt] = useState(null);
+  const [activeOpportunity, setActiveOpportunity] = useState(null);
 
   const inputRef = useRef(null);
 
@@ -481,6 +461,10 @@ export default function IndexPage() {
       .slice(0, 3);
   }, [roadmap]);
 
+  const closeOpportunityOverlay = useCallback(() => {
+    setActiveOpportunity(null);
+  }, []);
+
   const handleTrialSubmit = useCallback(
     async (event) => {
       event.preventDefault();
@@ -571,7 +555,7 @@ export default function IndexPage() {
             </p>
           </section>
 
-          <Card className="shadow-lg trial-preview-card">
+          <Card className="shadow-lg trial-preview-card surface-card surface-card--muted">
             <CardHeader>
               <CardTitle>Find your Google Business Profile</CardTitle>
               <CardDescription>Start typing your business name—we&apos;ll search Google automatically.</CardDescription>
@@ -643,7 +627,7 @@ export default function IndexPage() {
         <div className="page-shell">
           <div className="mx-auto flex w-full max-w-3xl flex-col gap-8">
 
-            <Card className="shadow-lg trial-preview-card">
+            <Card className="shadow-lg trial-preview-card surface-card surface-card--muted">
               <CardHeader>
                 <CardTitle>Confirm your profile</CardTitle>
                 <CardDescription className="mb-2">Drop your email to save the preview and kick off the scan.</CardDescription>
@@ -717,7 +701,7 @@ export default function IndexPage() {
             </p>
           </section>
 
-          <Card className="shadow-lg trial-preview-card">
+            <Card className="shadow-lg trial-preview-card surface-card surface-card--muted">
             <CardHeader>
               <CardTitle>What&apos;s happening</CardTitle>
               <CardDescription>We keep you posted as each step completes.</CardDescription>
@@ -765,7 +749,7 @@ export default function IndexPage() {
       <div className="trial-preview-page">
         <div className="page-shell">
           <div className="mx-auto flex w-full max-w-6xl flex-col gap-10 lg:gap-12">
-          <section className="flex flex-col gap-4">
+          <section className="trial-preview-section surface-card surface-card--muted flex flex-col gap-4">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div className="space-y-2">
                 <h1 className="text-4xl font-semibold text-foreground">
@@ -818,7 +802,7 @@ export default function IndexPage() {
             </div>
           </section>
 
-          <section className="space-y-6 trial-preview-section">
+          <section className="trial-preview-section surface-card surface-card--muted space-y-6">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div>
                 <h2 className="text-2xl font-semibold text-foreground">Overall progress</h2>
@@ -866,7 +850,7 @@ export default function IndexPage() {
             ) : null}
           </section>
 
-          <section className="space-y-4 trial-preview-section">
+          <section className="trial-preview-section surface-card surface-card--muted space-y-4">
             <div className="space-y-2">
               <h2 className="text-2xl font-semibold text-foreground">Next steps to improve your profile</h2>
               <p className="text-sm text-muted-foreground">
@@ -874,10 +858,30 @@ export default function IndexPage() {
               </p>
             </div>
             {topOpportunities.length ? (
-              <ul className="business-optimization-roadmap__section-task-list">
-                {topOpportunities.map((task) => (
-                  <OpportunityItem key={task.id} task={task} />
-                ))}
+              <ul className="next-steps-panel__list trial-preview__next-steps">
+                {topOpportunities.map((task) => {
+                  const impactLabel = Number.isFinite(Number(task.weight)) ? `${Number(task.weight)}% impact` : null;
+                  return (
+                    <li key={task.id}>
+                      <button
+                        type="button"
+                        className="next-steps-panel__item trial-preview__next-step-button"
+                        onClick={() => setActiveOpportunity(task)}
+                      >
+                        <div className="next-steps-panel__item-header">
+                          <strong>{task.label}</strong>
+                          {task.status ? (
+                            <span className="status-pill" data-status={task.status.key}>
+                              {task.status.label}
+                            </span>
+                          ) : null}
+                        </div>
+                        {task.detail ? <p>{task.detail}</p> : null}
+                        {impactLabel ? <p className="business-optimization-roadmap__task-detail">{impactLabel}</p> : null}
+                      </button>
+                    </li>
+                  );
+                })}
               </ul>
             ) : (
               <p className="text-sm text-muted-foreground">
@@ -886,7 +890,7 @@ export default function IndexPage() {
             )}
           </section>
 
-          <Card className="shadow-lg trial-preview-card">
+          <Card className="shadow-lg trial-preview-card surface-card surface-card--muted">
             <CardHeader>
               <CardTitle>See your geo grid coverage</CardTitle>
               <CardDescription>
@@ -935,7 +939,7 @@ export default function IndexPage() {
             </CardContent>
           </Card>
 
-          <Card className="shadow-lg trial-preview-card">
+          <Card className="shadow-lg trial-preview-card surface-card surface-card--muted">
             <CardHeader>
               <CardTitle>Start your 7 day Local Paint Pilot trial</CardTitle>
               <CardDescription>
@@ -995,6 +999,52 @@ export default function IndexPage() {
               </CardFooter>
             ) : null}
           </Card>
+
+          {activeOpportunity ? (
+            <div className="task-overlay" role="presentation">
+              <div className="task-overlay__backdrop" onClick={closeOpportunityOverlay} />
+              <div
+                className="task-overlay__panel"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="trial-opportunity-title"
+              >
+                <div className="task-overlay__header">
+                  <div>
+                    <h3 id="trial-opportunity-title">{activeOpportunity.label}</h3>
+                    {activeOpportunity.status ? (
+                      <span className="status-pill" data-status={activeOpportunity.status.key}>
+                        {activeOpportunity.status.label}
+                      </span>
+                    ) : null}
+                  </div>
+                  <button
+                    type="button"
+                    className="task-overlay__close"
+                    aria-label="Close details"
+                    onClick={closeOpportunityOverlay}
+                  >
+                    ×
+                  </button>
+                </div>
+
+                <div className="task-overlay__detail">
+                  <div className="task-overlay__summary">
+                    <p>Create your account to get details for this optimization step.</p>
+                    {activeOpportunity.detail ? <p>{activeOpportunity.detail}</p> : null}
+                  </div>
+                </div>
+
+                <div className="task-overlay__content">
+                  <div className="trial-preview__overlay-message">
+                    <p>
+                      Start a free trial to unlock the full step-by-step guide, templates, and tracking inside your dashboard.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : null}
         </div>
       </div>
     </div>
