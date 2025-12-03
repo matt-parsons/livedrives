@@ -503,10 +503,10 @@ export default function IndexPage() {
         let credential;
 
         try {
-          credential = await createUserWithEmailAndPassword(auth, trimmedEmail, trialPassword);
-        } catch (error) {
-          if (error.code === 'auth/email-already-in-use') {
-            credential = await signInWithEmailAndPassword(auth, trimmedEmail, trialPassword);
+        credential = await createUserWithEmailAndPassword(trimmedEmail, trialPassword);
+      } catch (error) {
+        if (error.code === 'auth/email-already-in-use') {
+            credential = await signInWithEmailAndPassword(trimmedEmail, trialPassword);
           } else {
             throw error;
           }
@@ -700,6 +700,7 @@ export default function IndexPage() {
               </form>
             </CardContent>
           </Card>
+        </div>
         </div>
       </div>
     );
@@ -996,6 +997,7 @@ export default function IndexPage() {
           </Card>
         </div>
       </div>
+    </div>
     );
   };
 
