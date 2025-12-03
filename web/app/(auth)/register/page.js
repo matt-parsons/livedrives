@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { auth } from '@/lib/firebaseClient';
 import { createUserWithEmailAndPassword, sendEmailVerification } from 'firebase/auth';
+import Link from 'next/link';
 
 async function exchangeSession(idToken) {
   const response = await fetch('/api/auth/session', {
@@ -159,7 +160,7 @@ export default function RegisterPage() {
               </p>
             ) : (
               <p className="text-sm text-muted-foreground">
-                We&apos;ll send verification details immediately so you can confirm ownership anytime.
+                Already have an account? <Link href="/signin">Log in</Link>
               </p>
             )}
           </CardFooter>
