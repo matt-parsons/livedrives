@@ -43,7 +43,7 @@ function roleLabel(role) {
   return 'Member';
 }
 
-export default function UserDirectoryTable({ members: initialMembers, organizationName }) {
+export default function UserDirectoryTable({ members: initialMembers, organizationId, organizationName }) {
   const [members, setMembers] = useState(initialMembers);
   const [rowStates, setRowStates] = useState({});
   const [dialogUser, setDialogUser] = useState(null);
@@ -66,7 +66,8 @@ export default function UserDirectoryTable({ members: initialMembers, organizati
       updateRowState(userId, { resetStatus: 'loading', resetMessage: '', resetLink: '' });
 
       try {
-        const response = await fetch(`/api/owner/users/${userId}/reset-password`, {
+        const organizationQuery = organizationId ? `?organizationId=${encodeURIComponent(organizationId)}` : '';
+        const response = await fetch(`/api/owner/users/${userId}/reset-password${organizationQuery}`, {
           method: 'POST'
         });
         const payload = await response.json().catch(() => ({}));
@@ -106,7 +107,8 @@ export default function UserDirectoryTable({ members: initialMembers, organizati
       updateRowState(user.id, { deleteStatus: 'loading', deleteMessage: '' });
 
       try {
-        const response = await fetch(`/api/owner/users/${user.id}`, {
+        const organizationQuery = organizationId ? `?organizationId=${encodeURIComponent(organizationId)}` : '';
+        const response = await fetch(`/api/owner/users/${user.id}${organizationQuery}`, {
           method: 'DELETE'
         });
         const payload = await response.json().catch(() => ({}));

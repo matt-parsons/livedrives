@@ -39,6 +39,62 @@ function slugify(value) {
     .slice(0, 80);
 }
 
+const DAY_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+const DEFAULT_HOURS = {
+  sun: [{ open: '09:00', close: '21:00' }],
+  mon: [{ open: '09:00', close: '21:00' }],
+  tue: [{ open: '09:00', close: '21:00' }],
+  wed: [{ open: '09:00', close: '21:00' }],
+  thu: [{ open: '09:00', close: '21:00' }],
+  fri: [{ open: '09:00', close: '21:00' }],
+  sat: [{ open: '09:00', close: '21:00' }]
+};
+
+function formatTimeString(raw) {
+  const str = typeof raw === 'string' ? raw.trim() : '';
+  if (str.length === 4) {
+    return `${str.slice(0, 2)}:${str.slice(2)}`;
+  }
+
+  if (str.length === 5 && str.includes(':')) {
+    return str;
+  }
+
+  return null;
+}
+
+function buildHoursFromPlace(place) {
+  const windows = DAY_KEYS.reduce((acc, key) => ({ ...acc, [key]: [] }), {});
+  const periods = place?.openingHours?.periods;
+
+  if (Array.isArray(periods)) {
+    for (const period of periods) {
+      const openDay = period?.open?.day;
+      const closeDay = period?.close?.day ?? openDay;
+      const openTime = formatTimeString(period?.open?.time);
+      const closeTime = formatTimeString(period?.close?.time);
+
+      if (
+        openDay === undefined ||
+        closeDay === undefined ||
+        openTime === null ||
+        closeTime === null ||
+        openDay !== closeDay ||
+        openDay < 0 ||
+        openDay > 6
+      ) {
+        continue;
+      }
+
+      const key = DAY_KEYS[openDay];
+      windows[key].push({ open: openTime, close: closeTime });
+    }
+  }
+
+  const hasProvidedHours = Object.values(windows).some((segments) => segments.length > 0);
+  return hasProvidedHours ? windows : DEFAULT_HOURS;
+}
+
 function derivePlaceValuesFromPlace(place, prevState) {
   const location = place.location ?? {};
   const latValue =
@@ -71,7 +127,9 @@ export default function BusinessForm({
   mode = 'create',
   businessId = null,
   initialValues = {},
-  showPlaceSearch = mode !== 'edit'
+  showPlaceSearch = mode !== 'edit',
+  searchOnly = false,
+  redirectPath = null
 }) {
   const router = useRouter();
   const [formState, setFormState] = useState(() => {
@@ -101,6 +159,7 @@ export default function BusinessForm({
           : Boolean(initialValues.isActive)
     };
   });
+  const [selectedPlace, setSelectedPlace] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [placesQuery, setPlacesQuery] = useState('');
@@ -121,6 +180,7 @@ export default function BusinessForm({
     setPhase('search');
     setLookupState('idle');
     setLookupError('');
+    setSelectedPlace(null);
   };
 
   useEffect(() => {
@@ -200,8 +260,32 @@ export default function BusinessForm({
       const selected =
         activeSuggestionIndex >= 0 ? suggestions[activeSuggestionIndex] : suggestions[0];
       if (selected) {
-        handleAddBusiness(selected.placeId);
+        setSelectedPlace(selected);
+        handleAddBusiness(selected.placeId, selected);
       }
+    }
+  };
+
+  const saveBusinessHours = async (businessId, place) => {
+    if (!businessId || !place) {
+      return;
+    }
+
+    const hours = buildHoursFromPlace(place);
+
+    try {
+      const response = await fetch(`/api/businesses/${businessId}/business-hours`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ hours })
+      });
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        console.warn('Failed to save business hours', data.error || response.statusText);
+      }
+    } catch (hoursError) {
+      console.warn('Error persisting business hours', hoursError);
     }
   };
 
@@ -249,8 +333,16 @@ export default function BusinessForm({
       }
 
       const targetIdentifier = business.businessSlug ?? business.id;
-      router.push(`/dashboard/${encodeURIComponent(targetIdentifier)}`);
+      const destination = redirectPath || `/dashboard/${encodeURIComponent(targetIdentifier)}`;
+
+      if (redirectPath) {
+        setSubmitting(false);
+      }
+
+      router.push(destination);
       router.refresh();
+
+      return business;
     } catch (err) {
       setError(err.message || 'Failed to save business.');
       setSubmitting(false);
@@ -262,6 +354,16 @@ export default function BusinessForm({
     if (event && typeof event.preventDefault === 'function') {
       event.preventDefault();
     }
+    if (searchOnly) {
+      const selected = selectedPlace || (activeSuggestionIndex >= 0 ? suggestions[activeSuggestionIndex] : suggestions[0]);
+      if (selected?.placeId) {
+        await handleAddBusiness(selected.placeId, selected);
+      } else {
+        setLookupError('Select a Google Business Profile to continue.');
+        setLookupState('error');
+      }
+      return;
+    }
     try {
       await submitBusiness(formState);
     } catch {
@@ -269,7 +371,7 @@ export default function BusinessForm({
     }
   };
 
-  const handleAddBusiness = async (placeId) => {
+  const handleAddBusiness = async (placeId, suggestion = null) => {
     if (!showPlaceSearch || !placeId || gatheringData || submitting) {
       return;
     }
@@ -278,6 +380,7 @@ export default function BusinessForm({
     setGatheringData(true);
     setGatheringMessage('Gathering your business data…');
     setLookupError('');
+    setSelectedPlace(suggestion);
 
     try {
       console.log('handleAddBusiness fetching', placeId);
@@ -303,7 +406,10 @@ export default function BusinessForm({
       setLookupError('');
       setPlacesQuery('');
 
-      await submitBusiness(derivedState);
+      const business = await submitBusiness(derivedState);
+      if (business?.id) {
+        await saveBusinessHours(business.id, data.place);
+      }
     } catch (err) {
       setLookupError(err.message || 'Failed to load place details.');
       setLookupState('error');
@@ -384,7 +490,7 @@ export default function BusinessForm({
                         <Button
                           type="button"
                           variant="secondary"
-                          onClick={() => handleAddBusiness(place.placeId)}
+                          onClick={() => handleAddBusiness(place.placeId, place)}
                           disabled={submitting || lookupState === 'loading' || gatheringData}
                         >
                           {gatheringData ? 'Adding…' : 'Add this business'}
@@ -399,165 +505,167 @@ export default function BusinessForm({
         </div>
       ) : null}
 
-      <div className="grid gap-6">
-        <div className="grid gap-4 md:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="business-name">Business name</Label>
-            <Input
-              id="business-name"
-              value={formState.businessName}
-              onChange={handleInputChange('businessName')}
-              required
-              placeholder="Acme Painting"
-              disabled={submitting}
-            />
+      {!searchOnly ? (
+        <div className="grid gap-6">
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="business-name">Business name</Label>
+              <Input
+                id="business-name"
+                value={formState.businessName}
+                onChange={handleInputChange('businessName')}
+                required
+                placeholder="Acme Painting"
+                disabled={submitting}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="business-slug">Slug</Label>
+              <Input
+                id="business-slug"
+                value={formState.businessSlug}
+                onChange={handleInputChange('businessSlug')}
+                placeholder="acme-painting"
+                disabled={submitting}
+              />
+              <p className="text-xs text-muted-foreground">Optional: short identifier used in URLs.</p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="brand-search">Brand search term</Label>
+              <Input
+                id="brand-search"
+                value={formState.brandSearch}
+                onChange={handleInputChange('brandSearch')}
+                placeholder="Acme Painting near me"
+                disabled={submitting}
+              />
+              <p className="text-xs text-muted-foreground">Used when constructing ranking and CTR keywords.</p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="mid">MID</Label>
+              <Input
+                id="mid"
+                value={formState.mid}
+                onChange={handleInputChange('mid')}
+                placeholder="Map marker ID"
+                disabled={submitting}
+              />
+            </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="business-slug">Slug</Label>
-            <Input
-              id="business-slug"
-              value={formState.businessSlug}
-              onChange={handleInputChange('businessSlug')}
-              placeholder="acme-painting"
-              disabled={submitting}
-            />
-            <p className="text-xs text-muted-foreground">Optional: short identifier used in URLs.</p>
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="destination-address">Destination address</Label>
+              <Input
+                id="destination-address"
+                value={formState.destinationAddress}
+                onChange={handleInputChange('destinationAddress')}
+                placeholder="123 Main St"
+                disabled={submitting}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="destination-zip">Destination ZIP / postal</Label>
+              <Input
+                id="destination-zip"
+                value={formState.destinationZip}
+                onChange={handleInputChange('destinationZip')}
+                placeholder="90210"
+                disabled={submitting}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="dest-lat">Destination latitude</Label>
+              <Input
+                id="dest-lat"
+                value={formState.destLat}
+                onChange={handleInputChange('destLat')}
+                inputMode="decimal"
+                placeholder="34.10000"
+                disabled={submitting}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="dest-lng">Destination longitude</Label>
+              <Input
+                id="dest-lng"
+                value={formState.destLng}
+                onChange={handleInputChange('destLng')}
+                inputMode="decimal"
+                placeholder="-118.32500"
+                disabled={submitting}
+              />
+            </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="brand-search">Brand search term</Label>
-            <Input
-              id="brand-search"
-              value={formState.brandSearch}
-              onChange={handleInputChange('brandSearch')}
-              placeholder="Acme Painting near me"
-              disabled={submitting}
-            />
-            <p className="text-xs text-muted-foreground">Used when constructing ranking and CTR keywords.</p>
+          <div className="grid gap-4 md:grid-cols-3">
+            <div className="space-y-2">
+              <Label htmlFor="timezone">Timezone</Label>
+              <Input
+                id="timezone"
+                value={formState.timezone}
+                onChange={handleInputChange('timezone')}
+                placeholder="America/Los_Angeles"
+                disabled={submitting}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="drives-per-day">Drives per day</Label>
+              <Input
+                id="drives-per-day"
+                type="number"
+                min="0"
+                value={formState.drivesPerDay}
+                onChange={handleInputChange('drivesPerDay')}
+                placeholder="5"
+                disabled={submitting}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="is-active">Status</Label>
+              <select
+                id="is-active"
+                value={formState.isActive ? 'active' : 'inactive'}
+                onChange={handleIsActiveChange}
+                className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+                disabled={submitting}
+              >
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+              </select>
+              <p className="text-xs text-muted-foreground">Inactive businesses pause scheduled activity.</p>
+            </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="mid">MID</Label>
-            <Input
-              id="mid"
-              value={formState.mid}
-              onChange={handleInputChange('mid')}
-              placeholder="Map marker ID"
-              disabled={submitting}
-            />
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="gplace-id">Google Place ID</Label>
+              <Input
+                id="gplace-id"
+                value={formState.gPlaceId}
+                onChange={handleInputChange('gPlaceId')}
+                placeholder="ChIJ..."
+                disabled={submitting}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="notes-helper">Notes</Label>
+              <p id="notes-helper" className="text-xs text-muted-foreground">
+                Keep this in sync with your live Google Business Profile identifiers.
+              </p>
+            </div>
           </div>
         </div>
-
-        <div className="grid gap-4 md:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="destination-address">Destination address</Label>
-            <Input
-              id="destination-address"
-              value={formState.destinationAddress}
-              onChange={handleInputChange('destinationAddress')}
-              placeholder="123 Main St"
-              disabled={submitting}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="destination-zip">Destination ZIP / postal</Label>
-            <Input
-              id="destination-zip"
-              value={formState.destinationZip}
-              onChange={handleInputChange('destinationZip')}
-              placeholder="90210"
-              disabled={submitting}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="dest-lat">Destination latitude</Label>
-            <Input
-              id="dest-lat"
-              value={formState.destLat}
-              onChange={handleInputChange('destLat')}
-              inputMode="decimal"
-              placeholder="34.10000"
-              disabled={submitting}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="dest-lng">Destination longitude</Label>
-            <Input
-              id="dest-lng"
-              value={formState.destLng}
-              onChange={handleInputChange('destLng')}
-              inputMode="decimal"
-              placeholder="-118.32500"
-              disabled={submitting}
-            />
-          </div>
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-3">
-          <div className="space-y-2">
-            <Label htmlFor="timezone">Timezone</Label>
-            <Input
-              id="timezone"
-              value={formState.timezone}
-              onChange={handleInputChange('timezone')}
-              placeholder="America/Los_Angeles"
-              disabled={submitting}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="drives-per-day">Drives per day</Label>
-            <Input
-              id="drives-per-day"
-              type="number"
-              min="0"
-              value={formState.drivesPerDay}
-              onChange={handleInputChange('drivesPerDay')}
-              placeholder="5"
-              disabled={submitting}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="is-active">Status</Label>
-            <select
-              id="is-active"
-              value={formState.isActive ? 'active' : 'inactive'}
-              onChange={handleIsActiveChange}
-              className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
-              disabled={submitting}
-            >
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-            </select>
-            <p className="text-xs text-muted-foreground">Inactive businesses pause scheduled activity.</p>
-          </div>
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="gplace-id">Google Place ID</Label>
-            <Input
-              id="gplace-id"
-              value={formState.gPlaceId}
-              onChange={handleInputChange('gPlaceId')}
-              placeholder="ChIJ..."
-              disabled={submitting}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="notes-helper">Notes</Label>
-            <p id="notes-helper" className="text-xs text-muted-foreground">
-              Keep this in sync with your live Google Business Profile identifiers.
-            </p>
-          </div>
-        </div>
-      </div>
+      ) : null}
 
       {error ? (
         <p className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive" role="alert">
@@ -565,11 +673,13 @@ export default function BusinessForm({
         </p>
       ) : null}
 
-      <div className="flex justify-end">
-        <Button type="submit" disabled={submitting || gatheringData}>
-          {submitting ? 'Saving…' : mode === 'edit' ? 'Save changes' : 'Create business'}
-        </Button>
-      </div>
+      {!searchOnly ? (
+        <div className="flex justify-end">
+          <Button type="submit" disabled={submitting || gatheringData}>
+            {submitting ? 'Saving…' : mode === 'edit' ? 'Save changes' : 'Create business'}
+          </Button>
+        </div>
+      ) : null}
     </form>
 
   );

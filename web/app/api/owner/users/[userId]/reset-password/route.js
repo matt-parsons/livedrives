@@ -26,6 +26,15 @@ function parseUserId(raw) {
   return value;
 }
 
+function parseOrganizationId(raw) {
+  const value = Number(raw);
+  if (!Number.isFinite(value) || value <= 0) {
+    return null;
+  }
+
+  return value;
+}
+
 export async function POST(request, { params }) {
   let session;
 
@@ -45,6 +54,9 @@ export async function POST(request, { params }) {
     return jsonError('Invalid user id.', 400);
   }
 
+  const { searchParams } = new URL(request.url);
+  const organizationId = parseOrganizationId(searchParams.get('organizationId')) || session.organizationId;
+
   const [rows] = await pool.query(
     `SELECT u.id, u.email
        FROM user_org_members m
@@ -52,7 +64,7 @@ export async function POST(request, { params }) {
       WHERE m.organization_id = ?
         AND u.id = ?
       LIMIT 1`,
-    [session.organizationId, userId]
+    [organizationId, userId]
   );
 
   if (!rows.length) {

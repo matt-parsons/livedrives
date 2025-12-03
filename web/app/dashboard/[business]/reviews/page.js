@@ -1,6 +1,11 @@
 import { notFound, redirect } from 'next/navigation';
 import { AuthError, requireAuth } from '@/lib/authServer';
-import { buildGbpAuthUrl, deriveLocationName, fetchGbpReviews } from '@/lib/googleBusinessProfile';
+import {
+  buildGbpAuthUrl,
+  deriveLocationName,
+  ensureGbpAccessToken,
+  fetchGbpReviews
+} from '@/lib/googleBusinessProfile';
 import { listScheduledPostsForBusiness } from '@/lib/gbpPostScheduler';
 import { loadBusiness } from '../helpers';
 import BusinessNavigation from '../BusinessNavigation';
@@ -137,7 +142,7 @@ function buildSnapshot(reviews) {
 
 async function loadReviewSnapshot(business) {
   const locationName = deriveLocationName(business);
-  const accessToken = process.env.GOOGLE_BUSINESS_PROFILE_ACCESS_TOKEN;
+  const accessToken = await ensureGbpAccessToken(business.id);
 
   if (!accessToken || !locationName) {
     return { snapshot: null, authorizationUrl: buildGbpAuthUrl({ state: `business:${business?.id ?? ''}` }) };

@@ -205,7 +205,7 @@ export default async function BusinessDashboardPage({ params }) {
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div className="space-y-1">
                   <p className="text-xs uppercase tracking-wide text-muted-foreground">Origin keyword</p>
-                  <p className="text-lg font-semibold text-foreground">Confirm your first origin zone keyword</p>
+                  <p className="text-lg font-semibold text-foreground">Confirm your keyword</p>
                   <p className="text-sm text-muted-foreground">
                     We'll pin the keyword to your business address with a 3 mile radius so rank tracking can begin.
                   </p>
