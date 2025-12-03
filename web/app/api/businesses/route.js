@@ -2,7 +2,7 @@ import pool from '@lib/db/db.js';
 import geoGridSchedules from '@lib/db/geoGridSchedules.js';
 import { AuthError, requireAuth } from '@/lib/authServer';
 import { buildOrganizationScopeClause } from '@/lib/organizations';
-import { mapToDbColumns, normalizeBusinessPayload, wasProvided } from './utils.js';
+import { ensureUniqueBusinessSlug, mapToDbColumns, normalizeBusinessPayload, toSlug, wasProvided } from './utils.js';
 
 export const runtime = 'nodejs';
 
@@ -44,6 +44,9 @@ export async function POST(request) {
 
     const normalizedValues = { ...values };
 
+    const slugBase = normalizedValues.businessSlug ?? toSlug(values.businessName) ?? 'business';
+    normalizedValues.businessSlug = await ensureUniqueBusinessSlug(pool, slugBase);
+
     if (!wasProvided(body, 'brandSearch')) {
       normalizedValues.brandSearch = values.brandSearch ?? values.businessName;
     }
@@ -52,24 +55,57 @@ export async function POST(request) {
       normalizedValues.isActive = values.isActive ?? 1;
     }
 
-    const dbValues = mapToDbColumns(normalizedValues);
+    const baseDbValues = mapToDbColumns(normalizedValues);
+    let dbValues = { ...baseDbValues };
+    let businessId = null;
 
-    const columns = ['organization_id'];
-    const placeholders = ['?'];
-    const params = [session.organizationId];
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      const columns = ['organization_id'];
+      const placeholders = ['?'];
+      const params = [session.organizationId];
 
-    for (const [column, value] of Object.entries(dbValues)) {
-      columns.push(column);
-      placeholders.push('?');
-      params.push(value);
+      for (const [column, value] of Object.entries(dbValues)) {
+        columns.push(column);
+        placeholders.push('?');
+        params.push(value);
+      }
+
+      columns.push('created_at', 'updated_at');
+      placeholders.push('NOW()', 'NOW()');
+
+      const sql = `INSERT INTO businesses (${columns.join(', ')}) VALUES (${placeholders.join(', ')})`;
+
+      try {
+        const [result] = await pool.query(sql, params);
+        businessId = result.insertId;
+        break;
+      } catch (error) {
+        if (error && typeof error === 'object' && error.code === 'ER_DUP_ENTRY') {
+          const message = String(error.message || '').toLowerCase();
+
+          if (message.includes('business_slug')) {
+            dbValues.business_slug = await ensureUniqueBusinessSlug(pool, normalizedValues.businessSlug);
+            continue;
+          }
+
+          if (message.includes('mid')) {
+            dbValues.mid = null;
+            continue;
+          }
+
+          if (message.includes('g_place_id')) {
+            dbValues.g_place_id = null;
+            continue;
+          }
+        }
+
+        throw error;
+      }
     }
 
-    columns.push('created_at', 'updated_at');
-    placeholders.push('NOW()', 'NOW()');
-
-    const sql = `INSERT INTO businesses (${columns.join(', ')}) VALUES (${placeholders.join(', ')})`;
-    const [result] = await pool.query(sql, params);
-    const businessId = result.insertId;
+    if (!businessId) {
+      throw new Error('Failed to create business record.');
+    }
 
     try {
       await geoGridSchedules.initializeGeoGridSchedule(businessId);
@@ -96,7 +132,8 @@ export async function POST(request) {
     }
 
     if (error && typeof error === 'object' && error.code === 'ER_DUP_ENTRY') {
-      return Response.json({ error: 'Business slug, MID, or Google Place ID must be unique.' }, { status: 409 });
+      console.error('Duplicate business constraint encountered', error);
+      return Response.json({ error: 'Unable to create business with the provided identifiers.' }, { status: 409 });
     }
 
     console.error('Failed to create business', error);

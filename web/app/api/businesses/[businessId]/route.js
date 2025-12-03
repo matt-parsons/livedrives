@@ -2,7 +2,7 @@ import pool from '@lib/db/db.js';
 import geoGridSchedules from '@lib/db/geoGridSchedules.js';
 import { AuthError, requireAuth } from '@/lib/authServer';
 import { buildOrganizationScopeClause } from '@/lib/organizations';
-import { mapToDbColumns, normalizeBusinessPayload } from '../utils.js';
+import { ensureUniqueBusinessSlug, mapToDbColumns, normalizeBusinessPayload } from '../utils.js';
 
 export const runtime = 'nodejs';
 
@@ -25,6 +25,14 @@ export async function PATCH(request, { params }) {
 
     if (!Object.keys(values).length) {
       return Response.json({ error: 'No updates were provided.' }, { status: 400 });
+    }
+
+    if (Object.prototype.hasOwnProperty.call(values, 'businessSlug')) {
+      const providedSlug = values.businessSlug;
+
+      if (providedSlug !== null) {
+        values.businessSlug = await ensureUniqueBusinessSlug(pool, providedSlug, { excludeId: businessId });
+      }
     }
 
     const dbValues = mapToDbColumns(values);
@@ -103,7 +111,8 @@ export async function PATCH(request, { params }) {
     }
 
     if (error && typeof error === 'object' && error.code === 'ER_DUP_ENTRY') {
-      return Response.json({ error: 'Business slug, MID, or Google Place ID must be unique.' }, { status: 409 });
+      console.error(`Duplicate business constraint encountered for ${rawId}`, error);
+      return Response.json({ error: 'Unable to save business with the provided identifiers.' }, { status: 409 });
     }
 
     console.error(`Failed to update business ${rawId}`, error);
