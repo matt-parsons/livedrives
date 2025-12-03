@@ -1,10 +1,17 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import {
+  auth,
+  createUserWithEmailAndPassword,
+  sendEmailVerification,
+  signInWithEmailAndPassword
+} from '@/lib/firebaseClient';
 
 const LOADING_STEPS = [
   {
@@ -29,6 +36,7 @@ const GEO_GRID_SAMPLE = [7, 4, 3, 2, 5, 6, 9, 12, 8, 5, 4, 7, 16, 11, 6, 3, 6, 9
 const GEO_GRID_COLUMNS = 5;
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const MIN_PASSWORD_LENGTH = 8;
 
 function formatTimestamp(value) {
   if (!value) {
@@ -110,6 +118,34 @@ function StatusList({ currentStep }) {
   );
 }
 
+async function exchangeSession(idToken) {
+  const response = await fetch('/api/auth/session', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ idToken })
+  });
+
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new Error(data.error || 'Unable to start your session.');
+  }
+}
+
+async function bootstrapSession() {
+  const response = await fetch('/api/auth/bootstrap', {
+    method: 'POST',
+    credentials: 'include'
+  });
+
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new Error(data.error || 'Unable to finish bootstrapping your account.');
+  }
+
+  return response.json();
+}
+
 function OpportunityItem({ task }) {
   const impactLabel = Number.isFinite(Number(task.weight)) ? `${Number(task.weight)}% impact` : null;
 
@@ -132,6 +168,7 @@ function OpportunityItem({ task }) {
 }
 
 export default function IndexPage() {
+  const router = useRouter();
   const [phase, setPhase] = useState('search');
   const [query, setQuery] = useState('');
   const [suggestions, setSuggestions] = useState([]);
@@ -145,6 +182,7 @@ export default function IndexPage() {
   const [roadmap, setRoadmap] = useState(null);
   const [trialName, setTrialName] = useState('');
   const [trialEmail, setTrialEmail] = useState('');
+  const [trialPassword, setTrialPassword] = useState('');
   const [trialStatus, setTrialStatus] = useState('idle');
   const [trialError, setTrialError] = useState('');
   const [leadEmail, setLeadEmail] = useState('');
@@ -259,6 +297,7 @@ export default function IndexPage() {
     setRoadmap(null);
     setTrialName('');
     setTrialEmail('');
+    setTrialPassword('');
     setTrialStatus('idle');
     setTrialError('');
     setLeadEmail('');
@@ -453,14 +492,45 @@ export default function IndexPage() {
         return;
       }
 
+      if (trialPassword.length < MIN_PASSWORD_LENGTH) {
+        setTrialError(`Password must be at least ${MIN_PASSWORD_LENGTH} characters long.`);
+        return;
+      }
+
       setTrialStatus('submitting');
 
       try {
+        let credential;
+
+        try {
+          credential = await createUserWithEmailAndPassword(auth, trimmedEmail, trialPassword);
+        } catch (error) {
+          if (error.code === 'auth/email-already-in-use') {
+            credential = await signInWithEmailAndPassword(auth, trimmedEmail, trialPassword);
+          } else {
+            throw error;
+          }
+        }
+
+        if (!credential?.user) {
+          throw new Error('Unable to set up your account right now.');
+        }
+
+        try {
+          if (!credential.user.emailVerified) {
+            await sendEmailVerification(credential.user);
+          }
+        } catch (emailError) {
+          console.warn('Failed to send Firebase verification email', emailError);
+        }
+
+        const idToken = await credential.user.getIdToken();
+
         const response = await fetch('/api/public/register', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            name: trialName.trim(),
+            name: trialName?.trim?.() || trialName,
             email: trimmedEmail
           })
         });
@@ -471,14 +541,20 @@ export default function IndexPage() {
           throw new Error(payload.error || 'Unable to start your trial right now.');
         }
 
+        await exchangeSession(idToken);
+        await bootstrapSession();
+        await auth.signOut();
+
         setTrialStatus('success');
+        router.push('/dashboard');
+        router.refresh();
       } catch (error) {
         console.error('Trial registration failed', error);
         setTrialStatus('idle');
         setTrialError(error.message || 'We could not process your trial request.');
       }
     },
-    [trialEmail, trialName]
+    [trialEmail, trialName, trialPassword, router]
   );
 
   const renderSearch = () => (
@@ -866,34 +942,29 @@ export default function IndexPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {trialStatus === 'success' ? (
-                <div className="space-y-3 rounded-md border border-emerald-400/60 bg-emerald-500/10 p-4 text-sm text-emerald-700">
-                  <p className="font-semibold">You&apos;re all set!</p>
-                  <p>
-                    Check your email for a verification email. Once confirmed you&apos;ll have full access to Local Paint Pilot.
-                  </p>
-                </div>
-              ) : (
+                {trialStatus === 'success' ? (
+                  <div className="space-y-3 rounded-md border border-emerald-400/60 bg-emerald-500/10 p-4 text-sm text-emerald-700">
+                    <p className="font-semibold">You&apos;re all set!</p>
+                    <p>
+                      We emailed a verification link. Your 7 day trial is active—feel free to explore the dashboard now while
+                      you confirm your email.
+                    </p>
+                  </div>
+                ) : (
                 <form className="grid gap-4 md:grid-cols-2" onSubmit={handleTrialSubmit}>
                   <div className="md:col-span-1 space-y-2">
-                    <Label htmlFor="trial-name">Your name</Label>
-                    <Input
-                      id="trial-name"
-                      type="text"
-                      value={trialName}
-                      onChange={(event) => setTrialName(event.target.value)}
-                      placeholder="Ada Lovelace"
-                      disabled={trialStatus === 'submitting'}
-                    />
+                    <Label htmlFor="trial-email">Work email</Label>
+                    <Input id="trial-email" type="email" value={trialEmail} disabled required />
                   </div>
                   <div className="md:col-span-1 space-y-2">
-                    <Label htmlFor="trial-email">Work email</Label>
+                    <Label htmlFor="trial-password">Password</Label>
                     <Input
-                      id="trial-email"
-                      type="email"
-                      value={trialEmail}
-                      onChange={(event) => setTrialEmail(event.target.value)}
-                      placeholder="you@company.com"
+                      id="trial-password"
+                      type="password"
+                      value={trialPassword}
+                      onChange={(event) => setTrialPassword(event.target.value)}
+                      placeholder="Create a password"
+                      autoComplete="new-password"
                       disabled={trialStatus === 'submitting'}
                       required
                     />
