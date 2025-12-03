@@ -25,6 +25,9 @@ const LOADING_STEPS = [
   }
 ];
 
+const GEO_GRID_SAMPLE = [7, 4, 3, 2, 5, 6, 9, 12, 8, 5, 4, 7, 16, 11, 6, 3, 6, 9, 13, 7, 5, 7, 8, 6, 4];
+const GEO_GRID_COLUMNS = 5;
+
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function formatTimestamp(value) {
@@ -672,6 +675,7 @@ export default function IndexPage() {
       : null;
     const sections = Array.isArray(roadmap?.sections) ? roadmap.sections : [];
     const previewTimestampLabel = formatTimestamp(leadPreviewCompletedAt || leadPreviewStartedAt);
+    const geoGridMaxValue = Math.max(...GEO_GRID_SAMPLE);
 
     return (
       <div className="page-shell">
@@ -796,6 +800,55 @@ export default function IndexPage() {
               </p>
             )}
           </section>
+
+          <Card className="shadow-lg">
+            <CardHeader>
+              <CardTitle>See your geo grid coverage</CardTitle>
+              <CardDescription>
+                We track how you rank across your service area. Start a free trial to unlock the interactive map and alerts.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="geo-grid-preview">
+                <div
+                  className="geo-grid-preview__grid"
+                  style={{ gridTemplateColumns: `repeat(${GEO_GRID_COLUMNS}, minmax(0, 1fr))` }}
+                  aria-hidden="true"
+                >
+                  {GEO_GRID_SAMPLE.map((rank, index) => {
+                    const intensity = Math.max(0, Math.min(1, rank / (geoGridMaxValue || 1)));
+                    return (
+                      <div
+                        key={index}
+                        className="geo-grid-preview__cell"
+                        style={{
+                          background: `linear-gradient(135deg, rgba(34, 174, 209, ${0.12 + intensity * 0.4}), rgba(255, 149, 56, ${0.08 + (1 - intensity) * 0.22}))`
+                        }}
+                      >
+                        <span className="geo-grid-preview__cell-rank">#{rank}</span>
+                      </div>
+                    );
+                  })}
+                  <div className="geo-grid-preview__overlay">
+                    <p className="geo-grid-preview__overlay-title">Geo grid preview locked</p>
+                    <p className="geo-grid-preview__overlay-copy">
+                      Start your 7 day trial to reveal live rankings, coverage gaps, and weekly change alerts.
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div className="grid gap-2 text-sm text-muted-foreground md:grid-cols-2">
+                <div className="rounded-lg border border-border/60 bg-muted/10 p-3">
+                  <p className="font-semibold text-foreground">Track coverage by neighborhood</p>
+                  <p>We map rankings across a 5x5 grid so you can see where you win and where to improve.</p>
+                </div>
+                <div className="rounded-lg border border-border/60 bg-muted/10 p-3">
+                  <p className="font-semibold text-foreground">Alerts for movement</p>
+                  <p>Trial access includes weekly geo grid refreshes plus notifications when positions shift.</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
           <Card className="shadow-lg">
             <CardHeader>
