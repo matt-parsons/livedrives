@@ -807,12 +807,9 @@ export default function IndexPage() {
               <div>
                 <h2 className="text-2xl font-semibold text-foreground">Overall progress</h2>
                 <p className="text-sm text-muted-foreground">
-                  We use the same optimization model as your business dashboard to score this preview.
+                  Complete all tasks to maximize your ranking potential
                 </p>
               </div>
-              <span className="text-sm font-semibold text-secondary-foreground">
-                {progressPercent === null ? 'No score yet' : `${progressPercent}% complete`}
-              </span>
             </div>
 
             <div
@@ -823,9 +820,9 @@ export default function IndexPage() {
               }`}
             >
               <div className="business-optimization-roadmap__summary-header">
-                <strong className="business-optimization-roadmap__summary-heading">Optimization progress</strong>
+                <h2 class="section-title">GBP Score Optimization</h2>
                 <span className="business-optimization-roadmap__summary-progress">
-                  {progressPercent === null ? 'No score yet' : `${progressPercent}% complete`}
+                  <strong>{progressPercent === null ? 'No score yet' : `${progressPercent}%`}</strong>
                 </span>
               </div>
               <div aria-hidden="true" className="business-optimization-roadmap__progress-track">
@@ -901,23 +898,11 @@ export default function IndexPage() {
               <div className="geo-grid-preview">
                 <div
                   className="geo-grid-preview__grid"
-                  style={{ gridTemplateColumns: `repeat(${GEO_GRID_COLUMNS}, minmax(0, 1fr))` }}
                   aria-hidden="true"
                 >
-                  {GEO_GRID_SAMPLE.map((rank, index) => {
-                    const intensity = Math.max(0, Math.min(1, rank / (geoGridMaxValue || 1)));
-                    return (
-                      <div
-                        key={index}
-                        className="geo-grid-preview__cell"
-                        style={{
-                          background: `linear-gradient(135deg, rgba(34, 174, 209, ${0.12 + intensity * 0.4}), rgba(255, 149, 56, ${0.08 + (1 - intensity) * 0.22}))`
-                        }}
-                      >
-                        <span className="geo-grid-preview__cell-rank">#{rank}</span>
-                      </div>
-                    );
-                  })}
+                  <div className="geo-grid-preview__demo">
+                    <img src="images/localpaintpilot-ranking-demo.png" />
+                  </div>
                   <div className="geo-grid-preview__overlay">
                     <p className="geo-grid-preview__overlay-title">Geo grid preview locked</p>
                     <p className="geo-grid-preview__overlay-copy">
@@ -943,7 +928,7 @@ export default function IndexPage() {
             <CardHeader>
               <CardTitle>Start your 7 day Local Paint Pilot trial</CardTitle>
               <CardDescription>
-                We&apos;ll create your account, email Firebase verification details, and unlock the full dashboard experience.
+                We&apos;ll create your account and unlock the full dashboard experience.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -994,7 +979,7 @@ export default function IndexPage() {
             {trialStatus !== 'success' ? (
               <CardFooter>
                 <p className="text-xs text-muted-foreground">
-                  Trials include full access to dashboards, keyword rank tracking, and live operations tooling. Cancel anytime during the first 7 days.
+                  The Free Trial include full access to dashboards, keyword rank tracking, and live operations tooling. No credit card required.
                 </p>
               </CardFooter>
             ) : null}

@@ -3759,8 +3759,8 @@ textarea {
 }
 
 .business-optimization-roadmap__summary-progress {
-  font-size: 0.9rem;
-  color: rgba(3, 60, 87, 0.6);
+    font-size: 2rem;
+    color: var(--color-heading);
 }
 
 .business-optimization-roadmap__progress-track {
@@ -4073,6 +4073,9 @@ textarea {
 .trial-preview-page .business-optimization-roadmap__section-summary-card {
   background: linear-gradient(180deg, rgba(3, 60, 87, 0.04), rgba(3, 60, 87, 0.02));
   border: 1px solid rgba(3, 60, 87, 0.08);
+  padding: 20px;
+  display: flex;
+  justify-content: space-between;
 }
 
 .trial-preview-page .business-optimization-roadmap__progress-track {
@@ -4111,13 +4114,20 @@ textarea {
   gap: 12px;
 }
 
+.trial-preview-page .geo-grid-preview__demo {
+  display: flex;
+  align-items: center;
+  justify-content: center;  
+}
+
 .trial-preview-page .geo-grid-preview__cell {
   border: 1px solid rgba(3, 60, 87, 0.1);
   filter: saturate(0.9);
+  border-radius: 50%;
 }
 
 .trial-preview-page .geo-grid-preview__overlay {
-  background: rgba(246, 246, 246, 0.85);
+  background: rgba(246, 246, 246, 0.25);
   backdrop-filter: blur(10px);
 }
 
