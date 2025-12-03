@@ -258,7 +258,7 @@ export default function KeywordOriginZoneForm({
           <Label htmlFor="onboarding-keyword">Top keyword picks</Label>
           <span className="text-xs text-muted-foreground">
             {suggestionStatus === 'loading'
-              ? 'Asking ChatGPT for keywords…'
+              ? 'Generating your top search keywords…'
               : 'Tap a pick or enter your own keyword'}
           </span>
         </div>
