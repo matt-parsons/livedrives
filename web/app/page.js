@@ -25,6 +25,9 @@ const LOADING_STEPS = [
   }
 ];
 
+const GEO_GRID_SAMPLE = [7, 4, 3, 2, 5, 6, 9, 12, 8, 5, 4, 7, 16, 11, 6, 3, 6, 9, 13, 7, 5, 7, 8, 6, 4];
+const GEO_GRID_COLUMNS = 5;
+
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function formatTimestamp(value) {
@@ -479,75 +482,77 @@ export default function IndexPage() {
   );
 
   const renderSearch = () => (
-    <div className="page-shell">
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-8 lg:gap-12">
-        <section className="space-y-4">
-          <span className="inline-flex items-center rounded-full border border-secondary/40 bg-secondary/10 px-3 py-1 text-xs font-medium uppercase tracking-wide text-secondary-foreground">
-            Special Offer
-          </span>
-          <h1 className="text-4xl font-semibold text-foreground">Sign up - Try Local Paint Pilot for free</h1>
-          <p className="text-lg leading-relaxed text-muted-foreground">
-            Enter your Google Business Profile name and we&apos;ll pull live ata, map optimization wins, and show how the dashboard guides your rankings.
-          </p>
-        </section>
+    <div className="trial-preview-page">
+      <div className="page-shell">
+        <div className="mx-auto flex w-full max-w-5xl flex-col gap-8 lg:gap-12">
+          <section className="trial-preview-hero space-y-4">
+            <span className="trial-preview-badge inline-flex items-center rounded-full border border-secondary/40 bg-secondary/10 px-3 py-1 text-xs font-medium uppercase tracking-wide text-secondary-foreground">
+              Special Offer
+            </span>
+            <h1 className="text-4xl font-semibold text-foreground">Sign up - Try Local Paint Pilot for free</h1>
+            <p className="text-lg leading-relaxed text-muted-foreground">
+              Enter your Google Business Profile name and we&apos;ll pull live ata, map optimization wins, and show how the dashboard guides your rankings.
+            </p>
+          </section>
 
-        <Card className="shadow-lg">
-          <CardHeader>
-            <CardTitle>Find your Google Business Profile</CardTitle>
-            <CardDescription>Start typing your business name—we&apos;ll search Google automatically.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form className="flex flex-col gap-4" onSubmit={handleSubmitLookup}>
-              <div className="space-y-2">
-                <Label htmlFor="profile-search">Business name</Label>
-                <Input
-                  id="profile-search"
-                  ref={inputRef}
-                  type="text"
-                  value={query}
-                  placeholder="e.g. Local Paint Pros Austin"
-                  onChange={(event) => setQuery(event.target.value)}
-                  onKeyDown={handleLookupKeyDown}
-                  autoComplete="off"
-                />
-              </div>
-
-              {lookupState === 'loading' ? (
-                <p className="text-sm text-muted-foreground">Searching Google Places…</p>
-              ) : null}
-
-              {lookupState === 'error' && lookupError ? (
-                <p className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive" role="alert">
-                  {lookupError}
-                </p>
-              ) : null}
-
-              {lookupState === 'empty' ? (
-                <p className="text-sm text-muted-foreground">No Google profiles matched that search yet.</p>
-              ) : null}
-
-              {suggestions.length ? (
-                <div className="flex flex-col gap-2">
-                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Suggestions</p>
-                  <div className="flex flex-col gap-2">
-                    {suggestions.map((suggestion, index) => (
-                      <LookupSuggestion
-                        key={suggestion.placeId}
-                        suggestion={suggestion}
-                        isActive={index === activeIndex}
-                        onSelect={(choice) => startLeadCapture(choice)}
-                      />
-                    ))}
-                  </div>
+          <Card className="shadow-lg trial-preview-card">
+            <CardHeader>
+              <CardTitle>Find your Google Business Profile</CardTitle>
+              <CardDescription>Start typing your business name—we&apos;ll search Google automatically.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form className="flex flex-col gap-4" onSubmit={handleSubmitLookup}>
+                <div className="space-y-2">
+                  <Label htmlFor="profile-search">Business name</Label>
+                  <Input
+                    id="profile-search"
+                    ref={inputRef}
+                    type="text"
+                    value={query}
+                    placeholder="e.g. Local Paint Pros Austin"
+                    onChange={(event) => setQuery(event.target.value)}
+                    onKeyDown={handleLookupKeyDown}
+                    autoComplete="off"
+                  />
                 </div>
-              ) : null}
 
-              <div className="flex flex-wrap justify-end gap-3">
-                <Button type="submit" disabled={!suggestions.length}>Analyze my profile</Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
+                {lookupState === 'loading' ? (
+                  <p className="text-sm text-muted-foreground">Searching Google Places…</p>
+                ) : null}
+
+                {lookupState === 'error' && lookupError ? (
+                  <p className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive" role="alert">
+                    {lookupError}
+                  </p>
+                ) : null}
+
+                {lookupState === 'empty' ? (
+                  <p className="text-sm text-muted-foreground">No Google profiles matched that search yet.</p>
+                ) : null}
+
+                {suggestions.length ? (
+                  <div className="flex flex-col gap-2">
+                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Suggestions</p>
+                    <div className="flex flex-col gap-2">
+                      {suggestions.map((suggestion, index) => (
+                        <LookupSuggestion
+                          key={suggestion.placeId}
+                          suggestion={suggestion}
+                          isActive={index === activeIndex}
+                          onSelect={(choice) => startLeadCapture(choice)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+
+                <div className="flex flex-wrap justify-end gap-3">
+                  <Button type="submit" disabled={!suggestions.length}>Analyze my profile</Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );
@@ -558,15 +563,16 @@ export default function IndexPage() {
     }
 
     return (
-      <div className="page-shell">
-        <div className="mx-auto flex w-full max-w-3xl flex-col gap-8">
+      <div className="trial-preview-page">
+        <div className="page-shell">
+          <div className="mx-auto flex w-full max-w-3xl flex-col gap-8">
 
-          <Card className="shadow-lg">
-            <CardHeader>
-              <CardTitle>Confirm your profile</CardTitle>
-              <CardDescription className="mb-2">Drop your email to save the preview and kick off the scan.</CardDescription>
-            </CardHeader>
-            <CardContent>
+            <Card className="shadow-lg trial-preview-card">
+              <CardHeader>
+                <CardTitle>Confirm your profile</CardTitle>
+                <CardDescription className="mb-2">Drop your email to save the preview and kick off the scan.</CardDescription>
+              </CardHeader>
+              <CardContent>
               <form className="space-y-6" onSubmit={handleLeadSubmit}>
                 <div className="rounded-xl border border-border/60 bg-muted/10 p-4">
                   <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Google profile</p>
@@ -598,12 +604,12 @@ export default function IndexPage() {
                   <p className="text-sm text-muted-foreground"></p>
                 )}
 
-                <div className="flex flex-wrap justify-between gap-3">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={() => {
-                      setPhase('search');
+                  <div className="flex flex-wrap justify-between gap-3">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={() => {
+                        setPhase('search');
                       setSelectedPlace(null);
                       setLeadStatus('idle');
                       setLeadError('');
@@ -624,43 +630,47 @@ export default function IndexPage() {
   };
 
   const renderLoading = () => (
-    <div className="page-shell">
-      <div className="mx-auto flex w-full max-w-3xl flex-col gap-8">
-        <section className="space-y-3">
-          <h1 className="text-3xl font-semibold text-foreground">Building your preview dashboard</h1>
-          <p className="text-base text-muted-foreground">
-            Hang tight while we pull fresh data from Google and assemble your optimization roadmap.
-          </p>
-        </section>
+    <div className="trial-preview-page">
+      <div className="page-shell">
+        <div className="mx-auto flex w-full max-w-3xl flex-col gap-8">
+          <section className="space-y-3">
+            <h1 className="text-3xl font-semibold text-foreground">Building your preview dashboard</h1>
+            <p className="text-base text-muted-foreground">
+              Hang tight while we pull fresh data from Google and assemble your optimization roadmap.
+            </p>
+          </section>
 
-        <Card className="shadow-lg">
-          <CardHeader>
-            <CardTitle>What&apos;s happening</CardTitle>
-            <CardDescription>We keep you posted as each step completes.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <StatusList currentStep={loadingStep} />
-          </CardContent>
-        </Card>
+          <Card className="shadow-lg trial-preview-card">
+            <CardHeader>
+              <CardTitle>What&apos;s happening</CardTitle>
+              <CardDescription>We keep you posted as each step completes.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <StatusList currentStep={loadingStep} />
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );
 
   const renderError = () => (
-    <div className="page-shell">
-      <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
-        <section className="space-y-3">
-          <h1 className="text-3xl font-semibold text-foreground">We couldn&apos;t build the preview</h1>
-          <p className="text-base text-muted-foreground">{analysisError || 'Something unexpected happened.'}</p>
-        </section>
+    <div className="trial-preview-page">
+      <div className="page-shell">
+        <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
+          <section className="space-y-3">
+            <h1 className="text-3xl font-semibold text-foreground">We couldn&apos;t build the preview</h1>
+            <p className="text-base text-muted-foreground">{analysisError || 'Something unexpected happened.'}</p>
+          </section>
 
-        <div className="flex flex-wrap gap-3">
-          <Button onClick={() => (selectedPlace ? beginAnalysis(selectedPlace) : resetFlow())}>
-            Try again
-          </Button>
-          <Button variant="ghost" onClick={resetFlow}>
-            Search a different profile
-          </Button>
+          <div className="flex flex-wrap gap-3">
+            <Button onClick={() => (selectedPlace ? beginAnalysis(selectedPlace) : resetFlow())}>
+              Try again
+            </Button>
+            <Button variant="ghost" onClick={resetFlow}>
+              Search a different profile
+            </Button>
+          </div>
         </div>
       </div>
     </div>
@@ -672,10 +682,12 @@ export default function IndexPage() {
       : null;
     const sections = Array.isArray(roadmap?.sections) ? roadmap.sections : [];
     const previewTimestampLabel = formatTimestamp(leadPreviewCompletedAt || leadPreviewStartedAt);
+    const geoGridMaxValue = Math.max(...GEO_GRID_SAMPLE);
 
     return (
-      <div className="page-shell">
-        <div className="mx-auto flex w-full max-w-6xl flex-col gap-10 lg:gap-12">
+      <div className="trial-preview-page">
+        <div className="page-shell">
+          <div className="mx-auto flex w-full max-w-6xl flex-col gap-10 lg:gap-12">
           <section className="flex flex-col gap-4">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div className="space-y-2">
@@ -686,7 +698,7 @@ export default function IndexPage() {
                   <p className="text-base text-muted-foreground">{placeDetails.formattedAddress}</p>
                 ) : null}
               </div>
-              <div className="flex items-center gap-3 rounded-full border border-secondary/60 bg-secondary/10 px-4 py-2">
+              <div className="trial-preview-kpi flex items-center gap-3 rounded-full border border-secondary/60 bg-secondary/10 px-4 py-2">
                 <span className="text-sm font-medium text-secondary-foreground">Overall progress</span>
                 <span className="text-2xl font-semibold text-secondary-foreground">
                   {progressPercent === null ? 'No score yet' : `${progressPercent}%`}
@@ -729,7 +741,7 @@ export default function IndexPage() {
             </div>
           </section>
 
-          <section className="space-y-6">
+          <section className="space-y-6 trial-preview-section">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div>
                 <h2 className="text-2xl font-semibold text-foreground">Overall progress</h2>
@@ -777,7 +789,7 @@ export default function IndexPage() {
             ) : null}
           </section>
 
-          <section className="space-y-4">
+          <section className="space-y-4 trial-preview-section">
             <div className="space-y-2">
               <h2 className="text-2xl font-semibold text-foreground">Next steps to improve your profile</h2>
               <p className="text-sm text-muted-foreground">
@@ -797,7 +809,56 @@ export default function IndexPage() {
             )}
           </section>
 
-          <Card className="shadow-lg">
+          <Card className="shadow-lg trial-preview-card">
+            <CardHeader>
+              <CardTitle>See your geo grid coverage</CardTitle>
+              <CardDescription>
+                We track how you rank across your service area. Start a free trial to unlock the interactive map and alerts.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="geo-grid-preview">
+                <div
+                  className="geo-grid-preview__grid"
+                  style={{ gridTemplateColumns: `repeat(${GEO_GRID_COLUMNS}, minmax(0, 1fr))` }}
+                  aria-hidden="true"
+                >
+                  {GEO_GRID_SAMPLE.map((rank, index) => {
+                    const intensity = Math.max(0, Math.min(1, rank / (geoGridMaxValue || 1)));
+                    return (
+                      <div
+                        key={index}
+                        className="geo-grid-preview__cell"
+                        style={{
+                          background: `linear-gradient(135deg, rgba(34, 174, 209, ${0.12 + intensity * 0.4}), rgba(255, 149, 56, ${0.08 + (1 - intensity) * 0.22}))`
+                        }}
+                      >
+                        <span className="geo-grid-preview__cell-rank">#{rank}</span>
+                      </div>
+                    );
+                  })}
+                  <div className="geo-grid-preview__overlay">
+                    <p className="geo-grid-preview__overlay-title">Geo grid preview locked</p>
+                    <p className="geo-grid-preview__overlay-copy">
+                      Start your 7 day trial to reveal live rankings, coverage gaps, and weekly change alerts.
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div className="grid gap-2 text-sm text-muted-foreground md:grid-cols-2">
+                <div className="rounded-lg border border-border/60 bg-muted/10 p-3">
+                  <p className="font-semibold text-foreground">Track coverage by neighborhood</p>
+                  <p>We map rankings across a 5x5 grid so you can see where you win and where to improve.</p>
+                </div>
+                <div className="rounded-lg border border-border/60 bg-muted/10 p-3">
+                  <p className="font-semibold text-foreground">Alerts for movement</p>
+                  <p>Trial access includes weekly geo grid refreshes plus notifications when positions shift.</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-lg trial-preview-card">
             <CardHeader>
               <CardTitle>Start your 7 day Local Paint Pilot trial</CardTitle>
               <CardDescription>
