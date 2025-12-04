@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { notFound, redirect } from 'next/navigation';
 import { AuthError, requireAuth } from '@/lib/authServer';
 import {
@@ -6,17 +7,22 @@ import {
   ensureGbpAccessToken,
   fetchGbpReviews
 } from '@/lib/googleBusinessProfile';
+import { fetchDataForSeoReviews } from '@lib/google/dataForSeoReviews.js';
 import { listScheduledPostsForBusiness } from '@/lib/gbpPostScheduler';
+import { loadCachedReviewSnapshot, saveReviewSnapshot } from '@lib/db/reviewSnapshots';
 import { loadBusiness } from '../helpers';
 import BusinessNavigation from '../BusinessNavigation';
 import SidebarBrand from '../SidebarBrand';
 import DashboardBusinessHeader from '../DashboardBusinessHeader';
 import ReviewOverview from './ReviewOverview';
+import ReviewLoadingBlock from './ReviewLoadingBlock';
 import ReviewPermissionsGate from './ReviewPermissionsGate';
 
 export const metadata = {
   title: 'Reviews · Local Paint Pilot'
 };
+
+const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 
 function summarizeRatingsOverWeeks(reviews) {
   const buckets = new Map();
@@ -66,7 +72,22 @@ function summarizeSentiment(reviews) {
     else negative += 1;
 
     if (Array.isArray(review.complaints)) {
-      review.complaints.forEach((c) => themes.add(c));
+      review.complaints.forEach((complaint) => {
+        const normalizedTheme =
+          typeof complaint === 'string'
+            ? complaint
+            : complaint && typeof complaint === 'object'
+              ? typeof complaint.feature === 'string' && complaint.feature.trim().length > 0
+                ? complaint.feature
+                : typeof complaint.assessment === 'string' && complaint.assessment.trim().length > 0
+                  ? complaint.assessment
+                  : null
+              : null;
+
+        if (normalizedTheme) {
+          themes.add(normalizedTheme);
+        }
+      });
     }
     if (typeof review.comment === 'string' && review.comment.length > 0 && themes.size < 8) {
       const words = review.comment
@@ -140,22 +161,52 @@ function buildSnapshot(reviews) {
   };
 }
 
-async function loadReviewSnapshot(business) {
-  const locationName = deriveLocationName(business);
-  const accessToken = await ensureGbpAccessToken(business.id);
+async function loadReviewSnapshot(business, gbpAccessToken) {
+  const authorizationUrl = buildGbpAuthUrl({ state: `business:${business?.id ?? ''}` });
+  const placeId = business?.gPlaceId ?? null;
+  const cached = await loadCachedReviewSnapshot(business.id);
 
-  if (!accessToken || !locationName) {
-    return { snapshot: null, authorizationUrl: buildGbpAuthUrl({ state: `business:${business?.id ?? ''}` }) };
+  if (
+    cached?.snapshot &&
+    cached.placeId === placeId &&
+    cached.lastRefreshedAt &&
+    Date.now() - cached.lastRefreshedAt.getTime() < ONE_DAY_MS
+  ) {
+    return { snapshot: cached.snapshot, authorizationUrl };
   }
 
+  let snapshot = null;
   try {
-    const reviews = await fetchGbpReviews(accessToken, locationName);
-    const snapshot = buildSnapshot(reviews);
-    return { snapshot, authorizationUrl: null };
+    const reviews = placeId ? await fetchDataForSeoReviews(placeId) : [];
+    if (reviews.length > 0) {
+      snapshot = buildSnapshot(reviews);
+    }
   } catch (error) {
-    console.error('Failed to load GBP reviews', error);
-    return { snapshot: null, authorizationUrl: buildGbpAuthUrl({ state: `business:${business?.id ?? ''}` }) };
+    console.error('Failed to load reviews from DataForSEO', error);
   }
+
+  const locationName = deriveLocationName(business);
+  const accessToken = gbpAccessToken ?? (await ensureGbpAccessToken(business.id));
+
+  if (!snapshot && accessToken && locationName) {
+    try {
+      const reviews = await fetchGbpReviews(accessToken, locationName);
+      snapshot = buildSnapshot(reviews);
+    } catch (error) {
+      console.error('Failed to load GBP reviews', error);
+    }
+  }
+
+  if (snapshot) {
+    await saveReviewSnapshot({ businessId: business.id, placeId, snapshot });
+    return { snapshot, authorizationUrl };
+  }
+
+  if (cached?.snapshot && cached.placeId === placeId) {
+    return { snapshot: cached.snapshot, authorizationUrl };
+  }
+
+  return { snapshot: null, authorizationUrl };
 }
 
 export default async function BusinessReviewsPage({ params }) {
@@ -179,8 +230,7 @@ export default async function BusinessReviewsPage({ params }) {
   }
 
   const businessIdentifier = business.businessSlug ?? String(business.id);
-  const { snapshot, authorizationUrl } = await loadReviewSnapshot(business);
-  const scheduledPosts = await listScheduledPostsForBusiness(business.id);
+  const authorizationUrl = buildGbpAuthUrl({ state: `business:${business?.id ?? ''}` });
 
   return (
     <div className="dashboard-layout__body">
@@ -194,18 +244,33 @@ export default async function BusinessReviewsPage({ params }) {
       <main className="dashboard-layout__main">
         <DashboardBusinessHeader />
         <div className="dashboard-layout__content">
-          {snapshot ? (
-            <ReviewOverview
-              snapshot={snapshot}
-              scheduledPosts={scheduledPosts}
-              businessId={business.id}
-              timezone={business.timezone}
-            />
-          ) : (
-            <ReviewPermissionsGate authorizationUrl={authorizationUrl} />
-          )}
+          <Suspense fallback={<ReviewLoadingBlock authorizationUrl={authorizationUrl} />}>
+            <ReviewsContent business={business} authorizationUrl={authorizationUrl} />
+          </Suspense>
         </div>
       </main>
     </div>
+  );
+}
+
+async function ReviewsContent({ business, authorizationUrl }) {
+  const gbpAccessToken = await ensureGbpAccessToken(business.id);
+  const { snapshot } = await loadReviewSnapshot(business, gbpAccessToken);
+  const hasGbpAccess = Boolean(gbpAccessToken);
+  const scheduledPosts = hasGbpAccess ? await listScheduledPostsForBusiness(business.id) : [];
+
+  if (!snapshot) {
+    return <ReviewPermissionsGate authorizationUrl={authorizationUrl} />;
+  }
+
+  return (
+    <ReviewOverview
+      snapshot={snapshot}
+      scheduledPosts={scheduledPosts}
+      businessId={business.id}
+      timezone={business.timezone}
+      authorizationUrl={authorizationUrl}
+      canSchedulePosts={hasGbpAccess}
+    />
   );
 }
