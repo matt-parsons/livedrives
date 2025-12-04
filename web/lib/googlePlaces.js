@@ -101,6 +101,44 @@ function extractCategories(types) {
     .filter(Boolean);
 }
 
+function mapDataforseoSidebarToPlaceResult(sidebarData = {}, fallbackPlaceId = null) {
+  const latitude = sidebarData?.latitude;
+  const longitude = sidebarData?.longitude;
+  const hasLocation =
+    typeof latitude === 'number' && typeof longitude === 'number';
+
+  return {
+    place_id: sidebarData?.placeId ?? fallbackPlaceId ?? null,
+    cid: sidebarData?.cid ?? null,
+    name: sidebarData?.businessName ?? sidebarData?.name ?? null,
+    formatted_address: sidebarData?.formattedAddress ?? null,
+    geometry: hasLocation
+      ? { location: { lat: latitude, lng: longitude } }
+      : undefined,
+    formatted_phone_number: sidebarData?.phone ?? null,
+    website: sidebarData?.website ?? null,
+    business_status: null,
+    types: [],
+    photos: [],
+    editorial_summary: null,
+    opening_hours: null,
+    current_opening_hours: null,
+    user_ratings_total: sidebarData?.reviewCount ?? null,
+    rating: sidebarData?.rating ?? null,
+    reviews: [],
+    url: null,
+    delivery: null,
+    takeout: null,
+    dine_in: null,
+    serves_breakfast: null,
+    serves_brunch: null,
+    serves_lunch: null,
+    serves_dinner: null,
+    serves_beer: null,
+    serves_wine: null,
+  };
+}
+
 export async function fetchTimezone(location, { signal } = {}) {
   if (!location || location.lat === undefined || location.lng === undefined) {
     return null;
@@ -193,12 +231,60 @@ function buildPlacePayload(result, { fallbackPlaceId, timezone = null, sidebarDa
 
 
 export async function fetchPlaceDetails(placeId, { signal } = {}) {
-  if (!GOOGLE_API_KEY) {
-    throw new PlacesError('Google Maps API key is not configured.', { status: 500 });
-  }
-
   if (!placeId) {
     throw new PlacesError('Place ID is required.', { status: 400 });
+  }
+
+  if (SIDEBAR_PROVIDER === 'dataforseo') {
+    try {
+      const sidebarOptions = {
+        businessName: null,
+        provider: SIDEBAR_PROVIDER,
+        locationCode: Number(DATAFORSEO_LOCATION_CODE) || 2840,
+        languageCode: DATAFORSEO_LANGUAGE_CODE || 'en',
+      };
+
+      const sidebarData = await fetch(`${baseUrl}/api/places/sidebar`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        signal,
+        body: JSON.stringify({
+          geometry: null,
+          placeId,
+          options: sidebarOptions,
+        })
+      })
+        .then(res => {
+          if (!res.ok) throw new Error(`Sidebar API failed: ${res.status}`);
+          return res.json();
+        })
+        .catch(err => {
+          console.error('Sidebar API error:', err);
+          return {}; // Fallback if it fails
+        });
+
+      const normalizedResult = mapDataforseoSidebarToPlaceResult(sidebarData, placeId);
+      const timezone = await fetchTimezone(normalizedResult.geometry?.location ?? null, { signal });
+
+      const place = buildPlacePayload(normalizedResult, {
+        fallbackPlaceId: placeId,
+        timezone,
+        sidebarData,
+      });
+
+      return { place, raw: normalizedResult, sidebar: sidebarData ?? null };
+    } catch (error) {
+      if (error instanceof PlacesError) {
+        throw error;
+      }
+
+      console.error('Place details lookup failed', error);
+      throw new PlacesError('Failed to load place details.', { status: 500 });
+    }
+  }
+
+  if (!GOOGLE_API_KEY) {
+    throw new PlacesError('Google Maps API key is not configured.', { status: 500 });
   }
 
   const detailsEndpoint = new URL('https://maps.googleapis.com/maps/api/place/details/json');
