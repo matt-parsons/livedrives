@@ -101,44 +101,6 @@ function extractCategories(types) {
     .filter(Boolean);
 }
 
-function mapDataforseoSidebarToPlaceResult(sidebarData = {}, fallbackPlaceId = null) {
-  const latitude = sidebarData?.latitude;
-  const longitude = sidebarData?.longitude;
-  const hasLocation =
-    typeof latitude === 'number' && typeof longitude === 'number';
-
-  return {
-    place_id: sidebarData?.placeId ?? fallbackPlaceId ?? null,
-    cid: sidebarData?.cid ?? null,
-    name: sidebarData?.businessName ?? sidebarData?.name ?? null,
-    formatted_address: sidebarData?.formattedAddress ?? null,
-    geometry: hasLocation
-      ? { location: { lat: latitude, lng: longitude } }
-      : undefined,
-    formatted_phone_number: sidebarData?.phone ?? null,
-    website: sidebarData?.website ?? null,
-    business_status: null,
-    types: [],
-    photos: [],
-    editorial_summary: null,
-    opening_hours: null,
-    current_opening_hours: null,
-    user_ratings_total: sidebarData?.reviewCount ?? null,
-    rating: sidebarData?.rating ?? null,
-    reviews: [],
-    url: null,
-    delivery: null,
-    takeout: null,
-    dine_in: null,
-    serves_breakfast: null,
-    serves_brunch: null,
-    serves_lunch: null,
-    serves_dinner: null,
-    serves_beer: null,
-    serves_wine: null,
-  };
-}
-
 export async function fetchTimezone(location, { signal } = {}) {
   if (!location || location.lat === undefined || location.lng === undefined) {
     return null;
@@ -263,7 +225,21 @@ export async function fetchPlaceDetails(placeId, { signal } = {}) {
           return {}; // Fallback if it fails
         });
 
-      const normalizedResult = mapDataforseoSidebarToPlaceResult(sidebarData, placeId);
+      const normalizedResult = { ...sidebarData };
+
+      if (!normalizedResult.place_id) {
+        normalizedResult.place_id = normalizedResult.placeId ?? placeId ?? null;
+      }
+      if (!normalizedResult.name) {
+        normalizedResult.name = normalizedResult.businessName ?? sidebarData?.title ?? null;
+      }
+      if (!normalizedResult.formatted_address) {
+        normalizedResult.formatted_address = normalizedResult.formattedAddress ?? null;
+      }
+      if (!normalizedResult.geometry && normalizedResult.latitude !== undefined && normalizedResult.longitude !== undefined) {
+        normalizedResult.geometry = { location: { lat: normalizedResult.latitude, lng: normalizedResult.longitude } };
+      }
+
       const timezone = await fetchTimezone(normalizedResult.geometry?.location ?? null, { signal });
 
       const place = buildPlacePayload(normalizedResult, {
