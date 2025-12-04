@@ -289,7 +289,14 @@ function buildProfilePreview(place, sidebarPhotosArg) {
     : [];
   const postLinks = Array.isArray(place.sidebar?.posts)
     ? place.sidebar.posts
-        .map((value) => (typeof value === 'string' ? value.trim() : ''))
+        .map((value) => {
+          if (value && typeof value === 'object') {
+            const link = value.link || value.url || value.cta_link;
+            return typeof link === 'string' ? link.trim() : '';
+          }
+
+          return '';
+        })
         .filter((value) => value.length > 0)
     : [];
 

@@ -101,6 +101,32 @@ function extractCategories(types) {
     .filter(Boolean);
 }
 
+function extractLatestPostDate(posts) {
+  if (!Array.isArray(posts)) {
+    return null;
+  }
+
+  let latest = null;
+
+  for (const post of posts) {
+    const normalized =
+      typeof post === 'string'
+        ? post.trim()
+        : post && typeof post === 'object'
+          ? post.publishedAt ?? post.post_date ?? null
+          : null;
+
+    if (!normalized) continue;
+
+    const date = new Date(normalized);
+    if (Number.isNaN(date.getTime())) continue;
+
+    if (!latest || date > new Date(latest)) latest = date.toISOString();
+  }
+
+  return latest;
+}
+
 export async function fetchTimezone(location, { signal } = {}) {
   if (!location || location.lat === undefined || location.lng === undefined) {
     return null;
@@ -137,8 +163,8 @@ function buildPlacePayload(result, { fallbackPlaceId, timezone = null, sidebarDa
   const serviceCapabilities = sidebarData?.services;
   const description = sidebarData?.description ?? null;
 
-  const posts = sidebarData?.posts ?? null;
-  const latestPostDate = posts?.[0]?.[12] ?? null;
+  const posts = Array.isArray(sidebarData?.posts) ? sidebarData.posts : null;
+  const latestPostDate = extractLatestPostDate(posts);
   const reviewCountRaw = result.user_ratings_total ?? result.userRatingsTotal ?? sidebarData.reviewCount ?? null;
   const reviewCountNumeric = Number(reviewCountRaw);
   const reviewCount = Number.isFinite(reviewCountNumeric) ? reviewCountNumeric : null;
