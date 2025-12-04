@@ -116,7 +116,7 @@ function computeClaimStatus(businessStatus) {
 
   const normalized = businessStatus.toString().toUpperCase();
 
-  if (normalized === 'OPERATIONAL' || normalized === 'OPEN') {
+  if (normalized === 'OPERATIONAL' || normalized === 'OPEN' || normalized === 'TRUE') {
     return {
       status: normalizeStatus('completed'),
       detail: 'Google lists this place as operational.'
@@ -183,6 +183,7 @@ function normalizeSidebarPhotos(sidebar) {
 }
 
 function computePhotoStatus(photoCount, sidebarPhotos) {
+  console.log('photostatus', photoCount, sidebarPhotos);
   const apiCount = Number.isFinite(Number(photoCount)) ? Number(photoCount) : 0;
   const sidebarCount = Array.isArray(sidebarPhotos) ? sidebarPhotos.length : 0;
   const count = Math.max(apiCount, sidebarCount);
@@ -422,6 +423,7 @@ function computeServicesDescriptionsStatus(serviceCapabilities) {
 }
 
 function computeHoursStatus(weekdayText) {
+  console.log('weekdayText', weekdayText);
   const entries = Array.isArray(weekdayText) ? weekdayText.filter(Boolean) : [];
   const hoursText = entries.join(' ');
 
@@ -506,32 +508,40 @@ function computeWebsiteStatus(website) {
 }
 
 function computeReviewStatus(reviewCount, latestReview) {
+  console.log('computeReviewStatus', reviewCount);
   const count = Number.isFinite(Number(reviewCount)) ? Number(reviewCount) : 0;
 
-  if (!latestReview) {
+  if (!reviewCount) {
     return {
       status: normalizeStatus('pending'),
       freshness: 'dormant',
       detail: 'No reviews detected yet. Encourage customers to share feedback.'
     };
   }
-
-  const reviewDate = parseDateInput(
-    latestReview.time ?? latestReview.timestamp ?? latestReview.date ?? latestReview.time_ms
-  );
-  const { formatted, relative, daysAgo } = describeRecency(reviewDate);
-  const relativeDescription =
-    latestReview.relative_time_description ?? latestReview.relativeTimeDescription ?? relative ?? 'recently';
-  const label = formatted ? `${formatted}${relativeDescription ? ` (${relativeDescription})` : ''}` : relativeDescription;
-
   let freshness = 'dormant';
+  let label = '';
 
-  if (typeof daysAgo === 'number') {
-    if (daysAgo <= 30) {
-      freshness = 'active';
-    } else if (daysAgo <= 90) {
-      freshness = 'stale';
+  if(latestReview) {
+    const reviewDate = parseDateInput(
+      latestReview.time ?? latestReview.timestamp ?? latestReview.date ?? latestReview.time_ms
+    );
+    const { formatted, relative, daysAgo } = describeRecency(reviewDate);
+    const relativeDescription =
+      latestReview.relative_time_description ?? latestReview.relativeTimeDescription ?? relative ?? 'recently';
+    label = formatted ? `${formatted}${relativeDescription ? ` (${relativeDescription})` : ''}` : relativeDescription;
+
+
+
+    if (typeof daysAgo === 'number') {
+      if (daysAgo <= 30) {
+        freshness = 'active';
+      } else if (daysAgo <= 90) {
+        freshness = 'stale';
+      }
     }
+  } else {
+    freshness = 'stale';
+    label = 'unknown';
   }
 
   if (count >= 25) {
