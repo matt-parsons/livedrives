@@ -101,6 +101,69 @@ function extractCategories(types) {
     .filter(Boolean);
 }
 
+function extractLatestPostDate(posts) {
+  if (!Array.isArray(posts)) {
+    return null;
+  }
+
+  let latest = null;
+
+  for (const post of posts) {
+    const normalized =
+      typeof post === 'string'
+        ? post.trim()
+        : post && typeof post === 'object'
+          ? post.publishedAt ?? post.post_date ?? null
+          : null;
+
+    if (!normalized) continue;
+
+    // Parse relative dates like "3 days ago", "2 weeks ago", etc.
+    const date = parseRelativeOrAbsoluteDate(normalized);
+    if (!date || Number.isNaN(date.getTime())) continue;
+
+    if (!latest || date > new Date(latest)) latest = date.toISOString();
+  }
+
+  return latest;
+}
+
+function parseRelativeOrAbsoluteDate(dateString) {
+  // Try parsing as absolute date first
+  const absoluteDate = new Date(dateString);
+  if (!Number.isNaN(absoluteDate.getTime())) {
+    return absoluteDate;
+  }
+
+  // Parse relative dates
+  const relativeMatch = dateString.match(/^(\d+)\s+(second|minute|hour|day|week|month|year)s?\s+ago$/i);
+  
+  if (relativeMatch) {
+    const amount = parseInt(relativeMatch[1], 10);
+    const unit = relativeMatch[2].toLowerCase();
+    const now = new Date();
+
+    switch (unit) {
+      case 'second':
+        return new Date(now.getTime() - amount * 1000);
+      case 'minute':
+        return new Date(now.getTime() - amount * 60 * 1000);
+      case 'hour':
+        return new Date(now.getTime() - amount * 60 * 60 * 1000);
+      case 'day':
+        return new Date(now.getTime() - amount * 24 * 60 * 60 * 1000);
+      case 'week':
+        return new Date(now.getTime() - amount * 7 * 24 * 60 * 60 * 1000);
+      case 'month':
+        return new Date(now.setMonth(now.getMonth() - amount));
+      case 'year':
+        return new Date(now.setFullYear(now.getFullYear() - amount));
+    }
+  }
+
+  return null;
+}
+
 export async function fetchTimezone(location, { signal } = {}) {
   if (!location || location.lat === undefined || location.lng === undefined) {
     return null;
@@ -137,8 +200,8 @@ function buildPlacePayload(result, { fallbackPlaceId, timezone = null, sidebarDa
   const serviceCapabilities = sidebarData?.services;
   const description = sidebarData?.description ?? null;
 
-  const posts = sidebarData?.posts ?? null;
-  const latestPostDate = posts?.[0]?.[12] ?? null;
+  const posts = Array.isArray(sidebarData?.posts) ? sidebarData.posts : null;
+  const latestPostDate = extractLatestPostDate(posts);
   const reviewCountRaw = result.user_ratings_total ?? result.userRatingsTotal ?? sidebarData.reviewCount ?? null;
   const reviewCountNumeric = Number(reviewCountRaw);
   const reviewCount = Number.isFinite(reviewCountNumeric) ? reviewCountNumeric : null;

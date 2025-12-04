@@ -183,7 +183,7 @@ function normalizeSidebarPhotos(sidebar) {
 }
 
 function computePhotoStatus(photoCount, sidebarPhotos) {
-  console.log('photostatus', photoCount, sidebarPhotos);
+  // console.log('photostatus', photoCount, sidebarPhotos);
   const apiCount = Number.isFinite(Number(photoCount)) ? Number(photoCount) : 0;
   const sidebarCount = Array.isArray(sidebarPhotos) ? sidebarPhotos.length : 0;
   const count = Math.max(apiCount, sidebarCount);
@@ -289,7 +289,14 @@ function buildProfilePreview(place, sidebarPhotosArg) {
     : [];
   const postLinks = Array.isArray(place.sidebar?.posts)
     ? place.sidebar.posts
-        .map((value) => (typeof value === 'string' ? value.trim() : ''))
+        .map((value) => {
+          if (value && typeof value === 'object') {
+            const link = value.link || value.url || value.cta_link;
+            return typeof link === 'string' ? link.trim() : '';
+          }
+
+          return '';
+        })
         .filter((value) => value.length > 0)
     : [];
 
@@ -423,7 +430,7 @@ function computeServicesDescriptionsStatus(serviceCapabilities) {
 }
 
 function computeHoursStatus(weekdayText) {
-  console.log('weekdayText', weekdayText);
+  // console.log('weekdayText', weekdayText);
   const entries = Array.isArray(weekdayText) ? weekdayText.filter(Boolean) : [];
   const hoursText = entries.join(' ');
 
@@ -508,7 +515,7 @@ function computeWebsiteStatus(website) {
 }
 
 function computeReviewStatus(reviewCount, latestReview) {
-  console.log('computeReviewStatus', reviewCount);
+  // console.log('computeReviewStatus', reviewCount);
   const count = Number.isFinite(Number(reviewCount)) ? Number(reviewCount) : 0;
 
   if (!reviewCount) {
