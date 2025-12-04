@@ -1,5 +1,8 @@
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY || '';
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+const SIDEBAR_PROVIDER = (process.env.SIDEBAR_PROVIDER || 'dataforseo').toLowerCase();
+const DATAFORSEO_LOCATION_CODE = process.env.DATAFORSEO_LOCATION_CODE;
+const DATAFORSEO_LANGUAGE_CODE = process.env.DATAFORSEO_LANGUAGE_CODE;
 
 const fs = require("fs");
 const path = require("path");
@@ -249,6 +252,16 @@ export async function fetchPlaceDetails(placeId, { signal } = {}) {
 
     const result = detailsData.result ?? {};
     console.log('API GBP detailsData', result.geometry?.location);
+    const sidebarOptions = {
+      businessName: result.name ?? null,
+      provider: SIDEBAR_PROVIDER,
+    };
+
+    if (SIDEBAR_PROVIDER === 'dataforseo') {
+      sidebarOptions.locationCode = Number(DATAFORSEO_LOCATION_CODE) || 2840;
+      sidebarOptions.languageCode = DATAFORSEO_LANGUAGE_CODE || 'en';
+    }
+
     const [timezone, sidebarData] = await Promise.all([
       fetchTimezone(result.geometry?.location ?? null, { signal }),
       await fetch(`${baseUrl}/api/places/sidebar`, {
@@ -258,7 +271,7 @@ export async function fetchPlaceDetails(placeId, { signal } = {}) {
         body: JSON.stringify({
           geometry: result.geometry?.location ?? null,
           placeId: result.place_id,
-          options: { businessName: result.name ?? null }
+          options: sidebarOptions,
         })
       })
         .then(res => {
