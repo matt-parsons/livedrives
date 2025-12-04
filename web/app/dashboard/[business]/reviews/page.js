@@ -8,6 +8,7 @@ import {
 } from '@/lib/googleBusinessProfile';
 import { fetchDataForSeoReviews } from '@lib/google/dataForSeoReviews.js';
 import { listScheduledPostsForBusiness } from '@/lib/gbpPostScheduler';
+import { loadCachedReviewSnapshot, saveReviewSnapshot } from '@lib/db/reviewSnapshots';
 import { loadBusiness } from '../helpers';
 import BusinessNavigation from '../BusinessNavigation';
 import SidebarBrand from '../SidebarBrand';
@@ -18,6 +19,8 @@ import ReviewPermissionsGate from './ReviewPermissionsGate';
 export const metadata = {
   title: 'Reviews · Local Paint Pilot'
 };
+
+const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 
 function summarizeRatingsOverWeeks(reviews) {
   const buckets = new Map();
@@ -144,11 +147,22 @@ function buildSnapshot(reviews) {
 async function loadReviewSnapshot(business, gbpAccessToken) {
   const authorizationUrl = buildGbpAuthUrl({ state: `business:${business?.id ?? ''}` });
   const placeId = business?.gPlaceId ?? null;
+  const cached = await loadCachedReviewSnapshot(business.id);
 
+  if (
+    cached?.snapshot &&
+    cached.placeId === placeId &&
+    cached.lastRefreshedAt &&
+    Date.now() - cached.lastRefreshedAt.getTime() < ONE_DAY_MS
+  ) {
+    return { snapshot: cached.snapshot, authorizationUrl };
+  }
+
+  let snapshot = null;
   try {
     const reviews = placeId ? await fetchDataForSeoReviews(placeId) : [];
     if (reviews.length > 0) {
-      return { snapshot: buildSnapshot(reviews), authorizationUrl };
+      snapshot = buildSnapshot(reviews);
     }
   } catch (error) {
     console.error('Failed to load reviews from DataForSEO', error);
@@ -157,14 +171,22 @@ async function loadReviewSnapshot(business, gbpAccessToken) {
   const locationName = deriveLocationName(business);
   const accessToken = gbpAccessToken ?? (await ensureGbpAccessToken(business.id));
 
-  if (accessToken && locationName) {
+  if (!snapshot && accessToken && locationName) {
     try {
       const reviews = await fetchGbpReviews(accessToken, locationName);
-      const snapshot = buildSnapshot(reviews);
-      return { snapshot, authorizationUrl };
+      snapshot = buildSnapshot(reviews);
     } catch (error) {
       console.error('Failed to load GBP reviews', error);
     }
+  }
+
+  if (snapshot) {
+    await saveReviewSnapshot({ businessId: business.id, placeId, snapshot });
+    return { snapshot, authorizationUrl };
+  }
+
+  if (cached?.snapshot && cached.placeId === placeId) {
+    return { snapshot: cached.snapshot, authorizationUrl };
   }
 
   return { snapshot: null, authorizationUrl };
