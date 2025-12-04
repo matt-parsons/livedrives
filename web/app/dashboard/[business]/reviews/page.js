@@ -6,6 +6,7 @@ import {
   ensureGbpAccessToken,
   fetchGbpReviews
 } from '@/lib/googleBusinessProfile';
+import { fetchDataForSeoReviews } from '@lib/google/dataForSeoReviews.js';
 import { listScheduledPostsForBusiness } from '@/lib/gbpPostScheduler';
 import { loadBusiness } from '../helpers';
 import BusinessNavigation from '../BusinessNavigation';
@@ -140,22 +141,33 @@ function buildSnapshot(reviews) {
   };
 }
 
-async function loadReviewSnapshot(business) {
-  const locationName = deriveLocationName(business);
-  const accessToken = await ensureGbpAccessToken(business.id);
-
-  if (!accessToken || !locationName) {
-    return { snapshot: null, authorizationUrl: buildGbpAuthUrl({ state: `business:${business?.id ?? ''}` }) };
-  }
+async function loadReviewSnapshot(business, gbpAccessToken) {
+  const authorizationUrl = buildGbpAuthUrl({ state: `business:${business?.id ?? ''}` });
+  const placeId = business?.gPlaceId ?? null;
 
   try {
-    const reviews = await fetchGbpReviews(accessToken, locationName);
-    const snapshot = buildSnapshot(reviews);
-    return { snapshot, authorizationUrl: null };
+    const reviews = placeId ? await fetchDataForSeoReviews(placeId) : [];
+    if (reviews.length > 0) {
+      return { snapshot: buildSnapshot(reviews), authorizationUrl };
+    }
   } catch (error) {
-    console.error('Failed to load GBP reviews', error);
-    return { snapshot: null, authorizationUrl: buildGbpAuthUrl({ state: `business:${business?.id ?? ''}` }) };
+    console.error('Failed to load reviews from DataForSEO', error);
   }
+
+  const locationName = deriveLocationName(business);
+  const accessToken = gbpAccessToken ?? (await ensureGbpAccessToken(business.id));
+
+  if (accessToken && locationName) {
+    try {
+      const reviews = await fetchGbpReviews(accessToken, locationName);
+      const snapshot = buildSnapshot(reviews);
+      return { snapshot, authorizationUrl };
+    } catch (error) {
+      console.error('Failed to load GBP reviews', error);
+    }
+  }
+
+  return { snapshot: null, authorizationUrl };
 }
 
 export default async function BusinessReviewsPage({ params }) {
@@ -179,8 +191,10 @@ export default async function BusinessReviewsPage({ params }) {
   }
 
   const businessIdentifier = business.businessSlug ?? String(business.id);
-  const { snapshot, authorizationUrl } = await loadReviewSnapshot(business);
-  const scheduledPosts = await listScheduledPostsForBusiness(business.id);
+  const gbpAccessToken = await ensureGbpAccessToken(business.id);
+  const { snapshot, authorizationUrl } = await loadReviewSnapshot(business, gbpAccessToken);
+  const hasGbpAccess = Boolean(gbpAccessToken);
+  const scheduledPosts = hasGbpAccess ? await listScheduledPostsForBusiness(business.id) : [];
 
   return (
     <div className="dashboard-layout__body">
@@ -200,6 +214,8 @@ export default async function BusinessReviewsPage({ params }) {
               scheduledPosts={scheduledPosts}
               businessId={business.id}
               timezone={business.timezone}
+              authorizationUrl={authorizationUrl}
+              canSchedulePosts={hasGbpAccess}
             />
           ) : (
             <ReviewPermissionsGate authorizationUrl={authorizationUrl} />
