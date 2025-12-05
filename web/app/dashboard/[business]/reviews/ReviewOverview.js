@@ -127,14 +127,6 @@ export default function ReviewOverview({
   const [refreshing, setRefreshing] = useState(false);
   const [refreshNotice, setRefreshNotice] = useState(null);
 
-  const refreshHint = useMemo(() => {
-    if (!canRefreshReviews) {
-      return null;
-    }
-
-    return 'Admins can trigger a manual refresh if reviews look out of date.';
-  }, [canRefreshReviews]);
-
   const handleRefreshClick = useCallback(async () => {
     if (refreshing || !canRefreshReviews) {
       return;
@@ -182,10 +174,7 @@ export default function ReviewOverview({
         <p className="text-base text-muted-foreground">
           Track fresh feedback, rating movement, and the velocity of customer reviews across the past month.
         </p>
-        {refreshHint ? (
-          <p className="text-sm text-muted-foreground">{refreshHint}</p>
-        ) : null}
-        {refreshNotice ? (
+          {refreshNotice ? (
           <p
             className={`text-sm ${
               refreshNotice.tone === 'success'
@@ -229,8 +218,34 @@ export default function ReviewOverview({
         />
       </div>
 
+      <div className="rounded-lg bg-muted/60 p-4 text-sm leading-relaxed text-muted-foreground">
+        {snapshot.sentiment.summary}
+      </div>
+
       <div className="grid gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-2 shadow-sm">
+          <CardHeader>
+            <CardTitle>Review velocity</CardTitle>
+            <CardDescription>Compare short-term and monthly review intake to keep momentum steady.</CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <VelocityRow
+              label="Last 7 days"
+              count={snapshot.velocity.last7Days}
+              helper={`Up from ${snapshot.velocity.prior7Days} the week before.`}
+            />
+            <VelocityRow
+              label="Last 30 days"
+              count={snapshot.velocity.last30Days}
+              helper="Target: 30-40 reviews every month for ranking strength."
+            />
+            <VelocityRow
+              label="Projected next 30 days"
+              count={snapshot.velocity.projectedNext30Days}
+              helper="Based on the trailing 14-day pace."
+            />
+          </CardContent>
+
           <CardHeader className="pb-3">
             <CardTitle>Average rating trend</CardTitle>
             <CardDescription>Week-over-week movement pulled from recent public reviews.</CardDescription>
@@ -257,6 +272,7 @@ export default function ReviewOverview({
               </ResponsiveContainer>
             </ChartContainer>
           </CardContent>
+
         </Card>
 
         <Card className="shadow-sm">
@@ -268,49 +284,27 @@ export default function ReviewOverview({
             <SentimentBar label="Positive" value={snapshot.sentiment.positive} tone="positive" />
             <SentimentBar label="Neutral" value={snapshot.sentiment.neutral} tone="neutral" />
             <SentimentBar label="Negative" value={snapshot.sentiment.negative} tone="negative" />
-            <div className="rounded-lg bg-muted/60 p-4 text-sm leading-relaxed text-muted-foreground">
-              {snapshot.sentiment.summary}
-            </div>
+          </CardContent>
+          <CardHeader className="pt-6">
+            <CardTitle>Top themes</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
             <div>
-              <p className="mb-2 text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">Top themes</p>
               <ul className="flex flex-wrap gap-2">
                 {snapshot.sentiment.themes.map((theme) => (
                   <li
                     key={theme}
-                    className="rounded-full bg-background px-3 py-1 text-sm font-medium text-foreground shadow-sm"
+                    className="rounded bg-background px-3 py-1 text-sm font-medium text-foreground shadow-sm"
                   >
                     {theme}
                   </li>
                 ))}
               </ul>
-            </div>
+            </div>            
           </CardContent>
         </Card>
       </div>
 
-      <Card className="shadow-sm">
-        <CardHeader>
-          <CardTitle>Review velocity</CardTitle>
-          <CardDescription>Compare short-term and monthly review intake to keep momentum steady.</CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          <VelocityRow
-            label="Last 7 days"
-            count={snapshot.velocity.last7Days}
-            helper={`Up from ${snapshot.velocity.prior7Days} the week before.`}
-          />
-          <VelocityRow
-            label="Last 30 days"
-            count={snapshot.velocity.last30Days}
-            helper="Target: 30-40 reviews every month for ranking strength."
-          />
-          <VelocityRow
-            label="Projected next 30 days"
-            count={snapshot.velocity.projectedNext30Days}
-            helper="Based on the trailing 14-day pace."
-          />
-        </CardContent>
-      </Card>
 
       {canSchedulePosts ? (
         <GbpPostScheduler

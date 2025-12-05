@@ -48,6 +48,8 @@ export default function UserDirectoryTable({ members: initialMembers, organizati
   const [rowStates, setRowStates] = useState({});
   const [dialogUser, setDialogUser] = useState(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [organizationDialogOpen, setOrganizationDialogOpen] = useState(false);
+  const [organizationDeleteState, setOrganizationDeleteState] = useState({ status: 'idle', message: '' });
 
   const totalOwners = useMemo(() => members.filter((member) => member.role === 'owner').length, [members]);
 
@@ -146,6 +148,36 @@ export default function UserDirectoryTable({ members: initialMembers, organizati
     setDialogOpen(true);
   }, []);
 
+  const handleDeleteOrganizationClick = useCallback(() => {
+    setOrganizationDeleteState({ status: 'idle', message: '' });
+    setOrganizationDialogOpen(true);
+  }, []);
+
+  const confirmDeleteOrganization = useCallback(async () => {
+    setOrganizationDeleteState({ status: 'loading', message: '' });
+
+    try {
+      const response = await fetch(`/api/owner/organizations/${encodeURIComponent(organizationId)}`, {
+        method: 'DELETE'
+      });
+      const payload = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(payload?.error || 'Unable to delete organization.');
+      }
+
+      setOrganizationDeleteState({ status: 'success', message: '' });
+      window.location.reload();
+    } catch (error) {
+      setOrganizationDeleteState({
+        status: 'error',
+        message: error.message || 'Failed to delete organization.'
+      });
+    } finally {
+      setOrganizationDialogOpen(false);
+    }
+  }, [organizationId]);
+
   const handleCopyLink = useCallback((link) => {
     if (!link) {
       return;
@@ -174,7 +206,26 @@ export default function UserDirectoryTable({ members: initialMembers, organizati
           <p className="text-xs uppercase tracking-wide text-muted-foreground">Workspace</p>
           <p className="text-xl font-semibold text-foreground">{organizationName}</p>
         </div>
-        <p className="text-sm text-muted-foreground">{members.length} member{members.length === 1 ? '' : 's'}</p>
+        <div className="flex flex-col items-start gap-2 sm:items-end">
+          <div className="flex flex-wrap items-center gap-3">
+            <p className="text-sm text-muted-foreground">
+              {members.length} member{members.length === 1 ? '' : 's'}
+            </p>
+            <Button
+              size="sm"
+              variant="destructive"
+              disabled={organizationDeleteState.status === 'loading'}
+              onClick={handleDeleteOrganizationClick}
+            >
+              {organizationDeleteState.status === 'loading'
+                ? 'Deleting…'
+                : 'Delete business & users'}
+            </Button>
+          </div>
+          {organizationDeleteState.status === 'error' ? (
+            <p className="text-xs text-destructive">{organizationDeleteState.message}</p>
+          ) : null}
+        </div>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-left text-sm">
@@ -276,6 +327,29 @@ export default function UserDirectoryTable({ members: initialMembers, organizati
             </Button>
             <Button variant="destructive" onClick={() => confirmDelete(dialogUser)}>
               Delete user
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={organizationDialogOpen} onOpenChange={setOrganizationDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete {organizationName}?</DialogTitle>
+            <DialogDescription>
+              This will permanently remove the business, all user accounts, runs, geo grids, reviews, and schedules. This
+              cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOrganizationDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmDeleteOrganization}
+              disabled={organizationDeleteState.status === 'loading'}
+            >
+              {organizationDeleteState.status === 'loading' ? 'Deleting…' : 'Delete business & users'}
             </Button>
           </DialogFooter>
         </DialogContent>
