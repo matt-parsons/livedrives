@@ -751,8 +751,22 @@ ALTER TABLE `users`
 ALTER TABLE `user_org_members`
   ADD CONSTRAINT `fk_uom_org` FOREIGN KEY (`organization_id`) REFERENCES `organizations` (`id`) ON DELETE CASCADE,
   ADD CONSTRAINT `fk_uom_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
+--
+-- Table structure for table `review_snapshots`
+--
+CREATE TABLE IF NOT EXISTS `review_snapshots` (
+  `business_id` bigint NOT NULL,
+  `place_id` varchar(255) DEFAULT NULL,
+  `snapshot_payload` json NOT NULL,
+  `last_refreshed_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`business_id`),
+  KEY `idx_review_snapshots_place` (`place_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+

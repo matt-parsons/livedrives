@@ -10,13 +10,13 @@ export default function ReviewPermissionsGate({ authorizationUrl }) {
       <CardHeader>
         <CardTitle>Connect Google Business Profile</CardTitle>
         <CardDescription>
-          We need permission to connect directly to your Google Business Profile account.
+          Scheduling posts still requires a direct Google Business Profile connection.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3 text-sm text-muted-foreground">
         <p>
-          Authorize access with the Google Business Profile API so we can calculate real review velocity, sentiment, and rating
-          trends. We'll never make any updates to your profile without your approval.
+          Reviews are loaded from public search data, but post drafting and publishing run through your GBP account.
+          Authorize access with the Google Business Profile API to unlock the scheduler and keep everything in sync.
         </p>
       </CardContent>
       <CardFooter>

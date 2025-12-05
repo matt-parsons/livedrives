@@ -10,6 +10,7 @@ import {
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { ResponsiveContainer, LineChart, Line, CartesianGrid, XAxis, YAxis } from 'recharts';
 import SummaryMetricCard from '../SummaryMetricCard';
+import ReviewPermissionsGate from './ReviewPermissionsGate';
 import GbpPostScheduler from './GbpPostScheduler';
 
 function buildTrendIndicator(delta, { unit = '', invert = false, digits = 1 } = {}) {
@@ -100,7 +101,14 @@ function VelocityRow({ label, count, helper }) {
   );
 }
 
-export default function ReviewOverview({ snapshot, scheduledPosts = [], businessId, timezone }) {
+export default function ReviewOverview({
+  snapshot,
+  scheduledPosts = [],
+  businessId,
+  timezone,
+  authorizationUrl,
+  canSchedulePosts = false
+}) {
   const ratingDelta = snapshot.averageRating.current - snapshot.averageRating.previous;
   const reviewDelta = snapshot.newReviewsThisWeek - snapshot.lastWeekReviews;
   const ratingIndicator = buildTrendIndicator(ratingDelta, { unit: '', digits: 2 });
@@ -224,11 +232,15 @@ export default function ReviewOverview({ snapshot, scheduledPosts = [], business
         </CardContent>
       </Card>
 
-      <GbpPostScheduler
-        businessId={businessId}
-        timezone={timezone}
-        initialPosts={scheduledPosts}
-      />
+      {canSchedulePosts ? (
+        <GbpPostScheduler
+          businessId={businessId}
+          timezone={timezone}
+          initialPosts={scheduledPosts}
+        />
+      ) : (
+        <ReviewPermissionsGate authorizationUrl={authorizationUrl} />
+      )}
     </div>
   );
 }
