@@ -127,14 +127,6 @@ export default function ReviewOverview({
   const [refreshing, setRefreshing] = useState(false);
   const [refreshNotice, setRefreshNotice] = useState(null);
 
-  const refreshHint = useMemo(() => {
-    if (!canRefreshReviews) {
-      return null;
-    }
-
-    return 'Admins can trigger a manual refresh if reviews look out of date.';
-  }, [canRefreshReviews]);
-
   const handleRefreshClick = useCallback(async () => {
     if (refreshing || !canRefreshReviews) {
       return;
@@ -182,10 +174,7 @@ export default function ReviewOverview({
         <p className="text-base text-muted-foreground">
           Track fresh feedback, rating movement, and the velocity of customer reviews across the past month.
         </p>
-        {refreshHint ? (
-          <p className="text-sm text-muted-foreground">{refreshHint}</p>
-        ) : null}
-        {refreshNotice ? (
+          {refreshNotice ? (
           <p
             className={`text-sm ${
               refreshNotice.tone === 'success'
@@ -277,7 +266,7 @@ export default function ReviewOverview({
                 {snapshot.sentiment.themes.map((theme) => (
                   <li
                     key={theme}
-                    className="rounded-full bg-background px-3 py-1 text-sm font-medium text-foreground shadow-sm"
+                    className="rounded bg-background px-3 py-1 text-sm font-medium text-foreground shadow-sm"
                   >
                     {theme}
                   </li>
