@@ -8,7 +8,7 @@ import {
   loadOrganizationLock,
   loadOrganizationMembersForDeletion,
   parseOrganizationId
-} from '@lib/owner/organizations.js';
+} from '@lib/organizations.js';
 
 export const runtime = 'nodejs';
 
