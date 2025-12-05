@@ -12,6 +12,10 @@ import { ResponsiveContainer, LineChart, Line, CartesianGrid, XAxis, YAxis } fro
 import SummaryMetricCard from '../SummaryMetricCard';
 import ReviewPermissionsGate from './ReviewPermissionsGate';
 import GbpPostScheduler from './GbpPostScheduler';
+import { Button } from '@/components/ui/button';
+import { useCallback, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { RefreshCw } from 'lucide-react';
 
 function buildTrendIndicator(delta, { unit = '', invert = false, digits = 1 } = {}) {
   if (delta === null || delta === undefined) {
@@ -107,7 +111,8 @@ export default function ReviewOverview({
   businessId,
   timezone,
   authorizationUrl,
-  canSchedulePosts = false
+  canSchedulePosts = false,
+  canRefreshReviews = false
 }) {
   const ratingDelta = snapshot.averageRating.current - snapshot.averageRating.previous;
   const reviewDelta = snapshot.newReviewsThisWeek - snapshot.lastWeekReviews;
@@ -115,20 +120,95 @@ export default function ReviewOverview({
   const reviewIndicator = buildTrendIndicator(reviewDelta, { unit: '', digits: 0 });
   const velocityDelta = snapshot.velocity.last7Days - snapshot.velocity.prior7Days;
   const velocityIndicator = buildTrendIndicator(velocityDelta, { unit: '', digits: 0 });
+  const totalReviewCountLabel = Number.isFinite(snapshot.totalReviewCount)
+    ? snapshot.totalReviewCount.toLocaleString()
+    : '—';
+  const router = useRouter();
+  const [refreshing, setRefreshing] = useState(false);
+  const [refreshNotice, setRefreshNotice] = useState(null);
+
+  const refreshHint = useMemo(() => {
+    if (!canRefreshReviews) {
+      return null;
+    }
+
+    return 'Admins can trigger a manual refresh if reviews look out of date.';
+  }, [canRefreshReviews]);
+
+  const handleRefreshClick = useCallback(async () => {
+    if (refreshing || !canRefreshReviews) {
+      return;
+    }
+
+    setRefreshing(true);
+    setRefreshNotice(null);
+
+    try {
+      const response = await fetch(`/api/businesses/${businessId}/reviews/refresh`, { method: 'POST' });
+      const payload = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(payload?.error || 'Unable to refresh reviews right now.');
+      }
+
+      if (payload?.status === 'completed') {
+        setRefreshNotice({ tone: 'success', text: 'Reviews were refreshed just now.' });
+        router.refresh();
+      } else if (payload?.status === 'pending') {
+        setRefreshNotice({ tone: 'info', text: 'Review refresh started. Check back in a moment.' });
+      } else {
+        setRefreshNotice({ tone: 'warning', text: 'Review refresh could not start. Try again later.' });
+      }
+    } catch (error) {
+      setRefreshNotice({ tone: 'error', text: error?.message || 'Failed to refresh reviews.' });
+    } finally {
+      setRefreshing(false);
+    }
+  }, [businessId, canRefreshReviews, refreshing, router]);
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm font-medium uppercase tracking-[0.12em] text-muted-foreground">Review Monitoring</p>
-          <h1 className="text-3xl font-semibold text-foreground">Reviews</h1>
-          <p className="text-base text-muted-foreground">
-            Track fresh feedback, rating movement, and the velocity of customer reviews across the past month.
-          </p>
+          {canRefreshReviews ? (
+            <Button size="sm" variant="outline" onClick={handleRefreshClick} disabled={refreshing}>
+              <RefreshCw className="mr-2 h-4 w-4" />
+              {refreshing ? 'Refreshing…' : 'Refresh reviews'}
+            </Button>
+          ) : null}
         </div>
+        <h1 className="text-3xl font-semibold text-foreground">Reviews</h1>
+        <p className="text-base text-muted-foreground">
+          Track fresh feedback, rating movement, and the velocity of customer reviews across the past month.
+        </p>
+        {refreshHint ? (
+          <p className="text-sm text-muted-foreground">{refreshHint}</p>
+        ) : null}
+        {refreshNotice ? (
+          <p
+            className={`text-sm ${
+              refreshNotice.tone === 'success'
+                ? 'text-emerald-700'
+                : refreshNotice.tone === 'info'
+                  ? 'text-blue-700'
+                  : refreshNotice.tone === 'warning'
+                    ? 'text-amber-700'
+                    : 'text-red-700'
+            }`}
+          >
+            {refreshNotice.text}
+          </p>
+        ) : null}
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <SummaryMetricCard
+          title="Total reviews"
+          valueLabel={totalReviewCountLabel}
+          indicator={null}
+          deltaLabel={null}
+        />
         <SummaryMetricCard
           title="New reviews this week"
           valueLabel={`${snapshot.newReviewsThisWeek}`}
