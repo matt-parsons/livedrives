@@ -16,6 +16,9 @@ import { buildRunTrendIndicator } from './trendIndicators';
 import { buildMapPoints, resolveCenter } from './runs/formatters';
 import OptimizationPanelsClient from './OptimizationPanelsClient';
 import KeywordOriginZoneForm from '../get-started/KeywordOriginZoneForm';
+import { ensureGbpAccessToken } from '@/lib/googleBusinessProfile';
+import { loadReviewSnapshot } from './reviews/reviewSnapshot';
+import ReviewPreview from './ReviewPreview';
 
 function resolveStatus(status) {
   if (!status) {
@@ -147,6 +150,7 @@ export default async function BusinessDashboardPage({ params }) {
   const optimizationHref = `${baseHref}/optimization-steps`;
   const editHref = `${baseHref}/edit`;
   const ctrHref = `${baseHref}/ctr`;
+  const reviewsHref = `${baseHref}/reviews`;
 
   let session;
 
@@ -186,6 +190,8 @@ export default async function BusinessDashboardPage({ params }) {
   const mapCenter = latestRunDetails ? resolveCenter(latestRunDetails.run ?? {}, mapPoints) : null;
   const mapsApiKey =
     process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? process.env.GOOGLE_API_KEY ?? null;
+  const gbpAccessToken = await ensureGbpAccessToken(business.id);
+  const { snapshot: reviewSnapshot } = await loadReviewSnapshot(business, gbpAccessToken);
 
   const businessIdentifier = business.businessSlug ?? String(business.id);
   return (
@@ -254,6 +260,7 @@ export default async function BusinessDashboardPage({ params }) {
             keywordsHref={keywordsHref}
             ctrHref={ctrHref}
           />
+          <ReviewPreview snapshot={reviewSnapshot} reviewsHref={reviewsHref} />
         </div>
       </main>
     </div>

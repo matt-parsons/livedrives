@@ -1,4 +1,4 @@
-import { formatDecimal } from './helpers';
+import { formatDecimal } from './runs/formatters';
 
 export function buildRunTrendIndicator(delta, { invert = false, unit = '', digits = 1 } = {}) {
   if (delta === null || delta === undefined) {
