@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import pool from '@lib/db/db.js';
 import { adminAuth } from '@/lib/firebaseAdmin';
 import { AuthError, requireAuth } from '@/lib/authServer';
+import { deleteOrganizationData, parseOrganizationId } from '../organizations/utils';
 
 export const runtime = 'nodejs';
 
@@ -18,15 +19,6 @@ function handleAuthFailure(error) {
 }
 
 function parseUserId(raw) {
-  const value = Number(raw);
-  if (!Number.isFinite(value) || value <= 0) {
-    return null;
-  }
-
-  return value;
-}
-
-function parseOrganizationId(raw) {
   const value = Number(raw);
   if (!Number.isFinite(value) || value <= 0) {
     return null;
@@ -99,13 +91,10 @@ export async function DELETE(request, { params }) {
       [userId, organizationId]
     );
 
-    if (shouldDeleteOrganization) {
-      await connection.query('DELETE FROM businesses WHERE organization_id = ?', [organizationId]);
-    }
-
     await connection.query('DELETE FROM users WHERE id = ?', [userId]);
 
     if (shouldDeleteOrganization) {
+      await deleteOrganizationData(connection, organizationId);
       await connection.query('DELETE FROM organizations WHERE id = ?', [organizationId]);
     }
 
