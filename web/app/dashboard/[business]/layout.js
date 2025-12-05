@@ -2,6 +2,7 @@ import { notFound, redirect } from 'next/navigation';
 import { AuthError, requireAuth } from '@/lib/authServer';
 import { loadBusiness, loadOrganizationBusinesses } from './helpers';
 import { BusinessLayoutProvider } from './BusinessLayoutContext';
+import { warmBusinessReviewSnapshot } from './reviews/reviewSnapshot';
 
 export default async function BusinessLayout({ children, params }) {
   const identifier = params.business;
@@ -23,6 +24,10 @@ export default async function BusinessLayout({ children, params }) {
   if (!business) {
     notFound();
   }
+
+  warmBusinessReviewSnapshot(business).catch((error) => {
+    console.error('Failed to warm business review snapshot', error);
+  });
 
   const organizationBusinesses = await loadOrganizationBusinesses(session);
   const businessOptions = organizationBusinesses.map((entry) => ({
