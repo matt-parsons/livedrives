@@ -248,7 +248,10 @@ function sanitizeSnapshot(snapshot, { totalReviewCount = null } = {}) {
     ...snapshot,
     totalReviewCount: reviewCount,
     sentiment: {
-      ...sentiment,
+      positive: clampPercent(sentiment.positive),
+      neutral: clampPercent(sentiment.neutral),
+      negative: clampPercent(sentiment.negative),
+      summary: normalizeSummary(sentiment.summary) ?? DEFAULT_SENTIMENT_SUMMARY,
       themes: normalizeThemes(sentiment.themes)
     }
   };
@@ -439,6 +442,11 @@ export async function loadReviewSnapshot(business, gbpAccessToken, { force = fal
   const cached = await loadCachedReviewSnapshot(business.id);
   const sanitizedCachedSnapshot = sanitizeSnapshot(cached?.snapshot, { totalReviewCount: cachedReviewCount });
 
+  const needsAiSentiment =
+    OPENAI_API_KEY &&
+    sanitizedCachedSnapshot?.sentiment?.summary === DEFAULT_SENTIMENT_SUMMARY &&
+    (sanitizedCachedSnapshot?.sentiment?.themes?.length ?? 0) === 0;
+
   if (
     !force &&
     sanitizedCachedSnapshot &&
@@ -446,7 +454,9 @@ export async function loadReviewSnapshot(business, gbpAccessToken, { force = fal
     cached.lastRefreshedAt &&
     Date.now() - cached.lastRefreshedAt.getTime() < ONE_DAY_MS
   ) {
-    return { snapshot: sanitizedCachedSnapshot, authorizationUrl };
+    if (!needsAiSentiment) {
+      return { snapshot: sanitizedCachedSnapshot, authorizationUrl };
+    }
   }
 
   let snapshot = null;
