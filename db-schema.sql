@@ -764,6 +764,23 @@ CREATE TABLE IF NOT EXISTS `review_snapshots` (
   KEY `idx_review_snapshots_place` (`place_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+--
+-- Table structure for table `review_fetch_tasks`
+--
+CREATE TABLE IF NOT EXISTS `review_fetch_tasks` (
+  `business_id` bigint NOT NULL,
+  `place_id` varchar(255) DEFAULT NULL,
+  `task_id` varchar(128) NOT NULL,
+  `status` enum('pending','completed','failed') NOT NULL DEFAULT 'pending',
+  `last_checked_at` datetime DEFAULT NULL,
+  `completed_at` datetime DEFAULT NULL,
+  `error_message` varchar(255) DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`business_id`),
+  KEY `idx_review_fetch_tasks_task` (`task_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

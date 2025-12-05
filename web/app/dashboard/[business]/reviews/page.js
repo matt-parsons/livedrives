@@ -7,9 +7,19 @@ import {
   ensureGbpAccessToken,
   fetchGbpReviews
 } from '@/lib/googleBusinessProfile';
-import { fetchDataForSeoReviews } from '@lib/google/dataForSeoReviews.js';
+import {
+  BACKGROUND_TIMEOUT_MS,
+  DEFAULT_POLL_INTERVAL_MS,
+  fetchDataForSeoReviews
+} from '@lib/google/dataForSeoReviews.js';
 import { listScheduledPostsForBusiness } from '@/lib/gbpPostScheduler';
 import { loadCachedReviewSnapshot, saveReviewSnapshot } from '@lib/db/reviewSnapshots';
+import {
+  loadReviewFetchTask,
+  markReviewFetchTaskCompleted,
+  markReviewFetchTaskFailed,
+  saveReviewFetchTask
+} from '@lib/db/reviewFetchTasks';
 import { loadBusiness } from '../helpers';
 import BusinessNavigation from '../BusinessNavigation';
 import SidebarBrand from '../SidebarBrand';
@@ -17,6 +27,7 @@ import DashboardBusinessHeader from '../DashboardBusinessHeader';
 import ReviewOverview from './ReviewOverview';
 import ReviewLoadingBlock from './ReviewLoadingBlock';
 import ReviewPermissionsGate from './ReviewPermissionsGate';
+import ReviewPendingNotice from './ReviewPendingNotice';
 
 export const metadata = {
   title: 'Reviews · Local Paint Pilot'
@@ -202,6 +213,31 @@ function buildSnapshot(reviews) {
   };
 }
 
+function scheduleBackgroundReviewSync({ businessId, placeId, taskId }) {
+  setTimeout(async () => {
+    try {
+      const { reviews, status } = await fetchDataForSeoReviews(placeId, {
+        taskId,
+        pollIntervalMs: DEFAULT_POLL_INTERVAL_MS,
+        timeoutMs: BACKGROUND_TIMEOUT_MS,
+      });
+
+      if (status === 'completed' && reviews.length > 0) {
+        const snapshot = buildSnapshot(reviews);
+        await saveReviewSnapshot({ businessId, placeId, snapshot });
+        await markReviewFetchTaskCompleted({ businessId, taskId });
+      } else if (status === 'pending') {
+        await saveReviewFetchTask({ businessId, placeId, taskId, status: 'pending' });
+      } else {
+        await markReviewFetchTaskFailed({ businessId, taskId, errorMessage: 'task failed' });
+      }
+    } catch (error) {
+      console.error('Background review sync failed', error);
+      await markReviewFetchTaskFailed({ businessId, taskId, errorMessage: error?.message });
+    }
+  }, 0);
+}
+
 async function loadReviewSnapshot(business, gbpAccessToken) {
   const authorizationUrl = buildGbpAuthUrl({ state: `business:${business?.id ?? ''}` });
   const placeId = business?.gPlaceId ?? null;
@@ -218,10 +254,42 @@ async function loadReviewSnapshot(business, gbpAccessToken) {
   }
 
   let snapshot = null;
+  let dataForSeoPending = false;
   try {
-    const reviews = placeId ? await fetchDataForSeoReviews(placeId) : [];
-    if (reviews.length > 0) {
+    const existingTask = await loadReviewFetchTask(business.id);
+    const reusableTaskId = existingTask?.status === 'pending' ? existingTask.taskId : null;
+    const { reviews, status, taskId } = placeId
+      ? await fetchDataForSeoReviews(placeId, {
+          taskId: reusableTaskId,
+          pollIntervalMs: DEFAULT_POLL_INTERVAL_MS,
+          onTaskCreated: async (createdTaskId) => {
+            await saveReviewFetchTask({
+              businessId: business.id,
+              placeId,
+              taskId: createdTaskId,
+              status: 'pending'
+            });
+          }
+        })
+      : { reviews: [], status: 'error', taskId: null };
+
+    if (status === 'completed' && reviews.length > 0) {
       snapshot = buildSnapshot(reviews);
+      if (taskId) {
+        await markReviewFetchTaskCompleted({ businessId: business.id, taskId });
+      }
+    } else if (status === 'pending' && taskId) {
+      dataForSeoPending = true;
+      await saveReviewFetchTask({
+        businessId: business.id,
+        placeId,
+        taskId,
+        status: 'pending'
+      });
+
+      scheduleBackgroundReviewSync({ businessId: business.id, placeId, taskId });
+    } else if (status === 'error' && taskId) {
+      await markReviewFetchTaskFailed({ businessId: business.id, taskId, errorMessage: 'task failed' });
     }
   } catch (error) {
     console.error('Failed to load reviews from DataForSEO', error);
@@ -243,14 +311,14 @@ async function loadReviewSnapshot(business, gbpAccessToken) {
 
   if (sanitizedSnapshot) {
     await saveReviewSnapshot({ businessId: business.id, placeId, snapshot: sanitizedSnapshot });
-    return { snapshot: sanitizedSnapshot, authorizationUrl };
+    return { snapshot: sanitizedSnapshot, authorizationUrl, dataForSeoPending };
   }
 
   if (sanitizedCachedSnapshot && cached?.placeId === placeId) {
-    return { snapshot: sanitizedCachedSnapshot, authorizationUrl };
+    return { snapshot: sanitizedCachedSnapshot, authorizationUrl, dataForSeoPending };
   }
 
-  return { snapshot: null, authorizationUrl };
+  return { snapshot: null, authorizationUrl, dataForSeoPending };
 }
 
 export default async function BusinessReviewsPage({ params }) {
@@ -299,11 +367,15 @@ export default async function BusinessReviewsPage({ params }) {
 
 async function ReviewsContent({ business, authorizationUrl }) {
   const gbpAccessToken = await ensureGbpAccessToken(business.id);
-  const { snapshot } = await loadReviewSnapshot(business, gbpAccessToken);
+  const { snapshot, dataForSeoPending } = await loadReviewSnapshot(business, gbpAccessToken);
   const hasGbpAccess = Boolean(gbpAccessToken);
   const scheduledPosts = hasGbpAccess ? await listScheduledPostsForBusiness(business.id) : [];
 
   if (!snapshot) {
+    if (dataForSeoPending) {
+      return <ReviewPendingNotice />;
+    }
+
     return <ReviewPermissionsGate authorizationUrl={authorizationUrl} />;
   }
 
