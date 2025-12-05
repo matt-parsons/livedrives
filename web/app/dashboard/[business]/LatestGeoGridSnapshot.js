@@ -39,7 +39,7 @@ export default function LatestGeoGridSnapshot({
     <section className="surface-card surface-card--muted latest-geogrid-card">
       <div className="latest-geogrid-card__status-row">
         <div>
-          <div className="section-title">Keyword:</div> <strong className="latest-geogrid-card__keyword">"{keywordLabel}"</strong>
+          <div className="section-title">Your Latest Ranking Heat Map</div> <strong className="latest-geogrid-card__keyword">Keyword: "{keywordLabel}"</strong>
         </div>
       {keywordsHref ? (
         <Link className="cta-link" href={keywordsHref}>

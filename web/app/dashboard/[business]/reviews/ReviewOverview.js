@@ -218,6 +218,10 @@ export default function ReviewOverview({
         />
       </div>
 
+      <div className="rounded-lg bg-muted/60 p-4 text-sm leading-relaxed text-muted-foreground">
+        {snapshot.sentiment.summary}
+      </div>
+
       <div className="grid gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-2 shadow-sm">
           <CardHeader>
@@ -280,11 +284,12 @@ export default function ReviewOverview({
             <SentimentBar label="Positive" value={snapshot.sentiment.positive} tone="positive" />
             <SentimentBar label="Neutral" value={snapshot.sentiment.neutral} tone="neutral" />
             <SentimentBar label="Negative" value={snapshot.sentiment.negative} tone="negative" />
-            <div className="rounded-lg bg-muted/60 p-4 text-sm leading-relaxed text-muted-foreground">
-              {snapshot.sentiment.summary}
-            </div>
+          </CardContent>
+          <CardHeader className="pt-6">
+            <CardTitle>Top themes</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
             <div>
-              <p className="mb-2 text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">Top themes</p>
               <ul className="flex flex-wrap gap-2">
                 {snapshot.sentiment.themes.map((theme) => (
                   <li
@@ -295,7 +300,7 @@ export default function ReviewOverview({
                   </li>
                 ))}
               </ul>
-            </div>
+            </div>            
           </CardContent>
         </Card>
       </div>
