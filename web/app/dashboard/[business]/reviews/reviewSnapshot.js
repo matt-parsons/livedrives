@@ -17,8 +17,27 @@ import {
   markReviewFetchTaskFailed,
   saveReviewFetchTask
 } from '@lib/db/reviewFetchTasks';
+import cacheModule from '@lib/db/gbpProfileCache.js';
 
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+const cacheApi = cacheModule?.default ?? cacheModule;
+const { loadCachedProfile } = cacheApi;
+
+function extractReviewCountFromPlacesRaw(placesRaw) {
+  if (!placesRaw || typeof placesRaw !== 'object') {
+    return null;
+  }
+
+  const raw =
+    placesRaw.reviewCount ??
+    placesRaw.user_ratings_total ??
+    placesRaw.userRatingsTotal ??
+    null;
+
+  const numeric = Number(raw);
+
+  return Number.isFinite(numeric) ? numeric : null;
+}
 
 function normalizeThemes(themes = []) {
   const normalized = new Set();
@@ -45,15 +64,28 @@ function normalizeThemes(themes = []) {
   return Array.from(normalized).slice(0, 6);
 }
 
-function sanitizeSnapshot(snapshot) {
+function sanitizeSnapshot(snapshot, { totalReviewCount = null } = {}) {
   if (!snapshot || typeof snapshot !== 'object') {
     return null;
   }
 
   const sentiment = snapshot.sentiment || {};
+  const reviewCountCandidate = snapshot.totalReviewCount;
+  const derivedReviewCount =
+    reviewCountCandidate !== null && reviewCountCandidate !== undefined
+      ? Number(reviewCountCandidate)
+      : null;
+  const fallbackReviewCount =
+    totalReviewCount !== null && totalReviewCount !== undefined ? Number(totalReviewCount) : null;
+  const reviewCount = Number.isFinite(derivedReviewCount)
+    ? derivedReviewCount
+    : Number.isFinite(fallbackReviewCount)
+      ? fallbackReviewCount
+      : null;
 
   return {
     ...snapshot,
+    totalReviewCount: reviewCount,
     sentiment: {
       ...sentiment,
       themes: normalizeThemes(sentiment.themes)
@@ -208,7 +240,12 @@ function scheduleBackgroundReviewSync({ businessId, placeId, taskId }) {
       });
 
       if (status === 'completed' && reviews.length > 0) {
-        const snapshot = buildSnapshot(reviews);
+        const cachedProfile = placeId ? await loadCachedProfile(placeId) : null;
+        const cachedReviewCount = extractReviewCountFromPlacesRaw(cachedProfile?.placesRaw);
+        const snapshot = sanitizeSnapshot(
+          { ...buildSnapshot(reviews), totalReviewCount: cachedReviewCount ?? reviews.length ?? null },
+          { totalReviewCount: cachedReviewCount }
+        );
         await saveReviewSnapshot({ businessId, placeId, snapshot });
         await markReviewFetchTaskCompleted({ businessId, taskId });
       } else if (status === 'pending') {
@@ -226,8 +263,10 @@ function scheduleBackgroundReviewSync({ businessId, placeId, taskId }) {
 export async function loadReviewSnapshot(business, gbpAccessToken, { force = false } = {}) {
   const authorizationUrl = buildGbpAuthUrl({ state: `business:${business?.id ?? ''}` });
   const placeId = business?.gPlaceId ?? null;
+  const cachedProfile = placeId ? await loadCachedProfile(placeId) : null;
+  const cachedReviewCount = extractReviewCountFromPlacesRaw(cachedProfile?.placesRaw);
   const cached = await loadCachedReviewSnapshot(business.id);
-  const sanitizedCachedSnapshot = sanitizeSnapshot(cached?.snapshot);
+  const sanitizedCachedSnapshot = sanitizeSnapshot(cached?.snapshot, { totalReviewCount: cachedReviewCount });
 
   if (
     !force &&
@@ -271,6 +310,7 @@ export async function loadReviewSnapshot(business, gbpAccessToken, { force = fal
 
     if (status === 'completed' && reviews.length > 0) {
       snapshot = buildSnapshot(reviews);
+      snapshot.totalReviewCount = cachedReviewCount ?? reviews.length ?? null;
       snapshotSource = 'dataForSeo';
       if (taskId) {
         await markReviewFetchTaskCompleted({ businessId: business.id, taskId });
@@ -306,13 +346,14 @@ export async function loadReviewSnapshot(business, gbpAccessToken, { force = fal
       });
 
       snapshot = buildSnapshot(reviews);
+      snapshot.totalReviewCount = cachedReviewCount ?? reviews.length ?? null;
       snapshotSource = 'gbp';
     } catch (error) {
       console.error('Failed to load GBP reviews', error);
     }
   }
 
-  const sanitizedSnapshot = sanitizeSnapshot(snapshot);
+  const sanitizedSnapshot = sanitizeSnapshot(snapshot, { totalReviewCount: cachedReviewCount });
 
   if (sanitizedSnapshot) {
     if (snapshotSource) {

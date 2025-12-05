@@ -120,6 +120,9 @@ export default function ReviewOverview({
   const reviewIndicator = buildTrendIndicator(reviewDelta, { unit: '', digits: 0 });
   const velocityDelta = snapshot.velocity.last7Days - snapshot.velocity.prior7Days;
   const velocityIndicator = buildTrendIndicator(velocityDelta, { unit: '', digits: 0 });
+  const totalReviewCountLabel = Number.isFinite(snapshot.totalReviewCount)
+    ? snapshot.totalReviewCount.toLocaleString()
+    : '—';
   const router = useRouter();
   const [refreshing, setRefreshing] = useState(false);
   const [refreshNotice, setRefreshNotice] = useState(null);
@@ -199,7 +202,13 @@ export default function ReviewOverview({
         ) : null}
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <SummaryMetricCard
+          title="Total reviews"
+          valueLabel={totalReviewCountLabel}
+          indicator={null}
+          deltaLabel={null}
+        />
         <SummaryMetricCard
           title="New reviews this week"
           valueLabel={`${snapshot.newReviewsThisWeek}`}
