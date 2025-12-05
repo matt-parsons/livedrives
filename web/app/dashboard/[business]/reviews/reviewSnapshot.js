@@ -19,6 +19,12 @@ import {
 } from '@lib/db/reviewFetchTasks';
 import cacheModule from '@lib/db/gbpProfileCache.js';
 
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
+const MAX_REVIEWS_FOR_AI = 24;
+const MAX_REVIEW_TEXT_LENGTH = 500;
+const DEFAULT_SENTIMENT_SUMMARY = 'Sentiment is based on recent Google Business Profile reviews.';
+
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 const cacheApi = cacheModule?.default ?? cacheModule;
 const { loadCachedProfile } = cacheApi;
@@ -62,6 +68,161 @@ function normalizeThemes(themes = []) {
   }
 
   return Array.from(normalized).slice(0, 6);
+}
+
+function normalizeSummary(summary) {
+  if (typeof summary !== 'string') {
+    return null;
+  }
+
+  const trimmed = summary.trim();
+
+  return trimmed.length ? trimmed : null;
+}
+
+function clampPercent(value) {
+  const numeric = Number(value);
+
+  if (!Number.isFinite(numeric)) {
+    return null;
+  }
+
+  return Math.max(0, Math.min(100, Math.round(numeric)));
+}
+
+function mapReviewForPrompt(review) {
+  const rating = Number(String(review?.starRating ?? '').replace('STAR_', ''));
+  const ratingLabel = Number.isFinite(rating) ? `${rating}/5` : 'unrated';
+  const dateLabel = review?.updateTime
+    ? new Date(review.updateTime).toISOString().slice(0, 10)
+    : 'unknown date';
+  const rawComment =
+    typeof review?.comment === 'string' && review.comment.trim().length
+      ? review.comment.trim()
+      : '(no written comment)';
+
+  const comment = rawComment.slice(0, MAX_REVIEW_TEXT_LENGTH);
+
+  return `Rating: ${ratingLabel}\nDate: ${dateLabel}\nComment: ${comment}`;
+}
+
+function buildAiSentimentPrompt(reviews = []) {
+  const samples = reviews
+    .filter((review) => typeof review?.comment === 'string' || typeof review?.starRating === 'string')
+    .sort((a, b) => new Date(b.updateTime || 0) - new Date(a.updateTime || 0))
+    .slice(0, MAX_REVIEWS_FOR_AI)
+    .map(mapReviewForPrompt);
+
+  if (!samples.length) {
+    return null;
+  }
+
+  return [
+    'You are a customer experience analyst for a local service business.',
+    'Review the recent Google Business Profile reviews below.',
+    'Return JSON with this exact shape: {"positive": 0, "neutral": 0, "negative": 0, "summary": "...", "themes": ["..."]}.',
+    'Percentages should be whole numbers that add up to 100.',
+    'Keep the summary to 2-3 sentences and list 3-6 concise themes.',
+    '',
+    'Recent reviews:',
+    samples.join('\n---\n')
+  ].join('\n');
+}
+
+function parseAiSentimentResponse(messageContent) {
+  if (!messageContent) {
+    return null;
+  }
+
+  const cleaned = messageContent.replace(/^```json\n?|```$/g, '').trim();
+
+  try {
+    const parsed = JSON.parse(cleaned);
+    const positive = clampPercent(parsed.positive);
+    const neutral = clampPercent(parsed.neutral);
+    const negative = clampPercent(parsed.negative);
+    const summary = normalizeSummary(parsed.summary);
+    const themes = normalizeThemes(parsed.themes);
+
+    const hasPercents = [positive, neutral, negative].some((value) => value !== null);
+    const hasSummary = Boolean(summary);
+    const hasThemes = themes.length > 0;
+
+    if (!hasPercents && !hasSummary && !hasThemes) {
+      return null;
+    }
+
+    return { positive, neutral, negative, summary, themes };
+  } catch (error) {
+    console.error('Failed to parse AI sentiment payload', error, messageContent);
+    return null;
+  }
+}
+
+async function generateAiSentiment(reviews) {
+  if (!OPENAI_API_KEY) {
+    return null;
+  }
+
+  const prompt = buildAiSentimentPrompt(reviews);
+
+  if (!prompt) {
+    return null;
+  }
+
+  try {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${OPENAI_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: OPENAI_MODEL,
+        response_format: { type: 'json_object' },
+        messages: [
+          { role: 'system', content: 'You provide concise, actionable customer insight summaries.' },
+          { role: 'user', content: prompt }
+        ]
+      })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => '');
+      throw new Error(`OpenAI request failed (${response.status}): ${errorText || 'unknown error'}`);
+    }
+
+    const payload = await response.json();
+    const message = payload?.choices?.[0]?.message?.content || '';
+
+    return parseAiSentimentResponse(message);
+  } catch (error) {
+    console.error('Failed to generate AI sentiment summary', error);
+    return null;
+  }
+}
+
+function mergeSentiment(baseSentiment, aiSentiment) {
+  const base = baseSentiment || {};
+
+  if (!aiSentiment) {
+    return base;
+  }
+
+  const aiPositive = clampPercent(aiSentiment.positive);
+  const aiNeutral = clampPercent(aiSentiment.neutral);
+  const aiNegative = clampPercent(aiSentiment.negative);
+  const useAiPercents = [aiPositive, aiNeutral, aiNegative].some((value) => value !== null);
+  const aiThemes = Array.isArray(aiSentiment.themes) && aiSentiment.themes.length ? normalizeThemes(aiSentiment.themes) : null;
+  const aiSummary = normalizeSummary(aiSentiment.summary);
+
+  return {
+    positive: useAiPercents ? aiPositive ?? base.positive : base.positive,
+    neutral: useAiPercents ? aiNeutral ?? base.neutral : base.neutral,
+    negative: useAiPercents ? aiNegative ?? base.negative : base.negative,
+    summary: aiSummary ?? base.summary ?? DEFAULT_SENTIMENT_SUMMARY,
+    themes: aiThemes ?? normalizeThemes(base.themes)
+  };
 }
 
 function sanitizeSnapshot(snapshot, { totalReviewCount = null } = {}) {
@@ -173,7 +334,7 @@ function summarizeSentiment(reviews) {
     positive: Math.round((positive / total) * 100),
     neutral: Math.round((neutral / total) * 100),
     negative: Math.round((negative / total) * 100),
-    summary: 'Sentiment is based on recent Google Business Profile reviews.',
+    summary: DEFAULT_SENTIMENT_SUMMARY,
     themes: Array.from(themes).slice(0, 6)
   };
 }
@@ -198,7 +359,7 @@ function summarizeVelocity(reviews) {
   };
 }
 
-function buildSnapshot(reviews) {
+function buildSnapshotMetrics(reviews) {
   const ratingHistory = summarizeRatingsOverWeeks(reviews);
   const averageRating = ratingHistory.length
     ? {
@@ -230,6 +391,16 @@ function buildSnapshot(reviews) {
   };
 }
 
+async function buildSnapshot(reviews) {
+  const snapshot = buildSnapshotMetrics(reviews);
+  const aiSentiment = await generateAiSentiment(reviews);
+
+  return {
+    ...snapshot,
+    sentiment: mergeSentiment(snapshot.sentiment, aiSentiment)
+  };
+}
+
 function scheduleBackgroundReviewSync({ businessId, placeId, taskId }) {
   setTimeout(async () => {
     try {
@@ -243,7 +414,7 @@ function scheduleBackgroundReviewSync({ businessId, placeId, taskId }) {
         const cachedProfile = placeId ? await loadCachedProfile(placeId) : null;
         const cachedReviewCount = extractReviewCountFromPlacesRaw(cachedProfile?.placesRaw);
         const snapshot = sanitizeSnapshot(
-          { ...buildSnapshot(reviews), totalReviewCount: cachedReviewCount ?? reviews.length ?? null },
+          { ...(await buildSnapshot(reviews)), totalReviewCount: cachedReviewCount ?? reviews.length ?? null },
           { totalReviewCount: cachedReviewCount }
         );
         await saveReviewSnapshot({ businessId, placeId, snapshot });
@@ -309,7 +480,7 @@ export async function loadReviewSnapshot(business, gbpAccessToken, { force = fal
     });
 
     if (status === 'completed' && reviews.length > 0) {
-      snapshot = buildSnapshot(reviews);
+      snapshot = await buildSnapshot(reviews);
       snapshot.totalReviewCount = cachedReviewCount ?? reviews.length ?? null;
       snapshotSource = 'dataForSeo';
       if (taskId) {
@@ -345,7 +516,7 @@ export async function loadReviewSnapshot(business, gbpAccessToken, { force = fal
         sample: reviews?.[0]
       });
 
-      snapshot = buildSnapshot(reviews);
+      snapshot = await buildSnapshot(reviews);
       snapshot.totalReviewCount = cachedReviewCount ?? reviews.length ?? null;
       snapshotSource = 'gbp';
     } catch (error) {
