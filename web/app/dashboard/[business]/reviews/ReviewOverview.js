@@ -220,6 +220,28 @@ export default function ReviewOverview({
 
       <div className="grid gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-2 shadow-sm">
+          <CardHeader>
+            <CardTitle>Review velocity</CardTitle>
+            <CardDescription>Compare short-term and monthly review intake to keep momentum steady.</CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <VelocityRow
+              label="Last 7 days"
+              count={snapshot.velocity.last7Days}
+              helper={`Up from ${snapshot.velocity.prior7Days} the week before.`}
+            />
+            <VelocityRow
+              label="Last 30 days"
+              count={snapshot.velocity.last30Days}
+              helper="Target: 30-40 reviews every month for ranking strength."
+            />
+            <VelocityRow
+              label="Projected next 30 days"
+              count={snapshot.velocity.projectedNext30Days}
+              helper="Based on the trailing 14-day pace."
+            />
+          </CardContent>
+
           <CardHeader className="pb-3">
             <CardTitle>Average rating trend</CardTitle>
             <CardDescription>Week-over-week movement pulled from recent public reviews.</CardDescription>
@@ -246,6 +268,7 @@ export default function ReviewOverview({
               </ResponsiveContainer>
             </ChartContainer>
           </CardContent>
+
         </Card>
 
         <Card className="shadow-sm">
@@ -277,29 +300,6 @@ export default function ReviewOverview({
         </Card>
       </div>
 
-      <Card className="shadow-sm">
-        <CardHeader>
-          <CardTitle>Review velocity</CardTitle>
-          <CardDescription>Compare short-term and monthly review intake to keep momentum steady.</CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          <VelocityRow
-            label="Last 7 days"
-            count={snapshot.velocity.last7Days}
-            helper={`Up from ${snapshot.velocity.prior7Days} the week before.`}
-          />
-          <VelocityRow
-            label="Last 30 days"
-            count={snapshot.velocity.last30Days}
-            helper="Target: 30-40 reviews every month for ranking strength."
-          />
-          <VelocityRow
-            label="Projected next 30 days"
-            count={snapshot.velocity.projectedNext30Days}
-            helper="Based on the trailing 14-day pace."
-          />
-        </CardContent>
-      </Card>
 
       {canSchedulePosts ? (
         <GbpPostScheduler
