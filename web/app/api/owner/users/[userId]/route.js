@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import pool from '@lib/db/db.js';
 import { adminAuth } from '@/lib/firebaseAdmin';
 import { AuthError, requireAuth } from '@/lib/authServer';
-import { deleteOrganizationData, parseOrganizationId } from '../organizations/utils';
+import { deleteOrganizationData, parseOrganizationId } from '../organizations/utils.js';
 
 export const runtime = 'nodejs';
 
