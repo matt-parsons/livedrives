@@ -241,6 +241,8 @@ export async function loadReviewSnapshot(business, gbpAccessToken, { force = fal
 
   let snapshot = null;
   let dataForSeoPending = false;
+  let snapshotSource = null;
+
   try {
     const existingTask = await loadReviewFetchTask(business.id);
     const reusableTaskId = existingTask?.status === 'pending' ? existingTask.taskId : null;
@@ -259,8 +261,17 @@ export async function loadReviewSnapshot(business, gbpAccessToken, { force = fal
         })
       : { reviews: [], status: 'error', taskId: null };
 
+    console.log('DataForSEO reviews response', {
+      businessId: business.id,
+      status,
+      taskId,
+      reviewCount: reviews?.length ?? 0,
+      sample: reviews?.[0]
+    });
+
     if (status === 'completed' && reviews.length > 0) {
       snapshot = buildSnapshot(reviews);
+      snapshotSource = 'dataForSeo';
       if (taskId) {
         await markReviewFetchTaskCompleted({ businessId: business.id, taskId });
       }
@@ -287,7 +298,15 @@ export async function loadReviewSnapshot(business, gbpAccessToken, { force = fal
   if (!snapshot && accessToken && locationName) {
     try {
       const reviews = await fetchGbpReviews(accessToken, locationName);
+      console.log('GBP reviews response', {
+        businessId: business.id,
+        locationName,
+        reviewCount: reviews?.length ?? 0,
+        sample: reviews?.[0]
+      });
+
       snapshot = buildSnapshot(reviews);
+      snapshotSource = 'gbp';
     } catch (error) {
       console.error('Failed to load GBP reviews', error);
     }
@@ -296,6 +315,15 @@ export async function loadReviewSnapshot(business, gbpAccessToken, { force = fal
   const sanitizedSnapshot = sanitizeSnapshot(snapshot);
 
   if (sanitizedSnapshot) {
+    if (snapshotSource) {
+      console.log('Mapped review snapshot ready for persistence', {
+        businessId: business.id,
+        placeId,
+        source: snapshotSource,
+        snapshot: sanitizedSnapshot
+      });
+    }
+
     await saveReviewSnapshot({ businessId: business.id, placeId, snapshot: sanitizedSnapshot });
     return { snapshot: sanitizedSnapshot, authorizationUrl, dataForSeoPending };
   }
