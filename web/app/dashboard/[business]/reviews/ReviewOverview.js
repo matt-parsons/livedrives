@@ -13,8 +13,10 @@ import SummaryMetricCard from '../SummaryMetricCard';
 import ReviewPermissionsGate from './ReviewPermissionsGate';
 import GbpPostScheduler from './GbpPostScheduler';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { useCallback, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { RefreshCw, ShieldCheck } from 'lucide-react';
 
 function buildTrendIndicator(delta, { unit = '', invert = false, digits = 1 } = {}) {
   if (delta === null || delta === undefined) {
@@ -169,7 +171,12 @@ export default function ReviewOverview({
           <p className="text-sm font-medium uppercase tracking-[0.12em] text-muted-foreground">Review Monitoring</p>
           {canRefreshReviews ? (
             <div className="flex items-center gap-2">
+              <Badge className="hidden items-center gap-1 sm:inline-flex" variant="outline">
+                <ShieldCheck className="h-3.5 w-3.5" />
+                Admin
+              </Badge>
               <Button size="sm" variant="outline" onClick={handleRefreshClick} disabled={refreshing}>
+                <RefreshCw className="mr-2 h-4 w-4" />
                 {refreshing ? 'Refreshing…' : 'Refresh reviews'}
               </Button>
             </div>
