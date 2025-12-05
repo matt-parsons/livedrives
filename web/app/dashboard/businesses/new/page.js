@@ -19,7 +19,7 @@ export default async function NewBusinessPage() {
       <section className="page-header">
         <h1 className="page-title">Create a business</h1>
         <p className="page-subtitle">
-          Capture core details for a new business so you can start scheduling runs and CTR sessions.
+          Search for a business profile to automatically collect the details you need.
         </p>
       </section>
 
@@ -30,7 +30,7 @@ export default async function NewBusinessPage() {
         </div>
 
         <div className="surface-card surface-card--muted">
-          <BusinessForm mode="create" />
+          <BusinessForm mode="create" searchOnly />
         </div>
       </section>
 
