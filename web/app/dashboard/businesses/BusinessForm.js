@@ -25,6 +25,24 @@ function nullIfEmpty(value) {
   return value === null || value === undefined || value === '' ? null : value;
 }
 
+const DEFAULT_TIMEZONE = process.env.NEXT_PUBLIC_DEFAULT_TIMEZONE || 'America/Phoenix';
+
+function normalizeTimezone(value) {
+  if (typeof value === 'string' && value.trim().length > 0) {
+    return value.trim();
+  }
+
+  const browserTimezone = typeof Intl !== 'undefined'
+    ? Intl.DateTimeFormat().resolvedOptions()?.timeZone
+    : '';
+
+  if (browserTimezone) {
+    return browserTimezone;
+  }
+
+  return DEFAULT_TIMEZONE;
+}
+
 function slugify(value) {
   if (!value) {
     return '';
@@ -104,6 +122,7 @@ function derivePlaceValuesFromPlace(place, prevState) {
   const nextSlug = slugify(place.name ?? '');
   const derivedMid = place.sidebar?.mid ?? place.sidebar?.cid ?? place.cid ?? null;
   const placeId = place.placeId ?? place.place_id ?? null;
+  const resolvedTimezone = normalizeTimezone(place.timezone ?? prevState.timezone);
 
   return {
     ...prevState,
@@ -116,7 +135,7 @@ function derivePlaceValuesFromPlace(place, prevState) {
       latValue !== undefined && latValue !== null ? String(latValue) : prevState.destLat,
     destLng:
       lngValue !== undefined && lngValue !== null ? String(lngValue) : prevState.destLng,
-    timezone: place.timezone ?? prevState.timezone,
+    timezone: resolvedTimezone,
     gPlaceId: placeId ?? prevState.gPlaceId,
     mid: derivedMid ? String(derivedMid) : prevState.mid,
     drivesPerDay: prevState.drivesPerDay || '5'
@@ -149,7 +168,7 @@ export default function BusinessForm({
       destinationZip: initialValues.destinationZip ?? '',
       destLat: toInputString(initialValues.destLat),
       destLng: toInputString(initialValues.destLng),
-      timezone: initialValues.timezone ?? '',
+      timezone: normalizeTimezone(initialValues.timezone ?? ''),
       drivesPerDay: toInputString(defaultDrivesPerDay),
       gPlaceId: initialValues.gPlaceId ?? '',
       isActive: typeof initialValues.isActive === 'boolean'
@@ -298,7 +317,7 @@ export default function BusinessForm({
     destinationZip: nullIfEmpty(values.destinationZip.trim()),
     destLat: nullIfEmpty(values.destLat.trim()),
     destLng: nullIfEmpty(values.destLng.trim()),
-    timezone: nullIfEmpty(values.timezone.trim()),
+    timezone: normalizeTimezone(values.timezone),
     drivesPerDay: nullIfEmpty(values.drivesPerDay.trim()),
     gPlaceId: nullIfEmpty(values.gPlaceId.trim()),
     isActive: values.isActive
