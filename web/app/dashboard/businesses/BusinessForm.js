@@ -25,6 +25,24 @@ function nullIfEmpty(value) {
   return value === null || value === undefined || value === '' ? null : value;
 }
 
+const DEFAULT_TIMEZONE = process.env.NEXT_PUBLIC_DEFAULT_TIMEZONE || 'America/Phoenix';
+
+function normalizeTimezone(value) {
+  if (typeof value === 'string' && value.trim().length > 0) {
+    return value.trim();
+  }
+
+  const browserTimezone = typeof Intl !== 'undefined'
+    ? Intl.DateTimeFormat().resolvedOptions()?.timeZone
+    : '';
+
+  if (browserTimezone) {
+    return browserTimezone;
+  }
+
+  return DEFAULT_TIMEZONE;
+}
+
 function slugify(value) {
   if (!value) {
     return '';
@@ -104,6 +122,7 @@ function derivePlaceValuesFromPlace(place, prevState) {
   const nextSlug = slugify(place.name ?? '');
   const derivedMid = place.sidebar?.mid ?? place.sidebar?.cid ?? place.cid ?? null;
   const placeId = place.placeId ?? place.place_id ?? null;
+  const resolvedTimezone = normalizeTimezone(place.timezone ?? prevState.timezone);
 
   return {
     ...prevState,
@@ -116,7 +135,7 @@ function derivePlaceValuesFromPlace(place, prevState) {
       latValue !== undefined && latValue !== null ? String(latValue) : prevState.destLat,
     destLng:
       lngValue !== undefined && lngValue !== null ? String(lngValue) : prevState.destLng,
-    timezone: place.timezone ?? prevState.timezone,
+    timezone: resolvedTimezone,
     gPlaceId: placeId ?? prevState.gPlaceId,
     mid: derivedMid ? String(derivedMid) : prevState.mid,
     drivesPerDay: prevState.drivesPerDay || '5'
@@ -149,7 +168,7 @@ export default function BusinessForm({
       destinationZip: initialValues.destinationZip ?? '',
       destLat: toInputString(initialValues.destLat),
       destLng: toInputString(initialValues.destLng),
-      timezone: initialValues.timezone ?? '',
+      timezone: normalizeTimezone(initialValues.timezone ?? ''),
       drivesPerDay: toInputString(defaultDrivesPerDay),
       gPlaceId: initialValues.gPlaceId ?? '',
       isActive: typeof initialValues.isActive === 'boolean'
@@ -298,7 +317,7 @@ export default function BusinessForm({
     destinationZip: nullIfEmpty(values.destinationZip.trim()),
     destLat: nullIfEmpty(values.destLat.trim()),
     destLng: nullIfEmpty(values.destLng.trim()),
-    timezone: nullIfEmpty(values.timezone.trim()),
+    timezone: normalizeTimezone(values.timezone),
     drivesPerDay: nullIfEmpty(values.drivesPerDay.trim()),
     gPlaceId: nullIfEmpty(values.gPlaceId.trim()),
     isActive: values.isActive
@@ -397,6 +416,26 @@ export default function BusinessForm({
       }
 
       let derivedState = derivePlaceValuesFromPlace(data.place, formState);
+
+      const fallbackName =
+        derivedState.businessName?.trim() ||
+        suggestion?.name ||
+        data.place?.name ||
+        data.place?.displayName?.text ||
+        '';
+
+      if (!fallbackName) {
+        throw new Error('Business name was missing from the selected profile.');
+      }
+
+      if (!derivedState.businessName?.trim()) {
+        derivedState = {
+          ...derivedState,
+          businessName: fallbackName,
+          businessSlug: slugify(fallbackName) || derivedState.businessSlug,
+          brandSearch: derivedState.brandSearch || fallbackName
+        };
+      }
       console.log('handleAddBusiness derivedState', derivedState);
 
       setFormState(derivedState);
@@ -505,8 +544,28 @@ export default function BusinessForm({
         </div>
       ) : null}
 
-      {!searchOnly ? (
-        <div className="grid gap-6">
+      {searchOnly ? (
+        <div className="hidden" aria-hidden>
+          <input type="hidden" name="businessName" value={formState.businessName} readOnly />
+          <input type="hidden" name="businessSlug" value={formState.businessSlug} readOnly />
+          <input type="hidden" name="brandSearch" value={formState.brandSearch} readOnly />
+          <input type="hidden" name="mid" value={formState.mid} readOnly />
+          <input
+            type="hidden"
+            name="destinationAddress"
+            value={formState.destinationAddress}
+            readOnly
+          />
+          <input type="hidden" name="destinationZip" value={formState.destinationZip} readOnly />
+          <input type="hidden" name="destLat" value={formState.destLat} readOnly />
+          <input type="hidden" name="destLng" value={formState.destLng} readOnly />
+          <input type="hidden" name="timezone" value={formState.timezone} readOnly />
+          <input type="hidden" name="drivesPerDay" value={formState.drivesPerDay} readOnly />
+          <input type="hidden" name="gPlaceId" value={formState.gPlaceId} readOnly />
+          <input type="hidden" name="isActive" value={formState.isActive ? 'true' : 'false'} readOnly />
+        </div>
+        ) : (
+          <div className="grid gap-6">
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="business-name">Business name</Label>
@@ -663,9 +722,9 @@ export default function BusinessForm({
                 Keep this in sync with your live Google Business Profile identifiers.
               </p>
             </div>
+            </div>
           </div>
-        </div>
-      ) : null}
+        )}
 
       {error ? (
         <p className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive" role="alert">
