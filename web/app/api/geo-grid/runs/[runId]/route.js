@@ -1,4 +1,5 @@
 import pool from '@lib/db/db.js';
+import { revalidatePath } from 'next/cache';
 import { requireAuth } from '@/lib/authServer';
 import { buildOrganizationScopeClause } from '@/lib/organizations';
 
@@ -25,7 +26,11 @@ export async function DELETE(request, { params }) {
 
     try {
       const [runs] = await connection.query(
-        `SELECT r.id, r.business_id AS businessId, b.business_name AS businessName, r.keyword
+        `SELECT r.id,
+                r.business_id   AS businessId,
+                b.business_slug AS businessSlug,
+                b.business_name AS businessName,
+                r.keyword
            FROM geo_grid_runs r
            JOIN businesses b ON b.id = r.business_id
           WHERE r.id = ?
@@ -45,6 +50,11 @@ export async function DELETE(request, { params }) {
       await connection.query('DELETE FROM geo_grid_runs WHERE id = ?', [runId]);
 
       await connection.commit();
+
+      const businessIdentifier = runs[0].businessSlug ?? runs[0].businessId;
+      const businessPath = `/dashboard/${encodeURIComponent(businessIdentifier)}`;
+      revalidatePath(`${businessPath}/keywords`);
+      revalidatePath(`${businessPath}/runs`);
 
       return Response.json({
         deleted: true,
