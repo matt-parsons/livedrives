@@ -397,6 +397,26 @@ export default function BusinessForm({
       }
 
       let derivedState = derivePlaceValuesFromPlace(data.place, formState);
+
+      const fallbackName =
+        derivedState.businessName?.trim() ||
+        suggestion?.name ||
+        data.place?.name ||
+        data.place?.displayName?.text ||
+        '';
+
+      if (!fallbackName) {
+        throw new Error('Business name was missing from the selected profile.');
+      }
+
+      if (!derivedState.businessName?.trim()) {
+        derivedState = {
+          ...derivedState,
+          businessName: fallbackName,
+          businessSlug: slugify(fallbackName) || derivedState.businessSlug,
+          brandSearch: derivedState.brandSearch || fallbackName
+        };
+      }
       console.log('handleAddBusiness derivedState', derivedState);
 
       setFormState(derivedState);
