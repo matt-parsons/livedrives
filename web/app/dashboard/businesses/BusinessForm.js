@@ -525,8 +525,8 @@ export default function BusinessForm({
           <input type="hidden" name="gPlaceId" value={formState.gPlaceId} readOnly />
           <input type="hidden" name="isActive" value={formState.isActive ? 'true' : 'false'} readOnly />
         </div>
-      ) : (
-        <div className="grid gap-6">
+        ) : (
+          <div className="grid gap-6">
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="business-name">Business name</Label>
@@ -683,9 +683,9 @@ export default function BusinessForm({
                 Keep this in sync with your live Google Business Profile identifiers.
               </p>
             </div>
+            </div>
           </div>
-        </div>
-      ) : null}
+        )}
 
       {error ? (
         <p className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive" role="alert">
