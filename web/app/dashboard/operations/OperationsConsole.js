@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import GeoGridLauncher from '../geo-grid-launcher/GeoGridLauncher';
 import OperationsNavigation from './OperationsNavigation';
+import SidebarBrand from '../[business]/SidebarBrand';
 
 const LOG_SCOPE_OPTIONS = [
   { id: 'today', label: "Today's logs" },
@@ -454,12 +455,28 @@ export default function OperationsConsole({ timezone: initialTimezone, initialTa
   }, [ctrPaused]);
 
   return (
-    <div className="page-shell__body operations-layout">
-      <aside className="page-shell__sidebar" aria-label="Operations navigation">
-        <OperationsNavigation activeTab={activeTab} onTabSelect={setActiveTab} tabOptions={TAB_OPTIONS} />
+    <div className="dashboard-layout__body">
+      <aside className="dashboard-layout__sidebar" aria-label="Operations navigation">
+        <SidebarBrand />
+        <div className="dashboard-sidebar__menu">
+          <OperationsNavigation activeTab={activeTab} onTabSelect={setActiveTab} tabOptions={TAB_OPTIONS} />
+        </div>
       </aside>
 
-      <div className="page-shell__content operations-layout__content">
+      <div className="dashboard-layout__main">
+        <header className="dashboard-layout__header">
+          <div class="dashboard-layout__header-container">
+            <div class="dashboard-header">
+              <div class="dashboard-header__content">
+                <h1 class="page-title">Operations hub</h1>
+                <span class="dashboard-sidebar__location">Review live execution logs, monitor today’s scheduler queue, and control ranking report operations from one workspace.</span>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <div className="dashboard-layout__content">
+
         {activeTab === 'logs' ? (
           <section
             id="operations-panel-logs"
@@ -1197,6 +1214,7 @@ export default function OperationsConsole({ timezone: initialTimezone, initialTa
           </DialogContent>
         ) : null}
       </Dialog>
+      </div>
       </div>
     </div>
   );
