@@ -505,7 +505,27 @@ export default function BusinessForm({
         </div>
       ) : null}
 
-      {!searchOnly ? (
+      {searchOnly ? (
+        <div className="hidden" aria-hidden>
+          <input type="hidden" name="businessName" value={formState.businessName} readOnly />
+          <input type="hidden" name="businessSlug" value={formState.businessSlug} readOnly />
+          <input type="hidden" name="brandSearch" value={formState.brandSearch} readOnly />
+          <input type="hidden" name="mid" value={formState.mid} readOnly />
+          <input
+            type="hidden"
+            name="destinationAddress"
+            value={formState.destinationAddress}
+            readOnly
+          />
+          <input type="hidden" name="destinationZip" value={formState.destinationZip} readOnly />
+          <input type="hidden" name="destLat" value={formState.destLat} readOnly />
+          <input type="hidden" name="destLng" value={formState.destLng} readOnly />
+          <input type="hidden" name="timezone" value={formState.timezone} readOnly />
+          <input type="hidden" name="drivesPerDay" value={formState.drivesPerDay} readOnly />
+          <input type="hidden" name="gPlaceId" value={formState.gPlaceId} readOnly />
+          <input type="hidden" name="isActive" value={formState.isActive ? 'true' : 'false'} readOnly />
+        </div>
+      ) : (
         <div className="grid gap-6">
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
