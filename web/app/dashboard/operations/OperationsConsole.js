@@ -465,11 +465,11 @@ export default function OperationsConsole({ timezone: initialTimezone, initialTa
 
       <div className="dashboard-layout__main">
         <header className="dashboard-layout__header">
-          <div class="dashboard-layout__header-container">
-            <div class="dashboard-header">
-              <div class="dashboard-header__content">
-                <h1 class="page-title">Operations hub</h1>
-                <span class="dashboard-sidebar__location">Review live execution logs, monitor today’s scheduler queue, and control ranking report operations from one workspace.</span>
+          <div className="dashboard-layout__header-container">
+            <div className="dashboard-header">
+              <div className="dashboard-header__content">
+                <h1 className="page-title">Operations hub</h1>
+                <span className="dashboard-sidebar__location">Review live execution logs, monitor today’s scheduler queue, and control ranking report operations from one workspace.</span>
               </div>
             </div>
           </div>
