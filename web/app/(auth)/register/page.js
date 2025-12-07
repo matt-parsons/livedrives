@@ -93,13 +93,7 @@ export default function RegisterPage() {
     setError('');
     setStatus('redirecting');
 
-    try {
-      window.location.href = '/api/auth/google/login?redirect=/dashboard/get-started';
-    } catch (err) {
-      console.error('Google registration failed', err);
-      setError(err.message || 'Google sign-up failed. Please try again.');
-      setStatus('idle');
-    }
+    window.location.href = '/api/auth/google/login?redirect=/dashboard/get-started';
   };
 
   return (
