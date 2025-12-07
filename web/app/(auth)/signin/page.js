@@ -2,8 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '@/lib/firebaseClient';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -45,6 +43,12 @@ export default function SignInPage() {
   const [error, setError] = useState(searchParams.get('error') ? 'Google sign-in failed. Please try again.' : '');
   const [loading, setLoading] = useState(false);
 
+  async function loadFirebase() {
+    const { auth, signInWithEmailAndPassword } = await import('@/lib/firebaseClient');
+
+    return { auth, signInWithEmailAndPassword };
+  }
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.has('error')) {
@@ -58,6 +62,8 @@ export default function SignInPage() {
     setLoading(true);
 
     try {
+      const { auth, signInWithEmailAndPassword } = await loadFirebase();
+
       const credential = await signInWithEmailAndPassword(auth, email, password);
       const idToken = await credential.user.getIdToken();
       await exchangeSession(idToken);
