@@ -1,17 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '@/lib/firebaseClient';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-
-const googleProvider = new GoogleAuthProvider();
-
-googleProvider.setCustomParameters({ prompt: 'select_account' });
 
 async function bootstrapSession() {
   const res = await fetch('/api/auth/bootstrap', {
@@ -43,9 +39,10 @@ async function exchangeSession(idToken) {
 
 export default function SignInPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [error, setError] = useState(searchParams.get('error') ? 'Google sign-in failed. Please try again.' : '');
   const [loading, setLoading] = useState(false);
 
   const handleEmailPassword = async (event) => {
@@ -73,16 +70,9 @@ export default function SignInPage() {
     setLoading(true);
 
     try {
-      const credential = await signInWithPopup(auth, googleProvider);
-      const idToken = await credential.user.getIdToken();
-      await exchangeSession(idToken);
-      await bootstrapSession();
-      await auth.signOut();
-      router.push('/dashboard');
-      router.refresh();
+      window.location.href = '/api/auth/google/login?redirect=/dashboard';
     } catch (err) {
       setError(err.message || 'Google sign-in failed.');
-    } finally {
       setLoading(false);
     }
   };
