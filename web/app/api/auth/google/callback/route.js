@@ -21,7 +21,7 @@ function getEnvOrThrow(key) {
 
 function parseState(value) {
   if (!value) {
-    return { redirect: '/dashboard' };
+    return { redirect: '/dashboard', errorRedirect: '/auth/signin' };
   }
 
   try {
@@ -30,11 +30,14 @@ function parseState(value) {
     const redirect = typeof parsed.redirect === 'string' && parsed.redirect.startsWith('/')
       ? parsed.redirect
       : '/dashboard';
+    const errorRedirect = typeof parsed.errorRedirect === 'string' && parsed.errorRedirect.startsWith('/')
+      ? parsed.errorRedirect
+      : '/auth/signin';
 
-    return { redirect };
+    return { redirect, errorRedirect };
   } catch (error) {
     console.warn('Failed to parse Google login state', error);
-    return { redirect: '/dashboard' };
+    return { redirect: '/dashboard', errorRedirect: '/auth/signin' };
   }
 }
 
@@ -166,9 +169,9 @@ async function bootstrapUserSession(requestUrl, sessionCookie) {
 
 export async function GET(request) {
   const url = new URL(request.url);
-  const { redirect } = parseState(url.searchParams.get('state'));
+  const { redirect, errorRedirect: errorRedirectPath } = parseState(url.searchParams.get('state'));
   const fallbackRedirect = redirect || '/dashboard';
-  const errorRedirect = new URL('/auth/signin', url.origin);
+  const errorRedirect = new URL(errorRedirectPath || '/auth/signin', url.origin);
   errorRedirect.searchParams.set('error', 'google_login_failed');
 
   const code = url.searchParams.get('code');

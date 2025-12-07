@@ -14,16 +14,16 @@ function encodeState(state) {
   return Buffer.from(JSON.stringify(state), 'utf8').toString('base64url');
 }
 
-function normalizeRedirectPath(value) {
+function normalizeRedirectPath(value, defaultPath = '/dashboard') {
   if (typeof value !== 'string') {
-    return '/dashboard';
+    return defaultPath;
   }
 
   if (!value.startsWith('/')) {
-    return '/dashboard';
+    return defaultPath;
   }
 
-  return value || '/dashboard';
+  return value || defaultPath;
 }
 
 export async function GET(request) {
@@ -32,7 +32,8 @@ export async function GET(request) {
     const redirectUri = getEnvOrThrow('GOOGLE_LOGIN_OAUTH_REDIRECT_URI');
     const params = new URL(request.url).searchParams;
     const redirectPath = normalizeRedirectPath(params.get('redirect'));
-    const state = encodeState({ redirect: redirectPath });
+    const errorRedirectPath = normalizeRedirectPath(params.get('errorRedirect'), '/auth/signin');
+    const state = encodeState({ redirect: redirectPath, errorRedirect: errorRedirectPath });
 
     const authUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth');
     authUrl.searchParams.set('client_id', clientId);

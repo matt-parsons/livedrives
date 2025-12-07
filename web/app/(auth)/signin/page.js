@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -50,11 +50,10 @@ export default function SignInPage() {
   }
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.has('error')) {
+    if (searchParams.get('error')) {
       setError('Google sign-in failed. Please try again.');
     }
-  }, []);
+  }, [searchParams]);
 
   const handleEmailPassword = async (event) => {
     event.preventDefault();
@@ -83,7 +82,12 @@ export default function SignInPage() {
     setLoading(true);
 
     try {
-      window.location.href = '/api/auth/google/login?redirect=/dashboard';
+      const params = new URLSearchParams({
+        redirect: '/dashboard',
+        errorRedirect: '/auth/signin'
+      });
+
+      window.location.href = `/api/auth/google/login?${params.toString()}`;
     } catch (err) {
       setError(err.message || 'Google sign-in failed.');
       setLoading(false);

@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -42,12 +42,21 @@ const MIN_PASSWORD_LENGTH = 8;
 
 export default function RegisterPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [status, setStatus] = useState('idle');
   const [error, setError] = useState('');
 
   const isSubmitting = status === 'submitting';
+  const isGoogleSigningIn = status === 'google';
+  const isBusy = isSubmitting || isGoogleSigningIn;
+
+  useEffect(() => {
+    if (searchParams.get('error')) {
+      setError('Google sign-in failed. Please try again.');
+    }
+  }, [searchParams]);
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -87,6 +96,18 @@ export default function RegisterPage() {
     }
   }
 
+  function handleGoogle() {
+    setError('');
+    setStatus('google');
+
+    const params = new URLSearchParams({
+      redirect: '/dashboard/get-started',
+      errorRedirect: '/auth/register'
+    });
+
+    window.location.href = `/api/auth/google/login?${params.toString()}`;
+  }
+
   return (
     <div className="page-shell">
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-10 lg:grid lg:grid-cols-[1.1fr_1fr] lg:items-start">
@@ -116,7 +137,7 @@ Securely create your account in seconds.
                   placeholder="you@company.com"
                   autoComplete="email"
                   required
-                  disabled={isSubmitting}
+                  disabled={isBusy}
                 />
               </div>
 
@@ -131,15 +152,25 @@ Securely create your account in seconds.
                   autoComplete="new-password"
                   minLength={MIN_PASSWORD_LENGTH}
                   required
-                  disabled={isSubmitting}
+                  disabled={isBusy}
                 />
                 <p className="text-xs text-muted-foreground">Minimum {MIN_PASSWORD_LENGTH} characters.</p>
               </div>
 
-              <Button type="submit" className="w-full" disabled={isSubmitting}>
+              <Button type="submit" className="w-full" disabled={isBusy}>
                 {isSubmitting ? 'Creating your account…' : 'Start free trial'}
               </Button>
             </form>
+
+            <div className="flex items-center gap-3 text-sm text-muted-foreground">
+              <div className="h-px flex-1 bg-border" aria-hidden />
+              <span>or</span>
+              <div className="h-px flex-1 bg-border" aria-hidden />
+            </div>
+
+            <Button type="button" variant="secondary" className="w-full" onClick={handleGoogle} disabled={isBusy}>
+              {isGoogleSigningIn ? 'Preparing Google sign-up…' : 'Continue with Google'}
+            </Button>
           </CardContent>
 
           <CardFooter>
