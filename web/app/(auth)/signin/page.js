@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -40,7 +40,7 @@ export default function SignInPage() {
   const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState(searchParams.get('error') ? 'Google sign-in failed. Please try again.' : '');
+  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   async function loadFirebase() {
@@ -50,11 +50,10 @@ export default function SignInPage() {
   }
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.has('error')) {
+    if (searchParams.has('error')) {
       setError('Google sign-in failed. Please try again.');
     }
-  }, []);
+  }, [searchParams]);
 
   const handleEmailPassword = async (event) => {
     event.preventDefault();
@@ -78,16 +77,25 @@ export default function SignInPage() {
     }
   };
 
-  const handleGoogle = async () => {
+  const resolveOauthHost = () =>
+    process.env.NEXT_PUBLIC_GOOGLE_LOGIN_OAUTH_REDIRECT_URI || process.env.GOOGLE_LOGIN_OAUTH_REDIRECT_URI;
+
+  const buildGoogleLoginUrl = () => {
+    const oauthHost = resolveOauthHost();
+    const baseUrl = oauthHost
+      ? new URL('/api/auth/google/login', oauthHost)
+      : new URL('/api/auth/google/login', window.location.origin);
+
+    baseUrl.searchParams.set('redirect', '/dashboard');
+
+    return baseUrl.toString();
+  };
+
+  const handleGoogle = () => {
     setError('');
     setLoading(true);
 
-    try {
-      window.location.href = '/api/auth/google/login?redirect=/dashboard';
-    } catch (err) {
-      setError(err.message || 'Google sign-in failed.');
-      setLoading(false);
-    }
+    window.location.href = buildGoogleLoginUrl();
   };
 
   return (

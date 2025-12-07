@@ -48,6 +48,8 @@ export default function RegisterPage() {
   const [error, setError] = useState('');
 
   const isSubmitting = status === 'submitting';
+  const isRedirecting = status === 'redirecting';
+  const isBusy = isSubmitting || isRedirecting;
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -87,6 +89,27 @@ export default function RegisterPage() {
     }
   }
 
+  const resolveOauthHost = () =>
+    process.env.NEXT_PUBLIC_GOOGLE_LOGIN_OAUTH_REDIRECT_URI || process.env.GOOGLE_LOGIN_OAUTH_REDIRECT_URI;
+
+  const buildGoogleLoginUrl = () => {
+    const oauthHost = resolveOauthHost();
+    const baseUrl = oauthHost
+      ? new URL('/api/auth/google/login', oauthHost)
+      : new URL('/api/auth/google/login', window.location.origin);
+
+    baseUrl.searchParams.set('redirect', '/dashboard/get-started');
+
+    return baseUrl.toString();
+  };
+
+  const handleGoogle = () => {
+    setError('');
+    setStatus('redirecting');
+
+    window.location.href = buildGoogleLoginUrl();
+  };
+
   return (
     <div className="page-shell">
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-10 lg:grid lg:grid-cols-[1.1fr_1fr] lg:items-start">
@@ -116,7 +139,7 @@ Securely create your account in seconds.
                   placeholder="you@company.com"
                   autoComplete="email"
                   required
-                  disabled={isSubmitting}
+                  disabled={isBusy}
                 />
               </div>
 
@@ -131,18 +154,34 @@ Securely create your account in seconds.
                   autoComplete="new-password"
                   minLength={MIN_PASSWORD_LENGTH}
                   required
-                  disabled={isSubmitting}
+                  disabled={isBusy}
                 />
                 <p className="text-xs text-muted-foreground">Minimum {MIN_PASSWORD_LENGTH} characters.</p>
               </div>
 
-              <Button type="submit" className="w-full" disabled={isSubmitting}>
+              <Button type="submit" className="w-full" disabled={isBusy}>
                 {isSubmitting ? 'Creating your account…' : 'Start free trial'}
               </Button>
             </form>
           </CardContent>
 
-          <CardFooter>
+          <CardFooter className="flex flex-col gap-4">
+            <div className="flex items-center gap-3 text-sm text-muted-foreground">
+              <div className="h-px flex-1 bg-border" aria-hidden />
+              <span>or</span>
+              <div className="h-px flex-1 bg-border" aria-hidden />
+            </div>
+
+            <Button
+              type="button"
+              variant="secondary"
+              className="w-full"
+              onClick={handleGoogle}
+              disabled={isBusy}
+            >
+              {isRedirecting ? 'Preparing Google sign-up…' : 'Continue with Google'}
+            </Button>
+
             {error ? (
               <p
                 role="alert"
