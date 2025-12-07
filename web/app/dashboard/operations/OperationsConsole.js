@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import GeoGridLauncher from '../geo-grid-launcher/GeoGridLauncher';
 import OperationsNavigation from './OperationsNavigation';
+import SidebarBrand from '../[business]/SidebarBrand';
 
 const LOG_SCOPE_OPTIONS = [
   { id: 'today', label: "Today's logs" },
@@ -151,6 +152,7 @@ export default function OperationsConsole({ timezone: initialTimezone, initialTa
   const [geoRunsError, setGeoRunsError] = useState(null);
   const [geoRunsData, setGeoRunsData] = useState({ timezone: fallbackTimezone, runs: [] });
   const [geoRunsInitialized, setGeoRunsInitialized] = useState(false);
+  const [geoRunActions, setGeoRunActions] = useState({});
 
   const activeLogsTimezone = logsData?.timezone || fallbackTimezone;
   const activeScheduleTimezone = scheduleData?.timezone || fallbackTimezone;
@@ -354,6 +356,52 @@ export default function OperationsConsole({ timezone: initialTimezone, initialTa
     }
   }, []);
 
+  const handleDeleteGeoRun = useCallback(
+    async (run) => {
+      if (!run?.id) {
+        return;
+      }
+
+      const businessLabel = run.businessName
+        ?? (run.businessId != null ? `business ${run.businessId}` : 'this business');
+      const confirmMessage = `Delete ranking report run #${run.id} for ${businessLabel}?\nThis will remove the run and all recorded points. This action cannot be undone.`;
+
+      if (typeof window !== 'undefined' && !window.confirm(confirmMessage)) {
+        return;
+      }
+
+      setGeoRunActions((prev) => ({
+        ...prev,
+        [run.id]: { status: 'loading', message: '' }
+      }));
+
+      try {
+        const response = await fetch(`/api/geo-grid/runs/${run.id}`, { method: 'DELETE' });
+        const payload = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+          throw new Error(payload?.error || 'Failed to delete ranking report.');
+        }
+
+        setGeoRunsData((prev) => ({
+          ...prev,
+          runs: (Array.isArray(prev?.runs) ? prev.runs : []).filter((entry) => entry.id !== run.id)
+        }));
+
+        setGeoRunActions((prev) => ({
+          ...prev,
+          [run.id]: { status: 'success', message: '' }
+        }));
+      } catch (error) {
+        setGeoRunActions((prev) => ({
+          ...prev,
+          [run.id]: { status: 'error', message: error.message || 'Unable to delete ranking report.' }
+        }));
+      }
+    },
+    [setGeoRunsData]
+  );
+
   useEffect(() => {
     if (activeTab === 'geo' && !geoRunsInitialized && !geoRunsLoading) {
       loadGeoRuns();
@@ -454,12 +502,28 @@ export default function OperationsConsole({ timezone: initialTimezone, initialTa
   }, [ctrPaused]);
 
   return (
-    <div className="page-shell__body operations-layout">
-      <aside className="page-shell__sidebar" aria-label="Operations navigation">
-        <OperationsNavigation activeTab={activeTab} onTabSelect={setActiveTab} tabOptions={TAB_OPTIONS} />
+    <div className="dashboard-layout__body">
+      <aside className="dashboard-layout__sidebar" aria-label="Operations navigation">
+        <SidebarBrand />
+        <div className="dashboard-sidebar__menu">
+          <OperationsNavigation activeTab={activeTab} onTabSelect={setActiveTab} tabOptions={TAB_OPTIONS} />
+        </div>
       </aside>
 
-      <div className="page-shell__content operations-layout__content">
+      <div className="dashboard-layout__main">
+        <header className="dashboard-layout__header">
+          <div className="dashboard-layout__header-container">
+            <div className="dashboard-header">
+              <div className="dashboard-header__content">
+                <h1 className="page-title">Operations hub</h1>
+                <span className="dashboard-sidebar__location">Review live execution logs, monitor today’s scheduler queue, and control ranking report operations from one workspace.</span>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <div className="dashboard-layout__content">
+
         {activeTab === 'logs' ? (
           <section
             id="operations-panel-logs"
@@ -998,12 +1062,13 @@ export default function OperationsConsole({ timezone: initialTimezone, initialTa
                     <th style={{ minWidth: 140 }}>Top 3 points</th>
                     <th style={{ minWidth: 140 }}>Avg rank</th>
                     <th style={{ minWidth: 180 }}>Last measured</th>
+                    <th style={{ minWidth: 160 }}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {geoRunsLoading && geoRuns.length === 0 ? (
                     <tr>
-                      <td colSpan={13} className="table-placeholder">
+                      <td colSpan={14} className="table-placeholder">
                         Loading geo map runs…
                       </td>
                     </tr>
@@ -1011,41 +1076,60 @@ export default function OperationsConsole({ timezone: initialTimezone, initialTa
 
                   {!geoRunsLoading && geoRuns.length === 0 ? (
                     <tr>
-                      <td colSpan={13} className="table-placeholder">
+                      <td colSpan={14} className="table-placeholder">
                         No geo map runs found for your organization.
                       </td>
                     </tr>
                   ) : null}
 
-                  {geoRuns.map((run) => (
-                    <tr key={run.id}>
-                      <td>{run.id}</td>
-                      <td>{run.businessName ?? run.businessId ?? '—'}</td>
-                      <td>{run.keyword ?? '—'}</td>
-                      <td>{run.status ?? '—'}</td>
-                      <td>{formatDateTime(run.createdAt, activeGeoTimezone)}</td>
-                      <td>{formatDateTime(run.finishedAt, activeGeoTimezone)}</td>
-                      <td>
-                        {run.gridRows != null && run.gridCols != null
-                          ? `${run.gridRows} × ${run.gridCols}`
-                          : '—'}
-                      </td>
-                      <td>{run.radiusMiles != null ? formatDecimal(run.radiusMiles, 1) : '—'}</td>
-                      <td>{run.spacingMiles != null ? formatDecimal(run.spacingMiles, 2) : '—'}</td>
-                      <td>
-                        {run.totalPoints != null
-                          ? `${run.rankedPoints ?? 0} / ${run.totalPoints}`
-                          : '—'}
-                      </td>
-                      <td>
-                        {run.totalPoints != null
-                          ? `${run.top3Points ?? 0} / ${run.totalPoints}`
-                          : '—'}
-                      </td>
-                      <td>{formatDecimal(run.avgRank)}</td>
-                      <td>{formatDateTime(run.lastMeasuredAt, activeGeoTimezone)}</td>
-                    </tr>
-                  ))}
+                  {geoRuns.map((run) => {
+                    const rowAction = geoRunActions[run.id] || {};
+
+                    return (
+                      <tr key={run.id}>
+                        <td>{run.id}</td>
+                        <td>{run.businessName ?? run.businessId ?? '—'}</td>
+                        <td>{run.keyword ?? '—'}</td>
+                        <td>{run.status ?? '—'}</td>
+                        <td>{formatDateTime(run.createdAt, activeGeoTimezone)}</td>
+                        <td>{formatDateTime(run.finishedAt, activeGeoTimezone)}</td>
+                        <td>
+                          {run.gridRows != null && run.gridCols != null
+                            ? `${run.gridRows} × ${run.gridCols}`
+                            : '—'}
+                        </td>
+                        <td>{run.radiusMiles != null ? formatDecimal(run.radiusMiles, 1) : '—'}</td>
+                        <td>{run.spacingMiles != null ? formatDecimal(run.spacingMiles, 2) : '—'}</td>
+                        <td>
+                          {run.totalPoints != null
+                            ? `${run.rankedPoints ?? 0} / ${run.totalPoints}`
+                            : '—'}
+                        </td>
+                        <td>
+                          {run.totalPoints != null
+                            ? `${run.top3Points ?? 0} / ${run.totalPoints}`
+                            : '—'}
+                        </td>
+                        <td>{formatDecimal(run.avgRank)}</td>
+                        <td>{formatDateTime(run.lastMeasuredAt, activeGeoTimezone)}</td>
+                        <td>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                            <button
+                              type="button"
+                              className="inline-button inline-button--danger"
+                              onClick={() => handleDeleteGeoRun(run)}
+                              disabled={rowAction.status === 'loading'}
+                            >
+                              {rowAction.status === 'loading' ? 'Deleting…' : 'Delete run'}
+                            </button>
+                            {rowAction.status === 'error' ? (
+                              <span className="muted" role="alert">{rowAction.message}</span>
+                            ) : null}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -1197,6 +1281,7 @@ export default function OperationsConsole({ timezone: initialTimezone, initialTa
           </DialogContent>
         ) : null}
       </Dialog>
+      </div>
       </div>
     </div>
   );

@@ -37,9 +37,10 @@ async function exchangeSession(idToken) {
 
 export default function SignInPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [error, setError] = useState(searchParams.get('error') ? 'Google sign-in failed. Please try again.' : '');
   const [loading, setLoading] = useState(false);
 
   async function loadFirebase() {
