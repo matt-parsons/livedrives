@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '@/lib/firebaseClient';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
@@ -44,6 +44,13 @@ export default function SignInPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState(searchParams.get('error') ? 'Google sign-in failed. Please try again.' : '');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.has('error')) {
+      setError('Google sign-in failed. Please try again.');
+    }
+  }, []);
 
   const handleEmailPassword = async (event) => {
     event.preventDefault();
