@@ -1,6 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  env: {
+    GOOGLE_LOGIN_OAUTH_REDIRECT_URI: process.env.GOOGLE_LOGIN_OAUTH_REDIRECT_URI
+  },
   // Keep externalDir and typedRoutes if needed, but remove serverComponentsExternalPackages
   experimental: {
     typedRoutes: false,

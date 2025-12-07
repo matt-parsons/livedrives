@@ -77,16 +77,21 @@ export default function SignInPage() {
     }
   };
 
-  const handleGoogle = async () => {
+  const buildGoogleLoginUrl = () => {
+    const baseUrl = process.env.GOOGLE_LOGIN_OAUTH_REDIRECT_URI
+      ? new URL('/api/auth/google/login', process.env.GOOGLE_LOGIN_OAUTH_REDIRECT_URI)
+      : new URL('/api/auth/google/login', window.location.origin);
+
+    baseUrl.searchParams.set('redirect', '/dashboard');
+
+    return baseUrl.toString();
+  };
+
+  const handleGoogle = () => {
     setError('');
     setLoading(true);
 
-    try {
-      window.location.href = '/api/auth/google/login?redirect=/dashboard';
-    } catch (err) {
-      setError(err.message || 'Google sign-in failed.');
-      setLoading(false);
-    }
+    window.location.href = buildGoogleLoginUrl();
   };
 
   return (

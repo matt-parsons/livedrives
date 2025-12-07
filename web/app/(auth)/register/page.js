@@ -89,11 +89,21 @@ export default function RegisterPage() {
     }
   }
 
+  const buildGoogleLoginUrl = () => {
+    const baseUrl = process.env.GOOGLE_LOGIN_OAUTH_REDIRECT_URI
+      ? new URL('/api/auth/google/login', process.env.GOOGLE_LOGIN_OAUTH_REDIRECT_URI)
+      : new URL('/api/auth/google/login', window.location.origin);
+
+    baseUrl.searchParams.set('redirect', '/dashboard/get-started');
+
+    return baseUrl.toString();
+  };
+
   const handleGoogle = () => {
     setError('');
     setStatus('redirecting');
 
-    window.location.href = '/api/auth/google/login?redirect=/dashboard/get-started';
+    window.location.href = buildGoogleLoginUrl();
   };
 
   return (
