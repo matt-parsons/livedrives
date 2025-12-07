@@ -18,15 +18,7 @@ export default async function OperationsPage({ searchParams }) {
     const initialTab = requestedTab && TAB_IDS.has(requestedTab) ? requestedTab : undefined;
 
     return (
-      <div className="page-shell">
-        <section className="page-header">
-          <h1 className="page-title">Operations hub</h1>
-          <p className="page-subtitle">
-            Review live execution logs, monitor today’s scheduler queue, and control ranking report operations from one
-            workspace.
-          </p>
-        </section>
-
+      <div className="dashboard-layout">
         <OperationsConsole timezone={DEFAULT_TIMEZONE} initialTab={initialTab} />
       </div>
     );

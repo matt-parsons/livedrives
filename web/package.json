@@ -17,6 +17,7 @@
     "autoprefixer": "^10.4.19",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
+    "dotenv": "^17.2.3",
     "firebase": "^10.12.2",
     "firebase-admin": "^12.6.0",
     "lucide-react": "^0.378.0",
