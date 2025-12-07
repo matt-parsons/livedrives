@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -40,7 +40,9 @@ export default function SignInPage() {
   const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState(searchParams.get('error') ? 'Google sign-in failed. Please try again.' : '');
+  const [error, setError] = useState(
+    searchParams.get('error') ? 'Google sign-in failed. Please try again.' : ''
+  );
   const [loading, setLoading] = useState(false);
 
   async function loadFirebase() {
@@ -50,11 +52,10 @@ export default function SignInPage() {
   }
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.has('error')) {
+    if (searchParams.has('error')) {
       setError('Google sign-in failed. Please try again.');
     }
-  }, []);
+  }, [searchParams]);
 
   const handleEmailPassword = async (event) => {
     event.preventDefault();
