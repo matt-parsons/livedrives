@@ -33,3 +33,10 @@ variable so the suggestions API can call OpenAI:
 - `GOOGLE_BUSINESS_PROFILE_OAUTH_REDIRECT_URI` – Must match the callback route (`/api/google-business-profile/oauth`).
 - The new `GET /api/google-business-profile/oauth` route handles Google's redirect, exchanges the authorization code, stores the refresh/access tokens in the `gbp_authorizations` table, and redirects back to `/dashboard/<business-slug>/reviews`.
 - Review data is now fetched via stored tokens (automatically refreshed when needed) so a single refresh token can serve each business instead of relying on a global env var.
+
+## Google Login OAuth
+
+- `GOOGLE_LOGIN_OAUTH_CLIENT_ID` – OAuth client ID for signing users in with Google.
+- `GOOGLE_LOGIN_OAUTH_CLIENT_SECRET` – Client secret for exchanging Google authorization codes (falls back to `GOOGLE_LOGIE_OAUTH_CLIENT_SECRET` when present).
+- `GOOGLE_LOGIN_OAUTH_REDIRECT_URI` – Must point to the callback route (`/api/auth/google/callback`).
+- `GET /api/auth/google/login` redirects users to Google's consent screen, and the callback exchanges the code, creates/updates the Firebase user, starts a session cookie, and bootstraps their database profile.
