@@ -94,7 +94,7 @@ export async function GET(request) {
   }
 
   const clientId = process.env.GOOGLE_LOGIN_OAUTH_CLIENT_ID;
-  const clientSecret = process.env.GOOGLE_LOGIE_OAUTH_CLIENT_SECRET;
+  const clientSecret = process.env.GOOGLE_LOGIN_OAUTH_CLIENT_SECRET;
   const redirectUri = process.env.GOOGLE_LOGIN_OAUTH_REDIRECT_URI;
   const firebaseApiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
 
