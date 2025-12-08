@@ -78,7 +78,7 @@ export default function SignInPage() {
   };
 
   const resolveOauthHost = () =>
-    process.env.NEXT_PUBLIC_GOOGLE_LOGIN_OAUTH_REDIRECT_URI || process.env.GOOGLE_LOGIN_OAUTH_REDIRECT_URI;
+    process.env.NEXT_PUBLIC_GOOGLE_LOGIN_OAUTH_REDIRECT_URI;
 
   const buildGoogleLoginUrl = () => {
     const oauthHost = resolveOauthHost();
