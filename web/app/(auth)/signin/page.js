@@ -2,16 +2,12 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '@/lib/firebaseClient';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-
-const googleProvider = new GoogleAuthProvider();
-
-googleProvider.setCustomParameters({ prompt: 'select_account' });
 
 async function bootstrapSession() {
   const res = await fetch('/api/auth/bootstrap', {
@@ -73,16 +69,10 @@ export default function SignInPage() {
     setLoading(true);
 
     try {
-      const credential = await signInWithPopup(auth, googleProvider);
-      const idToken = await credential.user.getIdToken();
-      await exchangeSession(idToken);
-      await bootstrapSession();
-      await auth.signOut();
-      router.push('/dashboard');
-      router.refresh();
+      const redirect = encodeURIComponent('/dashboard');
+      window.location.assign(`/api/auth/google?redirect=${redirect}`);
     } catch (err) {
       setError(err.message || 'Google sign-in failed.');
-    } finally {
       setLoading(false);
     }
   };
