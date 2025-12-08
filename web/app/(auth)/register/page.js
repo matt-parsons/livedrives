@@ -46,8 +46,10 @@ export default function RegisterPage() {
   const [password, setPassword] = useState('');
   const [status, setStatus] = useState('idle');
   const [error, setError] = useState('');
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   const isSubmitting = status === 'submitting';
+  const isBusy = isSubmitting || googleLoading;
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -87,6 +89,20 @@ export default function RegisterPage() {
     }
   }
 
+  async function handleGoogleSignup() {
+    setError('');
+    setGoogleLoading(true);
+
+    try {
+      const redirect = encodeURIComponent('/dashboard/get-started');
+      window.location.assign(`/api/auth/google?redirect=${redirect}`);
+    } catch (err) {
+      console.error('Google signup flow failed', err);
+      setError(err.message || 'Unable to continue with Google right now.');
+      setGoogleLoading(false);
+    }
+  }
+
   return (
     <div className="page-shell">
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-10 lg:grid lg:grid-cols-[1.1fr_1fr] lg:items-start">
@@ -116,7 +132,7 @@ Securely create your account in seconds.
                   placeholder="you@company.com"
                   autoComplete="email"
                   required
-                  disabled={isSubmitting}
+                  disabled={isBusy}
                 />
               </div>
 
@@ -131,18 +147,34 @@ Securely create your account in seconds.
                   autoComplete="new-password"
                   minLength={MIN_PASSWORD_LENGTH}
                   required
-                  disabled={isSubmitting}
+                  disabled={isBusy}
                 />
                 <p className="text-xs text-muted-foreground">Minimum {MIN_PASSWORD_LENGTH} characters.</p>
               </div>
 
-              <Button type="submit" className="w-full" disabled={isSubmitting}>
+              <Button type="submit" className="w-full" disabled={isBusy}>
                 {isSubmitting ? 'Creating your account…' : 'Start free trial'}
               </Button>
             </form>
           </CardContent>
 
-          <CardFooter>
+          <CardFooter className="flex flex-col gap-4">
+            <div className="flex items-center gap-3 text-sm text-muted-foreground">
+              <div className="h-px flex-1 bg-border" aria-hidden />
+              <span>or</span>
+              <div className="h-px flex-1 bg-border" aria-hidden />
+            </div>
+
+            <Button
+              type="button"
+              variant="secondary"
+              className="w-full"
+              onClick={handleGoogleSignup}
+              disabled={isBusy}
+            >
+              {googleLoading ? 'Preparing Google sign-up…' : 'Continue with Google'}
+            </Button>
+
             {error ? (
               <p
                 role="alert"
