@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { getGoogleLoginConfig } from '@/lib/googleLoginConfig';
 
 function buildStateParam(redirect) {
   const safeRedirect = typeof redirect === 'string' && redirect.startsWith('/') ? redirect : '/dashboard';
@@ -7,8 +8,7 @@ function buildStateParam(redirect) {
 }
 
 export async function GET(request) {
-  const clientId = process.env.GOOGLE_LOGIN_OAUTH_CLIENT_ID;
-  const redirectUri = process.env.GOOGLE_LOGIN_OAUTH_REDIRECT_URI;
+  const { clientId, redirectUri } = getGoogleLoginConfig(request);
 
   if (!clientId || !redirectUri) {
     return NextResponse.json({ error: 'Google login is not configured.' }, { status: 500 });

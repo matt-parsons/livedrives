@@ -1,16 +1,10 @@
-import { SESSION_COOKIE_NAME } from '@/lib/authServer';
+import { applySessionCookie, getCookieDomain } from '@/lib/authServer';
 import { ROLE_PREVIEW_COOKIE_NAME } from '@/lib/rolePreview';
 
-export function applyLogoutCookies(response) {
-  response.cookies.set({
-    name: SESSION_COOKIE_NAME,
-    value: '',
-    maxAge: 0,
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    path: '/'
-  });
+export function applyLogoutCookies(response, { hostname } = {}) {
+  const domain = getCookieDomain(hostname);
+
+  applySessionCookie(response, '', { hostname, maxAgeMs: 0 });
 
   response.cookies.set({
     name: ROLE_PREVIEW_COOKIE_NAME,
@@ -18,7 +12,8 @@ export function applyLogoutCookies(response) {
     maxAge: 0,
     httpOnly: true,
     sameSite: 'lax',
-    path: '/'
+    path: '/',
+    ...(domain ? { domain } : {})
   });
 
   return response;

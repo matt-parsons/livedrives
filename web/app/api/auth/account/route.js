@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import pool from '@lib/db/db.js';
 import { adminAuth } from '@/lib/firebaseAdmin';
-import { AuthError, SESSION_COOKIE_NAME, requireAuth } from '@/lib/authServer';
+import { applySessionCookie, AuthError, requireAuth } from '@/lib/authServer';
 
 export const runtime = 'nodejs';
 
@@ -85,18 +85,10 @@ export async function DELETE(request) {
 
     await pool.query('DELETE FROM users WHERE id = ?', [session.userId]);
 
-    const response = NextResponse.json({ status: 'deleted' });
-    response.cookies.set({
-      name: SESSION_COOKIE_NAME,
-      value: '',
-      maxAge: 0,
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      path: '/'
+    return applySessionCookie(NextResponse.json({ status: 'deleted' }), '', {
+      hostname: request?.nextUrl?.hostname ?? new URL(request.url).hostname,
+      maxAgeMs: 0
     });
-
-    return response;
   } catch (error) {
     return buildErrorResponse(error, 'Failed to cancel account.');
   }
