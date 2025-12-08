@@ -75,7 +75,7 @@ async function exchangeGoogleIdTokenForFirebase(idToken, firebaseApiKey, redirec
 }
 
 function resolveRedirectOrigin({ appPublicUrl, redirectUri, requestOrigin }) {
-  const productionOrigin = 'https://app.localpaintpilot.com';
+  const productionOrigin = process.env.APP_PRODUCTION_URL || 'https://app.localpaintpilot.com';
 
   const candidates = [
     process.env.NODE_ENV === 'production' ? productionOrigin : null,
