@@ -2,7 +2,11 @@ import { NextResponse } from 'next/server';
 import { adminAuth } from '@/lib/firebaseAdmin';
 import { bootstrapUser } from '@/lib/bootstrapUser';
 import { applySessionCookie, SESSION_MAX_AGE_MS } from '@/lib/authServer';
-import { getGoogleLoginConfig } from '@/lib/googleLoginConfig';
+import {
+  getGoogleLoginConfig,
+  GOOGLE_LOGIN_ID_KEYS,
+  GOOGLE_LOGIN_SECRET_KEYS
+} from '@/lib/googleLoginConfig';
 
 export const runtime = 'nodejs';
 
@@ -123,11 +127,19 @@ export async function GET(request) {
     return NextResponse.redirect(redirectUrl);
   }
 
-  const missingFields = [
-    clientId ? null : 'GOOGLE_LOGIN_OAUTH_CLIENT_ID',
-    clientSecret ? null : 'GOOGLE_LOGIN_OAUTH_CLIENT_SECRET',
-    firebaseApiKey ? null : 'NEXT_PUBLIC_FIREBASE_API_KEY'
-  ].filter(Boolean);
+  const missingFields = [];
+
+  if (!clientId) {
+    missingFields.push(`one of: ${GOOGLE_LOGIN_ID_KEYS.join(' or ')}`);
+  }
+
+  if (!clientSecret) {
+    missingFields.push(`one of: ${GOOGLE_LOGIN_SECRET_KEYS.join(' or ')}`);
+  }
+
+  if (!firebaseApiKey) {
+    missingFields.push('NEXT_PUBLIC_FIREBASE_API_KEY');
+  }
 
   if (missingFields.length) {
     console.error('Google login configuration is incomplete.', { missingFields, redirectUri });

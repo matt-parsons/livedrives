@@ -4,7 +4,7 @@ import { ROLE_PREVIEW_COOKIE_NAME } from '@/lib/rolePreview';
 export function applyLogoutCookies(response, { hostname } = {}) {
   const domain = getCookieDomain(hostname);
 
-  applySessionCookie(response, '', { hostname, maxAgeMs: 0 });
+  applySessionCookie(response, '', { hostname, domain, maxAgeMs: 0 });
 
   response.cookies.set({
     name: ROLE_PREVIEW_COOKIE_NAME,
