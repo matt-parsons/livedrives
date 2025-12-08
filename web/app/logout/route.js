@@ -12,5 +12,7 @@ export function GET(request) {
 
   const targetUrl = nextUrl ? new URL(destination, nextUrl.origin) : destination;
 
-  return applyLogoutCookies(NextResponse.redirect(targetUrl));
+  return applyLogoutCookies(NextResponse.redirect(targetUrl), {
+    hostname: nextUrl?.hostname ?? new URL(request.url).hostname
+  });
 }
