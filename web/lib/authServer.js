@@ -7,12 +7,35 @@ import { getRolePreviewCookie, isRolePreviewSupported } from '@/lib/rolePreview'
 export const SESSION_COOKIE_NAME = '__session';
 export const SESSION_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 
+const PUBLIC_SUFFIX_EXCEPTIONS = new Set([
+  'ac.uk',
+  'co.uk',
+  'gov.uk',
+  'ltd.uk',
+  'me.uk',
+  'net.uk',
+  'org.uk',
+  'plc.uk',
+  'sch.uk',
+  'com.au',
+  'net.au',
+  'org.au',
+  'edu.au',
+  'gov.au',
+  'csiro.au',
+  'asn.au',
+  'vercel.app',
+  'onrender.com',
+  'herokuapp.com',
+  'appspot.com'
+]);
+
 function normalizeHostname(hostname) {
   if (!hostname || typeof hostname !== 'string') {
     return null;
   }
 
-  const stripped = hostname.toLowerCase();
+  const stripped = hostname.split(':')[0]?.toLowerCase();
 
   if (!stripped || stripped === 'localhost' || /^\d{1,3}(\.\d{1,3}){3}$/.test(stripped)) {
     return null;
@@ -34,11 +57,22 @@ export function getCookieDomain(hostname) {
     return null;
   }
 
-  return `.${parts.slice(-2).join('.')}`;
+  const registrableCandidate = parts.slice(-2).join('.');
+  const needsExtraLabel = PUBLIC_SUFFIX_EXCEPTIONS.has(registrableCandidate);
+
+  if (needsExtraLabel) {
+    if (parts.length >= 3) {
+      return `.${parts.slice(-3).join('.')}`;
+    }
+
+    return null;
+  }
+
+  return `.${registrableCandidate}`;
 }
 
-export function applySessionCookie(response, value, { hostname, maxAgeMs = SESSION_MAX_AGE_MS } = {}) {
-  const domain = getCookieDomain(hostname);
+export function applySessionCookie(response, value, { hostname, domain: domainOpt, maxAgeMs = SESSION_MAX_AGE_MS } = {}) {
+  const domain = domainOpt ?? getCookieDomain(hostname);
 
   response.cookies.set({
     name: SESSION_COOKIE_NAME,
