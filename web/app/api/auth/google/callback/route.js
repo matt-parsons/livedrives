@@ -49,7 +49,7 @@ async function exchangeCodeForTokens({ code, clientId, clientSecret, redirectUri
   return tokens;
 }
 
-async function exchangeGoogleIdTokenForFirebase(idToken, firebaseApiKey, redirectUri) {
+async function exchangeGoogleIdTokenForFirebase(idToken, firebaseApiKey, requestUri) {
   const response = await fetch(
     `https://identitytoolkit.googleapis.com/v1/accounts:signInWithIdp?key=${firebaseApiKey}`,
     {
@@ -57,7 +57,7 @@ async function exchangeGoogleIdTokenForFirebase(idToken, firebaseApiKey, redirec
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         postBody: `id_token=${idToken}&providerId=google.com`,
-        requestUri: redirectUri,
+        requestUri,
         returnSecureToken: true,
         returnIdpCredential: true
       })
@@ -113,6 +113,7 @@ export async function GET(request) {
     requestOrigin: url.origin
   });
   const redirectUrl = new URL(redirectPath, redirectBase);
+  const firebaseRequestUri = new URL('/', redirectBase).toString();
 
   if (error) {
     console.error('Google returned an error during login', error);
@@ -134,7 +135,7 @@ export async function GET(request) {
     const firebaseIdToken = await exchangeGoogleIdTokenForFirebase(
       tokens.id_token,
       firebaseApiKey,
-      redirectUri
+      firebaseRequestUri
     );
 
     const decoded = await adminAuth.verifyIdToken(firebaseIdToken, true);
