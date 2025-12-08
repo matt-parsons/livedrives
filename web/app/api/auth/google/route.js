@@ -1,5 +1,34 @@
 import { NextResponse } from 'next/server';
-import { getGoogleLoginConfig } from '@/lib/googleLoginConfig';
+
+const GOOGLE_LOGIN_ID_KEYS = [
+  'GOOGLE_LOGIN_OAUTH_CLIENT_ID',
+  'GOOGLE_OAUTH_CLIENT_ID',
+  'NEXT_PUBLIC_GOOGLE_LOGIN_OAUTH_CLIENT_ID',
+  'NEXT_PUBLIC_GOOGLE_OAUTH_CLIENT_ID'
+];
+
+const GOOGLE_LOGIN_REDIRECT_KEYS = [
+  'GOOGLE_LOGIN_OAUTH_REDIRECT_URI',
+  'GOOGLE_OAUTH_REDIRECT_URI'
+];
+
+function resolveEnv(keys) {
+  for (const key of keys) {
+    const value = process.env[key];
+    if (value) return value;
+  }
+
+  return '';
+}
+
+function getGoogleLoginConfig(request) {
+  const { origin } = new URL(request.url);
+  const clientId = resolveEnv(GOOGLE_LOGIN_ID_KEYS);
+  const redirectUri = resolveEnv(GOOGLE_LOGIN_REDIRECT_KEYS)
+    || new URL('/api/auth/google/callback', origin).toString();
+
+  return { clientId, redirectUri };
+}
 
 function buildStateParam(redirect) {
   const safeRedirect = typeof redirect === 'string' && redirect.startsWith('/') ? redirect : '/dashboard';
