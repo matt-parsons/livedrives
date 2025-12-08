@@ -7,6 +7,53 @@ import { getRolePreviewCookie, isRolePreviewSupported } from '@/lib/rolePreview'
 export const SESSION_COOKIE_NAME = '__session';
 export const SESSION_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 
+function normalizeHostname(hostname) {
+  if (!hostname || typeof hostname !== 'string') {
+    return null;
+  }
+
+  const stripped = hostname.split(':')[0]?.toLowerCase();
+
+  if (!stripped || stripped === 'localhost' || /^\d{1,3}(\.\d{1,3}){3}$/.test(stripped)) {
+    return null;
+  }
+
+  return stripped;
+}
+
+export function getCookieDomain(hostname) {
+  const normalized = normalizeHostname(hostname);
+
+  if (!normalized) {
+    return null;
+  }
+
+  const parts = normalized.split('.');
+
+  if (parts.length < 2) {
+    return null;
+  }
+
+  return `.${parts.slice(-2).join('.')}`;
+}
+
+export function applySessionCookie(response, value, { hostname, maxAgeMs = SESSION_MAX_AGE_MS } = {}) {
+  const domain = getCookieDomain(hostname);
+
+  response.cookies.set({
+    name: SESSION_COOKIE_NAME,
+    value,
+    maxAge: Math.max(Math.floor(maxAgeMs / 1000), 0),
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    path: '/',
+    ...(domain ? { domain } : {})
+  });
+
+  return response;
+}
+
 export class AuthError extends Error {
   constructor(statusCode = 401, message = 'Unauthorized') {
     super(message);

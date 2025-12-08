@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { adminAuth } from '@/lib/firebaseAdmin';
 import { bootstrapUser } from '@/lib/bootstrapUser';
-import { SESSION_COOKIE_NAME, SESSION_MAX_AGE_MS } from '@/lib/authServer';
+import { applySessionCookie, SESSION_MAX_AGE_MS } from '@/lib/authServer';
 
 export const runtime = 'nodejs';
 
@@ -49,7 +49,7 @@ async function exchangeCodeForTokens({ code, clientId, clientSecret, redirectUri
   return tokens;
 }
 
-async function exchangeGoogleIdTokenForFirebase(idToken, firebaseApiKey, redirectUri) {
+async function exchangeGoogleIdTokenForFirebase(idToken, firebaseApiKey, requestUri) {
   const response = await fetch(
     `https://identitytoolkit.googleapis.com/v1/accounts:signInWithIdp?key=${firebaseApiKey}`,
     {
@@ -57,7 +57,7 @@ async function exchangeGoogleIdTokenForFirebase(idToken, firebaseApiKey, redirec
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         postBody: `id_token=${idToken}&providerId=google.com`,
-        requestUri: redirectUri,
+        requestUri,
         returnSecureToken: true,
         returnIdpCredential: true
       })
@@ -113,6 +113,7 @@ export async function GET(request) {
     requestOrigin: url.origin
   });
   const redirectUrl = new URL(redirectPath, redirectBase);
+  const firebaseRequestUri = new URL('/', redirectBase).toString();
 
   if (error) {
     console.error('Google returned an error during login', error);
@@ -134,7 +135,7 @@ export async function GET(request) {
     const firebaseIdToken = await exchangeGoogleIdTokenForFirebase(
       tokens.id_token,
       firebaseApiKey,
-      redirectUri
+      firebaseRequestUri
     );
 
     const decoded = await adminAuth.verifyIdToken(firebaseIdToken, true);
@@ -144,18 +145,10 @@ export async function GET(request) {
       expiresIn: SESSION_MAX_AGE_MS
     });
 
-    const response = NextResponse.redirect(redirectUrl.toString());
-    response.cookies.set({
-      name: SESSION_COOKIE_NAME,
-      value: sessionCookie,
-      maxAge: SESSION_MAX_AGE_MS / 1000,
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      path: '/'
+    return applySessionCookie(NextResponse.redirect(redirectUrl.toString()), sessionCookie, {
+      hostname: redirectUrl.hostname,
+      maxAgeMs: SESSION_MAX_AGE_MS
     });
-
-    return response;
   } catch (authError) {
     console.error('Google OAuth callback failed', authError);
     return NextResponse.redirect(redirectUrl);
