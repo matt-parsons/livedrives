@@ -74,6 +74,26 @@ async function exchangeGoogleIdTokenForFirebase(idToken, firebaseApiKey, redirec
   return payload.idToken;
 }
 
+function resolveRedirectOrigin({ appPublicUrl, redirectUri, requestOrigin }) {
+  const productionOrigin = process.env.APP_PRODUCTION_URL || 'https://app.localpaintpilot.com';
+
+  const candidates = [
+    process.env.NODE_ENV === 'production' ? productionOrigin : null,
+    appPublicUrl,
+    redirectUri
+  ].filter(Boolean);
+
+  for (const candidate of candidates) {
+    try {
+      return new URL(candidate).origin;
+    } catch (error) {
+      console.warn('Invalid redirect origin candidate', candidate, error);
+    }
+  }
+
+  return requestOrigin;
+}
+
 export async function GET(request) {
   const url = new URL(request.url);
   const code = url.searchParams.get('code');
@@ -81,7 +101,18 @@ export async function GET(request) {
   const error = url.searchParams.get('error');
 
   const redirectPath = parseRedirect(state);
-  const redirectUrl = new URL(redirectPath, url.origin);
+  const clientId = process.env.GOOGLE_LOGIN_OAUTH_CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_LOGIN_OAUTH_CLIENT_SECRET;
+  const redirectUri = process.env.GOOGLE_LOGIN_OAUTH_REDIRECT_URI;
+  const firebaseApiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
+  const appPublicUrl = process.env.APP_PUBLIC_URL;
+
+  const redirectBase = resolveRedirectOrigin({
+    appPublicUrl,
+    redirectUri,
+    requestOrigin: url.origin
+  });
+  const redirectUrl = new URL(redirectPath, redirectBase);
 
   if (error) {
     console.error('Google returned an error during login', error);
@@ -92,11 +123,6 @@ export async function GET(request) {
     console.error('Missing Google authorization code.');
     return NextResponse.redirect(redirectUrl);
   }
-
-  const clientId = process.env.GOOGLE_LOGIN_OAUTH_CLIENT_ID;
-  const clientSecret = process.env.GOOGLE_LOGIN_OAUTH_CLIENT_SECRET;
-  const redirectUri = process.env.GOOGLE_LOGIN_OAUTH_REDIRECT_URI;
-  const firebaseApiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
 
   if (!clientId || !clientSecret || !redirectUri || !firebaseApiKey) {
     console.error('Google login configuration is incomplete.');

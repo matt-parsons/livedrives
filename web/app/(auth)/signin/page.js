@@ -8,6 +8,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 async function bootstrapSession() {
   const res = await fetch('/api/auth/bootstrap', {
@@ -147,7 +148,11 @@ export default function SignInPage() {
               >
                 {error}
               </p>
-            ) : null}
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Don't have an account? <Link href="/register">Sign up</Link>
+              </p>
+            )}
           </CardFooter>
         </Card>
       </div>
