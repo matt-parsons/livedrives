@@ -12,7 +12,7 @@ function normalizeHostname(hostname) {
     return null;
   }
 
-  const stripped = hostname.split(':')[0]?.toLowerCase();
+  const stripped = hostname.toLowerCase();
 
   if (!stripped || stripped === 'localhost' || /^\d{1,3}(\.\d{1,3}){3}$/.test(stripped)) {
     return null;
