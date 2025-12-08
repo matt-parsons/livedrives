@@ -197,7 +197,7 @@ async function createBusinessFromPreview(connection, { organizationId, userId, e
       gPlaceId,
       isActive: 1
     },
-    { allowPartial: true }
+    { partial: true }
   );
 
   if (errors?.length) {
