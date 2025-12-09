@@ -3874,6 +3874,43 @@ textarea {
   gap: 0.75rem;
 }
 
+.business-funnel__section-task-heatmap {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.business-funnel__section-task-list-left {
+  width: 100%;
+}
+
+
+.business-funnel__section-task-list-left .business-optimization-roadmap__task-card {
+  width: 32%;
+}
+
+@media (max-width: 720px) {
+  .business-funnel__section-task-list-left {
+    width: 100%;
+  }
+}
+
+.business-funnel__section-teaser-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;  
+}
+
+.business-funnel__section-teaser {
+  background: #ffffffc2;
+  text-align: center;
+  border: 1px solid #000;
+  position: absolute;
+  padding: 40px;
+  border-radius: 15px;
+  font-weight: bold;
+}
+
 .business-optimization-roadmap__section-empty-message {
   margin: 0;
   font-size: 0.9rem;

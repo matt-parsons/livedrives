@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import SidebarBrand from './dashboard/[business]/SidebarBrand';
 
 const LOADING_STEPS = [
   {
@@ -710,138 +711,147 @@ export default function LandingPage() {
     const previewTimestampLabel = formatTimestamp(leadPreviewCompletedAt || leadPreviewStartedAt);
 
     return (
-      <div className="page-shell">
-        <div className="mx-auto flex w-full max-w-6xl flex-col gap-10 lg:gap-12">
-          <section className="flex flex-col gap-4">
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <div className="space-y-2">
-                <h1 className="text-4xl font-semibold text-foreground">
-                  {placeDetails?.name || selectedPlace?.name || 'Preview dashboard'}
-                </h1>
-                {placeDetails?.formattedAddress ? (
-                  <p className="text-base text-muted-foreground">{placeDetails.formattedAddress}</p>
-                ) : null}
-              </div>
-              <div className="flex items-center gap-3 rounded-full border border-secondary/60 bg-secondary/10 px-4 py-2">
-                <span className="text-sm font-medium text-secondary-foreground">Overall progress</span>
-                <span className="text-2xl font-semibold text-secondary-foreground">
-                  {progressPercent === null ? 'No score yet' : `${progressPercent}%`}
-                </span>
-              </div>
-            </div>
-            <p className="text-base leading-relaxed text-muted-foreground">
-              Here&apos;s how Local Paint Pilot scores your Google profile. Upgrade to a 7 day trial to unlock the full dashboard, keyword rank tracking, and automation.
-            </p>
-            {previewTimestampLabel ? (
-              <div
-                className={classNames(
-                  'rounded-lg border px-4 py-3 text-sm',
-                  existingPreview
-                    ? 'border-secondary/60 bg-secondary/10 text-secondary-foreground'
-                    : 'border-border/60 bg-muted/10 text-muted-foreground'
-                )}
-              >
-                {existingPreview
-                  ? `We already created this preview on ${previewTimestampLabel}. Showing that same snapshot.`
-                  : `Preview generated on ${previewTimestampLabel}.`}
-              </div>
-            ) : null}
-            {placeMeta?.sidebarPending ? (
-              <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-                <p className="font-semibold">We&apos;re still gathering some data</p>
-                <p className="text-amber-800/80">
-                  Google Posts details are loading in the background. Sections that rely on that data will update shortly.
-                </p>
-              </div>
-            ) : null}
-            <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
-              {Array.isArray(placeDetails?.categories) && placeDetails.categories.length ? (
-                <span className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-card/80 px-3 py-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  {placeDetails.categories.join(' · ')}
-                </span>
-              ) : null}
-              {placeDetails?.googleMapsUri ? (
-                <a
-                  href={placeDetails.googleMapsUri}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 rounded-full border border-secondary/60 bg-secondary/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-secondary-foreground"
-                >
-                  View on Google Maps ↗
-                </a>
-              ) : null}
-            </div>
-          </section>
+      <div className="dashboard-layout__body">
+        <aside className="dashboard-layout__sidebar" aria-label="Workspace navigation">
+          <SidebarBrand />
+          <div className="dashboard-sidebar__menu">
+            
+          </div>
+        </aside>
 
-          <section className="space-y-6">
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <div>
-                <h2 className="text-2xl font-semibold text-foreground">Overall progress</h2>
-                <p className="text-sm text-muted-foreground">
-                  We use the same optimization model as your business dashboard to score this preview.
-                </p>
-              </div>
-              <span className="text-sm font-semibold text-secondary-foreground">
-                {progressPercent === null ? 'No score yet' : `${progressPercent}% complete`}
-              </span>
-            </div>
-
-            <div
-              className={`business-optimization-roadmap__sections-summary ${
-                sections.length
-                  ? 'business-optimization-roadmap__sections-summary--with-sections'
-                  : 'business-optimization-roadmap__sections-summary--without-sections'
-              }`}
-            >
-              <div className="business-optimization-roadmap__summary-header">
-                <strong className="business-optimization-roadmap__summary-heading">Optimization progress</strong>
-                <span className="business-optimization-roadmap__summary-progress">
-                  {progressPercent === null ? 'No score yet' : `${progressPercent}% complete`}
-                </span>
-              </div>
-              <div aria-hidden="true" className="business-optimization-roadmap__progress-track">
-                <div
-                  className="business-optimization-roadmap__progress-fill"
-                  style={{ width: `${progressPercent === null ? 0 : progressPercent}%` }}
-                />
+        <div className="dashboard-layout__main">
+          <header className="dashboard-layout__header">
+            <div className="dashboard-layout__header-container">
+              <div className="dashboard-header">
+                <div className="dashboard-header__content">
+                  <h1 className="page-title">{placeDetails?.name || selectedPlace?.name || 'Preview dashboard'}</h1>
+                  {placeDetails?.formattedAddress ? (
+                    <span className="dashboard-sidebar__location">{placeDetails.formattedAddress}</span>
+                  ) : null}                  
+                </div>
               </div>
             </div>
+          </header>
+          {placeMeta?.sidebarPending ? (
+            <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+              <p className="font-semibold">We&apos;re still gathering some data</p>
+              <p className="text-amber-800/80">
+                Google Posts details are loading in the background. Sections that rely on that data will update shortly.
+              </p>
+            </div>
+          ) : null}
+          <div className="dashboard-layout__content">
+          <h2 className="mt-4 text-2xl font-semibold text-foreground">Your audit is complete, next step is to fix these issues and increase your rankings.</h2>
 
-            {sections.length ? (
-              <div className="business-optimization-roadmap__section-summary-grid">
-                {sections.map((section) => (
-                  <div key={section.id} className="business-optimization-roadmap__section-summary-card">
-                    <span className="business-optimization-roadmap__section-summary-card-title">{section.title}</span>
-                    <strong className="business-optimization-roadmap__section-summary-card-completion">
-                      {section.completion === null ? 'No score yet' : `${section.completion}% complete`}
-                    </strong>
+          <section className="section business-dashboard__hero">
+              <div className="business-dashboard__optimization-row">
+                <div className="surface-card surface-card--muted dashboard-optimization-card">
+                  <div className="section-header">
+                    <div>
+                      <h2 className="section-title">GBP Score Optimization</h2>
+                      <p className="section-caption">Here's what we found in our initial data pull</p>
+                    </div>
+                    <div className="dashboard-optimization-card__scores">
+                      <div>
+                        {progressPercent === null ? 'No score yet' : `${progressPercent}%`}
+                      </div>
+                    </div>
                   </div>
-                ))}
+                  <div className="dashboard-optimization-card__content">
+                    <div className="dashboard-optimization-card__progress">
+                      <div
+                        style={{
+                          width: `${Math.min(100, Math.max(0, roadmap.progressPercent))}%`
+                        }}
+                      />
+                    </div>
+                  </div>
+          {previewTimestampLabel ? (
+            <div
+              className={classNames(
+                'rounded-lg border px-4 py-3 mt-5 mb-4 text-sm',
+                existingPreview
+                  ? 'border-secondary/60 bg-secondary/10 text-secondary-foreground'
+                  : 'border-border/60 bg-muted/10 text-muted-foreground'
+              )}
+            >
+              {existingPreview
+                ? `We already created this preview on ${previewTimestampLabel}. Showing that same snapshot.`
+                : `Preview generated on ${previewTimestampLabel}.`}
+            </div>
+          ) : null}                  
+                </div>
+                <div className="surface-card surface-card--muted dashboard-optimization-card">
+                  <div>
+                    <h2 className="section-title">Score Summary</h2>
+                    <p className="section-caption">Here's how we score your profilel</p>
+                  </div>
+                  {sections.length ? (
+                    <div className="business-optimization-roadmap__section-item">
+                      {sections.map((section) => (
+                        <div key={section.id} className="business-optimization-roadmap__section-header">
+                          <span className="business-optimization-roadmap__section-summary-card-title">{section.title}</span>
+                          <strong className="business-optimization-roadmap__section-summary-card-completion">
+                            {section.completion === null ? 'No score yet' : `${section.completion}%`}
+                          </strong>
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}   
+                </div>             
               </div>
-            ) : null}
+              <div className="business-dashboard__top-row"></div>
+          </section>
+          <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            <p className="font-semibold">Get Started for FREE</p>
+            <p className="text-amber-800/80">
+              <a href="#freetrial">Start a free trial to get step by step instructions on how to improve your profile & rankings.</a>
+            </p>
+          </div>
+
+          <section className="space-y-4">
+            <div className="space-y-2">
+              <h2 className="text-2xl font-semibold text-foreground">Start improving your profile to get more customers.</h2>
+              <p className="text-sm text-muted-foreground">
+                We highlighted your top 3 recommendations. 
+              </p>
+            </div>
+            <div class="business-funnel__section-task-heatmap">
+              {topOpportunities.length ? (
+                <div className="business-funnel__section-task-list-left">
+                  <ul className="business-optimization-roadmap__section-task-list">
+                    {topOpportunities.map((task) => (
+                      <OpportunityItem key={task.id} task={task} />
+                    ))}
+                  </ul>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  Great news—your automated checks look complete. Kick off a trial to explore advanced tools.
+                </p>
+              )}
+            </div>
           </section>
 
           <section className="space-y-4">
             <div className="space-y-2">
-              <h2 className="text-2xl font-semibold text-foreground">Next steps to improve your profile</h2>
+              <h2 className="text-2xl font-semibold text-foreground">Track your progress with weekly ranking reports.</h2>
               <p className="text-sm text-muted-foreground">
-                We highlighted your top 3 recommendations. Start a free trial to sign in and review the rest.
+                These ranking maps show where you are showing up when potential customers search for services your business offers.
               </p>
             </div>
-            {topOpportunities.length ? (
-              <ul className="business-optimization-roadmap__section-task-list">
-                {topOpportunities.map((task) => (
-                  <OpportunityItem key={task.id} task={task} />
-                ))}
-              </ul>
-            ) : (
-              <p className="text-sm text-muted-foreground">
-                Great news—your automated checks look complete. Kick off a trial to explore advanced tools.
-              </p>
-            )}
+            <div class="business-funnel__section-task-heatmap">
+              <div className="business-funnel__section-teaser-container">
+                <div className="business-funnel__section-teaser">
+                  <p className="text-sm text-muted-foreground">Demo Heat Map<br />
+                  Start your Free trial to get a live report specific to your business. </p>
+                </div>
+                <img src="./images/localpaintpilot-ranking-demo.png" />
+              </div>
+            </div>
           </section>
 
-          <Card className="shadow-lg">
+          <Card id="freetrial" className="shadow-lg">
             <CardHeader>
               <CardTitle>Start your 7 day Local Paint Pilot trial</CardTitle>
               <CardDescription>
@@ -889,11 +899,7 @@ export default function LandingPage() {
                       <span className="text-sm text-destructive" role="alert">
                         {trialError}
                       </span>
-                    ) : (
-                      <span className="text-sm text-muted-foreground">
-                        We&apos;ll send onboarding resources and confirm your account instantly.
-                      </span>
-                    )}
+                    ) : ( null )}
                   </div>
 
                   <div className="md:col-span-2 flex flex-col gap-4">
@@ -924,6 +930,7 @@ export default function LandingPage() {
               </CardFooter>
             ) : null}
           </Card>
+          </div>
         </div>
       </div>
     );
