@@ -114,11 +114,16 @@ export default async function MemberJourneyPage() {
   ]);
 
   const { primaryBusiness, originZones } = businessContext;
+  const existingZone = originZones.length ? originZones[0] : null;
   const defaultIdentifier = primaryBusiness
     ? encodeURIComponent(primaryBusiness.businessSlug ?? String(primaryBusiness.id))
     : null;
   const businessHref = defaultIdentifier ? `/dashboard/${defaultIdentifier}` : null;
   const editHref = defaultIdentifier ? `${businessHref}/edit` : null;
+
+  if (primaryBusiness && existingZone && businessHref) {
+    redirect(businessHref);
+  }
 
   let optimizationRoadmap = null;
   let optimizationError = null;
@@ -132,8 +137,6 @@ export default async function MemberJourneyPage() {
       optimizationError = error?.message ?? 'Failed to load Google Places data.';
     }
   }
-
-  const existingZone = originZones.length ? originZones[0] : null;
 
   return (
     <div className="page-shell">
