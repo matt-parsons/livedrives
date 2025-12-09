@@ -144,6 +144,7 @@ export default function LandingPage() {
   const [trialEmail, setTrialEmail] = useState('');
   const [trialStatus, setTrialStatus] = useState('idle');
   const [trialError, setTrialError] = useState('');
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [leadEmail, setLeadEmail] = useState('');
   const [leadStatus, setLeadStatus] = useState('idle');
   const [leadError, setLeadError] = useState('');
@@ -258,6 +259,7 @@ export default function LandingPage() {
     setTrialEmail('');
     setTrialStatus('idle');
     setTrialError('');
+    setGoogleLoading(false);
     setLeadEmail('');
     setLeadStatus('idle');
     setLeadError('');
@@ -477,6 +479,20 @@ export default function LandingPage() {
     },
     [trialEmail, trialName]
   );
+
+  const handleTrialGoogleSignup = useCallback(() => {
+    setTrialError('');
+    setGoogleLoading(true);
+
+    try {
+      const redirect = encodeURIComponent('/dashboard/get-started');
+      window.location.assign(`/api/auth/google?redirect=${redirect}`);
+    } catch (error) {
+      console.error('Google signup flow failed', error);
+      setTrialError(error.message || 'Unable to continue with Google right now.');
+      setGoogleLoading(false);
+    }
+  }, []);
 
   const renderSearch = () => (
     <div className="page-shell">
@@ -822,7 +838,7 @@ export default function LandingPage() {
                       value={trialName}
                       onChange={(event) => setTrialName(event.target.value)}
                       placeholder="Ada Lovelace"
-                      disabled={trialStatus === 'submitting'}
+                      disabled={trialStatus === 'submitting' || googleLoading}
                     />
                   </div>
                   <div className="md:col-span-1 space-y-2">
@@ -833,12 +849,12 @@ export default function LandingPage() {
                       value={trialEmail}
                       onChange={(event) => setTrialEmail(event.target.value)}
                       placeholder="you@company.com"
-                      disabled={trialStatus === 'submitting'}
+                      disabled={trialStatus === 'submitting' || googleLoading}
                       required
                     />
                   </div>
                   <div className="md:col-span-2 flex flex-wrap items-center gap-4">
-                    <Button type="submit" disabled={trialStatus === 'submitting'}>
+                    <Button type="submit" disabled={trialStatus === 'submitting' || googleLoading}>
                       {trialStatus === 'submitting' ? 'Starting your trial…' : 'Start my free trial'}
                     </Button>
                     {trialError ? (
@@ -850,6 +866,24 @@ export default function LandingPage() {
                         We&apos;ll send onboarding resources and confirm your account instantly.
                       </span>
                     )}
+                  </div>
+
+                  <div className="md:col-span-2 flex flex-col gap-4">
+                    <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                      <div className="h-px flex-1 bg-border" aria-hidden />
+                      <span>or</span>
+                      <div className="h-px flex-1 bg-border" aria-hidden />
+                    </div>
+
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      className="w-full"
+                      onClick={handleTrialGoogleSignup}
+                      disabled={trialStatus === 'submitting' || googleLoading}
+                    >
+                      {googleLoading ? 'Preparing Google sign-up…' : 'Continue with Google'}
+                    </Button>
                   </div>
                 </form>
               )}
