@@ -429,8 +429,8 @@ CREATE TABLE `funnel_leads` (
 ALTER TABLE `businesses`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `uq_company_id` (`business_slug`),
-  ADD UNIQUE KEY `uq_mid` (`mid`),
-  ADD UNIQUE KEY `uq_g_place_id` (`g_place_id`),
+  ADD KEY `idx_mid` (`mid`),
+  ADD KEY `idx_g_place_id` (`g_place_id`),
   ADD KEY `idx_company_lookup` (`business_slug`),
   ADD KEY `idx_brand_search` (`brand_search`),
   ADD KEY `idx_biz_org` (`organization_id`);
@@ -786,4 +786,3 @@ COMMIT;
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
-

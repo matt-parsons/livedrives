@@ -484,10 +484,16 @@ export default function LandingPage() {
     setTrialError('');
     setGoogleLoading(true);
 
+    const navigationTimeout = setTimeout(() => {
+      setGoogleLoading(false);
+      setTrialError('Failed to initiate Google sign-up. Please try again.');
+    }, 5000);
+
     try {
       const redirect = encodeURIComponent('/dashboard/get-started');
       window.location.assign(`/api/auth/google?redirect=${redirect}`);
     } catch (error) {
+      clearTimeout(navigationTimeout);
       console.error('Google signup flow failed', error);
       setTrialError(error.message || 'Unable to continue with Google right now.');
       setGoogleLoading(false);
