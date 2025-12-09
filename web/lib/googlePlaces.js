@@ -130,42 +130,35 @@ function extractLatestPostDate(posts) {
 }
 
 async function fetchSidebar(body, { signal, timeoutMs = SIDEBAR_TIMEOUT_MS } = {}) {
-  const fetchPromise = fetch(`${baseUrl}/api/places/sidebar`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    signal,
-    body: JSON.stringify(body),
-  })
-    .then((res) => {
-      if (!res.ok) throw new Error(`Sidebar API failed: ${res.status}`);
-      return res.json();
-    })
-    .catch((err) => {
-      console.error('Sidebar API error:', err);
-      return {};
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  if (signal) {
+    signal.addEventListener('abort', () => controller.abort(), { once: true });
+  }
+
+  try {
+    const res = await fetch(`${baseUrl}/api/places/sidebar`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      signal: controller.signal,
+      body: JSON.stringify(body),
     });
 
-  if (!timeoutMs || timeoutMs <= 0) {
-    const data = await fetchPromise;
+    if (!res.ok) throw new Error(`Sidebar API failed: ${res.status}`);
+    const data = await res.json();
     return { data, timedOut: false };
+  } catch (error) {
+    if (error.name === 'AbortError' && !signal?.aborted) {
+      // This was a timeout from our controller, not an external signal.
+      return { data: {}, timedOut: true };
+    }
+    // For external aborts or other errors, mimic original behavior.
+    console.error('Sidebar API error:', error);
+    return { data: {}, timedOut: false };
+  } finally {
+    clearTimeout(timeoutId);
   }
-
-  let timeoutHandle;
-  const timeoutPromise = new Promise((resolve) => {
-    timeoutHandle = setTimeout(() => resolve({ timedOut: true }), timeoutMs);
-  });
-
-  const result = await Promise.race([
-    fetchPromise.then((data) => ({ data, timedOut: false })),
-    timeoutPromise
-  ]);
-
-  if (result?.timedOut) {
-    return { data: {}, timedOut: true };
-  }
-
-  clearTimeout(timeoutHandle);
-  return result;
 }
 
 function parseRelativeOrAbsoluteDate(dateString) {
