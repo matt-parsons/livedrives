@@ -7,6 +7,7 @@ import {
 import {
   BACKGROUND_TIMEOUT_MS,
   DEFAULT_POLL_INTERVAL_MS,
+  DEFAULT_TIMEOUT_MS,
   fetchDataForSeoReviews
 } from '@lib/google/dataForSeoReviews.js';
 import { listScheduledPostsForBusiness } from '@/lib/gbpPostScheduler';
@@ -24,6 +25,8 @@ const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
 const MAX_REVIEWS_FOR_AI = 24;
 const MAX_REVIEW_TEXT_LENGTH = 500;
 const DEFAULT_SENTIMENT_SUMMARY = 'Sentiment is based on recent Google Business Profile reviews.';
+const INITIAL_POLL_INTERVAL_MS = 250;
+const INITIAL_TIMEOUT_MS = 600;
 
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 const cacheApi = cacheModule?.default ?? cacheModule;
@@ -469,7 +472,8 @@ export async function loadReviewSnapshot(business, gbpAccessToken, { force = fal
     const { reviews, status, taskId } = placeId
       ? await fetchDataForSeoReviews(placeId, {
           taskId: reusableTaskId,
-          pollIntervalMs: DEFAULT_POLL_INTERVAL_MS,
+          pollIntervalMs: force ? DEFAULT_POLL_INTERVAL_MS : INITIAL_POLL_INTERVAL_MS,
+          timeoutMs: force ? DEFAULT_TIMEOUT_MS : INITIAL_TIMEOUT_MS,
           onTaskCreated: async (createdTaskId) => {
             await saveReviewFetchTask({
               businessId: business.id,

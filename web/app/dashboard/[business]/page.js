@@ -170,7 +170,11 @@ export default async function BusinessDashboardPage({ params }) {
     notFound();
   }
 
-  const originZones = await loadOriginZones(business.id);
+  const [originZones, geoGridRunsRaw, gbpAccessToken] = await Promise.all([
+    loadOriginZones(business.id),
+    loadGeoGridRunSummaries(business.id),
+    ensureGbpAccessToken(business.id)
+  ]);
   const primaryOriginZone = originZones[0] ?? null;
   const hasSelectedKeyword = Array.isArray(primaryOriginZone?.keywords)
     ? primaryOriginZone.keywords.length > 0
@@ -179,7 +183,6 @@ export default async function BusinessDashboardPage({ params }) {
   const isAdmin = session.role === 'admin';
   const canManageSettings = isAdmin;
 
-  const geoGridRunsRaw = await loadGeoGridRunSummaries(business.id);
   const geoGridRuns = geoGridRunsRaw.map(mapRunRecord);
   const latestRunSummary = summarizeLatestRun(geoGridRuns, baseHref);
   const latestRunDetails =
@@ -190,7 +193,6 @@ export default async function BusinessDashboardPage({ params }) {
   const mapCenter = latestRunDetails ? resolveCenter(latestRunDetails.run ?? {}, mapPoints) : null;
   const mapsApiKey =
     process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? process.env.GOOGLE_API_KEY ?? null;
-  const gbpAccessToken = await ensureGbpAccessToken(business.id);
   const { snapshot: reviewSnapshot } = await loadReviewSnapshot(business, gbpAccessToken);
 
   const businessIdentifier = business.businessSlug ?? String(business.id);
