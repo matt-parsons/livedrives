@@ -25,8 +25,8 @@ const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
 const MAX_REVIEWS_FOR_AI = 24;
 const MAX_REVIEW_TEXT_LENGTH = 500;
 const DEFAULT_SENTIMENT_SUMMARY = 'Sentiment is based on recent Google Business Profile reviews.';
-const INITIAL_POLL_INTERVAL_MS = 750;
-const INITIAL_TIMEOUT_MS = 1000;
+const INITIAL_POLL_INTERVAL_MS = 250;
+const INITIAL_TIMEOUT_MS = 600;
 
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 const cacheApi = cacheModule?.default ?? cacheModule;
