@@ -75,7 +75,7 @@ async function queueOnboardingGeoGridRun({ businessId, keyword, origin, radiusMi
           status,
           requested_by,
           created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'queued', 'onboarding', UTC_TIMESTAMP())`,
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'queued', NULL, UTC_TIMESTAMP())`,
       [
         businessId,
         keyword,
