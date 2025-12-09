@@ -76,6 +76,51 @@ function parseJson(value) {
   }
 }
 
+async function collectPreviewAsync(leadRecord, startedAt = new Date()) {
+  try {
+    await pool.query(
+      `UPDATE funnel_leads
+          SET preview_status = 'pending',
+              preview_error = NULL,
+              preview_started_at = COALESCE(preview_started_at, ?),
+              updated_at = UTC_TIMESTAMP()
+        WHERE id = ?`,
+      [startedAt, leadRecord.id]
+    );
+
+    await loadOptimizationData(leadRecord.place_id);
+    const completedAt = new Date();
+
+    await pool.query(
+      `UPDATE funnel_leads
+          SET preview_status = 'completed',
+              preview_error = NULL,
+              preview_started_at = COALESCE(preview_started_at, ?),
+              preview_completed_at = ?,
+              updated_at = UTC_TIMESTAMP()
+        WHERE id = ?`,
+      [startedAt, completedAt, leadRecord.id]
+    );
+
+    return completedAt;
+  } catch (error) {
+    console.error('Funnel preview fetch failed', error);
+
+    const message = error?.message || 'Failed to collect Google Business Profile data.';
+    await pool.query(
+      `UPDATE funnel_leads
+          SET preview_status = 'error',
+              preview_error = ?,
+              preview_completed_at = NULL,
+              updated_at = UTC_TIMESTAMP()
+        WHERE id = ?`,
+      [message.slice(0, 500), leadRecord.id]
+    );
+
+    throw error;
+  }
+}
+
 function mapLeadRow(row) {
   return {
     id: row.id,
@@ -228,46 +273,16 @@ export async function POST(request) {
 
     const reusedPreview = Boolean(leadExisted && leadRecord.preview_completed_at);
     const shouldFetchPreview = !leadRecord.preview_completed_at;
+    let previewStartedAt = leadRecord.preview_started_at ?? null;
+    let previewCompletedAt = leadRecord.preview_completed_at ?? null;
 
     if (shouldFetchPreview) {
-      const startedAt = new Date();
-      try {
-        await loadOptimizationData(leadRecord.place_id);
-        const completedAt = new Date();
+      const startedAt = previewStartedAt ?? new Date();
+      previewStartedAt = startedAt;
 
-        await pool.query(
-          `UPDATE funnel_leads
-              SET preview_status = 'completed',
-                  preview_error = NULL,
-                  preview_started_at = COALESCE(preview_started_at, ?),
-                  preview_completed_at = ?,
-                  updated_at = UTC_TIMESTAMP()
-            WHERE id = ?`,
-          [startedAt, completedAt, leadRecord.id]
-        );
-
-        leadRecord.preview_started_at = leadRecord.preview_started_at ?? startedAt;
-        leadRecord.preview_completed_at = completedAt;
-        leadRecord.preview_status = 'completed';
-      } catch (error) {
+      collectPreviewAsync(leadRecord, startedAt).catch((error) => {
         console.error('Funnel preview fetch failed', error);
-
-        const message = error?.message || 'Failed to collect Google Business Profile data.';
-        await pool.query(
-          `UPDATE funnel_leads
-              SET preview_status = 'error',
-                  preview_error = ?,
-                  preview_completed_at = NULL,
-                  updated_at = UTC_TIMESTAMP()
-            WHERE id = ?`,
-          [message.slice(0, 500), leadRecord.id]
-        );
-
-        return NextResponse.json(
-          { error: 'We could not analyze that Google Business Profile. Please try again later.' },
-          { status: 502 }
-        );
-      }
+      });
     }
 
     const responsePlace = buildResponsePlace(leadRecord) || normalizedPlace;
@@ -278,8 +293,8 @@ export async function POST(request) {
         email: trimmedEmail,
         place: responsePlace,
         existingPreview: reusedPreview,
-        previewStartedAt: leadRecord.preview_started_at?.toISOString() ?? null,
-        previewCompletedAt: leadRecord.preview_completed_at?.toISOString() ?? null
+        previewStartedAt: previewStartedAt?.toISOString() ?? null,
+        previewCompletedAt: previewCompletedAt?.toISOString() ?? null
       },
       { status: leadExisted ? 200 : 201 }
     );

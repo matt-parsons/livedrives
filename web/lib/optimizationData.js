@@ -25,7 +25,7 @@ function normalizeBusinessId(value) {
   return numeric;
 }
 
-function buildMeta(record, { refreshedFromSource = false, warning = null } = {}) {
+function buildMeta(record, { refreshedFromSource = false, warning = null, sidebarPending = false } = {}) {
   const lastRefreshedAt = record?.lastRefreshedAt ? record.lastRefreshedAt.toISOString() : null;
   const lastManualRefreshAt = record?.lastManualRefreshAt
     ? record.lastManualRefreshAt.toISOString()
@@ -43,7 +43,8 @@ function buildMeta(record, { refreshedFromSource = false, warning = null } = {})
     nextAutoRefreshAt,
     nextManualRefreshAt,
     refreshedFromSource,
-    warning
+    warning,
+    sidebarPending
   };
 }
 
@@ -85,11 +86,13 @@ export async function loadOptimizationData(placeId, options = {}) {
   }
 
   let refreshedFromSource = false;
+  let sidebarPending = false;
 
   if (shouldRefresh) {
     try {
-      const { place, raw, sidebar } = await fetchPlaceDetails(placeId, { signal });
+      const { place, raw, sidebar, sidebarPending: sidebarWasPending } = await fetchPlaceDetails(placeId, { signal });
       place.sidebar = place.sidebar ?? sidebar ?? null;
+      sidebarPending = Boolean(sidebarWasPending);
 
       const refreshedAt = now;
       const manualRefreshAt = manualTrigger ? now : cache?.lastManualRefreshAt ?? null;
@@ -151,6 +154,6 @@ export async function loadOptimizationData(placeId, options = {}) {
   return {
     place: cache.place,
     roadmap,
-    meta: buildMeta(cache, { refreshedFromSource, warning })
+    meta: buildMeta(cache, { refreshedFromSource, warning, sidebarPending })
   };
 }

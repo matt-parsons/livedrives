@@ -140,6 +140,7 @@ export default function LandingPage() {
   const [analysisError, setAnalysisError] = useState('');
   const [placeDetails, setPlaceDetails] = useState(null);
   const [roadmap, setRoadmap] = useState(null);
+  const [placeMeta, setPlaceMeta] = useState(null);
   const [trialName, setTrialName] = useState('');
   const [trialEmail, setTrialEmail] = useState('');
   const [trialStatus, setTrialStatus] = useState('idle');
@@ -255,6 +256,7 @@ export default function LandingPage() {
     setAnalysisError('');
     setPlaceDetails(null);
     setRoadmap(null);
+    setPlaceMeta(null);
     setTrialName('');
     setTrialEmail('');
     setTrialStatus('idle');
@@ -281,6 +283,7 @@ export default function LandingPage() {
     setAnalysisError('');
     setPlaceDetails(null);
     setRoadmap(null);
+    setPlaceMeta(null);
     setLoadingStep(0);
     setExistingPreview(false);
     setLeadPreviewStartedAt(null);
@@ -300,6 +303,7 @@ export default function LandingPage() {
       setAnalysisError('');
       setPlaceDetails(null);
       setRoadmap(null);
+      setPlaceMeta(null);
 
       try {
         setLoadingStep(1);
@@ -315,9 +319,11 @@ export default function LandingPage() {
         const payload = await response.json();
         const details = payload.place ?? null;
         const roadmapResult = payload.roadmap ?? null;
+        const meta = payload.meta ?? null;
 
         setPlaceDetails(details);
         setRoadmap(roadmapResult);
+        setPlaceMeta(meta);
         setLoadingStep(3);
 
         await new Promise((resolve) => setTimeout(resolve, 500));
@@ -329,6 +335,7 @@ export default function LandingPage() {
       } catch (error) {
         console.error('Analysis failed', error);
         setAnalysisError(error.message || 'We hit an unexpected issue while analyzing the profile.');
+        setPlaceMeta(null);
         setPhase('error');
       }
     },
@@ -388,6 +395,12 @@ export default function LandingPage() {
       }
 
       setLeadStatus('submitting');
+      setPhase('loading');
+      setLoadingStep(0);
+      setAnalysisError('');
+      setPlaceDetails(null);
+      setRoadmap(null);
+      setPlaceMeta(null);
 
       try {
         const response = await fetch('/api/funnel/lead', {
@@ -425,6 +438,7 @@ export default function LandingPage() {
         console.error('Lead capture failed', error);
         setLeadStatus('idle');
         setLeadError(error.message || 'Unable to start your preview right now.');
+        setPhase('lead');
       }
     },
     [beginAnalysis, leadEmail, selectedPlace]
@@ -730,6 +744,14 @@ export default function LandingPage() {
                 {existingPreview
                   ? `We already created this preview on ${previewTimestampLabel}. Showing that same snapshot.`
                   : `Preview generated on ${previewTimestampLabel}.`}
+              </div>
+            ) : null}
+            {placeMeta?.sidebarPending ? (
+              <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                <p className="font-semibold">We&apos;re still gathering some data</p>
+                <p className="text-amber-800/80">
+                  Google Posts details are loading in the background. Sections that rely on that data will update shortly.
+                </p>
               </div>
             ) : null}
             <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
