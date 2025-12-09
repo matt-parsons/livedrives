@@ -3,6 +3,7 @@ const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
 const SIDEBAR_PROVIDER = (process.env.SIDEBAR_PROVIDER || 'dataforseo').toLowerCase();
 const DATAFORSEO_LOCATION_CODE = process.env.DATAFORSEO_LOCATION_CODE;
 const DATAFORSEO_LANGUAGE_CODE = process.env.DATAFORSEO_LANGUAGE_CODE;
+const SIDEBAR_TIMEOUT_MS = 5000;
 
 const fs = require("fs");
 const path = require("path");
@@ -126,6 +127,45 @@ function extractLatestPostDate(posts) {
   }
 
   return latest;
+}
+
+async function fetchSidebar(body, { signal, timeoutMs = SIDEBAR_TIMEOUT_MS } = {}) {
+  const fetchPromise = fetch(`${baseUrl}/api/places/sidebar`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    signal,
+    body: JSON.stringify(body),
+  })
+    .then((res) => {
+      if (!res.ok) throw new Error(`Sidebar API failed: ${res.status}`);
+      return res.json();
+    })
+    .catch((err) => {
+      console.error('Sidebar API error:', err);
+      return {};
+    });
+
+  if (!timeoutMs || timeoutMs <= 0) {
+    const data = await fetchPromise;
+    return { data, timedOut: false };
+  }
+
+  let timeoutHandle;
+  const timeoutPromise = new Promise((resolve) => {
+    timeoutHandle = setTimeout(() => resolve({ timedOut: true }), timeoutMs);
+  });
+
+  const result = await Promise.race([
+    fetchPromise.then((data) => ({ data, timedOut: false })),
+    timeoutPromise
+  ]);
+
+  if (result?.timedOut) {
+    return { data: {}, timedOut: true };
+  }
+
+  clearTimeout(timeoutHandle);
+  return result;
 }
 
 function parseRelativeOrAbsoluteDate(dateString) {
@@ -270,24 +310,14 @@ export async function fetchPlaceDetails(placeId, { signal } = {}) {
         languageCode: DATAFORSEO_LANGUAGE_CODE || 'en',
       };
 
-      const sidebarData = await fetch(`${baseUrl}/api/places/sidebar`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        signal,
-        body: JSON.stringify({
+      const { data: sidebarData, timedOut: sidebarTimedOut } = await fetchSidebar(
+        {
           geometry: null,
           placeId,
           options: sidebarOptions,
-        })
-      })
-        .then(res => {
-          if (!res.ok) throw new Error(`Sidebar API failed: ${res.status}`);
-          return res.json();
-        })
-        .catch(err => {
-          console.error('Sidebar API error:', err);
-          return {}; // Fallback if it fails
-        });
+        },
+        { signal }
+      );
 
       const normalizedResult = { ...sidebarData };
 
@@ -380,7 +410,7 @@ export async function fetchPlaceDetails(placeId, { signal } = {}) {
 
       console.log('place obj', place);
 
-      return { place, raw: normalizedResult, sidebar: sidebarData ?? null };
+      return { place, raw: normalizedResult, sidebar: sidebarData ?? null, sidebarPending: sidebarTimedOut };
     } catch (error) {
       if (error instanceof PlacesError) {
         throw error;
@@ -456,35 +486,26 @@ export async function fetchPlaceDetails(placeId, { signal } = {}) {
       sidebarOptions.languageCode = DATAFORSEO_LANGUAGE_CODE || 'en';
     }
 
-    const [timezone, sidebarData] = await Promise.all([
+    const [timezone, sidebarResult] = await Promise.all([
       fetchTimezone(result.geometry?.location ?? null, { signal }),
-      await fetch(`${baseUrl}/api/places/sidebar`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        signal,
-        body: JSON.stringify({
+      fetchSidebar(
+        {
           geometry: result.geometry?.location ?? null,
           placeId: result.place_id,
           options: sidebarOptions,
-        })
-      })
-        .then(res => {
-          if (!res.ok) throw new Error(`Sidebar API failed: ${res.status}`);
-          return res.json();
-        })
-        .catch(err => {
-          console.error('Sidebar API error:', err);
-          return {}; // Fallback if it fails
-        })
-
+        },
+        { signal }
+      )
     ]);
+    const sidebarData = sidebarResult?.data ?? {};
+    const sidebarPending = Boolean(sidebarResult?.timedOut);
     const place = buildPlacePayload(result, {
       fallbackPlaceId: placeId,
       timezone,
       sidebarData
     });
 
-    return { place, raw: result, sidebar: sidebarData ?? null };
+    return { place, raw: result, sidebar: sidebarData ?? null, sidebarPending };
   } catch (error) {
     if (error instanceof PlacesError) {
       throw error;
