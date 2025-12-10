@@ -224,6 +224,34 @@ export async function loadAllOrganizationDirectories() {
     }
   }
 
+  const [businessRows] = await pool.query(
+    `SELECT id,
+            organization_id AS organizationId,
+            business_name   AS businessName,
+            business_slug   AS businessSlug,
+            created_at      AS createdAt
+       FROM businesses
+      WHERE organization_id IN (?)
+      ORDER BY created_at ASC`,
+    [organizationIds]
+  );
+
+  const businessesByOrganization = new Map();
+  for (const row of businessRows) {
+    const organizationId = Number(row.organizationId);
+    if (!businessesByOrganization.has(organizationId)) {
+      businessesByOrganization.set(organizationId, []);
+    }
+
+    businessesByOrganization.get(organizationId).push({
+      id: Number(row.id),
+      organizationId,
+      businessName: row.businessName || 'Untitled business',
+      businessSlug: row.businessSlug || '',
+      createdAt: row.createdAt
+    });
+  }
+
   return organizations.map((organization) => {
     const orgId = Number(organization.id);
 
@@ -232,7 +260,8 @@ export async function loadAllOrganizationDirectories() {
       organizationName: organization.name || 'Workspace',
       subscription: mapSubscriptionRow(organization),
       trial: trialsByOrganization.get(orgId) || null,
-      members: membersByOrganization.get(orgId) || []
+      members: membersByOrganization.get(orgId) || [],
+      businesses: businessesByOrganization.get(orgId) || []
     };
   });
 }
