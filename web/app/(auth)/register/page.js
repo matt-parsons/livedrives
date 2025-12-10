@@ -80,7 +80,7 @@ export default function RegisterPage() {
       await bootstrapSession();
       await auth.signOut();
 
-      router.push('/dashboard/get-started');
+      router.push('/dashboard');
       router.refresh();
     } catch (err) {
       console.error('Registration flow failed', err);
@@ -94,7 +94,7 @@ export default function RegisterPage() {
     setGoogleLoading(true);
 
     try {
-      const redirect = encodeURIComponent('/dashboard/get-started');
+      const redirect = encodeURIComponent('/dashboard');
       window.location.assign(`/api/auth/google?redirect=${redirect}`);
     } catch (err) {
       console.error('Google signup flow failed', err);

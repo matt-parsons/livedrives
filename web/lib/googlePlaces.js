@@ -147,7 +147,8 @@ async function fetchSidebar(body, { signal, timeoutMs = SIDEBAR_TIMEOUT_MS } = {
 
     if (!res.ok) throw new Error(`Sidebar API failed: ${res.status}`);
     const data = await res.json();
-    return { data, timedOut: false };
+    const pendingFromResponse = Boolean(data?.sidebarPending ?? data?.postsPending);
+    return { data, timedOut: pendingFromResponse };
   } catch (error) {
     if (error.name === 'AbortError' && !signal?.aborted) {
       // This was a timeout from our controller, not an external signal.

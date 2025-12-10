@@ -7,6 +7,76 @@ const DEFAULT_SOAX_USERNAME = process.env.SOAX_DEFAULT_USERNAME || process.env.S
 const DEFAULT_SOAX_RES_USERNAME =
   process.env.SOAX_DEFAULT_RES_USERNAME || process.env.SOAX_RES_USERNAME || '';
 
+const US_STATES = [
+  { name: 'alabama', abbr: 'al' },
+  { name: 'alaska', abbr: 'ak' },
+  { name: 'arizona', abbr: 'az' },
+  { name: 'arkansas', abbr: 'ar' },
+  { name: 'california', abbr: 'ca' },
+  { name: 'colorado', abbr: 'co' },
+  { name: 'connecticut', abbr: 'ct' },
+  { name: 'delaware', abbr: 'de' },
+  { name: 'district of columbia', abbr: 'dc' },
+  { name: 'florida', abbr: 'fl' },
+  { name: 'georgia', abbr: 'ga' },
+  { name: 'hawaii', abbr: 'hi' },
+  { name: 'idaho', abbr: 'id' },
+  { name: 'illinois', abbr: 'il' },
+  { name: 'indiana', abbr: 'in' },
+  { name: 'iowa', abbr: 'ia' },
+  { name: 'kansas', abbr: 'ks' },
+  { name: 'kentucky', abbr: 'ky' },
+  { name: 'louisiana', abbr: 'la' },
+  { name: 'maine', abbr: 'me' },
+  { name: 'maryland', abbr: 'md' },
+  { name: 'massachusetts', abbr: 'ma' },
+  { name: 'michigan', abbr: 'mi' },
+  { name: 'minnesota', abbr: 'mn' },
+  { name: 'mississippi', abbr: 'ms' },
+  { name: 'missouri', abbr: 'mo' },
+  { name: 'montana', abbr: 'mt' },
+  { name: 'nebraska', abbr: 'ne' },
+  { name: 'nevada', abbr: 'nv' },
+  { name: 'new hampshire', abbr: 'nh' },
+  { name: 'new jersey', abbr: 'nj' },
+  { name: 'new mexico', abbr: 'nm' },
+  { name: 'new york', abbr: 'ny' },
+  { name: 'north carolina', abbr: 'nc' },
+  { name: 'north dakota', abbr: 'nd' },
+  { name: 'ohio', abbr: 'oh' },
+  { name: 'oklahoma', abbr: 'ok' },
+  { name: 'oregon', abbr: 'or' },
+  { name: 'pennsylvania', abbr: 'pa' },
+  { name: 'rhode island', abbr: 'ri' },
+  { name: 'south carolina', abbr: 'sc' },
+  { name: 'south dakota', abbr: 'sd' },
+  { name: 'tennessee', abbr: 'tn' },
+  { name: 'texas', abbr: 'tx' },
+  { name: 'utah', abbr: 'ut' },
+  { name: 'vermont', abbr: 'vt' },
+  { name: 'virginia', abbr: 'va' },
+  { name: 'washington', abbr: 'wa' },
+  { name: 'west virginia', abbr: 'wv' },
+  { name: 'wisconsin', abbr: 'wi' },
+  { name: 'wyoming', abbr: 'wy' }
+];
+
+const STATE_NORMALIZATION_MAP = US_STATES.reduce((acc, state) => {
+  acc[state.name] = state.name;
+  acc[state.abbr] = state.name;
+  return acc;
+}, {});
+
+const SOAX_CITY_API_ENDPOINT = 'https://api.soax.com/api/get-country-cities';
+const SOAX_API_KEY = process.env.SOAX_API_KEY || '';
+const SOAX_USERNAME_PACKAGE_KEY = process.env.SOAX_USERNAME_PACKAGE_KEY || 'package-300495';
+const SOAX_RES_PACKAGE_KEY = process.env.SOAX_RES_PACKAGE_KEY || 'package-300496';
+const SOAX_COUNTRY_ISO = process.env.SOAX_COUNTRY_ISO || 'us';
+const SOAX_CONN_TYPE = process.env.SOAX_CONN_TYPE || 'wifi';
+const SOAX_CITY_CACHE = new Map();
+const SOAX_CITY_FETCH_TIMEOUT_MS = 30_000;
+const FALLBACK_BIG_CITY = { city: 'phoenix', state: 'arizona', lat: 33.4484, lng: -112.074 };
+
 const FIELD_MAP = {
   businessName: 'business_name',
   businessSlug: 'business_slug',
@@ -52,6 +122,369 @@ const DAY_LABELS = {
 };
 
 const HOURS_SEGMENT_PATTERN = /^([01]\d|2[0-3]):[0-5]\d-([01]\d|2[0-3]):[0-5]\d$/;
+
+function normalizeStateName(value) {
+  if (!value) {
+    return null;
+  }
+
+  const normalized = String(value)
+    .toLowerCase()
+    .replace(/[.,]/g, ' ')
+    .trim();
+
+  if (!normalized.length) {
+    return null;
+  }
+
+  return STATE_NORMALIZATION_MAP[normalized] ?? null;
+}
+
+function normalizeCityName(value) {
+  if (!value) {
+    return null;
+  }
+
+  const normalized = String(value)
+    .trim()
+    .replace(/\s+/g, ' ');
+
+  return normalized.length ? normalized : null;
+}
+
+function parseCoordinate(value) {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? numeric : null;
+}
+
+function extractCityNameFromEntry(entry) {
+  if (!entry || typeof entry !== 'object') {
+    return null;
+  }
+
+  const candidates = [
+    entry.city,
+    entry.name,
+    entry.city_name,
+    entry.cityName,
+    entry.name_original,
+    entry.city_original
+  ];
+
+  for (const candidate of candidates) {
+    const normalized = normalizeCityName(candidate);
+    if (normalized) {
+      return normalized;
+    }
+  }
+
+  return null;
+}
+
+function extractCityLatLng(entry) {
+  if (!entry || typeof entry !== 'object') {
+    return { lat: null, lng: null };
+  }
+
+  const lat =
+    parseCoordinate(entry.latitude) ??
+    parseCoordinate(entry.lat) ??
+    parseCoordinate(entry.location?.lat) ??
+    parseCoordinate(entry.latitude_deg) ??
+    null;
+  const lng =
+    parseCoordinate(entry.longitude) ??
+    parseCoordinate(entry.lng) ??
+    parseCoordinate(entry.location?.lng) ??
+    parseCoordinate(entry.longitude_deg) ??
+    null;
+
+  return { lat, lng };
+}
+
+function extractCityEntriesFromPayload(payload) {
+  if (!payload) {
+    return [];
+  }
+
+  const seen = new Set();
+  const entries = [];
+
+  function pushArray(list) {
+    if (!Array.isArray(list)) {
+      return;
+    }
+
+    for (const item of list) {
+      if (item && typeof item === 'object') {
+        const key = extractCityNameFromEntry(item);
+        if (key && !seen.has(key + JSON.stringify(item))) {
+          seen.add(key + JSON.stringify(item));
+          entries.push(item);
+        }
+      }
+    }
+  }
+
+  pushArray(payload.cities);
+  pushArray(payload.data?.cities);
+
+  if (Array.isArray(payload.result)) {
+    for (const resultEntry of payload.result) {
+      pushArray(resultEntry?.cities);
+      if (resultEntry && typeof resultEntry === 'object' && extractCityNameFromEntry(resultEntry)) {
+        const key = extractCityNameFromEntry(resultEntry);
+        if (!seen.has(key + JSON.stringify(resultEntry))) {
+          seen.add(key + JSON.stringify(resultEntry));
+          entries.push(resultEntry);
+        }
+      }
+    }
+  } else if (payload.result && typeof payload.result === 'object') {
+    pushArray(payload.result.cities);
+    if (extractCityNameFromEntry(payload.result)) {
+      const key = extractCityNameFromEntry(payload.result);
+      if (!seen.has(key + JSON.stringify(payload.result))) {
+        seen.add(key + JSON.stringify(payload.result));
+        entries.push(payload.result);
+      }
+    }
+  }
+
+  if (Array.isArray(payload)) {
+    pushArray(payload);
+  }
+
+  return entries;
+}
+
+function createCityRecordFromSoax(entry) {
+  const name = extractCityNameFromEntry(entry);
+  if (!name) {
+    return null;
+  }
+
+  const { lat, lng } = extractCityLatLng(entry);
+  return { name, lat, lng };
+}
+
+async function fetchSoaxCitiesForRegion(packageKey, region) {
+  if (!SOAX_API_KEY || !packageKey || !region) {
+    return [];
+  }
+
+  const cacheKey = `${packageKey}:${region}`;
+  if (SOAX_CITY_CACHE.has(cacheKey)) {
+    return SOAX_CITY_CACHE.get(cacheKey);
+  }
+
+  try {
+    const url = new URL(SOAX_CITY_API_ENDPOINT);
+    url.searchParams.set('api_key', SOAX_API_KEY);
+    url.searchParams.set('package_key', packageKey);
+    url.searchParams.set('country_iso', SOAX_COUNTRY_ISO);
+    url.searchParams.set('conn_type', SOAX_CONN_TYPE);
+    url.searchParams.set('region', region);
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), SOAX_CITY_FETCH_TIMEOUT_MS);
+    const response = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      throw new Error(`SOAX cities request failed (${response.status})`);
+    }
+
+    const payload = await response.json().catch(() => null);
+    const entries = extractCityEntriesFromPayload(payload)
+      .map(createCityRecordFromSoax)
+      .filter(Boolean);
+
+    SOAX_CITY_CACHE.set(cacheKey, entries);
+    return entries;
+  } catch (error) {
+    console.warn('Failed to fetch SOAX cities for region', region, error);
+    return [];
+  }
+}
+
+async function findNearestBigCity({ state, city, lat, lng }) {
+  const normalizedState = normalizeStateName(state) ?? FALLBACK_BIG_CITY.state;
+  const normalizedCity = normalizeCityName(city);
+
+  const availableCities = normalizedState
+    ? await fetchSoaxCitiesForRegion(SOAX_USERNAME_PACKAGE_KEY, normalizedState)
+    : [];
+
+  if (normalizedCity) {
+    const matching = availableCities.find(
+      (candidate) => normalizeCityName(candidate.name) === normalizedCity
+    );
+    if (matching) {
+      return { ...matching, state: normalizedState };
+    }
+  }
+
+  const hasCoordinates = Number.isFinite(lat) && Number.isFinite(lng);
+  if (hasCoordinates) {
+    let best = null;
+    let bestDistance = Infinity;
+
+    for (const candidate of availableCities) {
+      if (!Number.isFinite(candidate.lat) || !Number.isFinite(candidate.lng)) {
+        continue;
+      }
+
+      const distance = haversineDistance(lat, lng, candidate.lat, candidate.lng);
+      if (distance < bestDistance) {
+        best = candidate;
+        bestDistance = distance;
+      }
+    }
+
+    if (best) {
+      return { ...best, state: normalizedState };
+    }
+  }
+
+  if (availableCities.length) {
+    return { ...availableCities[0], state: normalizedState };
+  }
+
+  return { ...FALLBACK_BIG_CITY };
+}
+
+function isCountryToken(value) {
+  if (!value) {
+    return false;
+  }
+
+  const normalized = String(value).toLowerCase().trim();
+  return ['usa', 'us', 'united states', 'united states of america'].includes(normalized);
+}
+
+function parseCityStateFromAddress(address) {
+  if (!address || typeof address !== 'string') {
+    return { city: null, state: null };
+  }
+
+  const parts = address
+    .split(',')
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  let index = parts.length - 1;
+
+  while (index >= 0 && isCountryToken(parts[index])) {
+    index -= 1;
+  }
+
+  const stateCandidate = index >= 0 ? parts[index] : null;
+  index -= 1;
+  const cityCandidate = index >= 0 ? parts[index] : null;
+
+  return {
+    city: normalizeCityName(cityCandidate),
+    state: normalizeStateName(stateCandidate)
+  };
+}
+
+function formatSoaxSegment(value) {
+  if (!value) {
+    return '';
+  }
+
+  const sanitized = String(value)
+    .toLowerCase()
+    .replace(/&/g, 'and')
+    .replace(/[^a-z0-9]+/g, '+')
+    .replace(/^\++|\++$/g, '')
+    .replace(/\++/g, '+');
+
+  return sanitized;
+}
+
+function buildSoaxUsernameSegment({ state, city, packageKey, includeOptWb = true }) {
+  if (!state || !city) {
+    return null;
+  }
+
+  const stateSegment = formatSoaxSegment(state);
+  const citySegment = formatSoaxSegment(city);
+
+  if (!stateSegment || !citySegment) {
+    return null;
+  }
+
+  const base = `${packageKey}-country-us-region-${stateSegment}-city-${citySegment}-sessionid-__SESSION_ID__-sessionlength-300`;
+  return includeOptWb ? `${base}-opt-wb` : base;
+}
+
+function toRadians(value) {
+  return (value * Math.PI) / 180;
+}
+
+function haversineDistance(lat1, lng1, lat2, lng2) {
+  const earthRadiusKm = 6371;
+  const dLat = toRadians(lat2 - lat1);
+  const dLng = toRadians(lng2 - lng1);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRadians(lat1)) * Math.cos(toRadians(lat2)) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+
+  return 2 * earthRadiusKm * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+async function resolveLocationMetadata({ placeId, lat, lng, address }) {
+  const metadata = {
+    city: null,
+    state: null,
+    lat: Number.isFinite(lat) ? lat : null,
+    lng: Number.isFinite(lng) ? lng : null
+  };
+
+  if (address) {
+    const parsed = parseCityStateFromAddress(address);
+    metadata.city = metadata.city ?? parsed.city;
+    metadata.state = metadata.state ?? parsed.state;
+  }
+
+  if (placeId && typeof cacheApi?.loadCachedProfile === 'function') {
+    try {
+      const cached = await cacheApi.loadCachedProfile(placeId);
+      const place = cached?.place ?? null;
+      const sidebar = cached?.sidebar ?? place?.sidebar ?? null;
+      const cachedLocation =
+        pickLatLng(place?.location) || pickLatLng(place?.sidebar) || pickLatLng(sidebar);
+
+      if (cachedLocation) {
+        metadata.lat = metadata.lat ?? cachedLocation.lat;
+        metadata.lng = metadata.lng ?? cachedLocation.lng;
+      }
+
+      const sidebarAddress =
+        place?.formattedAddress || sidebar?.formattedAddress || address || null;
+
+      if (sidebarAddress) {
+        const parsed = parseCityStateFromAddress(sidebarAddress);
+        metadata.city = metadata.city ?? parsed.city;
+        metadata.state = metadata.state ?? parsed.state;
+      }
+
+      if (!metadata.city && sidebar?.completeAddress?.city) {
+        metadata.city = normalizeCityName(sidebar.completeAddress.city);
+      }
+
+      if (!metadata.state && sidebar?.completeAddress?.state) {
+        metadata.state = normalizeStateName(sidebar.completeAddress.state);
+      }
+    } catch (error) {
+      console.warn('Failed to resolve SOAX location metadata', error);
+    }
+  }
+
+  return metadata;
+}
 
 function hasOwn(obj, key) {
   return Object.prototype.hasOwnProperty.call(obj, key);
@@ -468,6 +901,63 @@ export function mapToDbColumns(values) {
     }
     return acc;
   }, {});
+}
+
+export async function buildSoaxConfigForBusiness(db, businessId, options = {}) {
+  const defaultConfig = buildDefaultSoaxConfig();
+
+  if (!db || !businessId) {
+    return defaultConfig;
+  }
+
+  const [rows] = await db.query(
+    `SELECT g_place_id AS placeId,
+            destination_address AS destinationAddress,
+            dest_lat AS destLat,
+            dest_lng AS destLng
+       FROM businesses
+      WHERE id = ?
+      LIMIT 1`,
+    [businessId]
+  );
+
+  const row = rows[0] ?? {};
+  const placeId = options.gPlaceId ?? row.placeId ?? null;
+  const address = options.destinationAddress ?? row.destinationAddress ?? null;
+  const lat = parseCoordinate(options.destLat ?? row.destLat);
+  const lng = parseCoordinate(options.destLng ?? row.destLng);
+
+  const resolved = await resolveLocationMetadata({ placeId, lat, lng, address });
+  const bigCity = await findNearestBigCity({
+    state: resolved.state,
+    city: resolved.city,
+    lat: resolved.lat,
+    lng: resolved.lng
+  });
+  const usernameState = bigCity?.state ?? resolved.state;
+  const usernameCity = bigCity?.city ?? resolved.city;
+  const username =
+    buildSoaxUsernameSegment({
+      state: usernameState,
+      city: usernameCity,
+      packageKey: SOAX_USERNAME_PACKAGE_KEY,
+      includeOptWb: true
+    }) ?? defaultConfig.username;
+  const resCity = resolved.city ?? usernameCity;
+  const resState = resolved.state ?? usernameState;
+  const resUsername =
+    buildSoaxUsernameSegment({
+      state: resState,
+      city: resCity,
+      packageKey: SOAX_RES_PACKAGE_KEY,
+      includeOptWb: false
+    }) ?? defaultConfig.resUsername;
+
+  return {
+    endpoint: defaultConfig.endpoint,
+    username,
+    resUsername
+  };
 }
 
 export function wasProvided(payload, key) {

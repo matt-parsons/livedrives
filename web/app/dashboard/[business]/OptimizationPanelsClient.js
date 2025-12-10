@@ -109,6 +109,64 @@ export default function OptimizationPanelsClient({
     };
   }, [placeId, businessId]);
 
+  useEffect(() => {
+    if (!placeId || !meta?.sidebarPending) {
+      return undefined;
+    }
+
+    let isMounted = true;
+    const controllers = new Set();
+
+    const pollSidebarData = async () => {
+      if (!isMounted) {
+        return;
+      }
+
+      const controller = new AbortController();
+      controllers.add(controller);
+
+      try {
+        const params = new URLSearchParams({ placeId });
+        if (businessId) {
+          params.set('businessId', String(businessId));
+        }
+
+        const response = await fetch(`/api/optimization-data?${params.toString()}`, {
+          method: 'GET',
+          signal: controller.signal,
+          cache: 'no-store'
+        });
+
+        const payload = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+          throw new Error(payload?.error || `Request failed with status ${response.status}`);
+        }
+
+        if (isMounted) {
+          setRoadmap(payload?.data?.roadmap ?? null);
+          setMeta(payload?.data?.meta ?? null);
+          setError(null);
+        }
+      } catch (err) {
+        if (!controller.signal.aborted && isMounted) {
+          console.error('Sidebar polling failed', err);
+        }
+      } finally {
+        controllers.delete(controller);
+      }
+    };
+
+    const intervalId = setInterval(pollSidebarData, 15_000);
+    pollSidebarData();
+
+    return () => {
+      isMounted = false;
+      clearInterval(intervalId);
+      controllers.forEach((controller) => controller.abort());
+    };
+  }, [placeId, businessId, meta?.sidebarPending]);
+
   const nextManualRefreshDate = meta?.nextManualRefreshAt
     ? new Date(meta.nextManualRefreshAt)
     : null;

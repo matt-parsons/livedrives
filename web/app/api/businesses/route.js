@@ -4,6 +4,7 @@ import { AuthError, requireAuth } from '@/lib/authServer';
 import { buildOrganizationScopeClause } from '@/lib/organizations';
 import {
   applyCachedLocationFallback,
+  buildSoaxConfigForBusiness,
   ensureDefaultSoaxConfig,
   ensureUniqueBusinessSlug,
   mapToDbColumns,
@@ -122,7 +123,8 @@ export async function POST(request) {
     }
 
     try {
-      await ensureDefaultSoaxConfig(pool, businessId);
+      const soaxConfig = await buildSoaxConfigForBusiness(pool, businessId, normalizedValues);
+      await ensureDefaultSoaxConfig(pool, businessId, soaxConfig);
     } catch (soaxError) {
       console.error('Failed to seed SOAX configuration', soaxError);
     }

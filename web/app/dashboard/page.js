@@ -46,9 +46,9 @@ export default async function DashboardPage() {
     return (
       <div className="page-shell">
         <section className="page-header">
-          <h1 className="page-title">Set up your first business</h1>
+          <h1 className="page-title">Add your business</h1>
           <p className="page-subtitle">
-            Create a business profile to unlock optimization, profile ranking insights, and live operations monitoring.
+            Add your business profile to unlock optimization, profile ranking insights, and get more customers.
           </p>
         </section>
 

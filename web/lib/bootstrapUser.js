@@ -2,6 +2,7 @@ import pool from '@lib/db/db.js';
 import cacheModule from '@lib/db/gbpProfileCache.js';
 import {
   applyCachedLocationFallback,
+  buildSoaxConfigForBusiness,
   ensureDefaultSoaxConfig,
   mapToDbColumns,
   normalizeBusinessPayload
@@ -48,7 +49,9 @@ function slugify(value) {
     .slice(0, 80);
 }
 
-async function findCompletedPreviewLead(connection, userId, email) {
+async function findPreviewLead(connection, userId, email) {
+  const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
+
   const [rows] = await connection.query(
     `SELECT id,
             email,
@@ -58,13 +61,19 @@ async function findCompletedPreviewLead(connection, userId, email) {
             place_lat          AS placeLat,
             place_lng          AS placeLng,
             place_metadata_json AS placeMetadataJson,
+            preview_status     AS previewStatus,
+            preview_error      AS previewError,
+            preview_started_at AS previewStartedAt,
             preview_completed_at AS previewCompletedAt
        FROM funnel_leads
-      WHERE preview_status = 'completed'
+      WHERE place_id IS NOT NULL
         AND (converted_lead_id = ? OR email = ?)
-      ORDER BY preview_completed_at DESC, updated_at DESC, id DESC
+      ORDER BY
+        CASE WHEN preview_status = 'completed' THEN 0 ELSE 1 END,
+        COALESCE(preview_completed_at, preview_started_at, updated_at) DESC,
+        id DESC
       LIMIT 1`,
-    [userId, email]
+    [userId, normalizedEmail]
   );
 
   return rows[0] ?? null;
@@ -158,7 +167,7 @@ async function createBusinessFromPreview(connection, { organizationId, userId, e
     return null;
   }
 
-  const lead = await findCompletedPreviewLead(connection, userId, email);
+  const lead = await findPreviewLead(connection, userId, email);
 
   if (!lead) {
     return null;
@@ -238,7 +247,14 @@ async function createBusinessFromPreview(connection, { organizationId, userId, e
   await connection.query('UPDATE users SET business_id = ? WHERE id = ?', [businessId, userId]);
 
   try {
-    await ensureDefaultSoaxConfig(connection, businessId);
+    const soaxConfig = await buildSoaxConfigForBusiness(connection, businessId, {
+      gPlaceId,
+      destinationAddress,
+      destLat: location?.lat ?? null,
+      destLng: location?.lng ?? null
+    });
+
+    await ensureDefaultSoaxConfig(connection, businessId, soaxConfig);
   } catch (error) {
     console.warn('Failed to seed default SOAX configuration for preview business', error);
   }
