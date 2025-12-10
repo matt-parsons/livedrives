@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { useRouter } from 'next/navigation';
 import SidebarBrand from './dashboard/[business]/SidebarBrand';
 
 const LOADING_STEPS = [
@@ -142,11 +143,11 @@ export default function LandingPage() {
   const [placeDetails, setPlaceDetails] = useState(null);
   const [roadmap, setRoadmap] = useState(null);
   const [placeMeta, setPlaceMeta] = useState(null);
-  const [trialName, setTrialName] = useState('');
   const [trialEmail, setTrialEmail] = useState('');
   const [trialStatus, setTrialStatus] = useState('idle');
   const [trialError, setTrialError] = useState('');
   const [googleLoading, setGoogleLoading] = useState(false);
+  const router = useRouter();
   const [leadEmail, setLeadEmail] = useState('');
   const [leadStatus, setLeadStatus] = useState('idle');
   const [leadError, setLeadError] = useState('');
@@ -258,11 +259,10 @@ export default function LandingPage() {
     setPlaceDetails(null);
     setRoadmap(null);
     setPlaceMeta(null);
-    setTrialName('');
-    setTrialEmail('');
-    setTrialStatus('idle');
-    setTrialError('');
-    setGoogleLoading(false);
+        setTrialEmail('');
+        setTrialStatus('idle');
+        setTrialError('');
+        setGoogleLoading(false);
     setLeadEmail('');
     setLeadStatus('idle');
     setLeadError('');
@@ -330,9 +330,6 @@ export default function LandingPage() {
         await new Promise((resolve) => setTimeout(resolve, 500));
         setPhase('preview');
 
-        if (details?.name) {
-          setTrialName(details.name);
-        }
       } catch (error) {
         console.error('Analysis failed', error);
         setAnalysisError(error.message || 'We hit an unexpected issue while analyzing the profile.');
@@ -474,7 +471,6 @@ export default function LandingPage() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            name: trialName.trim(),
             email: trimmedEmail
           })
         });
@@ -486,13 +482,22 @@ export default function LandingPage() {
         }
 
         setTrialStatus('success');
+        try {
+          await fetch('/api/auth/bootstrap', {
+            method: 'POST',
+            credentials: 'include'
+          });
+        } catch (bootstrapError) {
+          console.error('Failed to bootstrap trial user', bootstrapError);
+        }
+        await router.push('/dashboard/get-started');
       } catch (error) {
         console.error('Trial registration failed', error);
         setTrialStatus('idle');
         setTrialError(error.message || 'We could not process your trial request.');
       }
     },
-    [trialEmail, trialName]
+    [router, trialEmail]
   );
 
   const handleTrialGoogleSignup = useCallback(() => {
@@ -853,32 +858,19 @@ export default function LandingPage() {
 
           <Card id="freetrial" className="shadow-lg">
             <CardHeader>
-              <CardTitle>Start your 7 day Local Paint Pilot trial</CardTitle>
-              <CardDescription>
-                We&apos;ll create your account, email Firebase verification details, and unlock the full dashboard experience.
-              </CardDescription>
+            <CardTitle>Start your 7 day Local Paint Pilot trial</CardTitle>
+            <CardDescription>
+              Share your work email and we&apos;ll create your workspace with instant access to the Local Paint Pilot dashboard.
+            </CardDescription>
             </CardHeader>
             <CardContent>
               {trialStatus === 'success' ? (
                 <div className="space-y-3 rounded-md border border-emerald-400/60 bg-emerald-500/10 p-4 text-sm text-emerald-700">
                   <p className="font-semibold">You&apos;re all set!</p>
-                  <p>
-                    Check your email for a verification email. Once confirmed you&apos;ll have full access to Local Paint Pilot.
-                  </p>
+                  <p>We&apos;re preparing your workspace and will take you straight into the dashboard.</p>
                 </div>
               ) : (
                 <form className="grid gap-4 md:grid-cols-2" onSubmit={handleTrialSubmit}>
-                  <div className="md:col-span-1 space-y-2">
-                    <Label htmlFor="trial-name">Your name</Label>
-                    <Input
-                      id="trial-name"
-                      type="text"
-                      value={trialName}
-                      onChange={(event) => setTrialName(event.target.value)}
-                      placeholder="Ada Lovelace"
-                      disabled={trialStatus === 'submitting' || googleLoading}
-                    />
-                  </div>
                   <div className="md:col-span-1 space-y-2">
                     <Label htmlFor="trial-email">Work email</Label>
                     <Input

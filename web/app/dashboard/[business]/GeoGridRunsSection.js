@@ -151,7 +151,7 @@ export default function GeoGridRunsSection({ caption, defaultView = 'trend', tre
           <div className="empty-state" style={{ marginTop: '20px' }}>
             <div>
               <h3>No keyword trends yet</h3>
-              <p>Accumulate multiple runs per keyword to unlock trend comparisons.</p>
+              <p>Once multiple ranking reports have runs your chart will show here.</p>
             </div>
           </div>
         ) : (

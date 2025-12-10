@@ -8,7 +8,7 @@ if (!FIREBASE_API_KEY) {
 
 const FIREBASE_SEND_OOB_ENDPOINT = `https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key=${FIREBASE_API_KEY}`;
 
-async function exchangeCustomTokenForIdToken(uid) {
+export async function exchangeCustomTokenForIdToken(uid) {
   const customToken = await adminAuth.createCustomToken(uid);
 
   const response = await fetch(
