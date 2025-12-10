@@ -2,7 +2,15 @@ import pool from '@lib/db/db.js';
 import geoGridSchedules from '@lib/db/geoGridSchedules.js';
 import { AuthError, requireAuth } from '@/lib/authServer';
 import { buildOrganizationScopeClause } from '@/lib/organizations';
-import { ensureUniqueBusinessSlug, mapToDbColumns, normalizeBusinessPayload, toSlug, wasProvided } from './utils.js';
+import {
+  applyCachedLocationFallback,
+  ensureDefaultSoaxConfig,
+  ensureUniqueBusinessSlug,
+  mapToDbColumns,
+  normalizeBusinessPayload,
+  toSlug,
+  wasProvided
+} from './utils.js';
 
 export const runtime = 'nodejs';
 
@@ -42,7 +50,7 @@ export async function POST(request) {
       return Response.json({ error: errors.join(' ') }, { status: 400 });
     }
 
-    const normalizedValues = { ...values };
+    const normalizedValues = await applyCachedLocationFallback({ ...values });
 
     const slugBase = normalizedValues.businessSlug ?? toSlug(values.businessName) ?? 'business';
     normalizedValues.businessSlug = await ensureUniqueBusinessSlug(pool, slugBase);
@@ -111,6 +119,12 @@ export async function POST(request) {
       await geoGridSchedules.initializeGeoGridSchedule(businessId);
     } catch (scheduleError) {
       console.error('Failed to initialize heat map schedule', scheduleError);
+    }
+
+    try {
+      await ensureDefaultSoaxConfig(pool, businessId);
+    } catch (soaxError) {
+      console.error('Failed to seed SOAX configuration', soaxError);
     }
 
     const scope = buildOrganizationScopeClause(session);
