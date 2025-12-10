@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import { AuthError, requireAuth } from '@/lib/authServer';
 import { loadAllOrganizationDirectories } from './helpers';
 import UserDirectoryTable from './UserDirectoryTable';
+import BusinessDirectoryTable from './BusinessDirectoryTable';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 export const metadata = {
@@ -183,6 +184,7 @@ export default async function AdminUserDirectoryPage() {
                 <SubscriptionSummaryCard subscription={directory.subscription} trial={directory.trial} />
                 <TrialSummaryCard trial={directory.trial} />
               </div>
+              <BusinessDirectoryTable businesses={directory.businesses} organizationId={directory.organizationId} />
               <UserDirectoryTable
                 members={directory.members}
                 organizationId={directory.organizationId}
