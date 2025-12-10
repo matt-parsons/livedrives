@@ -24,46 +24,14 @@ async function deleteBusinesses(connection, businessIds) {
     return [];
   }
 
-  const [runRows] = await connection.query(
-    'SELECT id FROM runs WHERE business_id IN (?) FOR UPDATE',
-    [normalizedBusinessIds]
-  );
-
-  const runIds = parseBusinessIds(runRows.map((row) => row.id));
-  if (runIds.length) {
-    await connection.query('DELETE FROM run_logs WHERE run_id IN (?)', [runIds]);
-    await connection.query('DELETE FROM ranking_snapshots WHERE run_id IN (?)', [runIds]);
-  }
-
-  const [geoGridRunRows] = await connection.query(
-    'SELECT id FROM geo_grid_runs WHERE business_id IN (?) FOR UPDATE',
-    [normalizedBusinessIds]
-  );
-
-  const geoGridRunIds = parseBusinessIds(geoGridRunRows.map((row) => row.id));
-  if (geoGridRunIds.length) {
-    await connection.query('DELETE FROM geo_grid_points WHERE run_id IN (?)', [geoGridRunIds]);
-  }
-
-  await connection.query('UPDATE users SET business_id = NULL WHERE business_id IN (?)', [normalizedBusinessIds]);
-
-  await connection.query('DELETE FROM run_logs WHERE business_id IN (?)', [normalizedBusinessIds]);
-  await connection.query('DELETE FROM ranking_snapshots WHERE business_id IN (?)', [normalizedBusinessIds]);
-  await connection.query('DELETE FROM ranking_queries WHERE business_id IN (?)', [normalizedBusinessIds]);
-  await connection.query('DELETE FROM runs WHERE business_id IN (?)', [normalizedBusinessIds]);
-
-  await connection.query('DELETE FROM geo_grid_runs WHERE business_id IN (?)', [normalizedBusinessIds]);
-  await connection.query('DELETE FROM geo_grid_schedules WHERE business_id IN (?)', [normalizedBusinessIds]);
-  await connection.query('DELETE FROM geo_grid_schedule_keywords WHERE business_id IN (?)', [normalizedBusinessIds]);
-  await connection.query('DELETE FROM origin_zones WHERE business_id IN (?)', [normalizedBusinessIds]);
-  await connection.query('DELETE FROM gbp_task_completions WHERE business_id IN (?)', [normalizedBusinessIds]);
-  await connection.query('DELETE FROM gbp_authorizations WHERE business_id IN (?)', [normalizedBusinessIds]);
-  await connection.query('DELETE FROM gbp_profile_cache WHERE business_id IN (?)', [normalizedBusinessIds]);
+  // Tables without ON DELETE CASCADE/SET NULL from businesses
   await connection.query('DELETE FROM business_hours WHERE business_id IN (?)', [normalizedBusinessIds]);
+  await connection.query('DELETE FROM runs WHERE business_id IN (?)', [normalizedBusinessIds]);
   await connection.query('DELETE FROM soax_configs WHERE business_id IN (?)', [normalizedBusinessIds]);
   await connection.query('DELETE FROM review_snapshots WHERE business_id IN (?)', [normalizedBusinessIds]);
   await connection.query('DELETE FROM review_fetch_tasks WHERE business_id IN (?)', [normalizedBusinessIds]);
 
+  // This will trigger all ON DELETE CASCADE and ON DELETE SET NULL on other tables.
   await connection.query('DELETE FROM businesses WHERE id IN (?)', [normalizedBusinessIds]);
 
   return normalizedBusinessIds;
