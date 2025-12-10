@@ -437,7 +437,11 @@ function scheduleBackgroundReviewSync({ businessId, placeId, taskId }) {
   }, 0);
 }
 
-export async function loadReviewSnapshot(business, gbpAccessToken, { force = false } = {}) {
+export async function loadReviewSnapshot(
+  business,
+  gbpAccessToken,
+  { force = false, skipRemoteFetch = false } = {}
+) {
   const authorizationUrl = buildGbpAuthUrl({ state: `business:${business?.id ?? ''}` });
   const placeId = business?.gPlaceId ?? null;
   const cachedProfile = placeId ? await loadCachedProfile(placeId) : null;
@@ -449,6 +453,13 @@ export async function loadReviewSnapshot(business, gbpAccessToken, { force = fal
     OPENAI_API_KEY &&
     sanitizedCachedSnapshot?.sentiment?.summary === DEFAULT_SENTIMENT_SUMMARY &&
     (sanitizedCachedSnapshot?.sentiment?.themes?.length ?? 0) === 0;
+  const existingTask = await loadReviewFetchTask(business.id);
+  const hasPendingTask = existingTask?.status === 'pending';
+  const reusableTaskId = hasPendingTask ? existingTask.taskId : null;
+
+  if (skipRemoteFetch) {
+    return { snapshot: sanitizedCachedSnapshot, authorizationUrl, dataForSeoPending: hasPendingTask };
+  }
 
   if (
     !force &&
@@ -458,7 +469,7 @@ export async function loadReviewSnapshot(business, gbpAccessToken, { force = fal
     Date.now() - cached.lastRefreshedAt.getTime() < ONE_DAY_MS
   ) {
     if (!needsAiSentiment) {
-      return { snapshot: sanitizedCachedSnapshot, authorizationUrl };
+      return { snapshot: sanitizedCachedSnapshot, authorizationUrl, dataForSeoPending: hasPendingTask };
     }
   }
 
@@ -467,8 +478,6 @@ export async function loadReviewSnapshot(business, gbpAccessToken, { force = fal
   let snapshotSource = null;
 
   try {
-    const existingTask = await loadReviewFetchTask(business.id);
-    const reusableTaskId = existingTask?.status === 'pending' ? existingTask.taskId : null;
     const { reviews, status, taskId } = placeId
       ? await fetchDataForSeoReviews(placeId, {
           taskId: reusableTaskId,

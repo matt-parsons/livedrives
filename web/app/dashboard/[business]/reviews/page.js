@@ -6,10 +6,8 @@ import { loadBusiness } from '../helpers';
 import BusinessNavigation from '../BusinessNavigation';
 import SidebarBrand from '../SidebarBrand';
 import DashboardBusinessHeader from '../DashboardBusinessHeader';
-import ReviewOverview from './ReviewOverview';
 import ReviewLoadingBlock from './ReviewLoadingBlock';
-import ReviewPermissionsGate from './ReviewPermissionsGate';
-import ReviewPendingNotice from './ReviewPendingNotice';
+import ReviewSnapshotController from './ReviewSnapshotController';
 import {
   loadReviewSnapshot,
   loadScheduledPosts,
@@ -78,17 +76,10 @@ async function ReviewsContent({ business, authorizationUrl, canRefreshReviews })
   const hasGbpAccess = Boolean(gbpAccessToken);
   const scheduledPosts = await loadScheduledPosts(business.id, hasGbpAccess);
 
-  if (!snapshot) {
-    if (dataForSeoPending) {
-      return <ReviewPendingNotice />;
-    }
-
-    return <ReviewPermissionsGate authorizationUrl={authorizationUrl} />;
-  }
-
   return (
-    <ReviewOverview
-      snapshot={snapshot}
+    <ReviewSnapshotController
+      initialSnapshot={snapshot}
+      initialDataForSeoPending={dataForSeoPending}
       scheduledPosts={scheduledPosts}
       businessId={business.id}
       timezone={business.timezone}

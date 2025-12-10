@@ -90,7 +90,7 @@ export async function loadOptimizationData(placeId, options = {}) {
 
   if (shouldRefresh) {
     try {
-      const { place, raw, sidebar, sidebarPending: sidebarWasPending } = await fetchPlaceDetails(placeId, { signal });
+      const { place, sidebar, sidebarPending: sidebarWasPending } = await fetchPlaceDetails(placeId, { signal });
       place.sidebar = place.sidebar ?? sidebar ?? null;
       sidebarPending = Boolean(sidebarWasPending);
 
@@ -103,7 +103,6 @@ export async function loadOptimizationData(placeId, options = {}) {
         placeId,
         businessId: normalizedBusinessId,
         place,
-        placesRaw: raw,
         sidebar,
         refreshedAt,
         manualRefreshAt
@@ -113,7 +112,6 @@ export async function loadOptimizationData(placeId, options = {}) {
         placeId,
         businessId: normalizedBusinessId,
         place,
-        placesRaw: raw,
         sidebar,
         lastRefreshedAt: refreshedAt,
         lastManualRefreshAt: manualRefreshAt

@@ -379,7 +379,6 @@ export default function OptimizationPanelsClient({
                 <strong>Automated CTR Optimization Active</strong>
                 <p>
                   Our AI is continuously improving your click-through rate in the background. No action needed.{' '}
-                  <Link href={automationLink}>Click here to learn more.</Link>
                 </p>
               </div>
             </div>

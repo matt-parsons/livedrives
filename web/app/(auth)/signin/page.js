@@ -82,10 +82,9 @@ export default function SignInPage() {
     <div className="page-shell">
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-10 lg:grid lg:grid-cols-2 lg:items-start">
         <section className="space-y-4 rounded-xl border border-border/60 bg-card/80 p-8 shadow-sm backdrop-blur">
-          <h1 className="text-3xl font-semibold text-foreground">Operational control, beautifully streamlined.</h1>
+          <h1 className="text-3xl font-semibold text-foreground">See where you rank. <br />Fix what matters. <br />Win more local jobs.</h1>
           <p className="text-base leading-relaxed text-muted-foreground">
-            Step into a refined workspace crafted for clarity and focus. Coordinate your businesses,
-            monitor runs in real time, and keep your teams aligned from a single command center.
+            Your dashboard gives you clear insights, keyword data, and real-world signals to help you climb the map pack
           </p>
         </section>
 
@@ -148,11 +147,10 @@ export default function SignInPage() {
               >
                 {error}
               </p>
-            ) : (
+            ):( null )}
               <p className="text-sm text-muted-foreground">
                 Don't have an account? <Link href="/register">Sign up</Link>
               </p>
-            )}
           </CardFooter>
         </Card>
       </div>

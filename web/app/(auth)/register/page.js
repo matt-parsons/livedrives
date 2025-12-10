@@ -108,9 +108,10 @@ export default function RegisterPage() {
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-10 lg:grid lg:grid-cols-[1.1fr_1fr] lg:items-start">
         <section className="space-y-4 rounded-xl border border-border/60 bg-card/80 p-8 shadow-sm backdrop-blur">
           <h1 className="text-3xl font-semibold text-foreground">Sign up<br />Try LocalPaintPilot for free</h1>
-          <p className="text-base leading-relaxed text-muted-foreground">
-Let's get you started<br></br>
-Securely create your account in seconds.
+          <h2 className="text-2xl font-semibold text-foreground">See where you rank. <br />Fix what matters. <br />Win more local jobs.</h2>
+          <p className="text-sm leading-relaxed text-muted-foreground">
+            FREE 7 Day Trial. No Credit Card Needed.<br />
+            
           </p>
         </section>
 
@@ -182,11 +183,10 @@ Securely create your account in seconds.
               >
                 {error}
               </p>
-            ) : (
-              <p className="text-sm text-muted-foreground">
-                Already have an account? <Link href="/signin">Log in</Link>
-              </p>
-            )}
+            ) : ( null ) }
+            <p className="text-sm text-muted-foreground">
+              Already have an account? <Link href="/signin">Log in</Link>
+            </p>
           </CardFooter>
         </Card>
       </div>

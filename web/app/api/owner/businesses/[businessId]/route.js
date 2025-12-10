@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import pool from '@lib/db/db.js';
 import { AuthError, requireAuth } from '@/lib/authServer';
-import { deleteBusinessData, parseOrganizationId } from '@lib/owner/organizations.js';
+import { deleteBusinessData, parseOrganizationId } from '@/lib/owner/organizations.js';
 
 export const runtime = 'nodejs';
 

@@ -4,6 +4,8 @@ import { loadAllOrganizationDirectories } from './helpers';
 import UserDirectoryTable from './UserDirectoryTable';
 import BusinessDirectoryTable from './BusinessDirectoryTable';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import OperationsNavigation from '../OperationsNavigation';
+import SidebarBrand from '../../[business]/SidebarBrand';
 
 export const metadata = {
   title: 'User directory · Local Paint Pilot'
@@ -163,44 +165,57 @@ export default async function AdminUserDirectoryPage() {
   }));
 
   return (
-    <div className="page-shell">
-      <section className="page-header">
-        <h1 className="page-title">User directory</h1>
-        <p className="page-subtitle">
-          View every member in your workspace, reset credentials, and remove access with confidence.
-        </p>
-      </section>
-
-      {directoriesWithContext.length ? (
-        <section className="section space-y-12">
-          {directoriesWithContext.map((directory) => (
-            <div key={directory.organizationId} className="space-y-6">
-              <div>
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">Organization</p>
-                <p className="text-2xl font-semibold text-foreground">{directory.organizationName}</p>
-                <p className="text-sm text-muted-foreground">ID #{directory.organizationId}</p>
+    <div className="dashboard-layout__body">
+      <aside className="dashboard-layout__sidebar" aria-label="Operations navigation">
+        <SidebarBrand />
+        <div className="dashboard-sidebar__menu">
+          <OperationsNavigation />
+        </div>
+      </aside>
+      <div className="dashboard-layout__main">
+        <header className="dashboard-layout__header">
+          <div className="dashboard-layout__header-container">
+            <div className="dashboard-header">
+              <div className="dashboard-header__content">
+                <h1 className="page-title">User directory</h1>
+                <span className="dashboard-sidebar__location">View every member in your workspace, reset credentials, and remove access with confidence.</span>
               </div>
-              <div className="grid gap-4 lg:grid-cols-2">
-                <SubscriptionSummaryCard subscription={directory.subscription} trial={directory.trial} />
-                <TrialSummaryCard trial={directory.trial} />
-              </div>
-              <BusinessDirectoryTable businesses={directory.businesses} organizationId={directory.organizationId} />
-              <UserDirectoryTable
-                members={directory.members}
-                organizationId={directory.organizationId}
-                organizationName={directory.subscription?.name || directory.organizationName}
-              />
             </div>
-          ))}
-        </section>
-      ) : (
-        <section className="section">
-          <div className="rounded-2xl border border-dashed border-border/70 bg-card/70 p-6 text-sm text-muted-foreground">
-            <p className="font-semibold text-foreground">No organizations detected</p>
-            <p className="mt-2">New workspaces will appear here as soon as they are created.</p>
           </div>
-        </section>
-      )}
+        </header>
+        <div className="dashboard-layout__content">
+          {directoriesWithContext.length ? (
+            <section className="section space-y-12">
+              {directoriesWithContext.map((directory) => (
+                <div key={directory.organizationId} className="space-y-6">
+                  <div>
+                    <p className="text-xs uppercase tracking-wide text-muted-foreground">Organization</p>
+                    <p className="text-2xl font-semibold text-foreground">{directory.organizationName}</p>
+                    <p className="text-sm text-muted-foreground">ID #{directory.organizationId}</p>
+                  </div>
+                  <div className="grid gap-4 lg:grid-cols-2">
+                    <SubscriptionSummaryCard subscription={directory.subscription} trial={directory.trial} />
+                    <TrialSummaryCard trial={directory.trial} />
+                  </div>
+                  <BusinessDirectoryTable businesses={directory.businesses} organizationId={directory.organizationId} />
+                  <UserDirectoryTable
+                    members={directory.members}
+                    organizationId={directory.organizationId}
+                    organizationName={directory.subscription?.name || directory.organizationName}
+                  />
+                </div>
+              ))}
+            </section>
+          ) : (
+            <section className="section">
+              <div className="rounded-2xl border border-dashed border-border/70 bg-card/70 p-6 text-sm text-muted-foreground">
+                <p className="font-semibold text-foreground">No organizations detected</p>
+                <p className="mt-2">New workspaces will appear here as soon as they are created.</p>
+              </div>
+            </section>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

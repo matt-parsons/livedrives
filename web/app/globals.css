@@ -874,6 +874,33 @@ textarea {
   border-radius: 18px;
   overflow: hidden;
   border: 1px solid rgba(148, 163, 184, 0.3);
+  position: relative;
+}
+
+.latest-geogrid-card__map-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 1.35rem;
+  background: rgba(2, 6, 23, 0.75);
+  color: #ffffff;
+  backdrop-filter: blur(3px);
+  pointer-events: none;
+}
+
+.latest-geogrid-card__map-overlay-title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.latest-geogrid-card__map-overlay-copy {
+  margin: 0.35rem 0 0;
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.88);
 }
 
 .latest-geogrid-card__placeholder {
