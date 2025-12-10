@@ -1,8 +1,10 @@
 import pool from '@lib/db/db.js';
+import { NextResponse } from 'next/server';
 import { adminAuth } from '@/lib/firebaseAdmin';
+import { applySessionCookie, SESSION_MAX_AGE_MS } from '@/lib/authServer';
 import {
-  sendFirebaseVerificationEmail,
-  sendFirebasePasswordResetEmail
+  exchangeCustomTokenForIdToken,
+  sendFirebaseVerificationEmail
 } from '@/lib/firebaseVerification';
 
 export const runtime = 'nodejs';
@@ -26,13 +28,13 @@ export async function POST(request) {
     const payload = await request.json().catch(() => null);
 
     if (!payload || typeof payload !== 'object') {
-      return Response.json({ error: 'Invalid request payload.' }, { status: 400 });
+      return NextResponse.json({ error: 'Invalid request payload.' }, { status: 400 });
     }
 
     const { email, name } = payload;
 
     if (!validateEmail(email)) {
-      return Response.json({ error: 'A valid email address is required.' }, { status: 400 });
+      return NextResponse.json({ error: 'A valid email address is required.' }, { status: 400 });
     }
 
     const trimmedEmail = email.trim().toLowerCase();
@@ -41,7 +43,6 @@ export async function POST(request) {
     const firebaseDisplayName = sanitizedName ? sanitizedName.slice(0, 128) : undefined;
 
     let userRecord;
-    let isNewUser = false;
 
     try {
       userRecord = await adminAuth.getUserByEmail(trimmedEmail);
@@ -58,7 +59,6 @@ export async function POST(request) {
           email: trimmedEmail,
           displayName: firebaseDisplayName
         });
-        isNewUser = true;
       } else {
         throw error;
       }
@@ -69,24 +69,12 @@ export async function POST(request) {
         await sendFirebaseVerificationEmail(userRecord.uid, trimmedEmail);
       } catch (error) {
         console.error('Failed to send Firebase verification email', error);
-        return Response.json(
+        return NextResponse.json(
           { error: 'Unable to send verification email. Please try again later.' },
           { status: 502 }
         );
       }
     }
-
-    // if (isNewUser) {
-    //   try {
-    //     await sendFirebasePasswordResetEmail(trimmedEmail);
-    //   } catch (error) {
-    //     console.error('Failed to send Firebase password reset email', error);
-    //     return Response.json(
-    //       { error: 'Unable to send login email. Please try again later.' },
-    //       { status: 502 }
-    //     );
-    //   }
-    // }
 
     const connection = await pool.getConnection();
 
@@ -160,12 +148,25 @@ export async function POST(request) {
 
       await connection.commit();
 
-      return Response.json({
+      const idToken = await exchangeCustomTokenForIdToken(userRecord.uid);
+      const sessionCookie = await adminAuth.createSessionCookie(idToken, {
+        expiresIn: SESSION_MAX_AGE_MS
+      });
+
+      const body = {
         success: true,
         userId,
         organizationId: membership.organizationId,
         role: membership.role
-      }, { status: 201 });
+      };
+
+      const hostname = request?.nextUrl?.hostname ?? new URL(request.url).hostname;
+      const response = NextResponse.json(body, { status: 201 });
+
+      return applySessionCookie(response, sessionCookie, {
+        hostname,
+        maxAgeMs: SESSION_MAX_AGE_MS
+      });
     } catch (error) {
       try {
         await connection.rollback();
@@ -179,6 +180,6 @@ export async function POST(request) {
     }
   } catch (error) {
     console.error('Public registration failed', error);
-    return Response.json({ error: 'Unable to process registration at this time.' }, { status: 500 });
+    return NextResponse.json({ error: 'Unable to process registration at this time.' }, { status: 500 });
   }
 }

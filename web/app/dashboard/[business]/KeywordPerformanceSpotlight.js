@@ -89,7 +89,7 @@ export default function KeywordPerformanceSpotlight({ items, mapsApiKey = null }
           </div>
         </div>
         <p style={{ marginTop: '1rem', color: '#6b7280' }}>
-          Not enough ranking reports in the last 30 days to chart keyword movement.
+          There haven't been any ranking reports in the last 30 days to chart keyword movement.
         </p>
       </div>
     );

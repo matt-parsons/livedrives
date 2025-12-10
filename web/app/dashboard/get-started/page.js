@@ -121,7 +121,7 @@ export default async function MemberJourneyPage() {
   const businessHref = defaultIdentifier ? `/dashboard/${defaultIdentifier}` : null;
   const editHref = defaultIdentifier ? `${businessHref}/edit` : null;
 
-  if (primaryBusiness && originZones.length > 0) {
+  if (primaryBusiness) {
     redirect(businessHref);
   }
 
