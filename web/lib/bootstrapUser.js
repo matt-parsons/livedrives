@@ -1,6 +1,11 @@
 import pool from '@lib/db/db.js';
 import cacheModule from '@lib/db/gbpProfileCache.js';
-import { mapToDbColumns, normalizeBusinessPayload } from '@/app/api/businesses/utils.js';
+import {
+  applyCachedLocationFallback,
+  ensureDefaultSoaxConfig,
+  mapToDbColumns,
+  normalizeBusinessPayload
+} from '@/app/api/businesses/utils.js';
 
 const cacheApi = cacheModule?.default ?? cacheModule;
 
@@ -183,22 +188,21 @@ async function createBusinessFromPreview(connection, { organizationId, userId, e
 
   const businessSlug = await ensureUniqueSlug(connection, slugify(businessName));
 
-  const { errors, values } = normalizeBusinessPayload(
-    {
-      businessName,
-      businessSlug,
-      brandSearch,
-      destinationAddress,
-      destinationZip: postalCode,
-      destLat: location?.lat ?? null,
-      destLng: location?.lng ?? null,
-      timezone,
-      drivesPerDay: 5,
-      gPlaceId,
-      isActive: 1
-    },
-    { partial: true }
-  );
+  const withLocationFallback = await applyCachedLocationFallback({
+    businessName,
+    businessSlug,
+    brandSearch,
+    destinationAddress,
+    destinationZip: postalCode,
+    destLat: location?.lat ?? null,
+    destLng: location?.lng ?? null,
+    timezone,
+    drivesPerDay: 5,
+    gPlaceId,
+    isActive: 1
+  });
+
+  const { errors, values } = normalizeBusinessPayload(withLocationFallback, { partial: true });
 
   if (errors?.length) {
     throw new Error(`Invalid preview lead payload: ${errors[0]?.message}`);
@@ -232,6 +236,12 @@ async function createBusinessFromPreview(connection, { organizationId, userId, e
   }
 
   await connection.query('UPDATE users SET business_id = ? WHERE id = ?', [businessId, userId]);
+
+  try {
+    await ensureDefaultSoaxConfig(connection, businessId);
+  } catch (error) {
+    console.warn('Failed to seed default SOAX configuration for preview business', error);
+  }
 
   return businessId;
 }

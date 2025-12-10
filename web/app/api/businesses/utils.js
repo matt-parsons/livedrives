@@ -1,3 +1,12 @@
+import cacheModule from '@lib/db/gbpProfileCache.js';
+
+const cacheApi = cacheModule?.default ?? cacheModule;
+
+const DEFAULT_SOAX_ENDPOINT = process.env.SOAX_DEFAULT_ENDPOINT || 'proxy.soax.com:5000';
+const DEFAULT_SOAX_USERNAME = process.env.SOAX_DEFAULT_USERNAME || process.env.SOAX_USERNAME || '';
+const DEFAULT_SOAX_RES_USERNAME =
+  process.env.SOAX_DEFAULT_RES_USERNAME || process.env.SOAX_RES_USERNAME || '';
+
 const FIELD_MAP = {
   businessName: 'business_name',
   businessSlug: 'business_slug',
@@ -183,6 +192,21 @@ function toBooleanFlag(value) {
   return undefined;
 }
 
+function pickLatLng(candidate) {
+  if (!candidate) {
+    return null;
+  }
+
+  const lat = Number(candidate.lat ?? candidate.latitude);
+  const lng = Number(candidate.lng ?? candidate.longitude);
+
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+    return null;
+  }
+
+  return { lat, lng };
+}
+
 export function normalizeBusinessPayload(input, { partial = false } = {}) {
   if (!input || typeof input !== 'object') {
     return { errors: ['Request body must be a JSON object.'], values: {} };
@@ -273,6 +297,44 @@ export function normalizeBusinessPayload(input, { partial = false } = {}) {
   }
 
   return { errors, values };
+}
+
+export async function applyCachedLocationFallback(values) {
+  if (!values || typeof values !== 'object') {
+    return values;
+  }
+
+  const hasLat = values.destLat !== undefined && values.destLat !== null;
+  const hasLng = values.destLng !== undefined && values.destLng !== null;
+  if (hasLat && hasLng) {
+    return values;
+  }
+
+  const placeId = values.gPlaceId;
+  if (!placeId || typeof cacheApi?.loadCachedProfile !== 'function') {
+    return values;
+  }
+
+  try {
+    const cached = await cacheApi.loadCachedProfile(placeId);
+    const location =
+      pickLatLng(cached?.place?.location) ||
+      pickLatLng(cached?.place?.sidebar) ||
+      pickLatLng(cached?.sidebar);
+
+    if (!location) {
+      return values;
+    }
+
+    return {
+      ...values,
+      destLat: hasLat ? values.destLat : location.lat,
+      destLng: hasLng ? values.destLng : location.lng
+    };
+  } catch (error) {
+    console.warn('Failed to apply cached location fallback', error);
+    return values;
+  }
 }
 
 function toHourSegments(value) {
@@ -410,4 +472,33 @@ export function mapToDbColumns(values) {
 
 export function wasProvided(payload, key) {
   return hasOwn(payload, key);
+}
+
+export function buildDefaultSoaxConfig() {
+  return {
+    endpoint: DEFAULT_SOAX_ENDPOINT,
+    username: DEFAULT_SOAX_USERNAME,
+    resUsername: DEFAULT_SOAX_RES_USERNAME
+  };
+}
+
+export async function ensureDefaultSoaxConfig(db, businessId, config = buildDefaultSoaxConfig()) {
+  if (!db || !businessId) {
+    return;
+  }
+
+  const endpoint = config?.endpoint || DEFAULT_SOAX_ENDPOINT;
+  const username = config?.username ?? DEFAULT_SOAX_USERNAME ?? '';
+  const resUsername = config?.resUsername ?? DEFAULT_SOAX_RES_USERNAME ?? '';
+
+  if (!endpoint) {
+    return;
+  }
+
+  await db.query(
+    `INSERT INTO soax_configs (business_id, label, endpoint, username, res_username)
+       VALUES (?, ?, ?, ?, ?)
+       ON DUPLICATE KEY UPDATE endpoint = VALUES(endpoint), username = VALUES(username), res_username = VALUES(res_username), created_at = created_at`,
+    [businessId, `business-${businessId}`, endpoint, username, resUsername]
+  );
 }
