@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { useRouter } from 'next/navigation';
-import SidebarBrand from './dashboard/[business]/SidebarBrand';
+import SidebarBrand from '../dashboard/[business]/SidebarBrand';
 
 const LOADING_STEPS = [
   {
@@ -490,7 +490,7 @@ export default function LandingPage() {
         } catch (bootstrapError) {
           console.error('Failed to bootstrap trial user', bootstrapError);
         }
-        await router.push('/dashboard/get-started');
+        await router.push('/dashboard');
       } catch (error) {
         console.error('Trial registration failed', error);
         setTrialStatus('idle');
@@ -510,7 +510,7 @@ export default function LandingPage() {
     }, 5000);
 
     try {
-      const redirect = encodeURIComponent('/dashboard/get-started');
+      const redirect = encodeURIComponent('/dashboard');
       window.location.assign(`/api/auth/google?redirect=${redirect}`);
     } catch (error) {
       clearTimeout(navigationTimeout);

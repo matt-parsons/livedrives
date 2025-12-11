@@ -116,43 +116,6 @@ const TASK_GUIDES = {
       'Check the “People also search for” suggestions in Google Maps to find category inspiration.'
     ]
   },
-  services: {
-    summary:
-      'Publish a clear list of services under each category so customers see everything you offer without leaving Google.',
-    steps: [
-      'Open the “Services” tab inside “Edit profile.”',
-      'For each category, click “Add service,” enter the exact service name customers search for, and optionally add a price range.',
-      'Save the list and repeat for every relevant category.'
-    ],
-    template: {
-      id: 'services-template',
-      title: 'Service menu draft',
-      description: 'Copy this outline into a doc, customize, and paste it back into GBP.',
-      text: `Category: [ex. Exterior painting]\n• Service 1: [Exterior house painting]\n• Service 2: [Deck staining]\n• Service 3: [Deck sealing]\nCategory: [ex. Interior painting]\n• Service 1: [Wall & ceiling painting]\n• Service 2: [Door painting]\n• Service 3: [Furniture painting]\nCategory: [ex. Drywall repair]\n• Service 1: [Drywall repair and patching]\n• Service 2: [Texture matching]\n• Service 3: [Crack & hole repair]\nCategory: [ex. Specialty coatings]\n• Service 1: [Epoxy floor coating]\n• Service 2: [Wood staining]\n• Service 3: [Wood varnishing]\nCategory: [ex. Commercial painting]\n• Service 1: [Commercial interior painting]\n• Service 2: [Commercial exterior painting]\n• Service 3: [Office & retail painting]`
-    },
-    tips: [
-      'Match the service names to the keywords you target on your website for consistency.',
-      'Do not keyword stuff—keep each service name short and descriptive.'
-    ]
-  },
-  'service-descriptions': {
-    summary:
-      'Short service descriptions (up to 300 characters) convince searchers to call. Make each description outcome-focused.',
-    steps: [
-      'Inside the “Services” editor, click a service name and choose “Add description.”',
-      'Write 1–2 sentences describing what is included, turnaround time, and why you are trustworthy. Save before closing the modal.'
-    ],
-    template: {
-      id: 'service-description-template',
-      title: 'Service description snippet',
-      description: 'Use this format for every service and replace the placeholders.',
-      text: `[Service name]: We provide [key deliverable] for [audience/location]. Expect [timeline or differentiator], upfront pricing, and support from [credential/experience]. Call [phone] for scheduling within [response time].`
-    },
-    tips: [
-      'Include your main service area in at least one description for local relevance.',
-      'Avoid repeating the same copy for every service—highlight unique benefits.'
-    ]
-  },
   'update-posts': {
     summary:
       'Fresh posts signal that the business is active. Aim to publish at least one update each week with a clear call-to-action.',

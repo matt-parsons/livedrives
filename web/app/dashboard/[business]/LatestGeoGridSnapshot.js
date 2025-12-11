@@ -19,6 +19,7 @@ export default function LatestGeoGridSnapshot({
   const hasKeyword = Boolean(keywordLabel?.trim());
   const statusKey = summary?.status?.key ?? 'unknown';
   const statusLabel = summary?.status?.label ?? 'Unknown';
+  const isReportInProgress = statusKey === 'in_progress';
   const summaryCards = [
     {
       id: 'avg',
@@ -65,14 +66,28 @@ export default function LatestGeoGridSnapshot({
 
           <div className="latest-geogrid-card__map">
             {hasMap ? (
-              <GeoGridMap
-                apiKey={apiKey}
-                center={center}
-                points={points}
-                interactive={false}
-                selectedPointId={null}
-                minHeight="clamp(220px, 35vw, 320px)"
-              />
+              <>
+                <GeoGridMap
+                  apiKey={apiKey}
+                  center={center}
+                  points={points}
+                  interactive={false}
+                  selectedPointId={null}
+                  minHeight="clamp(220px, 35vw, 320px)"
+                />
+                {isReportInProgress ? (
+                  <div className="latest-geogrid-card__map-overlay">
+                    <div>
+                      <p className="latest-geogrid-card__map-overlay-title">
+                        Ranking report in progress
+                      </p>
+                      <p className="latest-geogrid-card__map-overlay-copy">
+                        We'll show the refreshed ranking heat map once the report finishes.
+                      </p>
+                    </div>
+                  </div>
+                ) : null}
+              </>
             ) : (
               <div className="latest-geogrid-card__placeholder">
                 <p>

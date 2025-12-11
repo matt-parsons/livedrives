@@ -46,18 +46,15 @@ export default async function DashboardPage() {
     return (
       <div className="page-shell">
         <section className="page-header">
-          <h1 className="page-title">Set up your first business</h1>
+          <h1 className="page-title">Add your business</h1>
           <p className="page-subtitle">
-            Create a business profile to unlock optimization, profile ranking insights, and live operations monitoring.
+            Add your business profile to unlock optimization, profile ranking insights, and get more customers.
           </p>
         </section>
 
         <Card role="status" className="max-w-2xl border-dashed border-border/70 bg-card/90 shadow-sm">
           <CardHeader>
             <CardTitle className="text-xl">You're almost ready</CardTitle>
-            <CardDescription>
-              There are no businesses linked to your organization yet.
-            </CardDescription>
           </CardHeader>
           <div className="flex flex-col mt-5">
             <div className="flex flex-wrap">

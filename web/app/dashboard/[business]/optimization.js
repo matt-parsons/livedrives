@@ -365,84 +365,19 @@ function computeCategoryStatus(categories) {
   };
 }
 
-function computeServicesStatus(serviceCapabilities) {
-  const list = Array.isArray(serviceCapabilities) ? serviceCapabilities : [];
 
-  if (list.length >= 2) {
-    return {
-      status: normalizeStatus('completed'),
-      detail: `${list.length} service capabilities detected.`
-    };
-  }
-
-  if (list.length === 1) {
-    return {
-      status: normalizeStatus('in_progress'),
-      detail: `${list[0]} detected. Add more services to round out your offering.`
-    };
-  }
-
-  return {
-    status: normalizeStatus('pending'),
-    detail: 'No services found.'
-  };
-}
-function computeServicesDescriptionsStatus(serviceCapabilities) {
-  const list = Array.isArray(serviceCapabilities) ? serviceCapabilities : [];
-  
-  if (list.length === 0) {
-    return {
-      status: normalizeStatus('pending'),
-      detail: 'No services found.'
-    };
-  }
-
-  // Count services with descriptions (non-empty second element)
-  const servicesWithDescriptions = list.filter(service => {
-    const description = service?.[0]?.[1]; // Get the description from nested array
-    return description && description.trim() !== '';
-  }).length;
-
-  const totalServices = list.length;
-  const percentageComplete = (servicesWithDescriptions / totalServices) * 100;
-
-  // All services have descriptions
-  if (servicesWithDescriptions === totalServices) {
-    return {
-      status: normalizeStatus('completed'),
-      detail: `All ${totalServices} services have descriptions.`
-    };
-  }
-
-  // Some services have descriptions
-  if (servicesWithDescriptions > 0) {
-    return {
-      status: normalizeStatus('in_progress'),
-      detail: `${servicesWithDescriptions} of ${totalServices} services have descriptions (${Math.round(percentageComplete)}%).`
-    };
-  }
-
-  // No services have descriptions
-  return {
-    status: normalizeStatus('pending'),
-    detail: `0 of ${totalServices} services have descriptions. Add descriptions to help customers understand your offerings.`
-  };
-}
-
-function computeHoursStatus(weekdayText) {
+function computeHoursStatus(weekdayEntries) {
   // console.log('weekdayText', weekdayText);
-  const entries = Array.isArray(weekdayText) ? weekdayText.filter(Boolean) : [];
-  const hoursText = entries.join(' ');
 
 
-  if (entries.length >= 5) {
+  if (weekdayEntries >= 5) {
     return {
       status: normalizeStatus('completed'),
       detail: `Weekly hours detected in Google`
     };
   }
 
-  if (entries.length > 0) {
+  if (weekdayEntries > 0) {
     return {
       status: normalizeStatus('in_progress'),
       detail: 'Partial hours detected. Ensure all days are configured.'
@@ -659,8 +594,8 @@ const SECTION_DEFINITIONS = [
   {
     id: 'local-seo-optimization',
     title: 'Local Visibility',
-    description: 'Improve keyword coverage and service clarity for local search.',
-    taskIds: ['description', 'categories', 'services', 'service-descriptions']
+    description: 'Improve keyword coverage for local search.',
+    taskIds: ['description', 'categories']
   },
 ];
 
@@ -703,20 +638,6 @@ export function buildOptimizationRoadmap(place, options = {}) {
       ...computeCategoryStatus(place.categories)
     },
     {
-      id: 'services',
-      label: 'Publish services',
-      weight: 10,
-      auto: true,
-      ...computeServicesStatus(place.serviceCapabilities)
-    },
-    {
-      id: 'service-descriptions',
-      label: 'Add service descriptions',
-      weight: 8,
-      auto: true,
-      ...computeServicesDescriptionsStatus(place.serviceCapabilities)
-    },
-    {
       id: 'update-posts',
       label: 'Post weekly updates',
       weight: 7,
@@ -728,7 +649,7 @@ export function buildOptimizationRoadmap(place, options = {}) {
       label: 'Publish accurate business hours',
       weight: 6,
       auto: true,
-      ...computeHoursStatus(place.weekdayText)
+      ...computeHoursStatus(place.openingHours)
     },
     {
       id: 'phone-number',

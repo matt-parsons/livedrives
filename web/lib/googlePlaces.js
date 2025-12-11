@@ -147,7 +147,8 @@ async function fetchSidebar(body, { signal, timeoutMs = SIDEBAR_TIMEOUT_MS } = {
 
     if (!res.ok) throw new Error(`Sidebar API failed: ${res.status}`);
     const data = await res.json();
-    return { data, timedOut: false };
+    const pendingFromResponse = Boolean(data?.sidebarPending ?? data?.postsPending);
+    return { data, timedOut: pendingFromResponse, posts: data.posts };
   } catch (error) {
     if (error.name === 'AbortError' && !signal?.aborted) {
       // This was a timeout from our controller, not an external signal.
@@ -224,286 +225,179 @@ export async function fetchTimezone(location, { signal } = {}) {
   return null;
 }
 
-function buildPlacePayload(result, { fallbackPlaceId, timezone = null, sidebarData = {} } = {}) {
-  console.log('✅✅ buildPlacePayload');
+function countOpenDays(periods) {
+  if (!periods || typeof periods !== 'object') {
+    return 0;
+  }
 
-  const location = result.geometry?.location ?? null;
-  const openingHours = result.current_opening_hours ?? result.opening_hours ?? null;
-  const weekdayText = Array.isArray(openingHours?.weekday_text) ? openingHours.weekday_text : [];
-  const serviceCapabilities = sidebarData?.services;
-  const description = sidebarData?.description ?? null;
+  // Object.entries gets [['sunday', [Array]], ['monday', [Array]], ...]
+  const validDaysCount = Object.entries(periods).reduce((count, [day, periodsArray]) => {
+    // 1. Check if the value is an array
+    // 2. Check if the array is not empty (length > 0)
+    // 3. Check if the array contains at least one non-null/non-undefined element
+    if (Array.isArray(periodsArray) && periodsArray.length > 0 && periodsArray.some(p => p !== null && p !== undefined)) {
+      return count + 1;
+    }
+    // If it's null or an empty array, it counts as a closed day, so we don't increment
+    return count;
+  }, 0);
 
-  const posts = Array.isArray(sidebarData?.posts) ? sidebarData.posts : null;
-  const latestPostDate = extractLatestPostDate(posts);
-  const reviewCountRaw = result.user_ratings_total ?? result.userRatingsTotal ?? sidebarData.reviewCount ?? null;
-  const reviewCountNumeric = Number(reviewCountRaw);
-  const reviewCount = Number.isFinite(reviewCountNumeric) ? reviewCountNumeric : null;
-  const ratingNumeric = Number(result.rating);
-  const rating = Number.isFinite(ratingNumeric) ? ratingNumeric : null;
+  return validDaysCount;
+}
 
-  const photos = result.photos ?? result.total_photos ?? sidebarData.total_photos;
+function buildPlacePayload(sidebarData, { timezone = null } = {}) {
+  console.log('✅✅ buildPlacePayload', sidebarData);
 
-  const latestReview = Array.isArray(result.reviews)
-    ? result.reviews.sort((a, b) => b.time - a.time)[0]
+  // Extract rating info
+  const ratingValue = sidebarData.rating?.value;
+  const rating = Number.isFinite(Number(ratingValue)) ? Number(ratingValue) : null;
+  const reviewCount = sidebarData.rating?.votes_count ?? null;
+
+  // Extract location
+  const location = sidebarData.latitude !== undefined && sidebarData.longitude !== undefined
+    ? { lat: sidebarData.latitude, lng: sidebarData.longitude }
     : null;
 
+  const periodsSource = sidebarData.work_time?.work_hours?.timetable;
+    let openingHours = 0;
+    if (periodsSource) {
+        // This function checks if each day in the timetable has a non-empty array
+        openingHours = countOpenDays(periodsSource);
+    }
 
-  const sidebarLocation =
-    sidebarData && (sidebarData.latitude !== undefined || sidebarData.longitude !== undefined)
-      ? { latitude: sidebarData.latitude, longitude: sidebarData.longitude }
-      : null;
+  // Extract posts
+  const posts = Array.isArray(sidebarData.posts) ? sidebarData.posts : null;
+  const latestPostDate = extractLatestPostDate(posts);
+
+  // Build categories array from category_ids
+  const categories = Array.isArray(sidebarData.category_ids) 
+    ? sidebarData.category_ids.map(id => normalizeCategory(id)).filter(Boolean)
+    : [];
+
+  // Add additional categories
+  if (Array.isArray(sidebarData.additional_categories)) {
+    categories.push(...sidebarData.additional_categories);
+  }
 
   return {
-    // --- Core Google Places fields ---
-    placeId: result.place_id ?? fallbackPlaceId ?? sidebarData?.placeId ?? null,
-    cid: result.cid ?? sidebarData?.cid ?? '',
-    name: result.name ?? sidebarData?.name ?? '',
-    formattedAddress: result.formatted_address ?? sidebarData?.formattedAddress ?? '',
-    location: location ?? result.coords ?? sidebarLocation ?? null,
-    postalCode: extractPostalCode(result.address_components),
+    // Core identification
+    placeId: sidebarData.place_id ?? null,
+    cid: sidebarData.cid ?? '',
+    name: sidebarData.title ?? sidebarData.original_title ?? '',
+    
+    // Address info
+    formattedAddress: sidebarData.address ?? '',
+    addressInfo: sidebarData.address_info ?? null,
+    postalCode: sidebarData.address_info?.zip ?? null,
+    location,
     timezone,
-    phoneNumber:
-      result.formatted_phone_number ??
-      result.international_phone_number ??
-      sidebarData.phone ??
-      null,
-    website: result.website ?? sidebarData?.website ?? null,
-    googleMapsUri: result.url ?? result.googleMapsUri ?? null,
-    businessStatus: result.business_status ?? result.is_claimed ?? sidebarData.is_claimed ?? null,
+    
+    // Contact info
+    phoneNumber: sidebarData.phone ?? null,
+    website: sidebarData.url ?? null,
+    contactUrl: sidebarData.contact_url ?? null,
+    bookOnlineUrl: sidebarData.book_online_url ?? null,
+    domain: sidebarData.domain ?? null,
+    
+    // Business info
+    businessStatus: sidebarData.is_claimed ? 'OPERATIONAL' : 'UNKNOWN',
+    isClaimed: sidebarData.is_claimed ?? false,
+    
+    // Ratings & reviews
     rating,
     reviewCount,
-    latestReview,
-    categories: sidebarData?.bCategories ?? '',
-    primaryCategory: sidebarData?.category ?? '',
-    photos: photos ?? null,
-    photoCount: photos ?? 0,
+    ratingDistribution: sidebarData.rating_distribution ?? null,
+    
+    // Categories
+    categories,
+    primaryCategory: sidebarData.category ?? '',
+    
+    // Media
+    logo: sidebarData.logo ?? null,
+    mainImage: sidebarData.main_image ?? null,
+    photoCount: sidebarData.total_photos ?? 0,
+    
+    // Hours
     openingHours,
-    weekdayText,
-    description,
+    
+    // Content
+    description: sidebarData.description ?? null,
+    snippet: sidebarData.snippet ?? null,
+    
+    // Posts
     posts,
     latestPostDate,
-    serviceCapabilities: serviceCapabilities,
-    sidebar: sidebarData ?? null,
+    postsPending: sidebarData.postsPending ?? false,
+    
+    // Additional data
+    attributes: sidebarData.attributes ?? null,
+    placeTopics: sidebarData.place_topics ?? null,
+    popularTimes: sidebarData.popular_times ?? null,
+    peopleAlsoSearch: sidebarData.people_also_search ?? null,
+    priceLevel: sidebarData.price_level ?? null,
+    
+    // URLs
+    googleMapsUri: `https://www.google.com/maps/place/?q=place_id:${sidebarData.place_id}`,
+    contributorUrl: sidebarData.contributor_url ?? null,
+    
+    // Metadata
+    rankGroup: sidebarData.rank_group ?? null,
+    rankAbsolute: sidebarData.rank_absolute ?? null,
+    featureId: sidebarData.feature_id ?? null,
+    
     fetchedAt: new Date().toISOString(),
   };
 }
 
+// ============ OPTIMIZED fetchPlaceDetails ============
 
 export async function fetchPlaceDetails(placeId, { signal } = {}) {
   if (!placeId) {
     throw new PlacesError('Place ID is required.', { status: 400 });
   }
+  console.log('[DATAFORSEO] fetchPlaceDetails 1');
 
-  if (SIDEBAR_PROVIDER === 'dataforseo') {
-    try {
-      const sidebarOptions = {
-        businessName: null,
-        provider: SIDEBAR_PROVIDER,
-        locationCode: Number(DATAFORSEO_LOCATION_CODE) || 2840,
-        languageCode: DATAFORSEO_LANGUAGE_CODE || 'en',
-      };
-
-      const { data: sidebarData, timedOut: sidebarTimedOut } = await fetchSidebar(
-        {
-          geometry: null,
-          placeId,
-          options: sidebarOptions,
-        },
-        { signal }
-      );
-
-      const normalizedResult = { ...sidebarData };
-
-      if (!normalizedResult.place_id) {
-        normalizedResult.place_id = normalizedResult.placeId ?? placeId ?? null;
-      }
-      if (!normalizedResult.name) {
-        normalizedResult.name = normalizedResult.businessName ?? sidebarData?.title ?? null;
-      }
-      if (!normalizedResult.formatted_address) {
-        normalizedResult.formatted_address = normalizedResult.formattedAddress ?? null;
-      }
-      if (!normalizedResult.geometry && normalizedResult.latitude !== undefined && normalizedResult.longitude !== undefined) {
-        normalizedResult.geometry = { location: { lat: normalizedResult.latitude, lng: normalizedResult.longitude } };
-      }
-
-      const timezone = await fetchTimezone(normalizedResult.geometry?.location ?? null, { signal });
-
-      if (!GOOGLE_API_KEY) {
-        throw new PlacesError('Google Maps API key is not configured.', { status: 500 });
-      }
-
-      const detailsEndpoint = new URL('https://maps.googleapis.com/maps/api/place/details/json');
-      detailsEndpoint.searchParams.set('place_id', placeId);
-      detailsEndpoint.searchParams.set(
-        'fields',
-        [
-          // 'place_id',
-          // 'name',
-          // 'formatted_address',
-          // 'geometry/location',
-          // 'address_component',
-          // 'formatted_phone_number',
-          // 'international_phone_number',
-          // 'website',
-          // 'business_status',
-          // 'types',
-          // 'photos',
-          // 'editorial_summary',
-          'opening_hours',
-          'current_opening_hours',
-          // 'user_ratings_total',
-          // 'rating',
-          // 'reviews',
-          // 'url',
-          // 'delivery',
-          // 'takeout',
-          // 'dine_in',
-          // 'serves_breakfast',
-          // 'serves_brunch',
-          // 'serves_lunch',
-          // 'serves_dinner',
-          // 'serves_beer',
-          // 'serves_wine'
-        ].join(',')
-      );
-      detailsEndpoint.searchParams.set('key', GOOGLE_API_KEY);
-      let placesAPIResult = null;
-
-      try {
-        const detailsResponse = await fetch(detailsEndpoint, { cache: 'no-store', signal });
-        if (!detailsResponse.ok) {
-          throw new PlacesError('Failed to load place details.', { status: detailsResponse.status });
-        }
-
-        const detailsData = await detailsResponse.json();
-        if (detailsData.status !== 'OK') {
-          const message = detailsData.error_message || `Place details returned status ${detailsData.status}.`;
-          throw new PlacesError(message, { status: 502 });
-        }
-        // console.log('API GBP detailsData', detailsData);
-
-        placesAPIResult = detailsData.result ?? {};
-      } catch (error) {
-        if (error instanceof PlacesError) {
-          throw error;
-        }
-
-        console.error('Place details lookup failed', error);
-        throw new PlacesError('Failed to load place details.', { status: 500 });
-      }
-
-      normalizedResult.current_opening_hours = placesAPIResult?.current_opening_hours || null;
-
-      const place = buildPlacePayload(normalizedResult, {
-        fallbackPlaceId: placeId,
-        timezone,
-        sidebarData,
-      });
-
-      console.log('place obj', place);
-
-      return { place, raw: normalizedResult, sidebar: sidebarData ?? null, sidebarPending: sidebarTimedOut };
-    } catch (error) {
-      if (error instanceof PlacesError) {
-        throw error;
-      }
-
-      console.error('Place details lookup failed', error);
-      throw new PlacesError('Failed to load place details.', { status: 500 });
-    }
-  }
-
-  if (!GOOGLE_API_KEY) {
-    throw new PlacesError('Google Maps API key is not configured.', { status: 500 });
-  }
-
-  const detailsEndpoint = new URL('https://maps.googleapis.com/maps/api/place/details/json');
-  detailsEndpoint.searchParams.set('place_id', placeId);
-  detailsEndpoint.searchParams.set(
-    'fields',
-    [
-      'place_id',
-      'name',
-      'formatted_address',
-      'geometry/location',
-      'address_component',
-      'formatted_phone_number',
-      'international_phone_number',
-      'website',
-      'business_status',
-      'types',
-      'photos',
-      'editorial_summary',
-      'opening_hours',
-      'current_opening_hours',
-      'user_ratings_total',
-      'rating',
-      'reviews',
-      'url',
-      'delivery',
-      'takeout',
-      'dine_in',
-      'serves_breakfast',
-      'serves_brunch',
-      'serves_lunch',
-      'serves_dinner',
-      'serves_beer',
-      'serves_wine'
-    ].join(',')
-  );
-  detailsEndpoint.searchParams.set('key', GOOGLE_API_KEY);
+  const sidebarOptions = {
+    businessName: null,
+    provider: SIDEBAR_PROVIDER,
+    ...(SIDEBAR_PROVIDER === 'dataforseo' && {
+      locationCode: Number(DATAFORSEO_LOCATION_CODE) || 2840,
+      languageCode: DATAFORSEO_LANGUAGE_CODE || 'en'
+    })
+  };
 
   try {
-    const detailsResponse = await fetch(detailsEndpoint, { cache: 'no-store', signal });
-    if (!detailsResponse.ok) {
-      throw new PlacesError('Failed to load place details.', { status: detailsResponse.status });
-    }
+    // Fetch sidebar data
+    const { data: sidebarData, timedOut: sidebarTimedOut, posts: posts } = await fetchSidebar(
+      { geometry: null, placeId, options: sidebarOptions },
+      { signal }
+    );
 
-    const detailsData = await detailsResponse.json();
-    if (detailsData.status !== 'OK') {
-      const message = detailsData.error_message || `Place details returned status ${detailsData.status}.`;
-      throw new PlacesError(message, { status: 502 });
-    }
-    // console.log('API GBP detailsData', detailsData);
+    console.log('[DATAFORSEO] fetchSdiebarData', sidebarData, sidebarTimedOut, posts);
 
-    const result = detailsData.result ?? {};
-    console.log('API GBP detailsData', result.geometry?.location);
-    const sidebarOptions = {
-      businessName: result.name ?? null,
-      provider: SIDEBAR_PROVIDER,
+    // Extract location for timezone lookup
+    const location = sidebarData.latitude !== undefined && sidebarData.longitude !== undefined
+      ? { lat: sidebarData.latitude, lng: sidebarData.longitude }
+      : null;
+
+    // Fetch timezone
+    const timezone = await fetchTimezone(location, { signal });
+
+    // Build the place payload
+    const place = buildPlacePayload(sidebarData, { timezone });
+
+    return {
+      place,
+      raw: sidebarData,
+      sidebarPending: sidebarTimedOut
     };
 
-    if (SIDEBAR_PROVIDER === 'dataforseo') {
-      sidebarOptions.locationCode = Number(DATAFORSEO_LOCATION_CODE) || 2840;
-      sidebarOptions.languageCode = DATAFORSEO_LANGUAGE_CODE || 'en';
-    }
-
-    const [timezone, sidebarResult] = await Promise.all([
-      fetchTimezone(result.geometry?.location ?? null, { signal }),
-      fetchSidebar(
-        {
-          geometry: result.geometry?.location ?? null,
-          placeId: result.place_id,
-          options: sidebarOptions,
-        },
-        { signal }
-      )
-    ]);
-    const sidebarData = sidebarResult?.data ?? {};
-    const sidebarPending = Boolean(sidebarResult?.timedOut);
-    const place = buildPlacePayload(result, {
-      fallbackPlaceId: placeId,
-      timezone,
-      sidebarData
-    });
-
-    return { place, raw: result, sidebar: sidebarData ?? null, sidebarPending };
   } catch (error) {
+    console.log('[DATAFORSEO] fetchPlaceDetails ERROR');
+
     if (error instanceof PlacesError) {
       throw error;
     }
-
     console.error('Place details lookup failed', error);
     throw new PlacesError('Failed to load place details.', { status: 500 });
   }

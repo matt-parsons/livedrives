@@ -9,7 +9,7 @@ import KeywordOriginZoneForm from './KeywordOriginZoneForm';
 import { Button } from '@/components/ui/button';
 
 export const metadata = {
-  title: 'Member journey · Local Paint Pilot'
+  title: 'Get Set Up · Local Paint Pilot'
 };
 
 function formatDateLabel(date) {
@@ -87,8 +87,7 @@ function TrialStatusCard({ trial }) {
       <div className="rounded-md border border-border/60 bg-background/60 p-4 shadow-sm">
         <p className="text-xs uppercase tracking-wide text-muted-foreground">What to expect</p>
         <p>
-          Enjoy full access to dashboards, GBP optimization insights, and local ranking report tools for 7 days. We'll prompt you
-          before the trial ends.
+          You get full access to dashboards, GBP insights, heatmaps, and ranking reports to start getting more customers.
         </p>
       </div>
     </div>
@@ -141,25 +140,24 @@ export default async function MemberJourneyPage() {
   return (
     <div className="page-shell">
       <section className="page-header">
-        <h1 className="page-title">Member journey</h1>
+        <h1 className="page-title">Get Set Up</h1>
         <p className="page-subtitle">
-          Launch your Local Paint Pilot workspace in four quick steps. We'll capture a 7 day trial, your business
-          profile, GBP roadmap insights, and the first origin zone keyword.
+          Set up your account in four quick steps so you can start improving your Google rankings and <strong>get more customers</strong>.
         </p>
       </section>
 
       <StepSection
         step="1"
         title="Start your free 7 day trial"
-        intro="We automatically activate a trial for every new organization."
+        intro="Your trial is already active. You get full access to all tools for 7 days."
       >
         <TrialStatusCard trial={trial} />
       </StepSection>
 
       <StepSection
         step="2"
-        title="Register your business details"
-        intro="Add the business we should optimize. You can refine the record anytime."
+        title="Add your business"
+        intro="Search for your business name or address. We’ll fill in the details automatically."
       >
         {primaryBusiness ? (
           <div className="grid gap-4 text-sm text-muted-foreground">
@@ -193,8 +191,8 @@ export default async function MemberJourneyPage() {
 
       <StepSection
         step="3"
-        title="Review your GBP optimization roadmap"
-        intro="We'll lay out the steps you need to take to start improving your rankings right away."
+        title="See your GBP improvement plan"
+        intro="Once your business is added, we show you what needs fixing to rank better."
       >
         {!primaryBusiness ? (
           <p className="text-sm text-muted-foreground">
@@ -225,8 +223,8 @@ export default async function MemberJourneyPage() {
 
       <StepSection
         step="4"
-        title="Select your business keyword to track"
-        intro="Seed geo coverage with one high-impact keyword. We'll pin it to the business location with a 3 mile radius."
+        title="Pick a keyword to track"
+        intro="Choose one main keyword. We use it to start your local rank tracking."
       >
         {!primaryBusiness ? (
           <p className="text-sm text-muted-foreground">

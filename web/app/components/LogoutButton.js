@@ -27,7 +27,7 @@ export default function LogoutButton({ className, variant = 'secondary', size = 
         return;
       }
 
-      router.push('/');
+      router.push('/signin');
       router.refresh();
     });
   };

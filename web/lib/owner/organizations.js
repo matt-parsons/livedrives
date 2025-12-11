@@ -1,3 +1,13 @@
+function parseBusinessIds(rawValues) {
+  if (!Array.isArray(rawValues)) {
+    return [];
+  }
+
+  return rawValues
+    .map((value) => Number(value))
+    .filter((value) => Number.isFinite(value) && value > 0);
+}
+
 export function parseOrganizationId(raw) {
   const value = Number(raw);
   if (!Number.isFinite(value) || value <= 0) {
@@ -7,50 +17,45 @@ export function parseOrganizationId(raw) {
   return value;
 }
 
+async function deleteBusinesses(connection, businessIds) {
+  const normalizedBusinessIds = parseBusinessIds(businessIds);
+
+  if (!normalizedBusinessIds.length) {
+    return [];
+  }
+
+  // Tables without ON DELETE CASCADE/SET NULL from businesses
+  await connection.query('DELETE FROM business_hours WHERE business_id IN (?)', [normalizedBusinessIds]);
+  await connection.query('DELETE FROM runs WHERE business_id IN (?)', [normalizedBusinessIds]);
+  await connection.query('DELETE FROM soax_configs WHERE business_id IN (?)', [normalizedBusinessIds]);
+  await connection.query('DELETE FROM review_snapshots WHERE business_id IN (?)', [normalizedBusinessIds]);
+  await connection.query('DELETE FROM review_fetch_tasks WHERE business_id IN (?)', [normalizedBusinessIds]);
+
+  // This will trigger all ON DELETE CASCADE and ON DELETE SET NULL on other tables.
+  await connection.query('DELETE FROM businesses WHERE id IN (?)', [normalizedBusinessIds]);
+
+  return normalizedBusinessIds;
+}
+
+export async function deleteBusinessData(connection, businessId) {
+  return deleteBusinesses(connection, [businessId]);
+}
+
 export async function deleteOrganizationData(connection, organizationId) {
   const [businessRows] = await connection.query(
     'SELECT id FROM businesses WHERE organization_id = ? FOR UPDATE',
     [organizationId]
   );
 
-  const businessIds = businessRows.map((row) => Number(row.id)).filter((id) => Number.isFinite(id));
+  const businessIds = parseBusinessIds(businessRows.map((row) => row.id));
 
-  if (!businessIds.length) {
+  const deletedBusinessIds = await deleteBusinesses(connection, businessIds);
+
+  if (Number.isFinite(organizationId)) {
     await connection.query('DELETE FROM organization_trials WHERE organization_id = ?', [organizationId]);
-    return;
   }
 
-  const [runRows] = await connection.query(
-    'SELECT id FROM runs WHERE business_id IN (?) FOR UPDATE',
-    [businessIds]
-  );
-
-  const runIds = runRows.map((row) => Number(row.id)).filter((id) => Number.isFinite(id));
-
-  if (runIds.length) {
-    await connection.query('DELETE FROM run_logs WHERE run_id IN (?)', [runIds]);
-    await connection.query('DELETE FROM ranking_snapshots WHERE run_id IN (?)', [runIds]);
-  }
-
-  await connection.query('DELETE FROM run_logs WHERE business_id IN (?)', [businessIds]);
-  await connection.query('DELETE FROM ranking_snapshots WHERE business_id IN (?)', [businessIds]);
-  await connection.query('DELETE FROM ranking_queries WHERE business_id IN (?)', [businessIds]);
-  await connection.query('DELETE FROM runs WHERE business_id IN (?)', [businessIds]);
-
-  await connection.query('DELETE FROM geo_grid_runs WHERE business_id IN (?)', [businessIds]);
-  await connection.query('DELETE FROM geo_grid_schedules WHERE business_id IN (?)', [businessIds]);
-  await connection.query('DELETE FROM geo_grid_schedule_keywords WHERE business_id IN (?)', [businessIds]);
-  await connection.query('DELETE FROM origin_zones WHERE business_id IN (?)', [businessIds]);
-  await connection.query('DELETE FROM gbp_task_completions WHERE business_id IN (?)', [businessIds]);
-  await connection.query('DELETE FROM gbp_authorizations WHERE business_id IN (?)', [businessIds]);
-  await connection.query('DELETE FROM gbp_profile_cache WHERE business_id IN (?)', [businessIds]);
-  await connection.query('DELETE FROM business_hours WHERE business_id IN (?)', [businessIds]);
-  await connection.query('DELETE FROM soax_configs WHERE business_id IN (?)', [businessIds]);
-  await connection.query('DELETE FROM review_snapshots WHERE business_id IN (?)', [businessIds]);
-  await connection.query('DELETE FROM review_fetch_tasks WHERE business_id IN (?)', [businessIds]);
-
-  await connection.query('DELETE FROM businesses WHERE id IN (?)', [businessIds]);
-  await connection.query('DELETE FROM organization_trials WHERE organization_id = ?', [organizationId]);
+  return deletedBusinessIds;
 }
 
 export async function loadOrganizationLock(connection, organizationId) {

@@ -44,9 +44,6 @@ function ProfilePreview({ preview }) {
   const secondaryCategories = categories.filter(
     (category) => category && category !== preview.primaryCategory
   );
-  const services = Array.isArray(preview.serviceCapabilities)
-    ? preview.serviceCapabilities.filter(Boolean)
-    : [];
   const hours = Array.isArray(preview.weekdayText) ? preview.weekdayText : [];
   const latestReview = preview.latestReview ?? null;
 
@@ -135,21 +132,6 @@ function ProfilePreview({ preview }) {
           </div>
         ) : null}
       </dl>
-
-      {services.length ? (
-        <div className="business-optimization-roadmap__profile-chip-list">
-          {services.slice(0, 4).map((service) => (
-            <span key={service} className="business-optimization-roadmap__profile-chip">
-              {service}
-            </span>
-          ))}
-          {services.length > 4 ? (
-            <span className="business-optimization-roadmap__profile-chip business-optimization-roadmap__profile-chip--muted">
-              +{services.length - 4} more
-            </span>
-          ) : null}
-        </div>
-      ) : null}
 
       {preview.description ? (
         <div className="business-optimization-roadmap__profile-review-snippet">
