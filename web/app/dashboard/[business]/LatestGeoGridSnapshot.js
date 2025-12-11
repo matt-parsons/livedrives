@@ -44,7 +44,7 @@ export default function LatestGeoGridSnapshot({
           <div className="latest-geogrid-card__status-row">
             <div>
               <div className="section-title">Your Latest Ranking Heat Map</div>{' '}
-              <strong className="latest-geogrid-card__keyword">Keyword: "{keywordLabel}"</strong>
+              <strong className="latest-geogrid-card__keyword">Keyword: &quot;{keywordLabel}&quot;</strong>
             </div>
             {keywordsHref ? (
               <Link className="cta-link" href={keywordsHref}>
@@ -82,7 +82,7 @@ export default function LatestGeoGridSnapshot({
                         Ranking report in progress
                       </p>
                       <p className="latest-geogrid-card__map-overlay-copy">
-                        We'll show the refreshed ranking heat map once the report finishes.
+                        We&apos;ll show the refreshed ranking heat map once the report finishes.
                       </p>
                     </div>
                   </div>

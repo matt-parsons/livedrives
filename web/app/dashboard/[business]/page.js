@@ -215,7 +215,7 @@ export default async function BusinessDashboardPage({ params }) {
                   <p className="text-xs uppercase tracking-wide text-muted-foreground">Origin keyword</p>
                   <p className="text-lg font-semibold text-foreground">Confirm your keyword</p>
                   <p className="text-sm text-muted-foreground">
-                    We'll pin the keyword to your business address with a 3 mile radius so rank tracking can begin.
+                    We&apos;ll pin the keyword to your business address with a 3 mile radius so rank tracking can begin.
                   </p>
                 </div>
               </div>

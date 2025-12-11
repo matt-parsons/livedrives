@@ -448,7 +448,7 @@ export default function GeoGridRunViewer({
               <div className="run-summary__keyword">
                 <span className="run-summary__label">Keyword</span>
                 <span className="run-summary__value">
-                  "{runSummary.keyword || 'Unspecified keyword'}"
+                  &quot;{runSummary.keyword || 'Unspecified keyword'}&quot;
                 </span>
               </div>
 

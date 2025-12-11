@@ -54,7 +54,7 @@ export default async function DashboardPage() {
 
         <Card role="status" className="max-w-2xl border-dashed border-border/70 bg-card/90 shadow-sm">
           <CardHeader>
-            <CardTitle className="text-xl">You're almost ready</CardTitle>
+            <CardTitle className="text-xl">You&apos;re almost ready</CardTitle>
           </CardHeader>
           <div className="flex flex-col mt-5">
             <div className="flex flex-wrap">

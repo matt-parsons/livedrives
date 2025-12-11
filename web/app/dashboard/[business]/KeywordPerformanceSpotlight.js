@@ -79,6 +79,14 @@ export default function KeywordPerformanceSpotlight({ items, mapsApiKey = null }
     }
   }, [items, activeKey]);
 
+  const activeItem = useMemo(() => {
+    if (!items.length) {
+      return null;
+    }
+
+    return items.find((item) => item.key === activeKey) ?? items[0];
+  }, [items, activeKey]);
+
   if (!items.length) {
     return (
       <div className="surface-card surface-card--muted surface-card--compact">
@@ -89,19 +97,11 @@ export default function KeywordPerformanceSpotlight({ items, mapsApiKey = null }
           </div>
         </div>
         <p style={{ marginTop: '1rem', color: '#6b7280' }}>
-          There haven't been any ranking reports in the last 30 days to chart keyword movement.
+          There haven&apos;t been any ranking reports in the last 30 days to chart keyword movement.
         </p>
       </div>
     );
   }
-
-  const activeItem = useMemo(() => {
-    if (!items.length) {
-      return null;
-    }
-
-    return items.find((item) => item.key === activeKey) ?? items[0];
-  }, [items, activeKey]);
 
   if (!activeItem) {
     return null;

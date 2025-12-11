@@ -90,7 +90,7 @@ export default function UserDirectoryTable({ members: initialMembers, organizati
         });
       }
     },
-    [updateRowState]
+    [updateRowState, organizationId]
   );
 
   const closeDialog = useCallback((nextOpen) => {
@@ -140,7 +140,7 @@ export default function UserDirectoryTable({ members: initialMembers, organizati
         closeDialog(false);
       }
     },
-    [closeDialog, updateRowState]
+    [closeDialog, updateRowState, organizationId]
   );
 
   const handleDeleteClick = useCallback((member) => {

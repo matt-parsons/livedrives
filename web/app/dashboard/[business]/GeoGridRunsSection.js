@@ -227,7 +227,7 @@ export default function GeoGridRunsSection({ caption, defaultView = 'trend', tre
             <div className="empty-state" style={{ marginTop: '20px' }}>
               <div>
                 <h3>No local ranking reports yet</h3>
-                <p>Once we've checked your rankings we'll start mapping them across your area.</p>
+                <p>Once we&apos;ve checked your rankings we&apos;ll start mapping them across your area.</p>
               </div>
             </div>
           ) : (
