@@ -261,7 +261,7 @@ export default function OptimizationPanelsClient({
               <div>
                 <h2 className="section-title">Overall Progress</h2>
                 <p className="section-caption">
-                  Let's get you to 100% and improve your rankings!
+                  Let&apos;s get you to 100% and improve your rankings!
                 </p>
               </div>
               <Link className="cta-link" href={optimizationHref}>
@@ -321,7 +321,7 @@ export default function OptimizationPanelsClient({
                 <p className="dashboard-optimization-card__message">Gathering data… check back in a moment.</p>
               ) : error ? (
                 <div className="inline-error" role="status" style={{ marginTop: '0.75rem' }}>
-                  <strong>We're having trouble gathering your data</strong>
+                  <strong>We&apos;re having trouble gathering your data</strong>
                   <span>{error}</span>
                 </div>
               ) : roadmap ? (

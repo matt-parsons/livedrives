@@ -243,7 +243,7 @@ export default function GeoGridMap({
 
       mapInstanceRef.current = null;
     };
-  }, [apiKey, center, points, interactive]);
+  }, [apiKey, center, points, interactive, selectedPointId]);
 
   useEffect(() => {
     if (!markersRef.current.length) {

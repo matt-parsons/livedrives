@@ -544,7 +544,7 @@ export default function OriginZonesManager({ businessId, initialZones = [], capt
           <DialogHeader>
             <DialogTitle>Delete origin zone</DialogTitle>
             <DialogDescription>
-              This action will remove "{zonePendingDelete?.name || 'Unnamed zone'}" and its routing data. The change cannot be
+              This action will remove &quot;{zonePendingDelete?.name || 'Unnamed zone'}&quot; and its routing data. The change cannot be
               undone.
             </DialogDescription>
           </DialogHeader>

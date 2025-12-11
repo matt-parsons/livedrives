@@ -115,43 +115,6 @@ export default function KeywordOriginZoneForm({
   const [suggestions, setSuggestions] = useState([]);
   const [submitting, setSubmitting] = useState(false);
 
-  const formattedKeywords = useMemo(() => {
-    if (!existingZone?.keywords) {
-      return '—';
-    }
-
-    const terms = extractKeywordTerms(existingZone.keywords);
-
-    if (!terms.length) {
-      return String(existingZone.keywords);
-    }
-
-    return terms.join(', ');
-  }, [existingZone]);
-
-  if (existingZone) {
-    const coordLabel = existingZone.lat !== null && existingZone.lng !== null
-      ? `${formatCoordinate(existingZone.lat)}, ${formatCoordinate(existingZone.lng)}`
-      : null;
-
-    return (
-      <div className="flex flex-col gap-4">
-        <div className="rounded-lg border border-border/70 bg-muted/40 p-4 text-sm text-muted-foreground">
-          <p className="font-medium text-foreground">Origin zone created</p>
-          <p className="mt-1">
-            You're all set. The keyword <strong>{formattedKeywords}</strong> is tied to
-            "{existingZone.name || 'Primary coverage'}" with a {existingZone.radiusMi ?? 0} mile radius.
-          </p>
-          {coordLabel ? (
-            <p className="mt-1">Coordinates: {coordLabel}</p>
-          ) : null}
-        </div>
-      </div>
-    );
-  }
-
-  const hasCoordinates = Number.isFinite(Number(destLat)) && Number.isFinite(Number(destLng));
-
   useEffect(() => {
     let isActive = true;
     const cacheKey = `keywordSuggestions:${businessId}`;
@@ -228,6 +191,43 @@ export default function KeywordOriginZoneForm({
       isActive = false;
     };
   }, [businessId]);
+
+  const formattedKeywords = useMemo(() => {
+    if (!existingZone?.keywords) {
+      return '—';
+    }
+
+    const terms = extractKeywordTerms(existingZone.keywords);
+
+    if (!terms.length) {
+      return String(existingZone.keywords);
+    }
+
+    return terms.join(', ');
+  }, [existingZone]);
+
+  if (existingZone) {
+    const coordLabel = existingZone.lat !== null && existingZone.lng !== null
+      ? `${formatCoordinate(existingZone.lat)}, ${formatCoordinate(existingZone.lng)}`
+      : null;
+
+    return (
+      <div className="flex flex-col gap-4">
+        <div className="rounded-lg border border-border/70 bg-muted/40 p-4 text-sm text-muted-foreground">
+          <p className="font-medium text-foreground">Origin zone created</p>
+          <p className="mt-1">
+            You&apos;re all set. The keyword <strong>{formattedKeywords}</strong> is tied to
+            &quot;{existingZone.name || 'Primary coverage'}&quot; with a {existingZone.radiusMi ?? 0} mile radius.
+          </p>
+          {coordLabel ? (
+            <p className="mt-1">Coordinates: {coordLabel}</p>
+          ) : null}
+        </div>
+      </div>
+    );
+  }
+
+  const hasCoordinates = Number.isFinite(Number(destLat)) && Number.isFinite(Number(destLng));
 
   const createOriginZone = async (keywordValue) => {
     setError('');
@@ -309,7 +309,7 @@ export default function KeywordOriginZoneForm({
 
         {suggestionStatus === 'empty' ? (
           <p className="rounded-md border border-border/70 bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
-            We couldn't find ready-made picks. Enter a keyword you'd like us to track first.
+            We couldn&apos;t find ready-made picks. Enter a keyword you&apos;d like us to track first.
           </p>
         ) : null}
 
@@ -350,7 +350,7 @@ export default function KeywordOriginZoneForm({
             </Button>
           </div>
           <p className="text-xs text-muted-foreground">
-            We'll auto-create the first origin zone using the business location with a 3 mile radius.
+            We&apos;ll auto-create the first origin zone using the business location with a 3 mile radius.
           </p>
         </div>
         )}

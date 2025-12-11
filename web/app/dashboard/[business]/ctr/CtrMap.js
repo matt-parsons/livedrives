@@ -236,7 +236,7 @@ export default function CtrMap({ apiKey, center, points, businessName }) {
 
       mapInstance = null;
     };
-  }, [apiKey, center, points]);
+  }, [apiKey, center, points, businessName]);
 
   return (
     <div className="ctr-map">

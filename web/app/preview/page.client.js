@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { useRouter } from 'next/navigation';
 import SidebarBrand from '../dashboard/[business]/SidebarBrand';
+import Image from 'next/image'
 
 const LOADING_STEPS = [
   {
@@ -754,7 +755,7 @@ export default function LandingPage() {
                   <div className="section-header">
                     <div>
                       <h2 className="section-title">GBP Score Optimization</h2>
-                      <p className="section-caption">Here's what we found in our initial data pull</p>
+                      <p className="section-caption">Here&apos;s what we found in our initial data pull</p>
                     </div>
                     <div className="dashboard-optimization-card__scores">
                       <div>
@@ -789,7 +790,7 @@ export default function LandingPage() {
                 <div className="surface-card surface-card--muted dashboard-optimization-card">
                   <div>
                     <h2 className="section-title">Score Summary</h2>
-                    <p className="section-caption">Here's how we score your profilel</p>
+                    <p className="section-caption">Here&apos;s how we score your profilel</p>
                   </div>
                   {sections.length ? (
                     <div className="business-optimization-roadmap__section-item">
@@ -851,7 +852,7 @@ export default function LandingPage() {
                   <p className="text-sm text-muted-foreground">Demo Heat Map<br />
                   Start your Free trial to get a live report specific to your business. </p>
                 </div>
-                <img src="./images/localpaintpilot-ranking-demo.png" />
+                <Image src="./images/localpaintpilot-ranking-demo.png" alt="Local Paint Pilot Ranking Heat Map" />
               </div>
             </div>
           </section>

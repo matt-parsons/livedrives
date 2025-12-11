@@ -149,7 +149,7 @@ export default function SignInPage() {
               </p>
             ):( null )}
               <p className="text-sm text-muted-foreground">
-                Don't have an account? <Link href="/register">Sign up</Link>
+                Don&apos;t have an account? <Link href="/register">Sign up</Link>
               </p>
           </CardFooter>
         </Card>
