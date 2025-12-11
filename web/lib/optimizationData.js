@@ -25,7 +25,10 @@ function normalizeBusinessId(value) {
   return numeric;
 }
 
-function buildMeta(record, { refreshedFromSource = false, warning = null, sidebarPending = false } = {}) {
+function buildMeta(
+  record,
+  { refreshedFromSource = false, warning = null, sidebarPending = false, postsTaskId = null } = {}
+) {
   const lastRefreshedAt = record?.lastRefreshedAt ? record.lastRefreshedAt.toISOString() : null;
   const lastManualRefreshAt = record?.lastManualRefreshAt
     ? record.lastManualRefreshAt.toISOString()
@@ -44,7 +47,8 @@ function buildMeta(record, { refreshedFromSource = false, warning = null, sideba
     nextManualRefreshAt,
     refreshedFromSource,
     warning,
-    sidebarPending
+    sidebarPending,
+    postsTaskId,
   };
 }
 
@@ -148,10 +152,11 @@ export async function loadOptimizationData(placeId, options = {}) {
   }
 
   const roadmap = buildOptimizationRoadmap(cache.place, { manualCompletions });
+  const postsTaskId = cache.place?.postsTaskId ?? null;
 
   return {
     place: cache.place,
     roadmap,
-    meta: buildMeta(cache, { refreshedFromSource, warning, sidebarPending })
+    meta: buildMeta(cache, { refreshedFromSource, warning, sidebarPending, postsTaskId })
   };
 }
