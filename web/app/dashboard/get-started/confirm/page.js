@@ -60,7 +60,7 @@ export default async function ConfirmBusinessPage({ searchParams }) {
       <section className="page-header">
         <h1 className="page-title">Confirm Your Business</h1>
         <p className="page-subtitle">
-          We've filled in the details from Google. Please review and confirm them.
+          We&apos;ve filled in the details from Google. Please review and confirm them.
         </p>
       </section>
 

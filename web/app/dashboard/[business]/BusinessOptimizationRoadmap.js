@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image'
 
 function formatImpact(weight) {
   if (weight === null || weight === undefined) {
@@ -61,7 +62,7 @@ function ProfilePreview({ preview }) {
       <div className="business-optimization-roadmap__profile-top">
         <div className="business-optimization-roadmap__profile-avatar">
           {primaryPhoto ? (
-            <img
+            <Image
               src={primaryPhoto}
               alt={`${preview.name ?? 'Business'} profile photo`}
               loading="lazy"
