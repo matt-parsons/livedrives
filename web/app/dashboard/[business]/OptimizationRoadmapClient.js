@@ -71,6 +71,10 @@ export default function OptimizationRoadmapClient({ placeId, businessId = null, 
   }, [fetchData]);
 
   useEffect(() => {
+  console.log('poll posts useEffect - meta:', meta);
+  console.log('sidebarPending:', meta?.sidebarPending);
+  console.log('postsTaskId:', meta?.postsTaskId);
+
     if (!meta?.sidebarPending || !meta?.postsTaskId) {
       return;
     }
@@ -78,6 +82,7 @@ export default function OptimizationRoadmapClient({ placeId, businessId = null, 
     const controller = new AbortController();
     const timerId = setTimeout(() => {
       const poll = async () => {
+        console.log('poll posts');
         try {
           const response = await fetch(`/api/places/posts-status/${meta.postsTaskId}`, {
             signal: controller.signal

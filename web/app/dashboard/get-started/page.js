@@ -2,10 +2,8 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { AuthError, requireAuth } from '@/lib/authServer';
 import BusinessForm from '../businesses/BusinessForm';
-import BusinessOptimizationRoadmap from '../[business]/BusinessOptimizationRoadmap';
-import { loadOptimizationData } from '@/lib/optimizationData';
+import BusinessCapturePanel from './BusinessCapturePanel';
 import { loadJourneyBusinessContext, loadTrialStatus } from './helpers';
-import KeywordOriginZoneForm from './KeywordOriginZoneForm';
 import { Button } from '@/components/ui/button';
 
 export const metadata = {
@@ -113,28 +111,17 @@ export default async function MemberJourneyPage() {
   ]);
 
   const { primaryBusiness, originZones } = businessContext;
-  const existingZone = originZones.length ? originZones[0] : null;
   const defaultIdentifier = primaryBusiness
     ? encodeURIComponent(primaryBusiness.businessSlug ?? String(primaryBusiness.id))
     : null;
   const businessHref = defaultIdentifier ? `/dashboard/${defaultIdentifier}` : null;
   const editHref = defaultIdentifier ? `${businessHref}/edit` : null;
 
-  if (primaryBusiness) {
+  const shouldRedirectToDashboard =
+    Boolean(primaryBusiness) && originZones.length > 0 && Boolean(businessHref);
+
+  if (shouldRedirectToDashboard) {
     redirect(businessHref);
-  }
-
-  let optimizationRoadmap = null;
-  let optimizationError = null;
-
-  if (primaryBusiness?.gPlaceId) {
-    try {
-      const { roadmap } = await loadOptimizationData(primaryBusiness.gPlaceId);
-      optimizationRoadmap = roadmap;
-    } catch (error) {
-      optimizationRoadmap = null;
-      optimizationError = error?.message ?? 'Failed to load Google Places data.';
-    }
   }
 
   return (
@@ -142,106 +129,50 @@ export default async function MemberJourneyPage() {
       <section className="page-header">
         <h1 className="page-title">Get Set Up</h1>
         <p className="page-subtitle">
-          Set up your account in four quick steps so you can start improving your Google rankings and <strong>get more customers</strong>.
+          Set up your account so you can start improving your Google rankings and <strong>get more customers</strong>.
         </p>
       </section>
 
       <StepSection
         step="1"
-        title="Start your free 7 day trial"
-        intro="Your trial is already active. You get full access to all tools for 7 days."
-      >
-        <TrialStatusCard trial={trial} />
-      </StepSection>
-
-      <StepSection
-        step="2"
         title="Add your business"
         intro="Search for your business name or address. We’ll fill in the details automatically."
       >
         {primaryBusiness ? (
-          <div className="grid gap-4 text-sm text-muted-foreground">
-            <div className="rounded-lg border border-border/60 bg-background/80 p-4 shadow-sm">
-              <p className="text-base font-semibold text-foreground">{primaryBusiness.businessName}</p>
-              <p className="mt-1">{primaryBusiness.destinationAddress || 'Destination address pending'}</p>
-              <div className="mt-2 flex flex-wrap gap-3 text-xs uppercase tracking-wide text-muted-foreground">
-                <span>Timezone: {primaryBusiness.timezone || '—'}</span>
-                <span>Drives/day: {primaryBusiness.drivesPerDay ?? '0'}</span>
+          <div className="grid gap-4">
+            <div className="grid gap-4 text-sm text-muted-foreground">
+              <div className="rounded-lg border border-border/60 bg-background/80 p-4 shadow-sm">
+                <p className="text-base font-semibold text-foreground">{primaryBusiness.businessName}</p>
+                <p className="mt-1">
+                  {primaryBusiness.destinationAddress || 'Destination address pending'}
+                </p>
+                <div className="mt-2 flex flex-wrap gap-3 text-xs uppercase tracking-wide text-muted-foreground">
+                  <span>Timezone: {primaryBusiness.timezone || '—'}</span>
+                  <span>Drives/day: {primaryBusiness.drivesPerDay ?? '0'}</span>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-3">
+                {businessHref ? (
+                  <Button asChild>
+                    <Link href={businessHref}>Open business dashboard</Link>
+                  </Button>
+                ) : null}
+                {editHref ? (
+                  <Button asChild variant="outline">
+                    <Link href={editHref}>Edit business</Link>
+                  </Button>
+                ) : null}
               </div>
             </div>
-            <div className="flex flex-wrap gap-3">
-              {businessHref ? (
-                <Button asChild>
-                  <Link href={businessHref}>Open business dashboard</Link>
-                </Button>
-              ) : null}
-              {editHref ? (
-                <Button asChild variant="outline">
-                  <Link href={editHref}>Edit business</Link>
-                </Button>
-              ) : null}
-            </div>
+            <BusinessCapturePanel business={primaryBusiness} businessHref={businessHref} />
           </div>
         ) : (
           <div className="rounded-lg border border-dashed border-border/70 bg-background/40 p-4 shadow-sm">
-            <BusinessForm mode="create" searchOnly redirectPath="/dashboard/get-started" />
+            <BusinessForm mode="create" searchOnly />
           </div>
         )}
       </StepSection>
 
-      <StepSection
-        step="3"
-        title="See your GBP improvement plan"
-        intro="Once your business is added, we show you what needs fixing to rank better."
-      >
-        {!primaryBusiness ? (
-          <p className="text-sm text-muted-foreground">
-            Add a business first so we can evaluate its Google Business Profile and surface roadmap tasks.
-          </p>
-        ) : primaryBusiness.gPlaceId ? (
-          <BusinessOptimizationRoadmap
-            roadmap={optimizationRoadmap}
-            error={optimizationError}
-            placeId={primaryBusiness.gPlaceId}
-            editHref={editHref ?? undefined}
-          />
-        ) : (
-          <div className="rounded-lg border border-border/60 bg-background/60 p-4 text-sm text-muted-foreground shadow-sm">
-            <p className="font-medium text-foreground">Link a Google Place ID</p>
-            <p className="mt-1">
-              Add the Place ID on the business edit screen to generate automated GBP optimization tasks tailored to your
-              listing.
-            </p>
-            {editHref ? (
-              <Button asChild size="sm" className="mt-3" variant="secondary">
-                <Link href={editHref}>Add Place ID</Link>
-              </Button>
-            ) : null}
-          </div>
-        )}
-      </StepSection>
-
-      <StepSection
-        step="4"
-        title="Pick a keyword to track"
-        intro="Choose one main keyword. We use it to start your local rank tracking."
-      >
-        {!primaryBusiness ? (
-          <p className="text-sm text-muted-foreground">
-            Once your business profile is saved we can generate the default origin zone and start rank tracking.
-          </p>
-        ) : (
-          <KeywordOriginZoneForm
-            businessId={primaryBusiness.id}
-            businessName={primaryBusiness.businessName}
-            destinationAddress={primaryBusiness.destinationAddress}
-            destinationZip={primaryBusiness.destinationZip}
-            destLat={primaryBusiness.destLat}
-            destLng={primaryBusiness.destLng}
-            existingZone={existingZone}
-          />
-        )}
-      </StepSection>
     </div>
   );
 }

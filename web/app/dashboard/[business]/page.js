@@ -1,3 +1,4 @@
+import { DateTime } from 'luxon';
 import { notFound, redirect } from 'next/navigation';
 import { AuthError, requireAuth } from '@/lib/authServer';
 import BusinessNavigation from './BusinessNavigation';
@@ -10,7 +11,8 @@ import {
   loadBusiness,
   loadGeoGridRunSummaries,
   loadGeoGridRunWithPoints,
-  loadOriginZones
+  loadOriginZones,
+  loadGeoGridSchedule
 } from './helpers';
 import { buildRunTrendIndicator } from './trendIndicators';
 import { buildMapPoints, resolveCenter } from './runs/formatters';
@@ -45,6 +47,85 @@ function resolveStatus(status) {
   }
 
   return { key: 'unknown', label: value.replace(/_/g, ' ') };
+}
+
+function formatRankingReportDate(value, timezone) {
+  if (!value) {
+    return null;
+  }
+
+  try {
+    return new Intl.DateTimeFormat('en-US', {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+      timeZone: timezone || 'UTC'
+    }).format(new Date(value));
+  } catch (error) {
+    return new Date(value).toLocaleString();
+  }
+}
+
+function parseLocalTime(value) {
+  if (!value || typeof value !== 'string') {
+    return null;
+  }
+
+  const match = value.trim().match(/^(\d{1,2}):(\d{2})(?::\d{2})?$/);
+  if (!match) {
+    return null;
+  }
+
+  const hour = Number(match[1]);
+  const minute = Number(match[2]);
+
+  if (
+    !Number.isFinite(hour) ||
+    !Number.isFinite(minute) ||
+    hour < 0 ||
+    hour > 23 ||
+    minute < 0 ||
+    minute > 59
+  ) {
+    return null;
+  }
+
+  return { hour, minute };
+}
+
+function computeNextScheduledRunDate(dayOfWeek, startTimeLocal, timezone) {
+  if (dayOfWeek === null || dayOfWeek === undefined || !startTimeLocal) {
+    return null;
+  }
+
+  const time = parseLocalTime(startTimeLocal);
+  if (!time) {
+    return null;
+  }
+
+  const zone = timezone || 'UTC';
+  let now;
+  try {
+    now = DateTime.now().setZone(zone);
+  } catch {
+    now = DateTime.now().setZone('UTC');
+  }
+
+  const currentWeekday = now.weekday % 7;
+  const normalizedDay = Number.isFinite(Number(dayOfWeek)) ? Number(dayOfWeek) % 7 : null;
+  if (normalizedDay === null || normalizedDay < 0) {
+    return null;
+  }
+
+  let delta = (normalizedDay - currentWeekday + 7) % 7;
+  let candidate = now
+    .plus({ days: delta })
+    .set({ hour: time.hour, minute: time.minute, second: 0, millisecond: 0 });
+
+  if (candidate <= now) {
+    candidate = candidate.plus({ days: 7 });
+  }
+
+  return candidate.toJSDate();
 }
 
 function mapRunRecord(run) {
@@ -129,6 +210,7 @@ function summarizeLatestRun(runs, baseHref) {
     id: latest.id ?? null,
     keyword: latest.keyword || '(no keyword)',
     runDate: latest.runDate ?? '—',
+    runDateValue: latest.runDateValue ?? null,
     status,
     totalPoints: latest.totalPoints ?? 0,
     top3Points: latest.top3Points ?? 0,
@@ -170,10 +252,11 @@ export default async function BusinessDashboardPage({ params }) {
     notFound();
   }
 
-  const [originZones, geoGridRunsRaw, gbpAccessToken] = await Promise.all([
+  const [originZones, geoGridRunsRaw, gbpAccessToken, geoGridSchedule] = await Promise.all([
     loadOriginZones(business.id),
     loadGeoGridRunSummaries(business.id),
-    ensureGbpAccessToken(business.id)
+    ensureGbpAccessToken(business.id),
+    loadGeoGridSchedule(business.id)
   ]);
   const primaryOriginZone = originZones[0] ?? null;
   const hasSelectedKeyword = Array.isArray(primaryOriginZone?.keywords)
@@ -194,6 +277,18 @@ export default async function BusinessDashboardPage({ params }) {
   const mapsApiKey =
     process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? process.env.GOOGLE_API_KEY ?? null;
   const { snapshot: reviewSnapshot } = await loadReviewSnapshot(business, gbpAccessToken);
+  const nextRunSource =
+    geoGridSchedule?.nextRunAt ??
+    computeNextScheduledRunDate(
+      geoGridSchedule?.dayOfWeek,
+      geoGridSchedule?.startTimeLocal,
+      business.timezone
+    );
+  const nextRankingReportLabel = formatRankingReportDate(nextRunSource, business.timezone);
+  const lastRankingReportLabel = formatRankingReportDate(
+    latestRunSummary?.runDateValue ?? geoGridSchedule?.lastRunAt,
+    business.timezone
+  );
 
   const businessIdentifier = business.businessSlug ?? String(business.id);
   return (
@@ -261,6 +356,8 @@ export default async function BusinessDashboardPage({ params }) {
             latestRunSummary={latestRunSummary}
             keywordsHref={keywordsHref}
             ctrHref={ctrHref}
+            nextRankingReportLabel={nextRankingReportLabel}
+            lastRankingReportLabel={lastRankingReportLabel}
           />
           <ReviewPreview snapshot={reviewSnapshot} reviewsHref={reviewsHref} />
         </div>

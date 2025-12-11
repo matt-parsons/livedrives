@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import FullScreenLoader from '@/app/components/FullScreenLoader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -397,22 +398,39 @@ export default function BusinessForm({
 
     setPhase('loading');
     setGatheringData(true);
-    setGatheringMessage('Gathering your business data…');
+    setGatheringMessage('Finding your profile...');
     setLookupError('');
     setSelectedPlace(suggestion);
 
     try {
-      console.log('handleAddBusiness fetching', placeId);
-      const response = await fetch(`/api/places/${encodeURIComponent(placeId)}`);
-      const data = await response.json().catch(() => ({}));
-      console.log('handleAddBusiness response', { status: response.status, data });
+      let response;
+      let data;
+      const retries = 1; // Total 2 attempts
 
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to load place details.');
-      }
+      for (let i = 0; i <= retries; i++) {
+        try {
+          console.log(`handleAddBusiness fetching (attempt ${i + 1})`, placeId);
+          response = await fetch(`/api/places/${encodeURIComponent(placeId)}`);
+          data = await response.json().catch(() => ({}));
+          console.log('handleAddBusiness response', { status: response.status, data });
 
-      if (!data.place) {
-        throw new Error('Place details were missing in the response.');
+          if (!response.ok) {
+            throw new Error(data.error || 'Failed to load place details.');
+          }
+
+          if (!data.place) {
+            throw new Error('Place details were missing in the response.');
+          }
+
+          // Success, exit loop
+          break;
+        } catch (error) {
+          if (i === retries) {
+            throw error; // All retries failed
+          }
+          console.warn(`Attempt ${i + 1} failed. Retrying...`);
+          await new Promise(res => setTimeout(res, 1000)); // Wait 1s
+        }
       }
 
       let derivedState = derivePlaceValuesFromPlace(data.place, formState);
@@ -445,17 +463,25 @@ export default function BusinessForm({
       setLookupError('');
       setPlacesQuery('');
 
+      setGatheringMessage('Saving your profile...');
       const business = await submitBusiness(derivedState);
+
       if (business?.id) {
+        setGatheringMessage('Saving business hours...');
         await saveBusinessHours(business.id, data.place);
       }
     } catch (err) {
       setLookupError(err.message || 'Failed to load place details.');
       setLookupState('error');
-    } finally {
       setGatheringData(false);
       setGatheringMessage('');
       setPhase('search');
+    }
+  };
+
+  const handleRetry = () => {
+    if (selectedPlace) {
+      handleAddBusiness(selectedPlace.placeId, selectedPlace);
     }
   };
 
@@ -472,7 +498,9 @@ export default function BusinessForm({
   };
 
   return (
-    <form className="grid gap-8" onSubmit={handleSubmit}>
+    <>
+      <FullScreenLoader isOpen={gatheringData} message={gatheringMessage} />
+      <form className="grid gap-8" onSubmit={handleSubmit}>
       {showPlaceSearch ? (
         <div className="grid gap-4">
           <div className="space-y-2">
@@ -491,16 +519,19 @@ export default function BusinessForm({
               />
             </div>
             <p className="text-xs text-muted-foreground">Select a result to automatically fill in the business details.</p>
-            {lookupState === 'loading' && !gatheringData ? (
-              <p className="text-sm text-muted-foreground">Loading suggestions…</p>
-            ) : null}
-            {gatheringData && gatheringMessage ? (
-              <p className="text-sm text-muted-foreground">{gatheringMessage}</p>
+            {lookupState === 'loading' ? (
+              <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                <span>Loading suggestions…</span>
+              </div>
             ) : null}
             {lookupError && lookupState !== 'loading' ? (
-              <p className="text-sm text-destructive" role="alert">
-                {lookupError}
-              </p>
+              <div className="text-sm text-destructive" role="alert">
+                <p>{lookupError}</p>
+                <Button variant="link" className="h-auto p-0" onClick={handleRetry}>
+                  Try again
+                </Button>
+              </div>
             ) : null}
           </div>
 
@@ -739,7 +770,7 @@ export default function BusinessForm({
           </Button>
         </div>
       ) : null}
-    </form>
-
-  );
+        </form>
+        </>
+      );
 }

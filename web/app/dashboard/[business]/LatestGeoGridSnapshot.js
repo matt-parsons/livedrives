@@ -9,7 +9,9 @@ export default function LatestGeoGridSnapshot({
   center = null,
   points = [],
   summary = null,
-  keywordsHref = null
+  keywordsHref = null,
+  nextRankingReportLabel = null,
+  lastRankingReportLabel = null
 }) {
   const hasMap = Boolean(apiKey && center && Array.isArray(points) && points.length > 0);
   const solvLabel = summary?.solvLabel ?? '—';
@@ -63,6 +65,21 @@ export default function LatestGeoGridSnapshot({
               />
             ))}
           </div>
+
+          {(lastRankingReportLabel || nextRankingReportLabel) ? (
+            <div className="latest-geogrid-card__run-info">
+              {lastRankingReportLabel ? (
+                <p>
+                  Last ranking report ran <strong>{lastRankingReportLabel}</strong>.
+                </p>
+              ) : null}
+              {nextRankingReportLabel ? (
+                <p>
+                  Next ranking report will be recorded <strong>{nextRankingReportLabel}</strong>.
+                </p>
+              ) : null}
+            </div>
+          ) : null}
 
           <div className="latest-geogrid-card__map">
             {hasMap ? (

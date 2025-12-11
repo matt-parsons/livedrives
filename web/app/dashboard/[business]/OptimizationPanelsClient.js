@@ -40,7 +40,9 @@ export default function OptimizationPanelsClient({
   latestRunSummary = null,
   keywordsHref = null,
   ctrHref = null,
-  isAdmin = false
+  isAdmin = false,
+  nextRankingReportLabel = null,
+  lastRankingReportLabel = null
 }) {
   const [loading, setLoading] = useState(Boolean(placeId));
   const [error, setError] = useState(null);
@@ -391,6 +393,8 @@ export default function OptimizationPanelsClient({
         points={mapPoints}
         summary={latestRunSummary}
         keywordsHref={keywordsHref}
+        nextRankingReportLabel={nextRankingReportLabel}
+        lastRankingReportLabel={lastRankingReportLabel}
       />
 
     </>

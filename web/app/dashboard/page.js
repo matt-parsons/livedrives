@@ -42,30 +42,7 @@ export default async function DashboardPage() {
   const businesses = await loadOrganizationBusinesses(session);
 
   if (!businesses.length) {
-
-    return (
-      <div className="page-shell">
-        <section className="page-header">
-          <h1 className="page-title">Add your business</h1>
-          <p className="page-subtitle">
-            Add your business profile to unlock optimization, profile ranking insights, and get more customers.
-          </p>
-        </section>
-
-        <Card role="status" className="max-w-2xl border-dashed border-border/70 bg-card/90 shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-xl">You&apos;re almost ready</CardTitle>
-          </CardHeader>
-          <div className="flex flex-col mt-5">
-            <div className="flex flex-wrap">
-              <Button asChild variant="outline">
-                <Link href="/dashboard/get-started">Get Started!</Link>
-              </Button>
-            </div>
-          </div>
-        </Card>
-      </div>
-    );
+    redirect('/dashboard/get-started');
   }
 
   const defaultBusiness = selectDefaultBusiness(session, businesses);

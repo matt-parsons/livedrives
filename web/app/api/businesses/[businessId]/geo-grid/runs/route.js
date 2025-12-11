@@ -7,6 +7,8 @@ import {
   normalizeOriginZoneRow,
   resolveOrigin
 } from '@/lib/geoGrid';
+import geoGridSchedules from '@lib/db/geoGridSchedules.js';
+import { DateTime } from 'luxon';
 import { launchGeoGridWorker } from '@/lib/geoGridWorker';
 
 export const runtime = 'nodejs';
@@ -173,6 +175,15 @@ export async function POST(request, { params }) {
       await connection.commit();
 
       launchGeoGridWorker();
+
+      try {
+        const scheduleContext = await geoGridSchedules.loadScheduleContext(businessId);
+        if (scheduleContext && scheduleContext.schedule && !scheduleContext.schedule.lastRunAt) {
+          await geoGridSchedules.markScheduleRunComplete(businessId, DateTime.now());
+        }
+      } catch (scheduleError) {
+        console.error(`Failed to mark initial schedule run for business ${businessId}`, scheduleError);
+      }
 
       return Response.json({
         runId,

@@ -918,6 +918,18 @@ textarea {
   gap: 1rem;
 }
 
+.latest-geogrid-card__run-info {
+  font-size: 0.95rem;
+  color: #475467;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.latest-geogrid-card__run-info strong {
+  color: #0f172a;
+}
+
 .latest-geogrid-card__stat {
   display: flex;
   flex-direction: column;

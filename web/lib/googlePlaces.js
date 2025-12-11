@@ -154,9 +154,9 @@ async function fetchSidebar(body, { signal, timeoutMs = SIDEBAR_TIMEOUT_MS } = {
       // This was a timeout from our controller, not an external signal.
       return { data: {}, timedOut: true };
     }
-    // For external aborts or other errors, mimic original behavior.
+    // For other external aborts or other errors, re-throw.
     console.error('Sidebar API error:', error);
-    return { data: {}, timedOut: false };
+    throw error;
   } finally {
     clearTimeout(timeoutId);
   }
@@ -374,6 +374,10 @@ export async function fetchPlaceDetails(placeId, { signal } = {}) {
     );
 
     console.log('[DATAFORSEO] fetchSdiebarData', sidebarData, sidebarTimedOut, posts);
+
+    if (sidebarTimedOut && (!sidebarData || Object.keys(sidebarData).length === 0)) {
+      throw new PlacesError('Request to data provider timed out.', { status: 504 });
+    }
 
     // Extract location for timezone lookup
     const location = sidebarData.latitude !== undefined && sidebarData.longitude !== undefined
