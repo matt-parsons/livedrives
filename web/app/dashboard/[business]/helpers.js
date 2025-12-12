@@ -105,6 +105,32 @@ export async function loadBusiness(organizationContext, identifier) {
   return rows[0] ?? null;
 }
 
+export async function loadSubscription(organizationId) {
+  const [rows] = await pool.query(
+    `SELECT subscription_status, subscription_plan, subscription_renews_at
+       FROM organizations
+      WHERE id = ?
+      LIMIT 1`,
+    [organizationId]
+  );
+
+  return rows[0] ?? null;
+}
+
+export async function loadOrganizationTrial(organizationId) {
+  const [rows] = await pool.query(
+    `SELECT trial_starts_at, trial_ends_at, status
+       FROM organization_trials
+      WHERE organization_id = ?
+      LIMIT 1`,
+    [organizationId]
+  );
+
+  return rows[0] ?? null;
+}
+
+
+
 export async function loadOrganizationBusinesses(organizationContext) {
   const scope = buildOrganizationScopeClause(organizationContext);
 

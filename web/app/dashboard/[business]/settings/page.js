@@ -14,10 +14,12 @@ import {
   loadSoaxConfig,
   loadGeoGridSchedule,
   loadGeoGridRunSummaries,
+  loadSubscription,
   formatDate,
   formatDecimal
 } from '../helpers';
 import UserAccountSettings from './UserAccountSettings';
+import SubscriptionSettings from './SubscriptionSettings';
 import SidebarBrand from '../SidebarBrand';
 import DashboardBusinessHeader from '../DashboardBusinessHeader';
 
@@ -78,12 +80,13 @@ export default async function BusinessSettingsPage({ params }) {
   //   redirect(`/dashboard/${encodeURIComponent(identifier)}`);
   // }
 
-  const [businessHours, originZones, soaxConfig, geoGridSchedule, geoGridRuns] = await Promise.all([
+  const [businessHours, originZones, soaxConfig, geoGridSchedule, geoGridRuns, subscription] = await Promise.all([
     loadBusinessHours(business.id),
     loadOriginZones(business.id),
     loadSoaxConfig(business.id),
     loadGeoGridSchedule(business.id),
-    loadGeoGridRunSummaries(business.id)
+    loadGeoGridRunSummaries(business.id),
+    loadSubscription(session.organizationId)
   ]);
 
   const initialValues = {
@@ -280,6 +283,8 @@ export default async function BusinessSettingsPage({ params }) {
             </div>
             ) : ( null )
             }
+
+            <SubscriptionSettings subscription={subscription} />
 
             <section className="section">
               <div className="section-header">

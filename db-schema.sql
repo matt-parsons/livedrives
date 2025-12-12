@@ -216,11 +216,9 @@ CREATE TABLE `organizations` (
   `id` bigint(20) UNSIGNED NOT NULL,
   `name` varchar(255) NOT NULL,
   `subscription_status` varchar(32) DEFAULT NULL,
+  `stripe_subscription_id` varchar(255) DEFAULT NULL,
   `subscription_plan` varchar(64) DEFAULT NULL,
-  `plan` varchar(64) DEFAULT NULL,
   `subscription_renews_at` datetime DEFAULT NULL,
-  `renews_at` datetime DEFAULT NULL,
-  `subscription_renews_on` date DEFAULT NULL,
   `subscription_cancelled_at` datetime DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
