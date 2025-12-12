@@ -6,6 +6,7 @@ import BusinessHoursForm from '../BusinessHoursForm';
 import OriginZonesManager from '../OriginZonesManager';
 import SoaxConfigForm from '../SoaxConfigForm';
 import GeoGridScheduleCard from '../GeoGridScheduleCard';
+
 import {
   loadBusiness,
   loadBusinessHours,
@@ -152,7 +153,7 @@ export default async function BusinessSettingsPage({ params }) {
         </aside>
 
         <main className="dashboard-layout__main">
-          <DashboardBusinessHeader />
+          <DashboardBusinessHeader organizationId={session.organizationId} />
           <div className="dashboard-layout__content">
             <div>
               <h2 className="section-title">Business settings</h2>

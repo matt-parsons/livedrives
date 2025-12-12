@@ -464,7 +464,7 @@ export default async function BusinessKeywordsPage({ params, searchParams }) {
         </aside>
 
         <main className="dashboard-layout__main">
-          <DashboardBusinessHeader />
+          <DashboardBusinessHeader organizationId={session.organizationId} />
           <div className="dashboard-layout__content">
             <div className="section-header">
               <div>

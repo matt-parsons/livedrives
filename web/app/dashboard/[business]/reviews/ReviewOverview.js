@@ -306,7 +306,7 @@ export default function ReviewOverview({
       </div>
 
 
-      {canSchedulePosts ? (
+      {/* {canSchedulePosts ? (
         <GbpPostScheduler
           businessId={businessId}
           timezone={timezone}
@@ -314,7 +314,7 @@ export default function ReviewOverview({
         />
       ) : (
         <ReviewPermissionsGate authorizationUrl={authorizationUrl} />
-      )}
+      )} */}
     </div>
   );
 }

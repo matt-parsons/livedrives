@@ -3,8 +3,9 @@
 import BusinessSettingsShortcut from './BusinessSettingsShortcut';
 import BusinessSwitcher from './BusinessSwitcher';
 import { useBusinessLayout } from './BusinessLayoutContext';
+import TrialBanner from '@/app/components/TrialBanner';
 
-export default function DashboardBusinessHeader() {
+export default function DashboardBusinessHeader({ organizationId }) {
   const {
     businessName,
     locationLabel,
@@ -17,6 +18,8 @@ export default function DashboardBusinessHeader() {
 
   return (
     <header className="dashboard-layout__header">
+      <TrialBanner organizationId={organizationId} />
+
       <div className="dashboard-layout__header-container">
         <div className="dashboard-header">
           <div className="dashboard-header__content">

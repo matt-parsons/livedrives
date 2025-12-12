@@ -4050,6 +4050,9 @@ textarea {
   grid-template-columns: 1fr;
 }
 }
+.trial-banner {
+  background: #f8fafc;
+}
 
 .trial-preview-page {
   position: relative;

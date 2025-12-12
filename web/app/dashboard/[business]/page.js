@@ -301,7 +301,7 @@ export default async function BusinessDashboardPage({ params }) {
       </aside>
 
       <main className="dashboard-layout__main">
-        <DashboardBusinessHeader />
+        <DashboardBusinessHeader organizationId={session.organizationId} />
         <div className="dashboard-layout__content">
           {!hasSelectedKeyword ? (
             <section className="rounded-2xl border border-border/60 bg-card/90 p-6 shadow-sm">

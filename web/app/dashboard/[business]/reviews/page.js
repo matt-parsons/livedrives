@@ -8,6 +8,7 @@ import SidebarBrand from '../SidebarBrand';
 import DashboardBusinessHeader from '../DashboardBusinessHeader';
 import ReviewLoadingBlock from './ReviewLoadingBlock';
 import ReviewSnapshotController from './ReviewSnapshotController';
+
 import {
   loadReviewSnapshot,
   loadScheduledPosts,
@@ -55,7 +56,7 @@ export default async function BusinessReviewsPage({ params }) {
       </aside>
 
       <main className="dashboard-layout__main">
-        <DashboardBusinessHeader />
+        <DashboardBusinessHeader organizationId={session.organizationId} />
         <div className="dashboard-layout__content">
           <Suspense fallback={<ReviewLoadingBlock authorizationUrl={authorizationUrl} />}>
             <ReviewsContent
