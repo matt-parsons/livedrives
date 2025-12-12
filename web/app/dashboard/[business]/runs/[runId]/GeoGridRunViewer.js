@@ -441,16 +441,74 @@ export default function GeoGridRunViewer({
 
   return (
     <>
-      <section className="section">
+      {/*<section className="section">
         <div className="surface-card surface-card--muted run-summary">
-          <div className="run-summary-col">
-            <div className="run-summary__header">
-              <div className="run-summary__keyword">
+           <div className="run-summary-col">
+           <div className="run-summary__header">
+               <div className="run-summary__keyword">
                 <span className="run-summary__label">Keyword</span>
                 <span className="run-summary__value">
                   &quot;{runSummary.keyword || 'Unspecified keyword'}&quot;
                 </span>
-              </div>
+              </div> 
+
+            </div>
+
+            {/* <div className="run-summary__metrics">
+              <span className="metric-highlight metric-highlight--solv">
+                <span className="metric-highlight__label">SoLV (Top 3)</span>
+                <span className="metric-highlight__value">{solvTop3}</span>
+              </span>
+              <span className="metric-highlight">
+                <span className="metric-highlight__label">ARP</span>
+                <span className="metric-highlight__value">{avgPosition}</span>
+              </span>
+            </div>
+          </div>
+          <div className="run-summary-col">
+            <ul className="run-summary__facts">
+              <li>
+                <strong>Search performed:</strong>{' '}
+                <span className="run-summary__date">{runSummary.runDate ?? '—'}</span>
+              </li>
+              <li>
+                <strong>Grid:</strong> {gridSizeLabel} · Radius {radiusLabel} · Spacing{' '}
+                {spacingLabel}
+              </li>
+              <li>
+                <strong>Duration:</strong> {runDurationLabel || '—'}
+              </li>
+              <li>
+                <strong>Origin:</strong> {originCoordinates ?? '—'}{' '}
+                {originLink ? (
+                  <a
+                    className="inline-link"
+                    href={originLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    View on Google Maps ↗
+                  </a>
+                ) : null}
+              </li>
+              <li>
+                <strong>Run:</strong> #{runSummary.runId}
+              </li>
+              <li>
+                <strong>Status:</strong> {runStatus.label}
+              </li>
+            </ul>
+          </div> 
+        </div>
+      </section>
+*/}
+      <section className="section align-center">
+        <div className="surface-card surface-card--muted map-card">
+          <div className="map-layout">
+            <aside className="map-layout__sidebar">
+              <div className="map-layout__sidebar-header">
+                <h2 className="sidebar-title">Local listings</h2>
+                <p className="sidebar-subtitle">Click a grid point on the map to inspect the listings captured from that location.</p>
 
               {hasOtherRuns || canDisplayRerunButton ? (
                 <div className="run-summary__controls">
@@ -503,64 +561,7 @@ export default function GeoGridRunViewer({
                     </div>
                   ) : null}
                 </div>
-              ) : null}
-            </div>
-
-            <div className="run-summary__metrics">
-              <span className="metric-highlight metric-highlight--solv">
-                <span className="metric-highlight__label">SoLV (Top 3)</span>
-                <span className="metric-highlight__value">{solvTop3}</span>
-              </span>
-              <span className="metric-highlight">
-                <span className="metric-highlight__label">ARP</span>
-                <span className="metric-highlight__value">{avgPosition}</span>
-              </span>
-            </div>
-          </div>
-          <div className="run-summary-col">
-            <ul className="run-summary__facts">
-              <li>
-                <strong>Search performed:</strong>{' '}
-                <span className="run-summary__date">{runSummary.runDate ?? '—'}</span>
-              </li>
-              <li>
-                <strong>Grid:</strong> {gridSizeLabel} · Radius {radiusLabel} · Spacing{' '}
-                {spacingLabel}
-              </li>
-              <li>
-                <strong>Duration:</strong> {runDurationLabel || '—'}
-              </li>
-              <li>
-                <strong>Origin:</strong> {originCoordinates ?? '—'}{' '}
-                {originLink ? (
-                  <a
-                    className="inline-link"
-                    href={originLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    View on Google Maps ↗
-                  </a>
-                ) : null}
-              </li>
-              <li>
-                <strong>Run:</strong> #{runSummary.runId}
-              </li>
-              <li>
-                <strong>Status:</strong> {runStatus.label}
-              </li>
-            </ul>
-          </div>
-        </div>
-      </section>
-
-      <section className="section align-center">
-        <div className="surface-card surface-card--muted map-card">
-          <div className="map-layout">
-            <aside className="map-layout__sidebar">
-              <div className="map-layout__sidebar-header">
-                <h2 className="sidebar-title">Local listings</h2>
-                <p className="sidebar-subtitle">Click a grid point on the map to inspect the listings captured from that location.</p>
+              ) : null}                
               </div>
               {selectedPoint ? (
                 <div className="listing-point-summary" role="status">

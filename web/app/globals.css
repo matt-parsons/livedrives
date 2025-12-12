@@ -3918,6 +3918,10 @@ textarea {
   gap: 0.75rem;
 }
 
+.business-funnel__heatmap-demo {
+  width: 100%;
+}
+
 .business-funnel__section-task-list-left {
   width: 100%;
 }
@@ -3938,16 +3942,21 @@ textarea {
   align-items: center;
   justify-content: center;
   position: relative;  
+  width: 100%;
 }
 
 .business-funnel__section-teaser {
-  background: #ffffffc2;
-  text-align: center;
-  border: 1px solid #000;
-  position: absolute;
-  padding: 40px;
-  border-radius: 15px;
-  font-weight: bold;
+    background: #ffffff66;
+    text-align: center;
+    position: absolute;
+    padding: 40px;
+    font-weight: bold;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(6px);
 }
 
 .business-optimization-roadmap__section-empty-message {

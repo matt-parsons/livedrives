@@ -13,11 +13,9 @@ import {
   toTimestamp,
   loadBusiness,
   loadGeoGridRunSummaries,
-  loadGeoGridRunWithPoints,
   loadCtrKeywordOverview
 } from '../helpers';
 import { buildRunTrendIndicator } from '../trendIndicators';
-import { buildMapPoints, resolveCenter } from '../runs/formatters';
 
 export const metadata = {
   title: 'Keywords · Local Paint Pilot'
@@ -210,40 +208,7 @@ export default async function BusinessKeywordsPage({ params, searchParams }) {
     .map(({ latestTimestamp, ...rest }) => rest);
 
   const mapsApiKey = resolveMapsApiKey();
-  const keywordPerformanceItems = keywordPerformance30d.length
-    ? await Promise.all(
-        keywordPerformance30d.map(async (item) => {
-          if (!item.latestRunId || !mapsApiKey) {
-            return { ...item, latestRunMap: null };
-          }
-
-          try {
-            const runData = await loadGeoGridRunWithPoints(business.id, item.latestRunId);
-
-            if (!runData) {
-              return { ...item, latestRunMap: null };
-            }
-
-            const mapPoints = buildMapPoints(runData.points);
-            const center = resolveCenter(runData.run, mapPoints);
-
-            if (!center) {
-              return { ...item, latestRunMap: null };
-            }
-
-            return {
-              ...item,
-              latestRunMap: {
-                center,
-                points: mapPoints
-              }
-            };
-          } catch (error) {
-            return { ...item, latestRunMap: null };
-          }
-        })
-      )
-    : [];
+  const keywordPerformanceItems = keywordPerformance30d;
 
   const runTrendComparisons = new Map();
   const geoGridTrend = (() => {
@@ -476,9 +441,14 @@ export default async function BusinessKeywordsPage({ params, searchParams }) {
             </div>
 
             <section className="section">
-              <KeywordPerformanceSpotlight items={keywordPerformanceItems} mapsApiKey={mapsApiKey} />
+              <KeywordPerformanceSpotlight
+                items={keywordPerformanceItems}
+                mapsApiKey={mapsApiKey}
+                businessId={business.id}
+                businessIdentifier={businessIdentifier}
+              />
             </section>
-
+            {canViewCtr ? (
             <section className="section">
                 <GeoGridRunsSection
                   caption={geoSectionCaption}
@@ -487,6 +457,7 @@ export default async function BusinessKeywordsPage({ params, searchParams }) {
                   runItems={geoGridRunsList}
                 />
             </section>
+            ) : null }
 
             {canViewCtr ? (
               <section className="section">

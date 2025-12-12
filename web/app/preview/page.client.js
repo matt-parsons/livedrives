@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { useRouter } from 'next/navigation';
 import SidebarBrand from '../dashboard/[business]/SidebarBrand';
 import Image from 'next/image'
+import Link from 'next/link';
 
 const LOADING_STEPS = [
   {
@@ -749,7 +750,7 @@ export default function LandingPage() {
           <div className="dashboard-layout__content">
           <h2 className="mt-4 text-2xl font-semibold text-foreground">Your audit is complete, next step is to fix these issues and increase your rankings.</h2>
 
-          <section className="section business-dashboard__hero">
+          <section className="business-dashboard__hero">
               <div className="business-dashboard__optimization-row">
                 <div className="surface-card surface-card--muted dashboard-optimization-card">
                   <div className="section-header">
@@ -808,18 +809,24 @@ export default function LandingPage() {
               </div>
               <div className="business-dashboard__top-row"></div>
           </section>
-          <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-            <p className="font-semibold">Get Started for FREE</p>
-            <p className="text-amber-800/80">
-              <a href="#freetrial">Start a free trial to get step by step instructions on how to improve your profile & rankings.</a>
-            </p>
+          <div className="rounded-lg border surface-card surface-card--muted px-4 py-3 text-sm flex justify-between items-center">
+            <div>
+              <h2 className="section-title">Get Started for FREE</h2>
+              <p className="section-caption">
+                <a href="#freetrial">Start a free trial to get step by step instructions on how to improve your profile & rankings.</a>
+              </p>
+            </div>
+            <Link href="#freetrial" className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-1 px-2 rounded">
+              Upgrade Now
+            </Link>
+
           </div>
 
           <section className="space-y-4">
             <div className="space-y-2">
               <h2 className="text-2xl font-semibold text-foreground">Start improving your profile to get more customers.</h2>
               <p className="text-sm text-muted-foreground">
-                We highlighted your top 3 recommendations. 
+                We highlighted your top recommendations. 
               </p>
             </div>
             <div class="business-funnel__section-task-heatmap">
@@ -846,13 +853,13 @@ export default function LandingPage() {
                 These ranking maps show where you are showing up when potential customers search for services your business offers.
               </p>
             </div>
-            <div class="business-funnel__section-task-heatmap">
+            <div class="surface-card surface-card--muted dashboard-optimization-card business-funnel__section-task-heatmap">
               <div className="business-funnel__section-teaser-container">
                 <div className="business-funnel__section-teaser">
                   <p className="text-sm text-muted-foreground">Demo Heat Map<br />
                   Start your Free trial to get a live report specific to your business. </p>
                 </div>
-                <Image src="./images/localpaintpilot-ranking-demo.png" alt="Local Paint Pilot Ranking Heat Map" />
+                <Image className="business-funnel__heatmap-demo" src="/images/localpaintpilot-ranking-demo.png" alt="Local Paint Pilot Ranking Heat Map" width={250} height={250} />
               </div>
             </div>
           </section>

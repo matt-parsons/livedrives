@@ -2,76 +2,18 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import GeoGridMap from './runs/[runId]/GeoGridMap';
+import GeoGridRunViewer from './runs/[runId]/GeoGridRunViewer';
 import KeywordTrendChart from './KeywordTrendChart';
 import SummaryMetricCard from './SummaryMetricCard';
+import { buildMapPoints, extractRunSummary, resolveCenter } from './runs/formatters';
 
-function renderHeatmapContent(activeItem, mapsApiKey) {
-  if (!activeItem.latestRunId) {
-    return (
-      <p style={{ margin: 0, fontSize: '0.85rem', color: '#6b7280' }}>
-        Deploy another ranking report run to unlock the live heatmap preview.
-      </p>
-    );
-  }
-
-  if (!mapsApiKey) {
-    return (
-      <div
-        style={{
-          fontSize: '0.82rem',
-          color: '#6b7280',
-          backgroundColor: '#f9fafb',
-          border: '1px solid rgba(148, 163, 184, 0.32)',
-          borderRadius: '12px',
-          padding: '0.85rem 1rem'
-        }}
-      >
-        Add a Google Maps API key to preview the latest ranking report run.
-      </div>
-    );
-  }
-
-  if (!activeItem.latestRunMap) {
-    return (
-      <div
-        style={{
-          fontSize: '0.82rem',
-          color: '#6b7280',
-          backgroundColor: '#f9fafb',
-          border: '1px solid rgba(148, 163, 184, 0.32)',
-          borderRadius: '12px',
-          padding: '0.85rem 1rem'
-        }}
-      >
-        Ranking report map preview unavailable for this run.
-      </div>
-    );
-  }
-
-  return (
-    <div
-      style={{
-        borderRadius: '16px',
-        overflow: 'hidden',
-        border: '1px solid rgba(148, 163, 184, 0.2)'
-      }}
-    >
-      <GeoGridMap
-        key={activeItem.latestRunId}
-        apiKey={mapsApiKey}
-        center={activeItem.latestRunMap.center}
-        points={activeItem.latestRunMap.points}
-        interactive={false}
-        selectedPointId={null}
-        minHeight="clamp(220px, 45vw, 320px)"
-      />
-    </div>
-  );
-}
-
-export default function KeywordPerformanceSpotlight({ items, mapsApiKey = null }) {
+export default function KeywordPerformanceSpotlight({ items, mapsApiKey = null, businessId, businessIdentifier }) {
   const [activeKey, setActiveKey] = useState(() => items[0]?.key ?? null);
+  const [heatmapState, setHeatmapState] = useState(() => ({
+    loading: false,
+    error: null,
+    runData: null
+  }));
 
   useEffect(() => {
     if (!items.some((item) => item.key === activeKey)) {
@@ -86,6 +28,72 @@ export default function KeywordPerformanceSpotlight({ items, mapsApiKey = null }
 
     return items.find((item) => item.key === activeKey) ?? items[0];
   }, [items, activeKey]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadRun() {
+      if (!activeItem?.latestRunId || !mapsApiKey || !businessId) {
+        if (isMounted) {
+          setHeatmapState({ loading: false, error: null, runData: null });
+        }
+        return;
+      }
+
+      setHeatmapState((prev) => ({ ...prev, loading: true, error: null }));
+
+      try {
+        const response = await fetch(
+          `/api/businesses/${encodeURIComponent(businessId)}/geo-grid/runs/${encodeURIComponent(
+            activeItem.latestRunId
+          )}`
+        );
+
+        if (!response.ok) {
+          const payload = await response.json().catch(() => null);
+          throw new Error(payload?.error || 'Unable to load run.');
+        }
+
+        const payload = await response.json();
+        const mapPoints = buildMapPoints(payload.points);
+        const center = resolveCenter(payload.run, mapPoints);
+
+        if (!center) {
+          throw new Error('Unable to determine map center.');
+        }
+
+        const summary = extractRunSummary(payload.run);
+
+        if (isMounted) {
+          setHeatmapState({
+            loading: false,
+            error: null,
+            runData: {
+              run: payload.run,
+              mapPoints,
+              center,
+              summary,
+              pointListings: payload.pointListings ?? []
+            }
+          });
+        }
+      } catch (error) {
+        if (isMounted) {
+          setHeatmapState({
+            loading: false,
+            error: error?.message || 'Ranking report map preview unavailable for this run.',
+            runData: null
+          });
+        }
+      }
+    }
+
+    loadRun();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [activeItem?.latestRunId, mapsApiKey, businessId]);
 
   if (!items.length) {
     return (
@@ -293,10 +301,10 @@ export default function KeywordPerformanceSpotlight({ items, mapsApiKey = null }
           <div>
             <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700, color: '#111827' }}>Ranking heatmap</h3>
             <p style={{ margin: '0.35rem 0 0', fontSize: '0.85rem', color: '#6b7280' }}>
-              Visualize how this keyword ranks across your configured service area.
+              See where your business shous up when customers are searching for your services.
             </p>
           </div>
-          {activeItem.latestRunHref ? (
+          {/* {activeItem.latestRunHref ? (
             <Link
               className="cta-link"
               href={activeItem.latestRunHref}
@@ -304,10 +312,77 @@ export default function KeywordPerformanceSpotlight({ items, mapsApiKey = null }
             >
               View run details ↗
             </Link>
-          ) : null}
+          ) : null} */}
         </div>
 
-        {renderHeatmapContent(activeItem, mapsApiKey)}
+        {!activeItem.latestRunId ? (
+          <p style={{ margin: 0, fontSize: '0.85rem', color: '#6b7280' }}>
+            Deploy another ranking report run to unlock the live heatmap preview.
+          </p>
+        ) : !mapsApiKey ? (
+          <div
+            style={{
+              fontSize: '0.82rem',
+              color: '#6b7280',
+              backgroundColor: '#f9fafb',
+              border: '1px solid rgba(148, 163, 184, 0.32)',
+              borderRadius: '12px',
+              padding: '0.85rem 1rem'
+            }}
+          >
+            Add a Google Maps API key to preview the latest ranking report run.
+          </div>
+        ) : heatmapState.loading ? (
+          <div style={{ fontSize: '0.85rem', color: '#6b7280' }}>Loading latest run…</div>
+        ) : heatmapState.error ? (
+          <div
+            style={{
+              fontSize: '0.82rem',
+              color: '#6b7280',
+              backgroundColor: '#f9fafb',
+              border: '1px solid rgba(148, 163, 184, 0.32)',
+              borderRadius: '12px',
+              padding: '0.85rem 1rem'
+            }}
+          >
+            {heatmapState.error}
+          </div>
+        ) : heatmapState.runData ? (
+          <div
+            style={{
+              borderRadius: '16px',
+              overflow: 'hidden',
+              border: '1px solid rgba(148, 163, 184, 0.2)'
+            }}
+          >
+            <GeoGridRunViewer
+              key={heatmapState.runData.run.id}
+              apiKey={mapsApiKey}
+              businessId={businessId}
+              businessIdentifier={businessIdentifier ?? String(businessId)}
+              initialRun={heatmapState.runData.run}
+              initialMapPoints={heatmapState.runData.mapPoints}
+              initialCenter={heatmapState.runData.center}
+              initialSummary={heatmapState.runData.summary}
+              initialPointListings={heatmapState.runData.pointListings}
+              runOptions={[]}
+              canRerun={false}
+            />
+          </div>
+        ) : (
+          <div
+            style={{
+              fontSize: '0.82rem',
+              color: '#6b7280',
+              backgroundColor: '#f9fafb',
+              border: '1px solid rgba(148, 163, 184, 0.32)',
+              borderRadius: '12px',
+              padding: '0.85rem 1rem'
+            }}
+          >
+            Ranking report map preview unavailable for this run.
+          </div>
+        )}
       </div>
     </div>
   );
