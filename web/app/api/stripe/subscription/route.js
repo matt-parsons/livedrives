@@ -53,11 +53,7 @@ export async function PATCH(request) {
 
     const organizationId = checkoutSession?.metadata?.organizationId;
 
-<<<<<<< codex/integrate-session-for-sidebarbrand-and-businessnavigation-26ilzv
-    if (organizationId && String(organizationId) !== String(session.organizationId)) {
-=======
     if (!organizationId || String(organizationId) !== String(session.organizationId)) {
->>>>>>> main
       return NextResponse.json({ error: 'Unauthorized organization update' }, { status: 403 });
     }
 
