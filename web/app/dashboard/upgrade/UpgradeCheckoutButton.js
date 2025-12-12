@@ -21,8 +21,7 @@ export default function UpgradeCheckoutButton({ priceId }) {
         throw new Error('Unable to start Stripe checkout.');
       }
 
-      const payload = await response.json();
-      const checkoutUrl = payload?.checkoutUrl ?? payload?.url;
+      const { checkoutUrl } = await response.json();
 
       if (!checkoutUrl) {
         throw new Error('Checkout session was created without a redirect URL.');

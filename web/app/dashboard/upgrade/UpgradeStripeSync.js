@@ -25,7 +25,8 @@ export default function UpgradeStripeSync({ sessionId }) {
         });
 
         if (!response.ok) {
-          throw new Error('Unable to confirm subscription.');
+          const errorPayload = await response.json().catch(() => ({}));
+          throw new Error(errorPayload.error || 'Unable to confirm subscription.');
         }
 
         if (!isCancelled) {

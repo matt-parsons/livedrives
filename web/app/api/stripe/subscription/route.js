@@ -1,7 +1,17 @@
 import { NextResponse } from 'next/server';
+import Stripe from 'stripe';
 import pool from '@lib/db/db.js';
 import { AuthError, requireAuth } from '@/lib/authServer';
-import { getStripeClient } from '@/lib/stripe';
+
+function getStripeClient() {
+  const secretKey = process.env.STRIPE_SECRET_KEY;
+
+  if (!secretKey) {
+    throw new Error('STRIPE_SECRET_KEY is not configured');
+  }
+
+  return new Stripe(secretKey, { apiVersion: '2024-06-20' });
+}
 
 async function updateOrganizationSubscription(organizationId, status, planId, renewsAt) {
   await pool.query(
@@ -43,7 +53,11 @@ export async function PATCH(request) {
 
     const organizationId = checkoutSession?.metadata?.organizationId;
 
+<<<<<<< codex/integrate-session-for-sidebarbrand-and-businessnavigation-26ilzv
     if (organizationId && String(organizationId) !== String(session.organizationId)) {
+=======
+    if (!organizationId || String(organizationId) !== String(session.organizationId)) {
+>>>>>>> main
       return NextResponse.json({ error: 'Unauthorized organization update' }, { status: 403 });
     }
 
