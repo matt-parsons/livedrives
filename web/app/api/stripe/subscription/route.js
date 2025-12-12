@@ -53,7 +53,7 @@ export async function PATCH(request) {
 
     const organizationId = checkoutSession?.metadata?.organizationId;
 
-    if (organizationId && String(organizationId) !== String(session.organizationId)) {
+    if (!organizationId || String(organizationId) !== String(session.organizationId)) {
       return NextResponse.json({ error: 'Unauthorized organization update' }, { status: 403 });
     }
 
