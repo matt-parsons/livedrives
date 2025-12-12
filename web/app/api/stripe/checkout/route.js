@@ -17,9 +17,9 @@ function buildSuccessUrl(requestUrl) {
   url.search = '';
   url.hash = '';
   url.pathname = '/dashboard/upgrade';
-  url.searchParams.set('session_id', '{CHECKOUT_SESSION_ID}');
-  return url.toString();
-}
+  // url.searchParams.set('session_id', '{CHECKOUT_SESSION_ID}');
+  const baseUrl = `${url.origin}${url.pathname}`;
+  return `${baseUrl}?session_id={CHECKOUT_SESSION_ID}`;}
 
 function buildCancelUrl(requestUrl) {
   const url = new URL(requestUrl);

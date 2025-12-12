@@ -13,14 +13,22 @@ function getStripeClient() {
   return new Stripe(secretKey, { apiVersion: '2024-06-20' });
 }
 
-async function updateOrganizationSubscription(organizationId, status, planId, renewsAt) {
+async function updateOrganizationSubscription(organizationId, status, planId, renewsAt, stripeSubscriptionId) {
   await pool.query(
     `UPDATE organizations
         SET subscription_status = ?,
             subscription_plan = ?,
-            subscription_renews_at = ?
+            subscription_renews_at = ?,
+            stripe_subscription_id = ?
       WHERE id = ?`,
-    [status ?? null, planId ?? null, renewsAt ?? null, organizationId]
+    [status ?? null, planId ?? null, renewsAt ?? null, stripeSubscriptionId ?? null, organizationId]
+  );
+}
+
+async function removeOrganizationTrial(organizationId) {
+  await pool.query(
+    `DELETE FROM organization_trials WHERE organization_id = ?`,
+    [organizationId]
   );
 }
 
@@ -65,8 +73,10 @@ export async function PATCH(request) {
     const subscriptionStatus = subscription?.status ?? checkoutSession.status ?? null;
     const renewsAt = resolveRenewalDate(subscription);
     const planId = resolvePlanId(subscription);
+    const stripeSubscriptionId = subscription.id
 
-    await updateOrganizationSubscription(session.organizationId, subscriptionStatus, planId, renewsAt);
+    await updateOrganizationSubscription(session.organizationId, subscriptionStatus, planId, renewsAt, stripeSubscriptionId);
+    await removeOrganizationTrial(session.organizationId);
 
     return NextResponse.json({
       subscriptionStatus,
@@ -80,5 +90,64 @@ export async function PATCH(request) {
 
     console.error('Failed to sync Stripe subscription', error);
     return NextResponse.json({ error: 'Unable to sync subscription' }, { status: 500 });
+  }
+}
+
+async function getOrganization(organizationId) {
+  const [rows] = await pool.query(
+    `SELECT id, stripe_subscription_id FROM organizations WHERE id = ?`,
+    [organizationId]
+  );
+  return rows[0] || null;
+}
+
+export async function DELETE(request) {
+  try {
+    const session = await requireAuth();
+    const stripe = getStripeClient();
+    const organizationId = session.organizationId;
+
+    const organization = await getOrganization(organizationId);
+    if (!organization || !organization.stripe_subscription_id) {
+      return NextResponse.json({ error: 'Subscription not found' }, { status: 404 });
+    }
+
+    // Cancel the subscription on Stripe
+    await stripe.subscriptions.cancel(organization.stripe_subscription_id);
+
+    // Get all businesses for the organization
+    // const [businesses] = await pool.query(
+    //   `SELECT id FROM businesses WHERE organization_id = ?`,
+    //   [organizationId]
+    // );
+
+    // Delete all businesses and their related data
+    // for (const business of businesses) {
+    //   // Manually delete related data that is not cascaded
+    //   await pool.query(`DELETE FROM ranking_snapshots WHERE business_id = ?`, [business.id]);
+    //   await pool.query(`DELETE FROM run_logs WHERE business_id = ?`, [business.id]);
+      
+    //   // Delete the business, which will trigger cascades for other data
+    //   await pool.query(`DELETE FROM businesses WHERE id = ?`, [business.id]);
+    // }
+
+    // Update the organization's subscription status
+    await pool.query(
+      `UPDATE organizations
+          SET subscription_status = 'canceled',
+              subscription_plan = NULL,
+              subscription_cancelled_at = NOW()
+        WHERE id = ?`,
+      [organizationId]
+    );
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    if (error instanceof AuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.statusCode });
+    }
+
+    console.error('Failed to cancel Stripe subscription', error);
+    return NextResponse.json({ error: 'Unable to cancel subscription' }, { status: 500 });
   }
 }

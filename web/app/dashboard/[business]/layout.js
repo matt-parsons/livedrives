@@ -1,6 +1,6 @@
 import { notFound, redirect } from 'next/navigation';
 import { AuthError, requireAuth } from '@/lib/authServer';
-import { loadBusiness, loadOrganizationBusinesses } from './helpers';
+import { loadBusiness, loadOrganizationBusinesses, loadSubscription, loadOrganizationTrial } from './helpers';
 import { BusinessLayoutProvider } from './BusinessLayoutContext';
 import { warmBusinessReviewSnapshot } from './reviews/reviewSnapshot';
 
@@ -19,10 +19,21 @@ export default async function BusinessLayout({ children, params }) {
     throw error;
   }
 
-  const business = await loadBusiness(session, identifier);
+  const [business, subscription, trial] = await Promise.all([
+    loadBusiness(session, identifier),
+    loadSubscription(session.organizationId),
+    loadOrganizationTrial(session.organizationId)
+  ]);
 
   if (!business) {
     notFound();
+  }
+
+  const hasSubscription = subscription && subscription.subscription_status === 'active';
+  const hasTrial = trial && trial.status === 'active' && new Date(trial.trial_ends_at) > new Date();
+
+  if (!hasSubscription && !hasTrial) {
+    redirect('/dashboard/upgrade');
   }
 
   warmBusinessReviewSnapshot(business).catch((error) => {
