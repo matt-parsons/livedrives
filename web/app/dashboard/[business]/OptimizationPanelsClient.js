@@ -119,6 +119,60 @@ export default function OptimizationPanelsClient({
     let isMounted = true;
     const controllers = new Set();
 
+    const pollPostsCompletion = async () => {
+      if (!isMounted || !meta?.postsTaskId) {
+        return;
+      }
+
+      const controller = new AbortController();
+      controllers.add(controller);
+
+      try {
+        const response = await fetch(`/api/places/posts-status/${meta.postsTaskId}`, {
+          method: 'GET',
+          signal: controller.signal,
+          cache: 'no-store'
+        });
+
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          throw new Error(data?.error || `Request failed with status ${response.status}`);
+        }
+
+        if (!data?.isComplete) {
+          return;
+        }
+
+        const params = new URLSearchParams({ placeId, forceRefresh: '1' });
+        if (businessId) {
+          params.set('businessId', String(businessId));
+        }
+
+        const refreshed = await fetch(`/api/optimization-data?${params.toString()}`, {
+          method: 'GET',
+          signal: controller.signal,
+          cache: 'no-store'
+        });
+
+        const payload = await refreshed.json().catch(() => ({}));
+        if (!refreshed.ok) {
+          throw new Error(payload?.error || `Request failed with status ${refreshed.status}`);
+        }
+
+        if (isMounted) {
+          setRoadmap(payload?.data?.roadmap ?? null);
+          setMeta(payload?.data?.meta ?? null);
+          setError(null);
+        }
+      } catch (err) {
+        if (!controller.signal.aborted && isMounted) {
+          console.error('Posts polling failed', err);
+        }
+      } finally {
+        controllers.delete(controller);
+      }
+    };
+
     const pollSidebarData = async () => {
       if (!isMounted) {
         return;
@@ -159,15 +213,16 @@ export default function OptimizationPanelsClient({
       }
     };
 
-    const intervalId = setInterval(pollSidebarData, 15_000);
-    pollSidebarData();
+    const intervalMs = meta?.postsTaskId ? 5_000 : 15_000;
+    const intervalId = setInterval(meta?.postsTaskId ? pollPostsCompletion : pollSidebarData, intervalMs);
+    (meta?.postsTaskId ? pollPostsCompletion : pollSidebarData)();
 
     return () => {
       isMounted = false;
       clearInterval(intervalId);
       controllers.forEach((controller) => controller.abort());
     };
-  }, [placeId, businessId, meta?.sidebarPending]);
+  }, [placeId, businessId, meta?.sidebarPending, meta?.postsTaskId]);
 
   const nextManualRefreshDate = meta?.nextManualRefreshAt
     ? new Date(meta.nextManualRefreshAt)
@@ -292,6 +347,7 @@ export default function OptimizationPanelsClient({
 
   const summaryLink = optimizationHref ?? '#';
   const automationLink = ctrHref ?? '#';
+  const isEnsuringLatestData = Boolean(refreshing || meta?.sidebarPending);
 
   return (
     <>
@@ -371,6 +427,13 @@ export default function OptimizationPanelsClient({
                   We could not compute optimization insights for this profile yet.
                 </p>
               )}
+
+              {isEnsuringLatestData ? (
+                <div className="dashboard-optimization-card__status-indicator" role="status" aria-live="polite">
+                  <span className="dashboard-optimization-card__spinner" aria-hidden="true" />
+                  <span>Making sure we have the latest data…</span>
+                </div>
+              ) : null}
             </div>
 
             <div className="surface-card surface-card--muted automation-cta">

@@ -69,6 +69,7 @@ export async function loadOptimizationData(placeId, options = {}) {
   let cache = await loadCachedProfile(placeId);
   let warning = null;
   let resolvedBusinessId = normalizeBusinessId(businessId) ?? cache?.businessId ?? null;
+  const cachedPostsTaskId = cache?.place?.postsTaskId ?? null;
 
   const shouldRefresh =
     forceRefresh ||
@@ -94,7 +95,10 @@ export async function loadOptimizationData(placeId, options = {}) {
 
   if (shouldRefresh) {
     try {
-      const { place, sidebar, sidebarPending: sidebarWasPending } = await fetchPlaceDetails(placeId, { signal });
+      const { place, sidebar, sidebarPending: sidebarWasPending } = await fetchPlaceDetails(placeId, {
+        signal,
+        postsTaskId: cachedPostsTaskId
+      });
       place.sidebar = place.sidebar ?? sidebar ?? null;
       sidebarPending = Boolean(sidebarWasPending);
 
@@ -153,10 +157,16 @@ export async function loadOptimizationData(placeId, options = {}) {
 
   const roadmap = buildOptimizationRoadmap(cache.place, { manualCompletions });
   const postsTaskId = cache.place?.postsTaskId ?? null;
+  const hasPendingPosts = Boolean(cache.place?.postsPending) && Boolean(postsTaskId);
 
   return {
     place: cache.place,
     roadmap,
-    meta: buildMeta(cache, { refreshedFromSource, warning, sidebarPending, postsTaskId })
+    meta: buildMeta(cache, {
+      refreshedFromSource,
+      warning,
+      sidebarPending: sidebarPending || hasPendingPosts,
+      postsTaskId
+    })
   };
 }

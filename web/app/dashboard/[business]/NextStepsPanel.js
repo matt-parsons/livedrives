@@ -488,7 +488,7 @@ export default function NextStepsPanel({ steps = [], optimizationHref = null, lo
           </div>
         ) : !hasTasks ? (
           <p className="next-steps-panel__message">
-            Great work! Automated checks did not surface additional actions right now.
+            You&apos;re in great shape! No critical actions needed. Keep up your weekly posting schedule and continue gathering reviews to stay competitive.
           </p>
         ) : (
           <ul className="next-steps-panel__list">

@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function UpgradeStripeSync({ sessionId }) {
+  const router = useRouter();
   const [status, setStatus] = useState('idle');
   const [error, setError] = useState(null);
 
@@ -47,6 +49,12 @@ export default function UpgradeStripeSync({ sessionId }) {
       isCancelled = true;
     };
   }, [sessionId]);
+
+  useEffect(() => {
+    if (status === 'success') {
+      router.push('/dashboard');
+    }
+  }, [status, router]);
 
   if (!sessionId || status === 'idle') {
     return null;

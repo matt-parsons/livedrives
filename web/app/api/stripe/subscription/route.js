@@ -13,15 +13,16 @@ function getStripeClient() {
   return new Stripe(secretKey, { apiVersion: '2024-06-20' });
 }
 
-async function updateOrganizationSubscription(organizationId, status, planId, renewsAt, stripeSubscriptionId) {
+async function updateOrganizationSubscription(organizationId, status, planId, planName, renewsAt, stripeSubscriptionId) {
   await pool.query(
     `UPDATE organizations
         SET subscription_status = ?,
             subscription_plan = ?,
+            stripe_subscription_name = ?,
             subscription_renews_at = ?,
             stripe_subscription_id = ?
       WHERE id = ?`,
-    [status ?? null, planId ?? null, renewsAt ?? null, stripeSubscriptionId ?? null, organizationId]
+    [status ?? null, planId ?? null, planName ?? null, renewsAt ?? null, stripeSubscriptionId ?? null, organizationId]
   );
 }
 
@@ -42,6 +43,11 @@ function resolveRenewalDate(subscription) {
 
 function resolvePlanId(subscription) {
   return subscription?.items?.data?.[0]?.price?.id ?? null;
+}
+
+function resolvePlanName(subscription) {
+  console.log(subscription);
+  return subscription?.items?.data?.[0]?.price?.product?.name ?? null;
 }
 
 export async function PATCH(request) {
@@ -67,20 +73,25 @@ export async function PATCH(request) {
 
     const subscription =
       typeof checkoutSession.subscription === 'string'
-        ? await stripe.subscriptions.retrieve(checkoutSession.subscription)
+        ? await stripe.subscriptions.retrieve(checkoutSession.subscription, { expand: ['items.data.price.product'] })
         : checkoutSession.subscription;
 
-    const subscriptionStatus = subscription?.status ?? checkoutSession.status ?? null;
-    const renewsAt = resolveRenewalDate(subscription);
+    const subscriptionStatus = subscription.status;
     const planId = resolvePlanId(subscription);
-    const stripeSubscriptionId = subscription.id
+    const planName = resolvePlanName(subscription);
+    const renewsAt = resolveRenewalDate(subscription);
+    const stripeSubscriptionId = subscription.id;
 
-    await updateOrganizationSubscription(session.organizationId, subscriptionStatus, planId, renewsAt, stripeSubscriptionId);
+    console.log('[Stripe Subscription] Retrieved subscription:', JSON.stringify(subscription, null, 2));
+    console.log('[Stripe Subscription] Resolved Plan Name:', planName);
+
+    await updateOrganizationSubscription(session.organizationId, subscriptionStatus, planId,  planName, renewsAt, stripeSubscriptionId);
     await removeOrganizationTrial(session.organizationId);
 
     return NextResponse.json({
       subscriptionStatus,
       subscriptionPlan: planId,
+      subscriptionPlanName: planName,
       subscriptionRenewsAt: renewsAt?.toISOString() ?? null
     });
   } catch (error) {
@@ -136,6 +147,7 @@ export async function DELETE(request) {
       `UPDATE organizations
           SET subscription_status = 'canceled',
               subscription_plan = NULL,
+              stripe_subscription_name = NULL,
               subscription_cancelled_at = NOW()
         WHERE id = ?`,
       [organizationId]

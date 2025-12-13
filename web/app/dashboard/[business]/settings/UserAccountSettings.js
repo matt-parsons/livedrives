@@ -172,7 +172,7 @@ export default function UserAccountSettings({ initialEmail = '' }) {
             autoComplete="email"
             disabled={emailSaving}
           />
-          <p className="text-xs text-muted-foreground">Updating email here will sync with Firebase and your user record.</p>
+          <p className="text-xs text-muted-foreground">Change your login email.</p>
         </div>
 
         {emailError ? (
