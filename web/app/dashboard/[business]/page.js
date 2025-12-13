@@ -361,6 +361,9 @@ export default async function BusinessDashboardPage({ params }) {
             ctrHref={ctrHref}
             nextRankingReportLabel={nextRankingReportLabel}
             lastRankingReportLabel={lastRankingReportLabel}
+            snapshot={reviewSnapshot}
+            dataForSeoPending={reviewPending}
+            reviewsHref={reviewsHref}
           />
           <ReviewPreview
             businessId={business.id}

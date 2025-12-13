@@ -40,13 +40,25 @@ export default function LatestGeoGridSnapshot({
   ];
 
   return (
+    <div className="dashboard-layout__sub-content">
+    <div className="business-dashboard__optimization-row">
+      {summaryCards.map((card) => (
+        <SummaryMetricCard
+          key={card.id}
+          title={card.title}
+          valueLabel={card.valueLabel}
+          indicator={card.indicator}
+          deltaLabel={card.deltaLabel}
+        />
+      ))}
+    </div>
     <section className="surface-card surface-card--muted latest-geogrid-card">
       {hasKeyword ? (
         <>
           <div className="latest-geogrid-card__status-row">
             <div>
-              <div className="section-title">Your Latest Ranking Heat Map</div>{' '}
-              <strong className="latest-geogrid-card__keyword">Keyword: &quot;{keywordLabel}&quot;</strong>
+              <div className="section-title">Your Latest Ranking Heat Map</div>
+              <span className="latest-geogrid-card__keyword">Keyword: <span className="strong">&quot;{keywordLabel}&quot;</span></span>
             </div>
             {keywordsHref ? (
               <Link className="cta-link" href={keywordsHref}>
@@ -54,32 +66,6 @@ export default function LatestGeoGridSnapshot({
               </Link>
             ) : null}
           </div>
-          <div className="latest-geogrid-card__stats">
-            {summaryCards.map((card) => (
-              <SummaryMetricCard
-                key={card.id}
-                title={card.title}
-                valueLabel={card.valueLabel}
-                indicator={card.indicator}
-                deltaLabel={card.deltaLabel}
-              />
-            ))}
-          </div>
-
-          {(lastRankingReportLabel || nextRankingReportLabel) ? (
-            <div className="latest-geogrid-card__run-info">
-              {lastRankingReportLabel ? (
-                <p>
-                  Last ranking report ran <strong>{lastRankingReportLabel}</strong>.
-                </p>
-              ) : null}
-              {nextRankingReportLabel ? (
-                <p>
-                  Next ranking report will be recorded <strong>{nextRankingReportLabel}</strong>.
-                </p>
-              ) : null}
-            </div>
-          ) : null}
 
           <div className="latest-geogrid-card__map">
             {hasMap ? (
@@ -123,6 +109,21 @@ export default function LatestGeoGridSnapshot({
           </p>
         </div>
       )}
+          {(lastRankingReportLabel || nextRankingReportLabel) ? (
+            <div className="latest-geogrid-card__run-info">
+              {lastRankingReportLabel ? (
+                <p>
+                  Last ranking report ran <strong>{lastRankingReportLabel}</strong>.
+                </p>
+              ) : null}
+              {nextRankingReportLabel ? (
+                <p>
+                  Next ranking report will be recorded <strong>{nextRankingReportLabel}</strong>.
+                </p>
+              ) : null}
+            </div>
+          ) : null}
     </section>
+    </div>
   );
 }

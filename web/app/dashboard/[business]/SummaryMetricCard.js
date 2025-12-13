@@ -47,28 +47,10 @@ export default function SummaryMetricCard({ title, valueLabel, indicator, deltaL
   const indicatorIcon = indicator?.icon ?? '→';
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '0.5rem',
-        padding: '1.25rem 1.4rem',
-        borderRadius: '20px',
-        backgroundColor: '#ffffff',
-        border: `1px solid ${palette.border}`,
-      }}
-    >
-      <span
-        style={{
-          fontSize: '0.82rem',
-          fontWeight: 600,
-          textTransform: 'uppercase',
-          letterSpacing: '0.05em',
-          color: '#6b7280'
-        }}
-      >
+    <div className="surface-card surface-card--muted dashboard-optimization-card">
+      <h2 class="section-title">
         {title}
-      </span>
+      </h2>
       <div
         style={{
           display: 'flex',

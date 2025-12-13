@@ -5,7 +5,9 @@ import Link from 'next/link';
 
 import LatestGeoGridSnapshot from './LatestGeoGridSnapshot';
 import NextStepsPanel from './NextStepsPanel';
+import SummaryMetricCard from './SummaryMetricCard';
 import { resolveLetterGrade, selectNextOptimizationSteps } from './optimization';
+import { buildRunTrendIndicator } from './trendIndicators';
 
 function formatTimestamp(value) {
   if (!value) {
@@ -42,7 +44,10 @@ export default function OptimizationPanelsClient({
   ctrHref = null,
   isAdmin = false,
   nextRankingReportLabel = null,
-  lastRankingReportLabel = null
+  lastRankingReportLabel = null,
+  snapshot,
+  dataForSeoPending,
+  reviewsHref
 }) {
   const [loading, setLoading] = useState(Boolean(placeId));
   const [error, setError] = useState(null);
@@ -223,6 +228,21 @@ export default function OptimizationPanelsClient({
       controllers.forEach((controller) => controller.abort());
     };
   }, [placeId, businessId, meta?.sidebarPending, meta?.postsTaskId]);
+  
+  const hasSnapshot = Boolean(snapshot);
+  const ratingCurrent = hasSnapshot ? Number(snapshot?.averageRating?.current) : null;
+  const ratingPrevious = hasSnapshot ? Number(snapshot?.averageRating?.previous) : null;
+  const ratingIndicator = buildRunTrendIndicator(
+    ratingCurrent !== null && ratingCurrent !== undefined &&
+      ratingPrevious !== null &&
+      ratingPrevious !== undefined
+      ? ratingCurrent - ratingPrevious
+      : null,
+    { unit: '', digits: 2 }
+  );
+  const ratingLabel =
+    Number.isFinite(ratingCurrent) && ratingCurrent > 0 ? `${ratingCurrent.toFixed(1)} ★` : '—';
+    
 
   const nextManualRefreshDate = meta?.nextManualRefreshAt
     ? new Date(meta.nextManualRefreshAt)
@@ -391,11 +411,6 @@ export default function OptimizationPanelsClient({
                       }}
                     />
                   </div>
-                  <div className="dashboard-optimization-card__cta">
-                    <Link className="cta-link" href={summaryLink}>
-                      View Pending Tasks ↗
-                    </Link>
-                  </div>
                   <div className="dashboard-optimization-card__meta">
                     {/* <p>{manualRefreshHelper}</p> */}
                     <p>Progress Last checked: {lastRefreshedLabel}.                  {placeId && isAdmin ? (
@@ -436,7 +451,33 @@ export default function OptimizationPanelsClient({
               ) : null}
             </div>
 
-            <div className="surface-card surface-card--muted automation-cta">
+
+            <SummaryMetricCard
+              title="Average rating trend"
+              valueLabel={ratingLabel}
+              indicator={ratingIndicator}
+              deltaLabel={
+                Number.isFinite(ratingPrevious)
+                  ? `from ${ratingPrevious.toFixed(1)} prior period`
+                  : null
+              }
+            />
+
+            <div className="surface-card surface-card--muted dashboard-optimization-card__actions">
+              <div>
+                <h2 className="section-title">GBP Optimization Tasks</h2>
+                <span>You have recommended tasks to improve your Google Business Profile ranking</span>
+              </div>
+              <div className="dashboard-optimization-card__cta">
+                <Link className="cta-link" href={summaryLink}>
+                  View Pending Tasks ↗
+                </Link>
+              </div>   
+            </div>
+
+         
+
+            {/* <div className="surface-card surface-card--muted automation-cta">
               <div className="automation-cta__icon" aria-hidden="true">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" data-dynamic-content="false"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"></path></svg>
               </div>
@@ -446,7 +487,7 @@ export default function OptimizationPanelsClient({
                   Our AI is continuously improving your click-through rate in the background. No action needed.{' '}
                 </p>
               </div>
-            </div>
+            </div> */}
           </div>
         </div>
       </section>
