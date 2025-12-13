@@ -17,6 +17,7 @@ export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const placeId = searchParams.get('placeId');
   const businessId = parseBusinessId(searchParams.get('businessId'));
+  const forceRefresh = searchParams.get('forceRefresh') === '1';
 
   if (!placeId) {
     return NextResponse.json(
@@ -26,7 +27,7 @@ export async function GET(request) {
   }
 
   try {
-    const data = await loadOptimizationData(placeId, { businessId });
+    const data = await loadOptimizationData(placeId, { businessId, forceRefresh });
     return NextResponse.json({ data });
   } catch (error) {
     const message =

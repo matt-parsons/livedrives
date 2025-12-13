@@ -13,7 +13,7 @@ export default function OptimizationRoadmapClient({ placeId, businessId = null, 
   const [roadmap, setRoadmap] = useState(null);
   const [meta, setMeta] = useState(null);
 
-  const fetchData = useCallback(async (controller) => {
+  const fetchData = useCallback(async (controller, { forceRefresh = false } = {}) => {
     if (!placeId) {
       setLoading(false);
       setError(null);
@@ -29,6 +29,9 @@ export default function OptimizationRoadmapClient({ placeId, businessId = null, 
       const params = new URLSearchParams({ placeId });
       if (businessId) {
         params.set('businessId', String(businessId));
+      }
+      if (forceRefresh) {
+        params.set('forceRefresh', '1');
       }
 
       const response = await fetch(`/api/optimization-data?${params.toString()}`, {
@@ -80,29 +83,33 @@ export default function OptimizationRoadmapClient({ placeId, businessId = null, 
     }
 
     const controller = new AbortController();
-    const timerId = setTimeout(() => {
-      const poll = async () => {
-        console.log('poll posts');
-        try {
-          const response = await fetch(`/api/places/posts-status/${meta.postsTaskId}`, {
-            signal: controller.signal
-          });
-          const data = await response.json();
-          if (data.isComplete && !controller.signal.aborted) {
-            // Data is ready, re-fetch the main data
-            fetchData(new AbortController());
-          }
-        } catch (err) {
-          if (!controller.signal.aborted) {
-            console.error('Polling failed:', err);
-          }
+    let inFlight = false;
+
+    const poll = async () => {
+      if (inFlight || controller.signal.aborted) return;
+      inFlight = true;
+      try {
+        const response = await fetch(`/api/places/posts-status/${meta.postsTaskId}`, {
+          signal: controller.signal
+        });
+        const data = await response.json();
+        if (data.isComplete && !controller.signal.aborted) {
+          fetchData(new AbortController(), { forceRefresh: true });
         }
-      };
-      poll();
-    }, POLLING_INTERVAL);
+      } catch (err) {
+        if (!controller.signal.aborted) {
+          console.error('Polling failed:', err);
+        }
+      } finally {
+        inFlight = false;
+      }
+    };
+
+    poll();
+    const intervalId = setInterval(poll, POLLING_INTERVAL);
 
     return () => {
-      clearTimeout(timerId);
+      clearInterval(intervalId);
       controller.abort();
     };
   }, [meta, fetchData]);

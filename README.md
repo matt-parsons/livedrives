@@ -33,3 +33,9 @@ variable so the suggestions API can call OpenAI:
 - `GOOGLE_BUSINESS_PROFILE_OAUTH_REDIRECT_URI` – Must match the callback route (`/api/google-business-profile/oauth`).
 - The new `GET /api/google-business-profile/oauth` route handles Google's redirect, exchanges the authorization code, stores the refresh/access tokens in the `gbp_authorizations` table, and redirects back to `/dashboard/<business-slug>/reviews`.
 - Review data is now fetched via stored tokens (automatically refreshed when needed) so a single refresh token can serve each business instead of relying on a global env var.
+
+## DataForSEO Google Posts (GBP updates)
+
+- `POST /api/places/sidebar` (when `SIDEBAR_PROVIDER=dataforseo`) creates a DataForSEO posts task and returns `postsTaskId`/`postsPending` so pages can render without waiting for results.
+- The dashboard polls `GET /api/places/posts-status/:taskId`; when complete it re-fetches `GET /api/optimization-data?forceRefresh=1` to store the latest post dates.
+- Optional: `DATAFORSEO_POSTS_TASK_TIMEOUT_MS` (default `2000`) to cap posts task network time per request.

@@ -246,7 +246,7 @@ function countOpenDays(periods) {
 }
 
 function buildPlacePayload(sidebarData, { timezone = null } = {}) {
-  console.log('✅✅ buildPlacePayload', sidebarData);
+  console.log('✅✅ buildPlacePayload');
 
   // Extract rating info
   const ratingValue = sidebarData.rating?.value;
@@ -328,6 +328,7 @@ function buildPlacePayload(sidebarData, { timezone = null } = {}) {
     posts,
     latestPostDate,
     postsPending: sidebarData.postsPending ?? false,
+    postsTaskId: sidebarData.postsTaskId ?? null,
     
     // Additional data
     attributes: sidebarData.attributes ?? null,
@@ -351,7 +352,7 @@ function buildPlacePayload(sidebarData, { timezone = null } = {}) {
 
 // ============ OPTIMIZED fetchPlaceDetails ============
 
-export async function fetchPlaceDetails(placeId, { signal } = {}) {
+export async function fetchPlaceDetails(placeId, { signal, postsTaskId = null } = {}) {
   if (!placeId) {
     throw new PlacesError('Place ID is required.', { status: 400 });
   }
@@ -360,6 +361,7 @@ export async function fetchPlaceDetails(placeId, { signal } = {}) {
   const sidebarOptions = {
     businessName: null,
     provider: SIDEBAR_PROVIDER,
+    ...(postsTaskId ? { postsTaskId } : {}),
     ...(SIDEBAR_PROVIDER === 'dataforseo' && {
       locationCode: Number(DATAFORSEO_LOCATION_CODE) || 2840,
       languageCode: DATAFORSEO_LANGUAGE_CODE || 'en'
@@ -392,6 +394,7 @@ export async function fetchPlaceDetails(placeId, { signal } = {}) {
 
     return {
       place,
+      sidebar: sidebarData,
       raw: sidebarData,
       sidebarPending: sidebarTimedOut
     };

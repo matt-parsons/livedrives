@@ -1,16 +1,26 @@
 import pool from '@lib/db/db.js';
 import { AuthError, requireAuth } from '@/lib/authServer';
-import { ensureGbpAccessToken } from '@/lib/googleBusinessProfile';
 import { buildOrganizationScopeClause } from '@/lib/organizations';
 import { BUSINESS_FIELDS } from '@/app/dashboard/[business]/helpers';
-import { loadReviewSnapshot } from '@/app/dashboard/[business]/reviews/reviewSnapshot';
+import { loadReviewFetchTask } from '@lib/db/reviewFetchTasks';
+import { fetchDataForSeoReviewsByTaskId } from '@lib/google/dataForSeoReviews.js';
 
 export const runtime = 'nodejs';
 
-function parseBooleanFlag(value) {
-  if (value === null || value === undefined) return false;
-  const normalized = value.toString().trim().toLowerCase();
-  return normalized === '1' || normalized === 'true' || normalized === 'yes';
+function resolveAuthHeader(options = {}) {
+  const base64Token = options.authToken || process.env.DATAFORSEO_AUTH;
+  const username = options.username || process.env.DATAFORSEO_USERNAME;
+  const password = options.password || process.env.DATAFORSEO_PASSWORD;
+
+  const token = base64Token || (username && password
+    ? Buffer.from(`${username}:${password}`).toString('base64')
+    : null);
+
+  if (!token) {
+    throw new Error('DataForSEO credentials are not configured.');
+  }
+
+  return `Basic ${token}`;
 }
 
 async function loadScopedBusiness(session, businessId) {
@@ -35,9 +45,6 @@ export async function GET(request, { params }) {
   }
 
   try {
-    const { searchParams } = new URL(request.url);
-    const forceRefresh = parseBooleanFlag(searchParams.get('forceRefresh'));
-
     const session = await requireAuth(request);
     const business = await loadScopedBusiness(session, businessId);
 
@@ -45,22 +52,29 @@ export async function GET(request, { params }) {
       return Response.json({ error: 'Business not found.' }, { status: 404 });
     }
 
-    const gbpAccessToken = await ensureGbpAccessToken(business.id);
-    const { snapshot, dataForSeoPending, dataForSeoTaskId } = await loadReviewSnapshot(
-      business,
-      gbpAccessToken,
-      forceRefresh
-        ? { bypassCache: true, pollIntervalMs: 250, timeoutMs: 2_000 }
-        : { skipRemoteFetch: true }
-    );
+    const task = await loadReviewFetchTask(businessId);
+    const taskId = task?.taskId ?? null;
 
-    return Response.json({ snapshot, dataForSeoPending, dataForSeoTaskId });
+    if (!taskId || task?.status !== 'pending') {
+      return Response.json({ isComplete: true, taskId });
+    }
+
+    const headers = {
+      Authorization: resolveAuthHeader(),
+      'Content-Type': 'application/json',
+    };
+
+    const reviews = await fetchDataForSeoReviewsByTaskId(taskId, headers);
+    const isComplete = Array.isArray(reviews) && reviews.length > 0;
+
+    return Response.json({ isComplete, taskId });
   } catch (error) {
     if (error instanceof AuthError) {
       return Response.json({ error: error.message }, { status: error.statusCode });
     }
 
-    console.error(`Failed to fetch review snapshot for business ${params?.businessId}`, error);
+    console.error(`Failed to fetch review task status for business ${params?.businessId}`, error);
     return Response.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
+

@@ -440,7 +440,7 @@ function scheduleBackgroundReviewSync({ businessId, placeId, taskId }) {
 export async function loadReviewSnapshot(
   business,
   gbpAccessToken,
-  { force = false, skipRemoteFetch = false } = {}
+  { force = false, skipRemoteFetch = false, bypassCache = false, pollIntervalMs = null, timeoutMs = null } = {}
 ) {
   const authorizationUrl = buildGbpAuthUrl({ state: `business:${business?.id ?? ''}` });
   const placeId = business?.gPlaceId ?? null;
@@ -456,20 +456,32 @@ export async function loadReviewSnapshot(
   const existingTask = await loadReviewFetchTask(business.id);
   const hasPendingTask = existingTask?.status === 'pending';
   const reusableTaskId = hasPendingTask ? existingTask.taskId : null;
+  let dataForSeoTaskId = reusableTaskId;
 
   if (skipRemoteFetch) {
-    return { snapshot: sanitizedCachedSnapshot, authorizationUrl, dataForSeoPending: hasPendingTask };
+    return {
+      snapshot: sanitizedCachedSnapshot,
+      authorizationUrl,
+      dataForSeoPending: hasPendingTask,
+      dataForSeoTaskId
+    };
   }
 
   if (
     !force &&
+    !bypassCache &&
     sanitizedCachedSnapshot &&
     cached.placeId === placeId &&
     cached.lastRefreshedAt &&
     Date.now() - cached.lastRefreshedAt.getTime() < ONE_DAY_MS
   ) {
     if (!needsAiSentiment) {
-      return { snapshot: sanitizedCachedSnapshot, authorizationUrl, dataForSeoPending: hasPendingTask };
+      return {
+        snapshot: sanitizedCachedSnapshot,
+        authorizationUrl,
+        dataForSeoPending: hasPendingTask,
+        dataForSeoTaskId
+      };
     }
   }
 
@@ -481,8 +493,9 @@ export async function loadReviewSnapshot(
     const { reviews, status, taskId } = placeId
       ? await fetchDataForSeoReviews(placeId, {
           taskId: reusableTaskId,
-          pollIntervalMs: force ? DEFAULT_POLL_INTERVAL_MS : INITIAL_POLL_INTERVAL_MS,
-          timeoutMs: force ? DEFAULT_TIMEOUT_MS : INITIAL_TIMEOUT_MS,
+          pollIntervalMs:
+            pollIntervalMs ?? (force ? DEFAULT_POLL_INTERVAL_MS : INITIAL_POLL_INTERVAL_MS),
+          timeoutMs: timeoutMs ?? (force ? DEFAULT_TIMEOUT_MS : INITIAL_TIMEOUT_MS),
           onTaskCreated: async (createdTaskId) => {
             await saveReviewFetchTask({
               businessId: business.id,
@@ -493,6 +506,7 @@ export async function loadReviewSnapshot(
           }
         })
       : { reviews: [], status: 'error', taskId: null };
+    dataForSeoTaskId = taskId ?? dataForSeoTaskId;
 
     console.log('DataForSEO reviews response', {
       businessId: business.id,
@@ -511,6 +525,7 @@ export async function loadReviewSnapshot(
       }
     } else if (status === 'pending' && taskId) {
       dataForSeoPending = true;
+      dataForSeoTaskId = taskId;
       await saveReviewFetchTask({
         businessId: business.id,
         placeId,
@@ -560,14 +575,24 @@ export async function loadReviewSnapshot(
     }
 
     await saveReviewSnapshot({ businessId: business.id, placeId, snapshot: sanitizedSnapshot });
-    return { snapshot: sanitizedSnapshot, authorizationUrl, dataForSeoPending };
+    return {
+      snapshot: sanitizedSnapshot,
+      authorizationUrl,
+      dataForSeoPending,
+      dataForSeoTaskId: dataForSeoPending ? dataForSeoTaskId : null
+    };
   }
 
   if (sanitizedCachedSnapshot && cached?.placeId === placeId) {
-    return { snapshot: sanitizedCachedSnapshot, authorizationUrl, dataForSeoPending };
+    return {
+      snapshot: sanitizedCachedSnapshot,
+      authorizationUrl,
+      dataForSeoPending,
+      dataForSeoTaskId
+    };
   }
 
-  return { snapshot: null, authorizationUrl, dataForSeoPending };
+  return { snapshot: null, authorizationUrl, dataForSeoPending, dataForSeoTaskId };
 }
 
 export async function warmBusinessReviewSnapshot(business) {

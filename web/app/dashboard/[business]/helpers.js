@@ -107,7 +107,7 @@ export async function loadBusiness(organizationContext, identifier) {
 
 export async function loadSubscription(organizationId) {
   const [rows] = await pool.query(
-    `SELECT subscription_status, subscription_plan, subscription_renews_at
+    `SELECT subscription_status, stripe_subscription_name AS subscription_plan, subscription_renews_at
        FROM organizations
       WHERE id = ?
       LIMIT 1`,

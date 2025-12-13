@@ -217,6 +217,7 @@ CREATE TABLE `organizations` (
   `name` varchar(255) NOT NULL,
   `subscription_status` varchar(32) DEFAULT NULL,
   `stripe_subscription_id` varchar(255) DEFAULT NULL,
+  `stripe_subscription_name` varchar(255) DEFAULT NULL,
   `subscription_plan` varchar(64) DEFAULT NULL,
   `subscription_renews_at` datetime DEFAULT NULL,
   `subscription_cancelled_at` datetime DEFAULT NULL,

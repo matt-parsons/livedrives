@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useEffect, useMemo, useState } from 'react';
 import SummaryMetricCard from './SummaryMetricCard';
 import { buildRunTrendIndicator } from './trendIndicators';
 
@@ -14,7 +15,84 @@ function formatPercent(value) {
   return `${Math.round(numeric)}%`;
 }
 
-export default function ReviewPreview({ snapshot, reviewsHref }) {
+export default function ReviewPreview({
+  businessId = null,
+  snapshot: initialSnapshot,
+  dataForSeoPending: initialDataForSeoPending = false,
+  reviewsHref
+}) {
+  const [snapshot, setSnapshot] = useState(initialSnapshot ?? null);
+  const [dataForSeoPending, setDataForSeoPending] = useState(Boolean(initialDataForSeoPending));
+  const [syncing, setSyncing] = useState(false);
+
+  useEffect(() => {
+    setSnapshot(initialSnapshot ?? null);
+    setDataForSeoPending(Boolean(initialDataForSeoPending));
+  }, [businessId, initialSnapshot, initialDataForSeoPending]);
+
+  useEffect(() => {
+    if (!businessId || !dataForSeoPending) {
+      return undefined;
+    }
+
+    let isMounted = true;
+    const controller = new AbortController();
+
+    const poll = async () => {
+      if (!isMounted || controller.signal.aborted) return;
+
+      setSyncing(true);
+      try {
+        const statusRes = await fetch(`/api/businesses/${businessId}/reviews/status`, {
+          method: 'GET',
+          signal: controller.signal,
+          cache: 'no-store'
+        });
+        const statusPayload = await statusRes.json().catch(() => ({}));
+        if (!statusRes.ok) {
+          throw new Error(statusPayload?.error || `Request failed with status ${statusRes.status}`);
+        }
+
+        if (!statusPayload?.isComplete) {
+          return;
+        }
+
+        const latestRes = await fetch(`/api/businesses/${businessId}/reviews/latest?forceRefresh=1`, {
+          method: 'GET',
+          signal: controller.signal,
+          cache: 'no-store'
+        });
+        const latestPayload = await latestRes.json().catch(() => ({}));
+        if (!latestRes.ok) {
+          throw new Error(latestPayload?.error || `Request failed with status ${latestRes.status}`);
+        }
+
+        if (isMounted) {
+          setSnapshot(latestPayload?.snapshot ?? null);
+          setDataForSeoPending(Boolean(latestPayload?.dataForSeoPending));
+        }
+      } catch (error) {
+        if (!controller.signal.aborted) {
+          console.error('Review preview polling failed', error);
+        }
+      } finally {
+        if (isMounted) {
+          setSyncing(false);
+        }
+      }
+    };
+
+    poll();
+    const intervalId = setInterval(poll, 5_000);
+
+    return () => {
+      isMounted = false;
+      clearInterval(intervalId);
+      controller.abort();
+    };
+  }, [businessId, dataForSeoPending]);
+
+  const isEnsuringLatestData = Boolean(syncing || dataForSeoPending);
   const hasSnapshot = Boolean(snapshot);
   const totalReviewsLabel =
     hasSnapshot && Number.isFinite(snapshot?.totalReviewCount)
@@ -48,6 +126,16 @@ export default function ReviewPreview({ snapshot, reviewsHref }) {
     { id: 'negative', label: 'Negative', value: sentiment?.negative }
   ].filter((entry) => Number.isFinite(Number(entry.value)));
   const sentimentSummary = sentiment?.summary ?? 'Sentiment insights will appear once reviews are synced.';
+
+  const statusIndicator = useMemo(() => {
+    if (!isEnsuringLatestData) return null;
+    return (
+      <div className="dashboard-optimization-card__status-indicator" role="status" aria-live="polite">
+        <span className="dashboard-optimization-card__spinner" aria-hidden="true" />
+        <span>Making sure we have the latest data…</span>
+      </div>
+    );
+  }, [isEnsuringLatestData]);
 
   return (
     <section className="surface-card surface-card--muted latest-geogrid-card" aria-labelledby="review-preview-heading">
@@ -115,6 +203,8 @@ export default function ReviewPreview({ snapshot, reviewsHref }) {
           unlock review insights.
         </div>
       )}
+
+      {statusIndicator}
     </section>
   );
 }

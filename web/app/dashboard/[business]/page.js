@@ -276,7 +276,10 @@ export default async function BusinessDashboardPage({ params }) {
   const mapCenter = latestRunDetails ? resolveCenter(latestRunDetails.run ?? {}, mapPoints) : null;
   const mapsApiKey =
     process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? process.env.GOOGLE_API_KEY ?? null;
-  const { snapshot: reviewSnapshot } = await loadReviewSnapshot(business, gbpAccessToken);
+  const { snapshot: reviewSnapshot, dataForSeoPending: reviewPending } = await loadReviewSnapshot(
+    business,
+    gbpAccessToken
+  );
   const nextRunSource =
     geoGridSchedule?.nextRunAt ??
     computeNextScheduledRunDate(
@@ -359,7 +362,12 @@ export default async function BusinessDashboardPage({ params }) {
             nextRankingReportLabel={nextRankingReportLabel}
             lastRankingReportLabel={lastRankingReportLabel}
           />
-          <ReviewPreview snapshot={reviewSnapshot} reviewsHref={reviewsHref} />
+          <ReviewPreview
+            businessId={business.id}
+            snapshot={reviewSnapshot}
+            dataForSeoPending={reviewPending}
+            reviewsHref={reviewsHref}
+          />
         </div>
       </main>
     </div>

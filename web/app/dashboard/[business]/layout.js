@@ -19,21 +19,28 @@ export default async function BusinessLayout({ children, params }) {
     throw error;
   }
 
-  const [business, subscription, trial] = await Promise.all([
-    loadBusiness(session, identifier),
-    loadSubscription(session.organizationId),
-    loadOrganizationTrial(session.organizationId)
-  ]);
+  const isAdmin = session.role === 'admin';
+  let hasSubscription = false;
+  let hasTrial = false;
+
+  if (!isAdmin) {
+    const [subscription, trial] = await Promise.all([
+      loadSubscription(session.organizationId),
+      loadOrganizationTrial(session.organizationId)
+    ]);
+
+    hasSubscription = subscription && subscription.subscription_status === 'active';
+    hasTrial = trial && trial.status === 'active' && new Date(trial.trial_ends_at) > new Date();
+
+    if (!hasSubscription && !hasTrial) {
+      redirect('/dashboard/upgrade');
+    }
+  }
+
+  const business = await loadBusiness(session, identifier);
 
   if (!business) {
     notFound();
-  }
-
-  const hasSubscription = subscription && subscription.subscription_status === 'active';
-  const hasTrial = trial && trial.status === 'active' && new Date(trial.trial_ends_at) > new Date();
-
-  if (!hasSubscription && !hasTrial) {
-    redirect('/dashboard/upgrade');
   }
 
   warmBusinessReviewSnapshot(business).catch((error) => {

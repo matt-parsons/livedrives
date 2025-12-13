@@ -12,8 +12,8 @@ const ConfirmationDialog = ({ open, onClose, onConfirm, title, children }) => {
         <h2>{title}</h2>
         <p>{children}</p>
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '2rem' }}>
-          <button onClick={onClose}>Cancel</button>
-          <button onClick={onConfirm} style={{ backgroundColor: 'red', color: 'white' }}>Confirm</button>
+          <button className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-60 ring-offset-background bg-primary text-primary-foreground shadow-sm hover:bg-primary/90 h-10 px-4 py-2" onClick={onClose}>Cancel</button>
+          <button className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-60 ring-offset-background bg-popover text-primary-foreground shadow-sm hover:bg-primary/90 h-10 px-4 py-2" onClick={onConfirm} style={{ backgroundColor: 'red', color: 'white' }}>Confirm</button>
         </div>
       </div>
     </div>
@@ -62,7 +62,7 @@ export default function SubscriptionSettings({ subscription }) {
             <p><strong>Plan:</strong> {subscription.subscription_plan}</p>
             <p><strong>Status:</strong> {subscription.subscription_status}</p>
             <p><strong>Renews on:</strong> {subscription.subscription_renews_at ? new Date(subscription.subscription_renews_at).toLocaleDateString() : 'N/A'}</p>
-            <button onClick={() => setDialogOpen(true)} disabled={isCanceling}>
+            <button className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-60 ring-offset-background bg-popover text-primary-foreground shadow-sm hover:bg-primary/90 h-10 px-4 py-2" onClick={() => setDialogOpen(true)} disabled={isCanceling}>
               {isCanceling ? 'Canceling...' : 'Cancel Subscription'}
             </button>
           </div>
