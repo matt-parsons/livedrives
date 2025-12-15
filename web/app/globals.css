@@ -932,12 +932,14 @@ textarea {
   margin: 0;
   font-size: 1.25rem;
   font-weight: 600;
+  color: rgba(255, 255, 255, 0.88) !important;
 }
 
 .latest-geogrid-card__map-overlay-copy {
   margin: 0.35rem 0 0;
   font-size: 0.95rem;
-  color: rgba(255, 255, 255, 0.88);
+  color: rgba(255, 255, 255, 0.88) !important;
+
 }
 
 .latest-geogrid-card__placeholder {
