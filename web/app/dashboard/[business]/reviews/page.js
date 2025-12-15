@@ -87,6 +87,8 @@ async function ReviewsContent({ business, authorizationUrl, canRefreshReviews })
       authorizationUrl={authorizationUrl}
       canSchedulePosts={hasGbpAccess}
       canRefreshReviews={canRefreshReviews}
+      businessName={business.businessName}
+      placeId={business.gPlaceId ?? null}
     />
   );
 }

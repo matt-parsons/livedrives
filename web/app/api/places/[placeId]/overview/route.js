@@ -33,6 +33,7 @@ function buildPrompt(place, roadmap) {
     'Write a short overview (4-6 sentences) that explains:',
     '- The most important fixes needed and the impact they can have.',
     '- One or two things the profile is already doing well, if any.',
+    '- Phrase any gaps as opportunities to improve instead of negatives.',
     'Avoid jargon and keep it conversational.',
     'Return JSON using exactly this shape: {"overview": "..."}',
     '',
