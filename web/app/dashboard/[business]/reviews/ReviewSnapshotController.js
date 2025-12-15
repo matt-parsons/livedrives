@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import ReviewOverview from './ReviewOverview';
 import ReviewPendingNotice from './ReviewPendingNotice';
 import ReviewPermissionsGate from './ReviewPermissionsGate';
+import BusinessAiOverviewCard from '../BusinessAiOverviewCard';
 
 const POLL_INTERVAL_MS = 5000;
 
@@ -15,7 +16,9 @@ export default function ReviewSnapshotController({
   timezone,
   authorizationUrl,
   canSchedulePosts,
-  canRefreshReviews
+  canRefreshReviews,
+  businessName,
+  placeId
 }) {
   const [snapshot, setSnapshot] = useState(initialSnapshot);
   const [dataForSeoPending, setDataForSeoPending] = useState(
@@ -99,15 +102,27 @@ export default function ReviewSnapshotController({
     return <ReviewPermissionsGate authorizationUrl={authorizationUrl} />;
   }
 
+  const aiOverviewReady = Boolean(snapshot && placeId);
+
   return (
-    <ReviewOverview
-      snapshot={snapshot}
-      scheduledPosts={scheduledPosts}
-      businessId={businessId}
-      timezone={timezone}
-      authorizationUrl={authorizationUrl}
-      canSchedulePosts={canSchedulePosts}
-      canRefreshReviews={canRefreshReviews}
-    />
+    <div className="flex flex-col gap-6">
+      {aiOverviewReady ? (
+        <BusinessAiOverviewCard
+          placeId={placeId}
+          businessName={businessName}
+          isReady={aiOverviewReady}
+        />
+      ) : null}
+
+      <ReviewOverview
+        snapshot={snapshot}
+        scheduledPosts={scheduledPosts}
+        businessId={businessId}
+        timezone={timezone}
+        authorizationUrl={authorizationUrl}
+        canSchedulePosts={canSchedulePosts}
+        canRefreshReviews={canRefreshReviews}
+      />
+    </div>
   );
 }
