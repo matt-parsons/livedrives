@@ -59,7 +59,7 @@ export default function BusinessAiOverviewCard({
         throw new Error('Received an unexpected response while generating the overview.');
       }
 
-      const safeOverview = buildOpportunityMessage(payload?.overview || '');
+      const safeOverview = payload?.overview || '';
       setOverview(safeOverview);
     } catch (err) {
       setError(err?.message || 'Unable to generate AI overview right now.');
