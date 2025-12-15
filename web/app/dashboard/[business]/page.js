@@ -22,6 +22,7 @@ import { ensureGbpAccessToken } from '@/lib/googleBusinessProfile';
 import { loadReviewSnapshot } from './reviews/reviewSnapshot';
 import ReviewPreview from './ReviewPreview';
 import BusinessAiOverviewCard from './BusinessAiOverviewCard';
+import RankingAiOverviewCard from './RankingAiOverviewCard';
 
 function resolveStatus(status) {
   if (!status) {

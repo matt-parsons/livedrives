@@ -58,6 +58,14 @@ export const GEO_GRID_RUN_FIELDS = `
 `;
 
 export function isNumericIdentifier(value) {
+  if (typeof value === 'number') {
+    return Number.isFinite(value) && Number.isInteger(value) && value > 0;
+  }
+
+  if (typeof value === 'bigint') {
+    return value > 0n;
+  }
+
   return typeof value === 'string' && /^[0-9]+$/.test(value);
 }
 
@@ -81,7 +89,12 @@ export function formatTrend(first, latest, digits = 2, unitSuffix = '') {
 }
 
 export async function loadBusiness(organizationContext, identifier) {
-  const numericId = isNumericIdentifier(identifier) ? Number(identifier) : null;
+  const identifierSlug = identifier === null || identifier === undefined ? '' : String(identifier);
+  const numericId = isNumericIdentifier(identifier)
+    ? typeof identifier === 'bigint'
+      ? identifier
+      : Number(identifierSlug)
+    : null;
   const scope = buildOrganizationScopeClause(organizationContext);
 
   const query = numericId === null
@@ -97,8 +110,8 @@ export async function loadBusiness(organizationContext, identifier) {
         LIMIT 1`;
 
   const params = numericId === null
-    ? [...scope.params, identifier]
-    : [...scope.params, identifier, numericId];
+    ? [...scope.params, identifierSlug]
+    : [...scope.params, identifierSlug, numericId];
 
   const [rows] = await pool.query(query, params);
 

@@ -37,14 +37,38 @@ export default function UpgradeCheckoutButton({ priceId }) {
   };
 
   return (
-    <div className="flex flex-col items-center gap-2">
+    <div className="flex w-full flex-col items-center gap-2">
       <button
         type="button"
         onClick={handleCheckout}
         disabled={loading}
-        className="rounded bg-blue-600 px-6 py-3 text-white shadow hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-70"
+        className="group flex w-full items-center justify-center gap-3 rounded-xl border border-blue-600 bg-white px-6 py-4 text-base font-semibold text-blue-600 shadow-sm transition hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-60"
       >
-        {loading ? 'Redirecting…' : 'Upgrade with Stripe'}
+        <span>{loading ? 'Redirecting…' : 'Start for Free'}</span>
+        {loading ? null : (
+          <svg
+            viewBox="0 0 20 20"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-5 w-5 transition-transform group-hover:translate-x-0.5"
+            aria-hidden="true"
+          >
+            <path
+              d="M3.75 10H16.25"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            <path
+              d="M11.25 5L16.25 10L11.25 15"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        )}
       </button>
       {error ? <p className="text-sm text-red-600">{error}</p> : null}
     </div>

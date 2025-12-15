@@ -99,15 +99,64 @@ export default async function UpgradePage({ searchParams }) {
           <main className="dashboard-layout__main">
             <DashboardBusinessHeader organizationId={session.organizationId} />
             <div className="dashboard-layout__content">
-              <div className="flex min-h-screen flex-col items-center justify-center gap-6 p-12 text-center">
+              <div className="flex flex-col items-center justify-center gap-8 p-12 text-center">
                 <div>
-                  <h1 className="text-4xl font-bold">Upgrade Your Plan</h1>
+                  <h1 className="text-4xl font-bold">Simple, Transparent Pricing</h1>
                   <p className="mt-4 text-lg text-slate-700">
-                    Activate billing to continue using LiveDrives without interruption.
+                    Get More Calls, No Ad Spend Required!
                   </p>
                 </div>
 
-                <UpgradeCheckoutButton />
+                <section aria-label="Starter pricing" className="w-full max-w-sm text-left">
+                  <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+                    <p className="text-sm font-semibold tracking-widest text-blue-600">STARTER</p>
+
+                    <div className="mt-3 flex items-baseline gap-2">
+                      <span className="text-6xl font-extrabold tracking-tight text-slate-900">$247</span>
+                      <span className="text-lg font-semibold text-slate-600">/month</span>
+                    </div>
+
+                    <p className="mt-3 text-base text-slate-600">Maximum flexibility.</p>
+
+                    <ul className="mt-8 space-y-4">
+                      {[
+                        'Local Rank Tracker',
+                        'Google Business Profile (GBP) AI Checklist',
+                        'Reputation Monitoring',
+                        'Competitor Tracking',
+                        '1 Business Location',
+                        'VIP Support',
+                        '1 HR Private Onboarding',
+                        '7 day free trial'
+                      ].map((label) => (
+                        <li key={label} className="flex items-start gap-3 text-slate-800">
+                          <span className="mt-0.5 inline-flex h-5 w-5 flex-none items-center justify-center rounded-full bg-blue-600">
+                            <svg
+                              viewBox="0 0 20 20"
+                              fill="none"
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="h-3.5 w-3.5"
+                              aria-hidden="true"
+                            >
+                              <path
+                                d="M16.25 5.75L8.375 13.625L3.75 9"
+                                stroke="white"
+                                strokeWidth="2.25"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              />
+                            </svg>
+                          </span>
+                          <span className="text-base font-medium leading-snug">{label}</span>
+                        </li>
+                      ))}
+                    </ul>
+
+                    <div className="mt-10">
+                      <UpgradeCheckoutButton />
+                    </div>
+                  </div>
+                </section>
                 <UpgradeStripeSync sessionId={checkoutSessionId} />
               </div>
             </div>
