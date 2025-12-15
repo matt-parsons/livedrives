@@ -111,7 +111,6 @@ export default function ReviewSnapshotController({
           placeId={placeId}
           businessName={businessName}
           isReady={aiOverviewReady}
-          prefilledOverview={snapshot?.sentiment?.summary ?? ''}
         />
       ) : null}
 

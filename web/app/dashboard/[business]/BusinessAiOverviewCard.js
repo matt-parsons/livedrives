@@ -11,12 +11,7 @@ function buildOpportunityMessage(text) {
   return text.replace(/\b(issues?|problems?|weaknesses?)\b/gi, (match) => `${match} (opportunity)`);
 }
 
-export default function BusinessAiOverviewCard({
-  placeId = null,
-  businessName = '',
-  isReady = false,
-  prefilledOverview = ''
-}) {
+export default function BusinessAiOverviewCard({ placeId = null, businessName = '', isReady = false }) {
   const [overview, setOverview] = useState('');
   const [displayedText, setDisplayedText] = useState('');
   const [loading, setLoading] = useState(false);
@@ -59,7 +54,7 @@ export default function BusinessAiOverviewCard({
         throw new Error('Received an unexpected response while generating the overview.');
       }
 
-      const safeOverview = payload?.overview || '';
+      const safeOverview = buildOpportunityMessage(payload?.overview || '');
       setOverview(safeOverview);
     } catch (err) {
       setError(err?.message || 'Unable to generate AI overview right now.');
@@ -69,18 +64,12 @@ export default function BusinessAiOverviewCard({
   }, [placeId]);
 
   useEffect(() => {
-    if (!prefilledOverview) return;
-
-    setOverview(buildOpportunityMessage(prefilledOverview));
-  }, [prefilledOverview]);
-
-  useEffect(() => {
-    if (!isReady || !placeId || prefilledOverview) {
+    if (!isReady || !placeId) {
       return undefined;
     }
 
     fetchOverview();
-  }, [fetchOverview, isReady, placeId, prefilledOverview]);
+  }, [fetchOverview, isReady, placeId]);
 
   useEffect(() => {
     if (!overview) {
