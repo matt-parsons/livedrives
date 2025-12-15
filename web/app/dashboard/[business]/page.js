@@ -21,6 +21,7 @@ import KeywordOriginZoneForm from '../get-started/KeywordOriginZoneForm';
 import { ensureGbpAccessToken } from '@/lib/googleBusinessProfile';
 import { loadReviewSnapshot } from './reviews/reviewSnapshot';
 import ReviewPreview from './ReviewPreview';
+import BusinessAiOverviewCard from './BusinessAiOverviewCard';
 
 function resolveStatus(status) {
   if (!status) {
@@ -293,6 +294,8 @@ export default async function BusinessDashboardPage({ params }) {
     business.timezone
   );
 
+  const aiOverviewReady = hasSelectedKeyword && Boolean(reviewSnapshot) && !reviewPending;
+
   const businessIdentifier = business.businessSlug ?? String(business.id);
   return (
     <div className="dashboard-layout__body">
@@ -306,6 +309,14 @@ export default async function BusinessDashboardPage({ params }) {
       <main className="dashboard-layout__main">
         <DashboardBusinessHeader organizationId={session.organizationId} />
         <div className="dashboard-layout__content">
+          {aiOverviewReady && business.gPlaceId ? (
+            <BusinessAiOverviewCard
+              placeId={business.gPlaceId}
+              businessName={business.businessName}
+              isReady={aiOverviewReady}
+            />
+          ) : null}
+
           {!hasSelectedKeyword ? (
             <section className="rounded-2xl border border-border/60 bg-card/90 p-6 shadow-sm">
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
