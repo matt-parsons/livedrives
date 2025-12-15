@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Sparkles } from 'lucide-react';
 
-const TYPING_INTERVAL_MS = 16;
+const TYPING_INTERVAL_MS = 30;
 
 function buildOpportunityMessage(text) {
   if (!text) return '';
@@ -35,10 +35,23 @@ export default function BusinessAiOverviewCard({ placeId = null, businessName = 
       const response = await fetch(`/api/places/${encodeURIComponent(placeId)}/overview`, {
         cache: 'no-store'
       });
-      const payload = await response.json().catch(() => ({}));
+      const body = await response.text();
 
       if (!response.ok) {
-        throw new Error(payload?.error || 'Unable to generate AI overview right now.');
+        let errorMessage = 'Unable to generate AI overview right now.';
+        try {
+          errorMessage = JSON.parse(body).error || errorMessage;
+        } catch {
+          if (body) errorMessage = body;
+        }
+        throw new Error(errorMessage);
+      }
+
+      let payload = {};
+      try {
+        payload = JSON.parse(body);
+      } catch (err) {
+        throw new Error('Received an unexpected response while generating the overview.');
       }
 
       const safeOverview = buildOpportunityMessage(payload?.overview || '');
@@ -56,13 +69,6 @@ export default function BusinessAiOverviewCard({ placeId = null, businessName = 
     }
 
     fetchOverview();
-
-    return () => {
-      if (typingIntervalRef.current) {
-        clearInterval(typingIntervalRef.current);
-        typingIntervalRef.current = null;
-      }
-    };
   }, [fetchOverview, isReady, placeId]);
 
   useEffect(() => {
