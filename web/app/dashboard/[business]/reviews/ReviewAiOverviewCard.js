@@ -11,7 +11,7 @@ function buildOpportunityMessage(text) {
   return text.replace(/\b(issues?|problems?|weaknesses?)\b/gi, (match) => `${match} (opportunity)`);
 }
 
-export default function BusinessAiOverviewCard({ placeId = null, businessName = '', isReady = false }) {
+export default function ReviewAiOverviewCard({ businessId = null, businessName = '', isReady = false }) {
   const [overview, setOverview] = useState('');
   const [displayedText, setDisplayedText] = useState('');
   const [loading, setLoading] = useState(false);
@@ -20,11 +20,11 @@ export default function BusinessAiOverviewCard({ placeId = null, businessName = 
 
   const subtitle = useMemo(() => {
     if (!businessName) return 'Live guidance once your data is ready';
-    return `AI overview tailored for ${businessName}`;
+    return `Review overview tailored for ${businessName}`;
   }, [businessName]);
 
   const fetchOverview = useCallback(async () => {
-    if (!placeId) {
+    if (!businessId) {
       return;
     }
 
@@ -32,7 +32,7 @@ export default function BusinessAiOverviewCard({ placeId = null, businessName = 
     setError(null);
 
     try {
-      const response = await fetch(`/api/places/${encodeURIComponent(placeId)}/overview`, {
+      const response = await fetch(`/api/businesses/${businessId}/reviews/latest`, {
         cache: 'no-store'
       });
       const body = await response.text();
@@ -54,22 +54,22 @@ export default function BusinessAiOverviewCard({ placeId = null, businessName = 
         throw new Error('Received an unexpected response while generating the overview.');
       }
 
-      const safeOverview = buildOpportunityMessage(payload?.overview || '');
+      const safeOverview = buildOpportunityMessage(payload?.snapshot?.sentiment?.summary || '');
       setOverview(safeOverview);
     } catch (err) {
       setError(err?.message || 'Unable to generate AI overview right now.');
     } finally {
       setLoading(false);
     }
-  }, [placeId]);
+  }, [businessId]);
 
   useEffect(() => {
-    if (!isReady || !placeId) {
+    if (!isReady || !businessId) {
       return undefined;
     }
 
     fetchOverview();
-  }, [fetchOverview, isReady, placeId]);
+  }, [fetchOverview, isReady, businessId]);
 
   useEffect(() => {
     if (!overview) {

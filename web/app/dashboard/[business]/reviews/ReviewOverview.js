@@ -218,10 +218,6 @@ export default function ReviewOverview({
         />
       </div>
 
-      <div className="rounded-lg bg-muted/60 p-4 text-sm leading-relaxed text-muted-foreground">
-        {snapshot.sentiment.summary}
-      </div>
-
       <div className="grid gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-2 shadow-sm">
           <CardHeader>

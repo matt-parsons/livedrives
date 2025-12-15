@@ -16,6 +16,7 @@ import {
   loadCtrKeywordOverview
 } from '../helpers';
 import { buildRunTrendIndicator } from '../trendIndicators';
+import KeywordAiOverviewCard from './KeywordAiOverviewCard';
 
 export const metadata = {
   title: 'Keywords · Local Paint Pilot'
@@ -431,6 +432,7 @@ export default async function BusinessKeywordsPage({ params, searchParams }) {
         <main className="dashboard-layout__main">
           <DashboardBusinessHeader organizationId={session.organizationId} />
           <div className="dashboard-layout__content">
+            <KeywordAiOverviewCard businessId={business.id} businessName={business.businessName} isReady={true} />
             <div className="section-header">
               <div>
                 <h2 className="section-title">Ranking Reports</h2>

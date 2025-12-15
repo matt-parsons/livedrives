@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import ReviewOverview from './ReviewOverview';
 import ReviewPendingNotice from './ReviewPendingNotice';
 import ReviewPermissionsGate from './ReviewPermissionsGate';
-import BusinessAiOverviewCard from '../BusinessAiOverviewCard';
+import BusinessReviewOverviewCard from './BusinessReviewOverviewCard';
 
 const POLL_INTERVAL_MS = 5000;
 
@@ -107,8 +107,8 @@ export default function ReviewSnapshotController({
   return (
     <div className="flex flex-col gap-6">
       {aiOverviewReady ? (
-        <BusinessAiOverviewCard
-          placeId={placeId}
+        <BusinessReviewOverviewCard
+          businessId={businessId}
           businessName={businessName}
           isReady={aiOverviewReady}
         />

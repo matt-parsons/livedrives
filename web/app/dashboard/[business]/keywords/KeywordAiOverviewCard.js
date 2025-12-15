@@ -11,7 +11,7 @@ function buildOpportunityMessage(text) {
   return text.replace(/\b(issues?|problems?|weaknesses?)\b/gi, (match) => `${match} (opportunity)`);
 }
 
-export default function BusinessAiOverviewCard({ placeId = null, businessName = '', isReady = false }) {
+export default function KeywordAiOverviewCard({ businessId = null, businessName = '', isReady = false }) {
   const [overview, setOverview] = useState('');
   const [displayedText, setDisplayedText] = useState('');
   const [loading, setLoading] = useState(false);
@@ -20,11 +20,11 @@ export default function BusinessAiOverviewCard({ placeId = null, businessName = 
 
   const subtitle = useMemo(() => {
     if (!businessName) return 'Live guidance once your data is ready';
-    return `AI overview tailored for ${businessName}`;
+    return `Ranking overview tailored for ${businessName}`;
   }, [businessName]);
 
   const fetchOverview = useCallback(async () => {
-    if (!placeId) {
+    if (!businessId) {
       return;
     }
 
@@ -32,7 +32,7 @@ export default function BusinessAiOverviewCard({ placeId = null, businessName = 
     setError(null);
 
     try {
-      const response = await fetch(`/api/places/${encodeURIComponent(placeId)}/overview`, {
+      const response = await fetch(`/api/businesses/${businessId}/ranking-overview`, {
         cache: 'no-store'
       });
       const body = await response.text();
@@ -61,15 +61,15 @@ export default function BusinessAiOverviewCard({ placeId = null, businessName = 
     } finally {
       setLoading(false);
     }
-  }, [placeId]);
+  }, [businessId]);
 
   useEffect(() => {
-    if (!isReady || !placeId) {
+    if (!isReady || !businessId) {
       return undefined;
     }
 
     fetchOverview();
-  }, [fetchOverview, isReady, placeId]);
+  }, [fetchOverview, isReady, businessId]);
 
   useEffect(() => {
     if (!overview) {
