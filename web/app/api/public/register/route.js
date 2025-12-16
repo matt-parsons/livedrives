@@ -6,6 +6,7 @@ import {
   exchangeCustomTokenForIdToken,
   sendFirebaseVerificationEmail
 } from '@/lib/firebaseVerification';
+import { createHighLevelContact, isHighLevelConfigured } from '@/lib/highLevel';
 
 export const runtime = 'nodejs';
 
@@ -41,6 +42,7 @@ export async function POST(request) {
     const trimmedName = typeof name === 'string' ? name.trim() : '';
     const sanitizedName = trimmedName ? trimmedName.slice(0, 255) : '';
     const firebaseDisplayName = sanitizedName ? sanitizedName.slice(0, 128) : undefined;
+    let recentLeadContext = null;
 
     let userRecord;
 
@@ -109,6 +111,19 @@ export async function POST(request) {
         [userId, trimmedEmail]
       );
 
+      const [leadRows] = await connection.query(
+        `SELECT place_name AS placeName, place_address AS placeAddress
+           FROM funnel_leads
+          WHERE email = ?
+          ORDER BY preview_completed_at IS NULL, preview_completed_at DESC, preview_started_at DESC, created_at DESC
+          LIMIT 1`,
+        [trimmedEmail]
+      );
+
+      if (leadRows.length) {
+        recentLeadContext = leadRows[0];
+      }
+
       const [membershipRows] = await connection.query(
         `SELECT organization_id AS organizationId, role
            FROM user_org_members
@@ -152,6 +167,22 @@ export async function POST(request) {
       const sessionCookie = await adminAuth.createSessionCookie(idToken, {
         expiresIn: SESSION_MAX_AGE_MS
       });
+
+      if (isHighLevelConfigured()) {
+        try {
+          await createHighLevelContact({
+            email: trimmedEmail,
+            name: sanitizedName || trimmedEmail.split('@')[0] || trimmedEmail,
+            companyName: recentLeadContext?.placeName || undefined,
+            address1: recentLeadContext?.placeAddress || undefined,
+            tags: ['account_trial']
+          });
+        } catch (error) {
+          console.error('Failed to sync HighLevel contact for registration', error?.response?.data || error);
+        }
+      } else {
+        console.warn('HighLevel API not configured; skipping contact sync for registration.');
+      }
 
       const body = {
         success: true,

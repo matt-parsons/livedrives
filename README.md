@@ -34,6 +34,13 @@ variable so the suggestions API can call OpenAI:
 - The new `GET /api/google-business-profile/oauth` route handles Google's redirect, exchanges the authorization code, stores the refresh/access tokens in the `gbp_authorizations` table, and redirects back to `/dashboard/<business-slug>/reviews`.
 - Review data is now fetched via stored tokens (automatically refreshed when needed) so a single refresh token can serve each business instead of relying on a global env var.
 
+## HighLevel CRM sync
+
+- `HIGH_LEVEL_CLIENT_ID` – Client ID for the HighLevel API client.
+- `HIGH_LEVEL_CLIENT_SECRET` – Client secret for the HighLevel API client.
+- `HIGH_LEVEL_LOCATION_ID` – The HighLevel location identifier to store new trial contacts.
+- Registrations attempt to create/update a contact tagged `account_trial` using the email/name collected during signup.
+
 ## DataForSEO Google Posts (GBP updates)
 
 - `POST /api/places/sidebar` (when `SIDEBAR_PROVIDER=dataforseo`) creates a DataForSEO posts task and returns `postsTaskId`/`postsPending` so pages can render without waiting for results.
