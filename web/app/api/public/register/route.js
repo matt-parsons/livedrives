@@ -6,6 +6,7 @@ import {
   exchangeCustomTokenForIdToken,
   sendFirebaseVerificationEmail
 } from '@/lib/firebaseVerification';
+import { createHighLevelContact, isHighLevelConfigured } from '@/lib/highLevel';
 
 export const runtime = 'nodejs';
 
@@ -152,6 +153,20 @@ export async function POST(request) {
       const sessionCookie = await adminAuth.createSessionCookie(idToken, {
         expiresIn: SESSION_MAX_AGE_MS
       });
+
+      if (isHighLevelConfigured()) {
+        try {
+          await createHighLevelContact({
+            email: trimmedEmail,
+            name: sanitizedName || trimmedEmail.split('@')[0] || trimmedEmail,
+            tags: ['account_trial']
+          });
+        } catch (error) {
+          console.error('Failed to sync HighLevel contact for registration', error?.response?.data || error);
+        }
+      } else {
+        console.warn('HighLevel API not configured; skipping contact sync for registration.');
+      }
 
       const body = {
         success: true,
