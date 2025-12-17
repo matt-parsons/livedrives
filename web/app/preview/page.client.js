@@ -434,6 +434,22 @@ export default function LandingPage() {
         setTrialEmail((current) => current || trimmedEmail);
 
         await beginAnalysis(resolvedPlace);
+
+        try {
+          await fetch('/api/highlevel/contact', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email: trimmedEmail,
+              name: selectedPlace.name,
+              address1: selectedPlace.formattedAddress,
+              tags: ['preview_funnel'],
+            }),
+          });
+        } catch (error) {
+          console.error('Failed to sync HighLevel contact for registration', error);
+        }
+
       } catch (error) {
         console.error('Lead capture failed', error);
         setLeadStatus('idle');

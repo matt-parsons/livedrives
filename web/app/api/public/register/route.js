@@ -6,7 +6,10 @@ import {
   exchangeCustomTokenForIdToken,
   sendFirebaseVerificationEmail
 } from '@/lib/firebaseVerification';
-import { createHighLevelContact, isHighLevelConfigured } from '@/lib/highLevel';
+import {
+  createHighLevelContact,
+  isHighLevelConfigured
+} from '@/lib/highLevel.server';
 
 export const runtime = 'nodejs';
 
@@ -155,12 +158,26 @@ export async function POST(request) {
       });
 
       if (isHighLevelConfigured()) {
+        console.log('[HIGHLEVEL] Syncing contact for new registration:');
+        const [businessRows] = await connection.query(
+          `SELECT business_name AS businessName, destination_address1 AS address1
+            FROM businesses
+            WHERE organization_id = ?
+            LIMIT 1`,
+          [organizationId]
+        );
+
+      let businessDetails = businessRows[0];
+
         try {
           await createHighLevelContact({
             email: trimmedEmail,
             name: sanitizedName || trimmedEmail.split('@')[0] || trimmedEmail,
-            tags: ['account_trial']
+            tags: ['account_trial'],
+            companyName: businessDetails?.businessName,
+            address1: businessDetails?.address1
           });
+          console.log('[HIGHLEVEL] CREATED');
         } catch (error) {
           console.error('Failed to sync HighLevel contact for registration', error?.response?.data || error);
         }
