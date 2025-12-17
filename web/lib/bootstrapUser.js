@@ -8,6 +8,10 @@ import {
   normalizeBusinessPayload
 } from '@/app/api/businesses/utils.js';
 
+import {
+  createHighLevelContact,
+  isHighLevelConfigured
+} from '@/lib/highLevel.server';
 const cacheApi = cacheModule?.default ?? cacheModule;
 
 function parseJson(value) {
@@ -333,6 +337,22 @@ export async function bootstrapUser(decoded) {
     } catch (seedError) {
       console.warn('Failed to auto-create preview business', seedError);
     }
+
+    if (isHighLevelConfigured()) {
+      console.log('[HIGHLEVEL] Syncing contact for new registration:');
+      try {
+        await createHighLevelContact({
+          email: decoded.email,
+          name: decoded.email.split('@')[0],
+          tags: ['account_trial']
+        });
+        console.log('[HIGHLEVEL] CREATED');
+      } catch (error) {
+        console.error('Failed to sync HighLevel contact for registration', error?.response?.data || error);
+      }
+    } else {
+      console.warn('HighLevel API not configured; skipping contact sync for registration.');
+    }    
 
     await connection.commit();
 
