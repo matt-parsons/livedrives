@@ -7,7 +7,7 @@ const path      = require('path');
 const schedule  = require('node-schedule');
 const { spawn } = require('child_process');
 const { DateTime } = require('luxon');
-const { isCtrPausedSync } = require('./lib/utils/ctrPause');
+const { isCtrPaused } = require('./lib/utils/ctrPause');
 
 // NOTE: change this path if your pool is elsewhere (e.g., './lib/db')
 const { fetchActiveConfigs } = require('./lib/db/configLoader');
@@ -112,8 +112,8 @@ function scheduleDrives(config) {
       source: 'db'
     });
 
-    const job = schedule.scheduleJob(runAt, () => {
-      if (isCtrPausedSync()) {
+    const job = schedule.scheduleJob(runAt, async () => {
+      if (await isCtrPaused()) {
         console.log(`[${id}][${new Date().toLocaleTimeString()}] CTR automation paused — skipping drive ${i+1}.`);
         return;
       }
@@ -145,7 +145,7 @@ async function loadAllFromDb({ forceReload = false, resetLog = false } = {}) {
     logWasReset = true;
   }
 
-  if (isCtrPausedSync()) {
+  if (await isCtrPaused()) {
     unloadAllBusinesses();
     console.log('[scheduler] CTR automation paused — skipping schedule load.');
     return;
