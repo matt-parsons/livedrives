@@ -136,7 +136,7 @@ export default async function MemberJourneyPage() {
       <StepSection
         step="1"
         title="Add your business"
-        intro="Search for your business name or address. We’ll fill in the details automatically."
+        intro="Search for your business name or address. We&apos;ll fill in the details automatically."
       >
         {primaryBusiness ? (
           <div className="grid gap-4">

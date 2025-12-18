@@ -1,10 +1,14 @@
 import pool from '@lib/db/db.js';
 import geoGridSchedules from '@lib/db/geoGridSchedules.js';
+import cacheModule from '@lib/db/gbpProfileCache.js';
 import { AuthError, requireAuth } from '@/lib/authServer';
 import { buildOrganizationScopeClause } from '@/lib/organizations';
+import { isHighLevelConfigured, upsertHighLevelContact } from '@/lib/highLevel.server';
 import { ensureUniqueBusinessSlug, mapToDbColumns, normalizeBusinessPayload } from '../utils.js';
 
 export const runtime = 'nodejs';
+
+const cacheApi = cacheModule?.default ?? cacheModule;
 
 export async function PATCH(request, { params }) {
   const rawId = params?.businessId;
@@ -103,6 +107,33 @@ export async function PATCH(request, { params }) {
 
     const business = rows[0];
     business.isActive = business.isActive === 1;
+
+    if (isHighLevelConfigured()) {
+      try {
+        const placeId = business.gPlaceId;
+        const cachedProfile =
+          placeId && typeof cacheApi?.loadCachedProfile === 'function'
+            ? await cacheApi.loadCachedProfile(placeId)
+            : null;
+        const cachedPlace = cachedProfile?.place ?? null;
+
+        await upsertHighLevelContact({
+          email: session.email,
+          name: session.name,
+          companyName: business.businessName,
+          address1: business.destinationAddress ?? undefined,
+          postalCode: business.destinationZip ?? undefined,
+          timezone: business.timezone ?? undefined,
+          phone: cachedPlace?.phoneNumber ?? undefined,
+          website: cachedPlace?.website ?? undefined
+        });
+      } catch (error) {
+        console.error(
+          `Failed to sync HighLevel contact for business ${rawId}`,
+          error?.response?.data || error
+        );
+      }
+    }
 
     return Response.json({ business });
   } catch (error) {

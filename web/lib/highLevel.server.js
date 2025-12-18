@@ -85,3 +85,94 @@ export async function createHighLevelContact({
 
   return response?.data ?? response;
 }
+
+function normalizeOptionalString(value) {
+  if (typeof value !== 'string') {
+    return undefined;
+  }
+
+  const trimmed = value.trim();
+  return trimmed.length ? trimmed : undefined;
+}
+
+export async function upsertHighLevelContact({
+  email,
+  name,
+  locationId = process.env.HIGH_LEVEL_LOCATION_ID,
+  tags = [],
+  companyName,
+  address1,
+  phone,
+  website,
+  postalCode,
+  city,
+  state,
+  timezone
+}) {
+  if (!email) {
+    throw new Error('Email is required to upsert a HighLevel contact');
+  }
+
+  if (!locationId) {
+    throw new Error('HighLevel locationId is not configured');
+  }
+
+  const { firstName, lastName } = splitName(name);
+  const payload = {
+    email,
+    name: normalizeOptionalString(name),
+    firstName,
+    lastName,
+    locationId
+  };
+
+  const normalizedTags = Array.from(new Set([...(tags || [])].filter(Boolean)));
+  if (normalizedTags.length) {
+    payload.tags = normalizedTags;
+  }
+
+  const normalizedCompany = normalizeOptionalString(companyName);
+  if (normalizedCompany) {
+    payload.companyName = normalizedCompany;
+  }
+
+  const normalizedAddress = normalizeOptionalString(address1);
+  if (normalizedAddress) {
+    payload.address1 = normalizedAddress;
+  }
+
+  const normalizedPhone = normalizeOptionalString(phone);
+  if (normalizedPhone) {
+    payload.phone = normalizedPhone;
+  }
+
+  const normalizedWebsite = normalizeOptionalString(website);
+  if (normalizedWebsite) {
+    payload.website = normalizedWebsite;
+  }
+
+  const normalizedPostalCode = normalizeOptionalString(postalCode);
+  if (normalizedPostalCode) {
+    payload.postalCode = normalizedPostalCode;
+  }
+
+  const normalizedCity = normalizeOptionalString(city);
+  if (normalizedCity) {
+    payload.city = normalizedCity;
+  }
+
+  const normalizedState = normalizeOptionalString(state);
+  if (normalizedState) {
+    payload.state = normalizedState;
+  }
+
+  const normalizedTimezone = normalizeOptionalString(timezone);
+  if (normalizedTimezone) {
+    payload.timezone = normalizedTimezone;
+  }
+
+  const client = getHighLevelClient();
+  const response = await client.contacts.upsertContact(payload);
+
+  return response?.data ?? response;
+}

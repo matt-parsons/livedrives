@@ -1,7 +1,9 @@
 import pool from '@lib/db/db.js';
 import geoGridSchedules from '@lib/db/geoGridSchedules.js';
+import cacheModule from '@lib/db/gbpProfileCache.js';
 import { AuthError, requireAuth } from '@/lib/authServer';
 import { buildOrganizationScopeClause } from '@/lib/organizations';
+import { isHighLevelConfigured, upsertHighLevelContact } from '@/lib/highLevel.server';
 import {
   applyCachedLocationFallback,
   buildSoaxConfigForBusiness,
@@ -14,6 +16,8 @@ import {
 } from './utils.js';
 
 export const runtime = 'nodejs';
+
+const cacheApi = cacheModule?.default ?? cacheModule;
 
 export async function GET(request) {
   try {
@@ -114,6 +118,33 @@ export async function POST(request) {
 
     if (!businessId) {
       throw new Error('Failed to create business record.');
+    }
+
+    if (isHighLevelConfigured()) {
+      try {
+        const placeId = normalizedValues.gPlaceId;
+        const cachedProfile =
+          placeId && typeof cacheApi?.loadCachedProfile === 'function'
+            ? await cacheApi.loadCachedProfile(placeId)
+            : null;
+        const cachedPlace = cachedProfile?.place ?? null;
+
+        await upsertHighLevelContact({
+          email: session.email,
+          name: session.name,
+          companyName: normalizedValues.businessName,
+          address1: normalizedValues.destinationAddress ?? undefined,
+          postalCode: normalizedValues.destinationZip ?? undefined,
+          timezone: normalizedValues.timezone ?? undefined,
+          phone: cachedPlace?.phoneNumber ?? undefined,
+          website: cachedPlace?.website ?? undefined
+        });
+      } catch (error) {
+        console.error(
+          'Failed to sync HighLevel contact for business creation',
+          error?.response?.data || error
+        );
+      }
     }
 
     try {

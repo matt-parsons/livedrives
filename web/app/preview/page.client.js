@@ -441,7 +441,7 @@ export default function LandingPage() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               email: trimmedEmail,
-              name: selectedPlace.name,
+              companyName: selectedPlace.name,
               address1: selectedPlace.formattedAddress,
               tags: ['preview_funnel'],
             }),
@@ -845,7 +845,7 @@ export default function LandingPage() {
                 We highlighted your top recommendations. 
               </p>
             </div>
-            <div class="business-funnel__section-task-heatmap">
+            <div className="business-funnel__section-task-heatmap">
               {topOpportunities.length ? (
                 <div className="business-funnel__section-task-list-left">
                   <ul className="business-optimization-roadmap__section-task-list">
