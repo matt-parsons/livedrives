@@ -8,6 +8,7 @@ import NextStepsPanel from './NextStepsPanel';
 import SummaryMetricCard from './SummaryMetricCard';
 import { resolveLetterGrade, selectNextOptimizationSteps } from './optimization';
 import { buildRunTrendIndicator } from './trendIndicators';
+import BusinessAiOverviewCard from './BusinessAiOverviewCard';
 
 function formatTimestamp(value) {
   if (!value) {
@@ -33,6 +34,7 @@ function formatTimestamp(value) {
 export default function OptimizationPanelsClient({
   placeId,
   businessId,
+  businessName,
   optimizationHref,
   canManageSettings,
   editHref,
@@ -47,7 +49,8 @@ export default function OptimizationPanelsClient({
   lastRankingReportLabel = null,
   snapshot,
   dataForSeoPending,
-  reviewsHref
+  reviewsHref,
+  aiOverviewReady
 }) {
   const [loading, setLoading] = useState(Boolean(placeId));
   const [error, setError] = useState(null);
@@ -476,7 +479,6 @@ export default function OptimizationPanelsClient({
             </div>
 
          
-
             {/* <div className="surface-card surface-card--muted automation-cta">
               <div className="automation-cta__icon" aria-hidden="true">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" data-dynamic-content="false"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"></path></svg>
@@ -490,6 +492,15 @@ export default function OptimizationPanelsClient({
             </div> */}
           </div>
         </div>
+          {aiOverviewReady && placeId ? (
+            <BusinessAiOverviewCard
+              placeId={placeId}
+              businessName={businessName}
+              isReady={aiOverviewReady}
+            />
+          ) : null}
+
+
       </section>
       <LatestGeoGridSnapshot
         businessId={businessId}

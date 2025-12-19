@@ -106,14 +106,6 @@ export default function ReviewSnapshotController({
 
   return (
     <div className="flex flex-col gap-6">
-      {aiOverviewReady ? (
-        <BusinessReviewOverviewCard
-          businessId={businessId}
-          businessName={businessName}
-          isReady={aiOverviewReady}
-        />
-      ) : null}
-
       <ReviewOverview
         snapshot={snapshot}
         scheduledPosts={scheduledPosts}
@@ -123,6 +115,13 @@ export default function ReviewSnapshotController({
         canSchedulePosts={canSchedulePosts}
         canRefreshReviews={canRefreshReviews}
       />
+      {aiOverviewReady ? (
+        <BusinessReviewOverviewCard
+          businessId={businessId}
+          businessName={businessName}
+          isReady={aiOverviewReady}
+        />
+      ) : null}      
     </div>
   );
 }

@@ -175,6 +175,8 @@ export default function LatestGeoGridSnapshot({
     <div className="dashboard-layout__sub-content">
     <div className="business-dashboard__optimization-row">
       {summaryCards.map((card) => (
+        <div key={card.id}>
+        {card.valueLabel !== '—' ? ( 
         <SummaryMetricCard
           key={card.id}
           title={card.title}
@@ -182,6 +184,8 @@ export default function LatestGeoGridSnapshot({
           indicator={card.indicator}
           deltaLabel={card.deltaLabel}
         />
+        ) : null}
+        </div>
       ))}
     </div>
     <section className="surface-card surface-card--muted latest-geogrid-card">

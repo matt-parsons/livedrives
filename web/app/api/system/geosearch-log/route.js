@@ -3,7 +3,7 @@ import { promises as fs } from 'fs';
 import { requireAuth } from '@/lib/authServer';
 
 const LOG_FILE_PATH = process.env.GEOSEARCH_LOG_PATH || '/var/log/geosearch.log';
-const DEFAULT_LINE_LIMIT = 500;
+const DEFAULT_LINE_LIMIT = 50;
 const MIN_LINE_LIMIT = 50;
 const MAX_LINE_LIMIT = 2000;
 

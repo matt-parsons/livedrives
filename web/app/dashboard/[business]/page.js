@@ -22,7 +22,6 @@ import KeywordOriginZoneForm from '../get-started/KeywordOriginZoneForm';
 import { ensureGbpAccessToken } from '@/lib/googleBusinessProfile';
 import { loadReviewSnapshot } from './reviews/reviewSnapshot';
 import ReviewPreview from './ReviewPreview';
-import BusinessAiOverviewCard from './BusinessAiOverviewCard';
 import RankingAiOverviewCard from './RankingAiOverviewCard';
 
 function resolveStatus(status) {
@@ -311,14 +310,6 @@ export default async function BusinessDashboardPage({ params }) {
       <main className="dashboard-layout__main">
         <DashboardBusinessHeader organizationId={session.organizationId} />
         <div className="dashboard-layout__content">
-          {aiOverviewReady && business.gPlaceId ? (
-            <BusinessAiOverviewCard
-              placeId={business.gPlaceId}
-              businessName={business.businessName}
-              isReady={aiOverviewReady}
-            />
-          ) : null}
-
           <KeywordSelectionModal
             hasSelectedKeyword={hasSelectedKeyword}
             business={business}
@@ -328,7 +319,7 @@ export default async function BusinessDashboardPage({ params }) {
           {hasSelectedKeyword && (
           <div className="section-header latest-geogrid-card__header">
             <div>
-              <h2 className="section-title">Profile Overview</h2>
+              <h2 className="section-title">What would you like to work on today?</h2>
 
               <p className="section-caption">
                 Review your freshest keyword coverage snapshot across the map.
@@ -345,6 +336,7 @@ export default async function BusinessDashboardPage({ params }) {
             <OptimizationPanelsClient
               placeId={business.gPlaceId ?? null}
               businessId={business.id}
+              businessName={business.businessName}
               optimizationHref={optimizationHref}
               canManageSettings={canManageSettings}
               isAdmin={isAdmin}
@@ -360,6 +352,7 @@ export default async function BusinessDashboardPage({ params }) {
               snapshot={reviewSnapshot}
               dataForSeoPending={reviewPending}
               reviewsHref={reviewsHref}
+              aiOverviewReady={aiOverviewReady}
             />
           )}
           {hasSelectedKeyword && (

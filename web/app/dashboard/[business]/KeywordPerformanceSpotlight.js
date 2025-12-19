@@ -6,8 +6,9 @@ import GeoGridRunViewer from './runs/[runId]/GeoGridRunViewer';
 import KeywordTrendChart from './KeywordTrendChart';
 import SummaryMetricCard from './SummaryMetricCard';
 import { buildMapPoints, extractRunSummary, resolveCenter } from './runs/formatters';
+import KeywordAiOverviewCard from './keywords/KeywordAiOverviewCard';
 
-export default function KeywordPerformanceSpotlight({ items, mapsApiKey = null, businessId, businessIdentifier }) {
+export default function KeywordPerformanceSpotlight({ items, mapsApiKey = null, businessId, businessIdentifier, businessName }) {
   const [activeKey, setActiveKey] = useState(() => items[0]?.key ?? null);
   const [heatmapState, setHeatmapState] = useState(() => ({
     loading: false,
@@ -260,38 +261,6 @@ export default function KeywordPerformanceSpotlight({ items, mapsApiKey = null, 
         <div
           style={{
             display: 'flex',
-            justifyContent: 'space-between',
-            flexWrap: 'wrap',
-            gap: '0.75rem'
-          }}
-        >
-          <div>
-            <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700, color: '#111827' }}>Performance over time</h3>
-            <p style={{ margin: '0.35rem 0 0', fontSize: '0.85rem', color: '#6b7280' }}>
-              Track ranking position and share of local voice for the selected keyword.
-            </p>
-          </div>
-          {latestRunDescription ? (
-            <span style={{ fontSize: '0.82rem', color: '#6b7280' }}>{latestRunDescription}</span>
-          ) : null}
-        </div>
-        <KeywordTrendChart points={activeItem.chartPoints} />
-      </div>
-
-      <div
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '1rem',
-          borderRadius: '20px',
-          backgroundColor: '#ffffff',
-          border: '1px solid rgba(148, 163, 184, 0.25)',
-          padding: '1.5rem'
-        }}
-      >
-        <div
-          style={{
-            display: 'flex',
             flexWrap: 'wrap',
             justifyContent: 'space-between',
             gap: '0.75rem',
@@ -383,6 +352,39 @@ export default function KeywordPerformanceSpotlight({ items, mapsApiKey = null, 
             Ranking report map preview unavailable for this run.
           </div>
         )}
+      </div>
+
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '1rem',
+          borderRadius: '20px',
+          backgroundColor: '#ffffff',
+          border: '1px solid rgba(148, 163, 184, 0.25)',
+          padding: '1.5rem'
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '0.75rem'
+          }}
+        >
+          <div>
+            <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700, color: '#111827' }}>Performance over time</h3>
+            <p style={{ margin: '0.35rem 0 0', fontSize: '0.85rem', color: '#6b7280' }}>
+              Track ranking position and share of local voice for the selected keyword.
+            </p>
+          </div>
+          {latestRunDescription ? (
+            <span style={{ fontSize: '0.82rem', color: '#6b7280' }}>{latestRunDescription}</span>
+          ) : null}
+        </div>
+        <KeywordAiOverviewCard businessId={businessId} businessName={businessName} isReady={true} />
+        <KeywordTrendChart points={activeItem.chartPoints} />
       </div>
     </div>
   );

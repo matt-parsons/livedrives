@@ -16,7 +16,6 @@ import {
   loadCtrKeywordOverview
 } from '../helpers';
 import { buildRunTrendIndicator } from '../trendIndicators';
-import KeywordAiOverviewCard from './KeywordAiOverviewCard';
 
 export const metadata = {
   title: 'Keywords · Local Paint Pilot'
@@ -34,7 +33,8 @@ function resolveStatus(status) {
   const value = status.toString();
   const lower = value.toLowerCase();
 
-  if (lower.includes('complete')) {
+  // Add 'done' to this check
+  if (lower.includes('complete') || lower === 'done') {
     return { key: 'completed', label: 'Completed' };
   }
 
@@ -140,6 +140,7 @@ export default async function BusinessKeywordsPage({ params, searchParams }) {
       createdAt: formatDate(createdAtValue)
     };
   });
+  const hasCompletedReport = geoGridRuns.some((run) => resolveStatus(run.status).key === 'completed');
 
   const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
   const nowTimestamp = Date.now();
@@ -432,7 +433,6 @@ export default async function BusinessKeywordsPage({ params, searchParams }) {
         <main className="dashboard-layout__main">
           <DashboardBusinessHeader organizationId={session.organizationId} />
           <div className="dashboard-layout__content">
-            <KeywordAiOverviewCard businessId={business.id} businessName={business.businessName} isReady={true} />
             <div className="section-header">
               <div>
                 <h2 className="section-title">Ranking Reports</h2>
@@ -442,134 +442,148 @@ export default async function BusinessKeywordsPage({ params, searchParams }) {
               </div>
             </div>
 
-            <section className="section">
-              <KeywordPerformanceSpotlight
-                items={keywordPerformanceItems}
-                mapsApiKey={mapsApiKey}
-                businessId={business.id}
-                businessIdentifier={businessIdentifier}
-              />
-            </section>
-            {canViewCtr ? (
-            <section className="section">
-                <GeoGridRunsSection
-                  caption={geoSectionCaption}
-                  defaultView={viewMode}
-                  trendItems={geoGridTrendList}
-                  runItems={geoGridRunsList}
-                />
-            </section>
-            ) : null }
+            {hasCompletedReport ? (
+              <>
+                <section className="section">
+                  <KeywordPerformanceSpotlight
+                    items={keywordPerformanceItems}
+                    mapsApiKey={mapsApiKey}
+                    businessId={business.id}
+                    businessName={business.businessName}
+                    businessIdentifier={businessIdentifier}
+                  />
+                </section>
+                {canViewCtr ? (
+                  <section className="section">
+                    <GeoGridRunsSection
+                      caption={geoSectionCaption}
+                      defaultView={viewMode}
+                      trendItems={geoGridTrendList}
+                      runItems={geoGridRunsList}
+                    />
+                  </section>
+                ) : null}
 
-            {canViewCtr ? (
+                {canViewCtr ? (
+                  <section className="section">
+                    <div className="surface-card surface-card--muted surface-card--compact">
+                      <div className="section-header">
+                        <h2 className="section-title">CTR sessions</h2>
+                        <p className="section-caption">Analyze click-through behaviors alongside geo performance.</p>
+                      </div>
+
+                      {ctrOverviewRows.length ? (
+                        <div
+                          className="ctr-overview-list"
+                          style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '0.75rem',
+                            marginTop: '1rem',
+                            marginBottom: '1rem'
+                          }}
+                        >
+                          {ctrOverviewRows.map((item) => (
+                            <div
+                              key={item.keyword}
+                              style={{
+                                display: 'flex',
+                                flexWrap: 'wrap',
+                                alignItems: 'center',
+                                gap: '1rem',
+                                border: '1px solid rgba(17, 24, 39, 0.08)',
+                                borderRadius: '12px',
+                                padding: '0.85rem 1.1rem',
+                                backgroundColor: '#ffffff'
+                              }}
+                            >
+                              <div style={{ flex: '1 1 200px' }}>
+                                <strong style={{ fontSize: '1rem' }}>{item.keyword}</strong>
+                                <div style={{ color: '#6b7280', fontSize: '0.85rem', marginTop: '0.2rem' }}>
+                                  {item.sessions} session{item.sessions === 1 ? '' : 's'} (30 days)
+                                </div>
+                              </div>
+
+                              <div
+                                style={{
+                                  display: 'flex',
+                                  flexWrap: 'wrap',
+                                  gap: '1.25rem',
+                                  flex: '1 1 240px'
+                                }}
+                              >
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                                  <span style={{ color: '#374151', fontSize: '0.9rem' }}>
+                                    Avg position{' '}
+                                    <strong style={{ fontSize: '1rem' }}>{item.avgLabel}</strong>
+                                  </span>
+                                  <span
+                                    style={{
+                                      ...item.avgPillStyle,
+                                      padding: '0.3rem 0.75rem',
+                                      borderRadius: '999px',
+                                      fontSize: '0.8rem',
+                                      fontWeight: 600
+                                    }}
+                                  >
+                                    {item.avgTrendLabel}
+                                    {item.avgDeltaLabel ? (
+                                      <span style={{ fontWeight: 500, opacity: 0.8 }}>
+                                        {' '}({item.avgDeltaLabel})
+                                      </span>
+                                    ) : null}
+                                  </span>
+                                </div>
+
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                                  <span style={{ color: '#374151', fontSize: '0.9rem' }}>
+                                    SoLV (Top 3){' '}
+                                    <strong style={{ fontSize: '1rem' }}>{item.solvLabel}</strong>
+                                  </span>
+                                  <span
+                                    style={{
+                                      ...item.solvPillStyle,
+                                      padding: '0.3rem 0.75rem',
+                                      borderRadius: '999px',
+                                      fontSize: '0.8rem',
+                                      fontWeight: 600
+                                    }}
+                                  >
+                                    {item.solvTrendLabel}
+                                    {item.solvDeltaLabel ? (
+                                      <span style={{ fontWeight: 500, opacity: 0.8 }}>
+                                        {' '}({item.solvDeltaLabel})
+                                      </span>
+                                    ) : null}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p style={{ marginTop: '1rem', color: '#6b7280' }}>
+                          No CTR sessions recorded in the last 30 days.
+                        </p>
+                      )}
+
+                      <Link className="cta-link" href={ctrHref}>
+                        Open CTR dashboard ↗
+                      </Link>
+                    </div>
+                  </section>
+                ) : null}
+              </>
+            ) : (
               <section className="section">
                 <div className="surface-card surface-card--muted surface-card--compact">
                   <div className="section-header">
-                    <h2 className="section-title">CTR sessions</h2>
-                    <p className="section-caption">Analyze click-through behaviors alongside geo performance.</p>
+                    <h2 className="section-title">Ranking reports are on the way</h2>
+                    <p className="section-caption">Check back after the first scan is completed.</p>
                   </div>
-
-                  {ctrOverviewRows.length ? (
-                    <div
-                      className="ctr-overview-list"
-                      style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '0.75rem',
-                        marginTop: '1rem',
-                        marginBottom: '1rem'
-                      }}
-                    >
-                      {ctrOverviewRows.map((item) => (
-                        <div
-                          key={item.keyword}
-                          style={{
-                            display: 'flex',
-                            flexWrap: 'wrap',
-                            alignItems: 'center',
-                            gap: '1rem',
-                            border: '1px solid rgba(17, 24, 39, 0.08)',
-                            borderRadius: '12px',
-                            padding: '0.85rem 1.1rem',
-                            backgroundColor: '#ffffff'
-                          }}
-                        >
-                          <div style={{ flex: '1 1 200px' }}>
-                            <strong style={{ fontSize: '1rem' }}>{item.keyword}</strong>
-                            <div style={{ color: '#6b7280', fontSize: '0.85rem', marginTop: '0.2rem' }}>
-                              {item.sessions} session{item.sessions === 1 ? '' : 's'} (30 days)
-                            </div>
-                          </div>
-
-                          <div
-                            style={{
-                              display: 'flex',
-                              flexWrap: 'wrap',
-                              gap: '1.25rem',
-                              flex: '1 1 240px'
-                            }}
-                          >
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                              <span style={{ color: '#374151', fontSize: '0.9rem' }}>
-                                Avg position{' '}
-                                <strong style={{ fontSize: '1rem' }}>{item.avgLabel}</strong>
-                              </span>
-                              <span
-                                style={{
-                                  ...item.avgPillStyle,
-                                  padding: '0.3rem 0.75rem',
-                                  borderRadius: '999px',
-                                  fontSize: '0.8rem',
-                                  fontWeight: 600
-                                }}
-                              >
-                                {item.avgTrendLabel}
-                                {item.avgDeltaLabel ? (
-                                  <span style={{ fontWeight: 500, opacity: 0.8 }}>
-                                    {' '}({item.avgDeltaLabel})
-                                  </span>
-                                ) : null}
-                              </span>
-                            </div>
-
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                              <span style={{ color: '#374151', fontSize: '0.9rem' }}>
-                                SoLV (Top 3){' '}
-                                <strong style={{ fontSize: '1rem' }}>{item.solvLabel}</strong>
-                              </span>
-                              <span
-                                style={{
-                                  ...item.solvPillStyle,
-                                  padding: '0.3rem 0.75rem',
-                                  borderRadius: '999px',
-                                  fontSize: '0.8rem',
-                                  fontWeight: 600
-                                }}
-                              >
-                                {item.solvTrendLabel}
-                                {item.solvDeltaLabel ? (
-                                  <span style={{ fontWeight: 500, opacity: 0.8 }}>
-                                    {' '}({item.solvDeltaLabel})
-                                  </span>
-                                ) : null}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p style={{ marginTop: '1rem', color: '#6b7280' }}>
-                      No CTR sessions recorded in the last 30 days.
-                    </p>
-                  )}
-
-                  <Link className="cta-link" href={ctrHref}>
-                    Open CTR dashboard ↗
-                  </Link>
                 </div>
               </section>
-            ) : null}
+            )}
 
           </div>
         </main>

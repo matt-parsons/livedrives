@@ -86,8 +86,8 @@ function requestWorkerExit(worker, timeoutMs = 10000) {
 
 // Worker Thread Code (runs on a separate thread)
 if (!isMainThread) {
-  const { getMapsRank } = require('../lib/core/rankTrack.js');
-  const { parseRankFromString } = require('../lib/google/counters');
+  const { getProfileRank } = require('../lib/core/rankTrack.js');
+  const { parseLocalResults } = require('../lib/google/counters');
 
   parentPort.on('message', async (data) => {
     if (data.exit) {
@@ -113,7 +113,7 @@ if (!isMainThread) {
       while (retries < maxRetries) {
         try {
           // --- STAGE 1: ACQUISITION (Get HTML) ---
-          const acquisitionResult = await getMapsRank({
+          const acquisitionResult = await getProfileRank({
             runId,
             pointId,
             keyword,
