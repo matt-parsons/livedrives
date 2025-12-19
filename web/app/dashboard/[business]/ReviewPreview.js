@@ -130,15 +130,35 @@ export default function ReviewPreview({
   const statusIndicator = useMemo(() => {
     if (!isEnsuringLatestData) return null;
     return (
-      <div className="dashboard-optimization-card__status-indicator" role="status" aria-live="polite">
-        <span className="dashboard-optimization-card__spinner" aria-hidden="true" />
-        <span>Making sure we have the latest data…</span>
+      <div
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(255, 255, 255, 0.7)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 10
+        }}
+      >
+        <div className="dashboard-optimization-card__status-indicator" role="status" aria-live="polite">
+          <span className="dashboard-optimization-card__spinner" aria-hidden="true" />
+          <span>Making sure we have the latest data…</span>
+        </div>
       </div>
     );
   }, [isEnsuringLatestData]);
 
   return (
-    <section className="surface-card surface-card--muted latest-geogrid-card" aria-labelledby="review-preview-heading">
+    <section
+      className="surface-card surface-card--muted latest-geogrid-card"
+      aria-labelledby="review-preview-heading"
+      style={{ position: 'relative' }}
+    >
+      {statusIndicator}
       <div className="section-header">
         <div>
           <h2 id="review-preview-heading" className="section-title">
@@ -199,12 +219,10 @@ export default function ReviewPreview({
         </>
       ) : (
         <div className="dashboard-optimization-card__message" style={{ marginTop: '0.5rem' }}>
-          We are still gathering review data for this business. Connect your Google Business Profile or check back shortly to
-          unlock review insights.
+          We are still gathering review data for this business. Connect your Google Business Profile or check back
+          shortly to unlock review insights.
         </div>
       )}
-
-      {statusIndicator}
     </section>
   );
 }
