@@ -358,31 +358,35 @@ export default async function BusinessDashboardPage({ params }) {
               </div>
             </div>
           </div>
-          <OptimizationPanelsClient
-            placeId={business.gPlaceId ?? null}
-            businessId={business.id}
-            optimizationHref={optimizationHref}
-            canManageSettings={canManageSettings}
-            isAdmin={isAdmin}
-            editHref={editHref}
-            mapPoints={mapPoints}
-            mapCenter={mapCenter}
-            mapsApiKey={mapsApiKey}
-            latestRunSummary={latestRunSummary}
-            keywordsHref={keywordsHref}
-            ctrHref={ctrHref}
-            nextRankingReportLabel={nextRankingReportLabel}
-            lastRankingReportLabel={lastRankingReportLabel}
-            snapshot={reviewSnapshot}
-            dataForSeoPending={reviewPending}
-            reviewsHref={reviewsHref}
-          />
-          <ReviewPreview
-            businessId={business.id}
-            snapshot={reviewSnapshot}
-            dataForSeoPending={reviewPending}
-            reviewsHref={reviewsHref}
-          />
+          {hasSelectedKeyword && (
+            <OptimizationPanelsClient
+              placeId={business.gPlaceId ?? null}
+              businessId={business.id}
+              optimizationHref={optimizationHref}
+              canManageSettings={canManageSettings}
+              isAdmin={isAdmin}
+              editHref={editHref}
+              mapPoints={mapPoints}
+              mapCenter={mapCenter}
+              mapsApiKey={mapsApiKey}
+              latestRunSummary={latestRunSummary}
+              keywordsHref={keywordsHref}
+              ctrHref={ctrHref}
+              nextRankingReportLabel={nextRankingReportLabel}
+              lastRankingReportLabel={lastRankingReportLabel}
+              snapshot={reviewSnapshot}
+              dataForSeoPending={reviewPending}
+              reviewsHref={reviewsHref}
+            />
+          )}
+          {hasSelectedKeyword && (
+            <ReviewPreview
+              businessId={business.id}
+              snapshot={reviewSnapshot}
+              dataForSeoPending={reviewPending}
+              reviewsHref={reviewsHref}
+            />
+          )}
         </div>
       </main>
     </div>

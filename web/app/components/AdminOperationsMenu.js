@@ -42,11 +42,6 @@ const ADMIN_OPERATION_LINKS = [
     href: '/dashboard/get-started',
     label: 'Get Started',
     description: 'Guide new members through trials, business setup, and geo keywords.'
-  },
-  {
-    href: '/dashboard/businesses/new',
-    label: 'Add new business',
-    description: 'Add a new business.'
   }
 ];
 

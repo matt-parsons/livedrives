@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 function extractKeywordTerms(raw) {
   if (!raw) {
@@ -295,7 +296,7 @@ export default function KeywordOriginZoneForm({
           <Label htmlFor="onboarding-keyword">Top keyword picks</Label>
           <span className="text-xs text-muted-foreground">
             {suggestionStatus === 'loading'
-              ? 'Generating your top search keywords…'
+              ? ''
               : 'Tap a pick or enter your own keyword'}
           </span>
         </div>
@@ -333,26 +334,42 @@ export default function KeywordOriginZoneForm({
             ))}
           </div>
         ) : null}
-        {suggestionStatus === 'loading' ? (<div></div>) : (
-        <div className="space-y-2">
-          <Label htmlFor="onboarding-keyword">Or type your own</Label>
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-            <Input
-              id="onboarding-keyword"
-              type="text"
-              value={keyword}
-              onChange={(event) => setKeyword(event.target.value)}
-              placeholder="e.g. house painter near me"
-              disabled={submitting}
-            />
-            <Button type="button" onClick={() => createOriginZone(keyword)} disabled={submitting}>
-              {submitting ? 'Saving keyword…' : 'Save keyword'}
-            </Button>
+        {suggestionStatus === 'loading' ? (
+          <div className="flex min-h-[8rem] flex-col items-center justify-center rounded-lg border border-dashed border-border bg-background p-6 text-center shadow-sm">
+            <div className="flex items-center gap-3">
+              <LoadingSpinner className="h-5 w-5" />
+              <p className="font-medium text-muted-foreground">
+                Generating your top search keywords…
+              </p>
+            </div>
           </div>
-          <p className="text-xs text-muted-foreground">
-            We&apos;ll auto-create the first origin zone using the business location with a 3 mile radius.
-          </p>
-        </div>
+        ) : (
+          (suggestionStatus === 'ready' || suggestionStatus === 'empty') && (
+            <div className="space-y-2">
+              <Label htmlFor="onboarding-keyword">Or type your own</Label>
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                <Input
+                  id="onboarding-keyword"
+                  type="text"
+                  value={keyword}
+                  onChange={(event) => setKeyword(event.target.value)}
+                  placeholder="e.g. house painter near me"
+                  disabled={submitting}
+                />
+                <Button
+                  type="button"
+                  onClick={() => createOriginZone(keyword)}
+                  disabled={submitting}
+                >
+                  {submitting ? 'Saving keyword…' : 'Save keyword'}
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                We&apos;ll auto-create the first origin zone using the business location with a 3
+                mile radius.
+              </p>
+            </div>
+          )
         )}
       </div>
 
