@@ -4,6 +4,7 @@ import { AuthError, requireAuth } from '@/lib/authServer';
 import BusinessNavigation from './BusinessNavigation';
 import SidebarBrand from './SidebarBrand';
 import DashboardBusinessHeader from './DashboardBusinessHeader';
+import KeywordSelectionModal from './KeywordSelectionModal';
 import {
   formatDate,
   formatDecimal,
@@ -318,32 +319,13 @@ export default async function BusinessDashboardPage({ params }) {
             />
           ) : null}
 
-          {!hasSelectedKeyword ? (
-            <section className="rounded-2xl border border-border/60 bg-card/90 p-6 shadow-sm">
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                <div className="space-y-1">
-                  <p className="text-xs uppercase tracking-wide text-muted-foreground">Origin keyword</p>
-                  <p className="text-lg font-semibold text-foreground">Confirm your keyword</p>
-                  <p className="text-sm text-muted-foreground">
-                    We&apos;ll pin the keyword to your business address with a 3 mile radius so rank tracking can begin.
-                  </p>
-                </div>
-              </div>
+          <KeywordSelectionModal
+            hasSelectedKeyword={hasSelectedKeyword}
+            business={business}
+            primaryOriginZone={primaryOriginZone}
+          />
 
-              <div className="mt-4">
-                <KeywordOriginZoneForm
-                  businessId={business.id}
-                  businessName={business.businessName}
-                  destinationAddress={business.destinationAddress}
-                  destinationZip={business.destinationZip}
-                  destLat={business.destLat}
-                  destLng={business.destLng}
-                  existingZone={primaryOriginZone}
-                />
-              </div>
-            </section>
-          ) : null}
-
+          {hasSelectedKeyword && (
           <div className="section-header latest-geogrid-card__header">
             <div>
               <h2 className="section-title">Profile Overview</h2>
@@ -358,6 +340,7 @@ export default async function BusinessDashboardPage({ params }) {
               </div>
             </div>
           </div>
+          )}
           {hasSelectedKeyword && (
             <OptimizationPanelsClient
               placeId={business.gPlaceId ?? null}

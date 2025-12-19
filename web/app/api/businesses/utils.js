@@ -75,8 +75,6 @@ const SOAX_COUNTRY_ISO = process.env.SOAX_COUNTRY_ISO || 'us';
 const SOAX_CONN_TYPE = process.env.SOAX_CONN_TYPE || 'wifi';
 const SOAX_CITY_CACHE = new Map();
 const SOAX_CITY_FETCH_TIMEOUT_MS = 30_000;
-const FALLBACK_BIG_CITY = { city: 'phoenix', state: 'arizona', lat: 33.4484, lng: -112.074 };
-
 const FIELD_MAP = {
   businessName: 'business_name',
   businessSlug: 'business_slug',
@@ -131,6 +129,8 @@ function normalizeStateName(value) {
   const normalized = String(value)
     .toLowerCase()
     .replace(/[.,]/g, ' ')
+    .replace(/\b\d{5}(?:-\d{4})?\b/g, ' ')
+    .replace(/\s+/g, ' ')
     .trim();
 
   if (!normalized.length) {
@@ -309,12 +309,21 @@ async function fetchSoaxCitiesForRegion(packageKey, region) {
 }
 
 async function findNearestBigCity({ state, city, lat, lng }) {
-  const normalizedState = normalizeStateName(state) ?? FALLBACK_BIG_CITY.state;
+  const normalizedState = normalizeStateName(state);
   const normalizedCity = normalizeCityName(city);
 
-  const availableCities = normalizedState
-    ? await fetchSoaxCitiesForRegion(SOAX_USERNAME_PACKAGE_KEY, normalizedState)
-    : [];
+  if (!normalizedState) {
+    return null;
+  }
+
+  const availableCities = await fetchSoaxCitiesForRegion(
+    SOAX_USERNAME_PACKAGE_KEY,
+    normalizedState
+  );
+
+  if (!availableCities.length) {
+    return null;
+  }
 
   if (normalizedCity) {
     const matching = availableCities.find(
@@ -347,11 +356,7 @@ async function findNearestBigCity({ state, city, lat, lng }) {
     }
   }
 
-  if (availableCities.length) {
-    return { ...availableCities[0], state: normalizedState };
-  }
-
-  return { ...FALLBACK_BIG_CITY };
+  return availableCities.length ? { ...availableCities[0], state: normalizedState } : null;
 }
 
 function isCountryToken(value) {
@@ -383,9 +388,17 @@ function parseCityStateFromAddress(address) {
   index -= 1;
   const cityCandidate = index >= 0 ? parts[index] : null;
 
+  const stateTokens = stateCandidate
+    ?.split(/\s+/)
+    .filter((token) => !/^\d{5}(?:-\d{4})?$/.test(token));
+  const resolvedState =
+    normalizeStateName(stateCandidate) ??
+    normalizeStateName(stateTokens?.slice(-2).join(' ')) ??
+    normalizeStateName(stateTokens?.slice(-1).join(' '));
+
   return {
     city: normalizeCityName(cityCandidate),
-    state: normalizeStateName(stateCandidate)
+    state: resolvedState
   };
 }
 
@@ -416,7 +429,7 @@ function buildSoaxUsernameSegment({ state, city, packageKey, includeOptWb = true
     return null;
   }
 
-  const base = `${packageKey}-country-us-region-${stateSegment}-city-${citySegment}-sessionid-__SESSION_ID__-sessionlength-300`;
+  const base = `${packageKey}-country-us-region-${stateSegment}-city-${citySegment}`;
   return includeOptWb ? `${base}-opt-wb` : base;
 }
 
@@ -928,27 +941,30 @@ export async function buildSoaxConfigForBusiness(db, businessId, options = {}) {
   const lng = parseCoordinate(options.destLng ?? row.destLng);
 
   const resolved = await resolveLocationMetadata({ placeId, lat, lng, address });
-  const bigCity = await findNearestBigCity({
-    state: resolved.state,
-    city: resolved.city,
-    lat: resolved.lat,
-    lng: resolved.lng
-  });
-  const usernameState = bigCity?.state ?? resolved.state;
-  const usernameCity = bigCity?.city ?? resolved.city;
+  const resolvedState = normalizeStateName(resolved.state);
+  let resolvedCity = normalizeCityName(resolved.city);
+
+  if (!resolvedCity && resolvedState) {
+    const bigCity = await findNearestBigCity({
+      state: resolvedState,
+      city: resolvedCity,
+      lat: resolved.lat,
+      lng: resolved.lng
+    });
+    resolvedCity = normalizeCityName(bigCity?.city);
+  }
+
   const username =
     buildSoaxUsernameSegment({
-      state: usernameState,
-      city: usernameCity,
+      state: resolvedState,
+      city: resolvedCity,
       packageKey: SOAX_USERNAME_PACKAGE_KEY,
-      includeOptWb: true
+      includeOptWb: false
     }) ?? defaultConfig.username;
-  const resCity = resolved.city ?? usernameCity;
-  const resState = resolved.state ?? usernameState;
   const resUsername =
     buildSoaxUsernameSegment({
-      state: resState,
-      city: resCity,
+      state: resolvedState,
+      city: resolvedCity,
       packageKey: SOAX_RES_PACKAGE_KEY,
       includeOptWb: false
     }) ?? defaultConfig.resUsername;
