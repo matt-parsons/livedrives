@@ -76,13 +76,14 @@ function getMarkerColor(rankPosition) {
   return RANK_MAX;
 }
 
-function buildMarkerIcon(rankPosition, isSelected = false) {
+function buildMarkerIcon(rankPosition, isSelected = false, unknownRankVariant = 'unknown') {
   const safeRank = rankPosition === null || rankPosition === undefined
     ? null
     : Number(rankPosition);
 
+  const isLoadingRank = safeRank === null && unknownRankVariant === 'loading';
   const label = safeRank === null
-    ? '?'
+    ? (isLoadingRank ? '' : '?')
     : safeRank > 20
       ? '20+'
       : String(safeRank);
@@ -93,10 +94,21 @@ function buildMarkerIcon(rankPosition, isSelected = false) {
   const size = isSelected ? 60 : 52;
   const anchor = size / 2;
 
+  const loaderMarkup = isLoadingRank
+    ? `
+  <g transform="translate(50 50)">
+    <circle r="18" fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="6" />
+    <path d="M0 -18 a18 18 0 1 1 -0.1 0" fill="none" stroke="#ffffff" stroke-width="6" stroke-linecap="round">
+      <animateTransform attributeName="transform" type="rotate" from="0 0 0" to="360 0 0" dur="1s" repeatCount="indefinite" />
+    </path>
+  </g>`
+    : '';
+
   const svg = `<?xml version="1.0" encoding="UTF-8"?>
 <svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
   <circle cx="50" cy="50" r="${radius}" fill="${fill}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
-  <text x="50" y="57" font-size="24" font-family="Arial, Helvetica, sans-serif" font-weight="300" fill="#ffffff" text-anchor="middle">${label}</text>
+  ${loaderMarkup}
+  ${label ? `<text x="50" y="57" font-size="24" font-family="Arial, Helvetica, sans-serif" font-weight="300" fill="#ffffff" text-anchor="middle">${label}</text>` : ''}
 </svg>`;
 
   return {
@@ -130,7 +142,8 @@ export default function GeoGridMap({
   selectedPointId = null,
   onPointSelect,
   interactive = true,
-  minHeight = 'clamp(360px, 60vw, 520px)'
+  minHeight = 'clamp(360px, 60vw, 520px)',
+  unknownRankVariant = 'unknown'
 }) {
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
@@ -178,7 +191,11 @@ export default function GeoGridMap({
           const marker = new mapsApi.Marker({
             position: { lat: point.lat, lng: point.lng },
             map: mapInstance,
-            icon: buildMarkerIcon(point.rankPosition, toNumeric(point.id) === toNumeric(selectedPointId)),
+            icon: buildMarkerIcon(
+              point.rankPosition,
+              toNumeric(point.id) === toNumeric(selectedPointId),
+              unknownRankVariant
+            ),
             title: point.rankPosition === null
               ? 'Rank not available'
               : `Rank ${point.rankLabel}`,
@@ -208,7 +225,7 @@ export default function GeoGridMap({
           markers.forEach((marker) => {
             const markerId = toNumeric(marker.__pointId);
             const isActive = normalizedSelected !== null && markerId === normalizedSelected;
-            marker.setIcon(buildMarkerIcon(marker.__rankPosition, isActive));
+            marker.setIcon(buildMarkerIcon(marker.__rankPosition, isActive, unknownRankVariant));
             marker.setZIndex(isActive ? 1000 : undefined);
 
             if (isActive) {
@@ -243,7 +260,7 @@ export default function GeoGridMap({
 
       mapInstanceRef.current = null;
     };
-  }, [apiKey, center, points, interactive, selectedPointId]);
+  }, [apiKey, center, points, interactive, selectedPointId, unknownRankVariant]);
 
   useEffect(() => {
     if (!markersRef.current.length) {
@@ -256,7 +273,7 @@ export default function GeoGridMap({
     markersRef.current.forEach((marker) => {
       const markerId = toNumeric(marker.__pointId);
       const isActive = normalizedSelected !== null && markerId === normalizedSelected;
-      marker.setIcon(buildMarkerIcon(marker.__rankPosition, isActive));
+      marker.setIcon(buildMarkerIcon(marker.__rankPosition, isActive, unknownRankVariant));
       marker.setZIndex(isActive ? 1000 : undefined);
 
       if (isActive) {
@@ -268,7 +285,7 @@ export default function GeoGridMap({
     if (activeMarker) {
       activeMarker.setZIndex(1000);
     }
-  }, [selectedPointId]);
+  }, [selectedPointId, unknownRankVariant]);
 
   return (
     <div className="geo-grid-map">

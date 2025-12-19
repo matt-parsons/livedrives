@@ -635,6 +635,13 @@ export default function GeoGridRunViewer({
                 points={mapPoints}
                 selectedPointId={selectedPointId}
                 onPointSelect={handlePointSelect}
+                unknownRankVariant={
+                  ['queued', 'running', 'in_progress', 'pending'].includes(
+                    String(run?.status ?? '').toLowerCase()
+                  )
+                    ? 'loading'
+                    : 'unknown'
+                }
               />
             </div>
           </div>
@@ -1032,4 +1039,3 @@ export default function GeoGridRunViewer({
     </>
   );
 }
-

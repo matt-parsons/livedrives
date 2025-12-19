@@ -942,6 +942,40 @@ textarea {
 
 }
 
+.latest-geogrid-card__progress {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.85rem;
+  margin-top: 1rem;
+}
+
+.latest-geogrid-card__progress-spinner {
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  border: 4px solid rgba(255, 255, 255, 0.22);
+  border-top-color: rgba(255, 255, 255, 0.88);
+  background-color: rgba(255, 255, 255, 0.06);
+  animation: automation-spin 1s linear infinite;
+}
+
+.latest-geogrid-card__progress-bar {
+  width: min(380px, 85%);
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.latest-geogrid-card__progress-fill {
+  height: 100%;
+  background: rgba(255, 255, 255, 0.82);
+  border-radius: 999px;
+  transition: width 220ms ease;
+}
+
 .latest-geogrid-card__placeholder {
   min-height: 220px;
   display: flex;

@@ -492,6 +492,7 @@ export default function OptimizationPanelsClient({
         </div>
       </section>
       <LatestGeoGridSnapshot
+        businessId={businessId}
         apiKey={mapsApiKey}
         center={mapCenter}
         points={mapPoints}
