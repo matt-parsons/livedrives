@@ -15,7 +15,7 @@ export default function ReviewPendingNotice() {
       </CardHeader>
       <CardContent className="space-y-3 text-sm text-muted-foreground">
         <p>
-          DataForSEO is still preparing your review results. Check back in a bit and we’ll
+          We&apos;re still gathering your review results. Check back in a bit and we&apos;ll
           automatically populate this page once the task completes.
         </p>
       </CardContent>
