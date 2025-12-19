@@ -453,7 +453,7 @@ export default function OptimizationPanelsClient({
 
 
             <SummaryMetricCard
-              title="Average rating trend"
+              title="30d Average rating trend"
               valueLabel={ratingLabel}
               indicator={ratingIndicator}
               deltaLabel={
@@ -470,7 +470,7 @@ export default function OptimizationPanelsClient({
               </div>
               <div className="dashboard-optimization-card__cta">
                 <Link className="cta-link" href={summaryLink}>
-                  View Pending Tasks ↗
+                  Fix Ranking Issues ↗
                 </Link>
               </div>   
             </div>

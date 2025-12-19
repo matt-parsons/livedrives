@@ -205,7 +205,7 @@ export default function ReviewOverview({
           deltaLabel={`vs ${snapshot.lastWeekReviews} last week`}
         />
         <SummaryMetricCard
-          title="Average rating trend"
+          title="30d Average rating trend"
           valueLabel={`${snapshot.averageRating.current.toFixed(1)} ★`}
           indicator={ratingIndicator}
           deltaLabel={`from ${snapshot.averageRating.previous.toFixed(1)} prior period`}

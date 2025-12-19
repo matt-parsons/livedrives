@@ -365,8 +365,7 @@ export default function KeywordOriginZoneForm({
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground">
-                We&apos;ll auto-create the first origin zone using the business location with a 3
-                mile radius.
+                We&apos;ll use the keyword you select to track your local search performance.
               </p>
             </div>
           )
