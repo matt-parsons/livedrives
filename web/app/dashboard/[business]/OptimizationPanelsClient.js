@@ -453,7 +453,7 @@ export default function OptimizationPanelsClient({
 
 
             <SummaryMetricCard
-              title="Average rating trend"
+              title="30d Average rating trend"
               valueLabel={ratingLabel}
               indicator={ratingIndicator}
               deltaLabel={
