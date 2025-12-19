@@ -15,7 +15,7 @@ export default function KeywordSelectionModal({ hasSelectedKeyword, business, pr
                   <p className="text-xs uppercase tracking-wide text-muted-foreground">STEP 1</p>
                   <p className="text-lg font-semibold text-foreground">Select your best keyword</p>
                   <p className="text-sm text-muted-foreground">
-                    This should be the main search term you believe customers use to find your business. <br />It's almost always a variation of <strong>[your primary service] + [your main location]</strong>.
+                    This should be the main search term you believe customers use to find your business. <br />It&apos;s almost always a variation of <strong>[your primary service] + [your main location]</strong>.
                   </p>
                 </div>
               </div>

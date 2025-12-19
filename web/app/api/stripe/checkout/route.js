@@ -34,7 +34,7 @@ export async function POST(request) {
     const session = await requireAuth();
     const stripe = getStripeClient();
     const body = await request.json();
-    const priceId = body?.priceId || process.env.STRIPE_PRICE_ID;
+    const priceId = body?.priceId || process.env.STRIPE_MO_PRICE_ID;
 
     if (!priceId) {
       return NextResponse.json({ error: 'Missing Stripe price configuration' }, { status: 400 });

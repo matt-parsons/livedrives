@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { sendPasswordResetEmail } from 'firebase/auth';
 import { auth } from '@/lib/firebaseClient';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
@@ -160,137 +161,156 @@ export default function UserAccountSettings({ initialEmail = '' }) {
   };
 
   return (
-    <div className="grid gap-8">
-      <form className="grid gap-4" onSubmit={handleEmailSubmit}>
-        <div className="space-y-2">
-          <Label htmlFor="user-email">Email</Label>
-          <Input
-            id="user-email"
-            type="email"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            autoComplete="email"
-            disabled={emailSaving}
-          />
-          <p className="text-xs text-muted-foreground">Change your login email.</p>
-        </div>
-
-        {emailError ? (
-          <p className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive" role="alert">
-            {emailError}
-          </p>
-        ) : null}
-        {emailStatus ? (
-          <p className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800" role="status">
-            {emailStatus}
-          </p>
-        ) : null}
-
-        <div className="flex justify-end">
-          <Button type="submit" disabled={emailSaving}>
-            {emailSaving ? 'Saving…' : 'Update email'}
-          </Button>
-        </div>
-      </form>
-
-      <form className="grid gap-4" onSubmit={handlePasswordSubmit}>
-        <div className="grid gap-4 md:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="new-password">New password</Label>
-            <Input
-              id="new-password"
-              type="password"
-              value={passwordState.newPassword}
-              onChange={(event) => setPasswordState((prev) => ({ ...prev, newPassword: event.target.value }))}
-              autoComplete="new-password"
-              disabled={passwordSaving}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="confirm-password">Confirm password</Label>
-            <Input
-              id="confirm-password"
-              type="password"
-              value={passwordState.confirmPassword}
-              onChange={(event) => setPasswordState((prev) => ({ ...prev, confirmPassword: event.target.value }))}
-              autoComplete="new-password"
-              disabled={passwordSaving}
-            />
-          </div>
-        </div>
-
-        {passwordError ? (
-          <p className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive" role="alert">
-            {passwordError}
-          </p>
-        ) : null}
-        {passwordStatus ? (
-          <p className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800" role="status">
-            {passwordStatus}
-          </p>
-        ) : null}
-
-        <div className="flex flex-wrap justify-between gap-3">
-          <div className="space-y-1 text-sm text-muted-foreground">
-            <p>Use a strong password to keep your account secure.</p>
-          </div>
-          <Button type="submit" disabled={passwordSaving}>
-            {passwordSaving ? 'Saving…' : 'Update password'}
-          </Button>
-        </div>
-      </form>
-
-      <div className="grid gap-3 rounded-lg border border-border/70 bg-muted/40 p-4">
+    <Dialog>
+      <div className="grid gap-4 flex-row justify-between md:flex md:items-center">
+        <p className="text-sm text-muted-foreground">Review and update your sign-in email, password, or account status.</p>
         <div>
-          <p className="font-semibold text-foreground">Send password reset email</p>
-          <p className="text-sm text-muted-foreground">We will email a reset link using the address above.</p>
-        </div>
-        {resetError ? (
-          <p className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive" role="alert">
-            {resetError}
-          </p>
-        ) : null}
-        {resetStatus ? (
-          <p className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800" role="status">
-            {resetStatus}
-          </p>
-        ) : null}
-        <div className="flex justify-end">
-          <Button type="button" variant="secondary" onClick={handleSendReset} disabled={resetSending}>
-            {resetSending ? 'Sending…' : 'Send reset link'}
-          </Button>
+        <DialogTrigger asChild>
+          <Button variant="secondary" type="button">Manage your account details</Button>
+        </DialogTrigger>
         </div>
       </div>
 
-      <div className="grid gap-3 rounded-lg border border-destructive/40 bg-destructive/5 p-4">
-        <div>
-          <p className="font-semibold text-destructive">Cancel account</p>
-          <p className="text-sm text-muted-foreground">
-            Deleting your account removes access and removes your user record. This action cannot be undone.
-          </p>
+      <DialogContent className="max-w-3xl">
+        <div className="space-y-1">
+          <p className="text-lg font-semibold text-foreground">Account details</p>
+          <p className="text-sm text-muted-foreground">These settings stay synced with Firebase authentication.</p>
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="delete-confirm">Type DELETE to confirm</Label>
-          <Input
-            id="delete-confirm"
-            value={deleteConfirm}
-            onChange={(event) => setDeleteConfirm(event.target.value)}
-            disabled={deleteSaving}
-            placeholder="DELETE"
-          />
+        <div className="max-h-[70vh] overflow-y-auto pr-1">
+          <div className="grid gap-8">
+            <form className="grid gap-4" onSubmit={handleEmailSubmit}>
+              <div className="space-y-2">
+                <Label htmlFor="user-email">Email</Label>
+                <Input
+                  id="user-email"
+                  type="email"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  autoComplete="email"
+                  disabled={emailSaving}
+                />
+                <p className="text-xs text-muted-foreground">Change your login email.</p>
+              </div>
+
+              {emailError ? (
+                <p className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive" role="alert">
+                  {emailError}
+                </p>
+              ) : null}
+              {emailStatus ? (
+                <p className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800" role="status">
+                  {emailStatus}
+                </p>
+              ) : null}
+
+              <div className="flex justify-end">
+                <Button type="submit" disabled={emailSaving}>
+                  {emailSaving ? 'Saving…' : 'Update email'}
+                </Button>
+              </div>
+            </form>
+
+            <form className="grid gap-4" onSubmit={handlePasswordSubmit}>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="new-password">New password</Label>
+                  <Input
+                    id="new-password"
+                    type="password"
+                    value={passwordState.newPassword}
+                    onChange={(event) => setPasswordState((prev) => ({ ...prev, newPassword: event.target.value }))}
+                    autoComplete="new-password"
+                    disabled={passwordSaving}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="confirm-password">Confirm password</Label>
+                  <Input
+                    id="confirm-password"
+                    type="password"
+                    value={passwordState.confirmPassword}
+                    onChange={(event) => setPasswordState((prev) => ({ ...prev, confirmPassword: event.target.value }))}
+                    autoComplete="new-password"
+                    disabled={passwordSaving}
+                  />
+                </div>
+              </div>
+
+              {passwordError ? (
+                <p className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive" role="alert">
+                  {passwordError}
+                </p>
+              ) : null}
+              {passwordStatus ? (
+                <p className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800" role="status">
+                  {passwordStatus}
+                </p>
+              ) : null}
+
+              <div className="flex flex-wrap justify-between gap-3">
+                <div className="space-y-1 text-sm text-muted-foreground">
+                  <p>Use a strong password to keep your account secure.</p>
+                </div>
+                <Button type="submit" disabled={passwordSaving}>
+                  {passwordSaving ? 'Saving…' : 'Update password'}
+                </Button>
+              </div>
+            </form>
+
+            <div className="grid gap-3 rounded-lg border border-border/70 bg-muted/40 p-4">
+              <div>
+                <p className="font-semibold text-foreground">Send password reset email</p>
+                <p className="text-sm text-muted-foreground">We will email a reset link using the address above.</p>
+              </div>
+              {resetError ? (
+                <p className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive" role="alert">
+                  {resetError}
+                </p>
+              ) : null}
+              {resetStatus ? (
+                <p className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800" role="status">
+                  {resetStatus}
+                </p>
+              ) : null}
+              <div className="flex justify-end">
+                <Button type="button" variant="secondary" onClick={handleSendReset} disabled={resetSending}>
+                  {resetSending ? 'Sending…' : 'Send reset link'}
+                </Button>
+              </div>
+            </div>
+
+            <div className="grid gap-3 rounded-lg border border-destructive/40 bg-destructive/5 p-4">
+              <div>
+                <p className="font-semibold text-destructive">Cancel account</p>
+                <p className="text-sm text-muted-foreground">
+                  Deleting your account removes access and removes your user record. This action cannot be undone.
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="delete-confirm">Type DELETE to confirm</Label>
+                <Input
+                  id="delete-confirm"
+                  value={deleteConfirm}
+                  onChange={(event) => setDeleteConfirm(event.target.value)}
+                  disabled={deleteSaving}
+                  placeholder="DELETE"
+                />
+              </div>
+              {deleteError ? (
+                <p className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive" role="alert">
+                  {deleteError}
+                </p>
+              ) : null}
+              <div className="flex justify-end">
+                <Button type="button" variant="destructive" onClick={handleDeleteAccount} disabled={deleteSaving}>
+                  {deleteSaving ? 'Cancelling…' : 'Delete account'}
+                </Button>
+              </div>
+            </div>
+          </div>
         </div>
-        {deleteError ? (
-          <p className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive" role="alert">
-            {deleteError}
-          </p>
-        ) : null}
-        <div className="flex justify-end">
-          <Button type="button" variant="destructive" onClick={handleDeleteAccount} disabled={deleteSaving}>
-            {deleteSaving ? 'Cancelling…' : 'Delete account'}
-          </Button>
-        </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

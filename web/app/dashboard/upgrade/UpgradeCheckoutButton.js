@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 
-export default function UpgradeCheckoutButton({ priceId }) {
+export default function UpgradeCheckoutButton({ priceId, buttonTxt = 'Start for Free' }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -44,7 +44,7 @@ export default function UpgradeCheckoutButton({ priceId }) {
         disabled={loading}
         className="group flex w-full items-center justify-center gap-3 rounded-xl border border-blue-600 bg-white px-6 py-4 text-base font-semibold text-blue-600 shadow-sm transition hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-60"
       >
-        <span>{loading ? 'Redirecting…' : 'Start for Free'}</span>
+        <span>{loading ? 'Redirecting…' : buttonTxt}</span>
         {loading ? null : (
           <svg
             viewBox="0 0 20 20"

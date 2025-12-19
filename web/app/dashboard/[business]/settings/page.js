@@ -6,6 +6,7 @@ import BusinessHoursForm from '../BusinessHoursForm';
 import OriginZonesManager from '../OriginZonesManager';
 import SoaxConfigForm from '../SoaxConfigForm';
 import GeoGridScheduleCard from '../GeoGridScheduleCard';
+import { loadAllOrganizationDirectories } from '@/app/dashboard/operations/users/helpers';
 
 import {
   loadBusiness,
@@ -80,14 +81,21 @@ export default async function BusinessSettingsPage({ params }) {
   //   redirect(`/dashboard/${encodeURIComponent(identifier)}`);
   // }
 
-  const [businessHours, originZones, soaxConfig, geoGridSchedule, geoGridRuns, subscription] = await Promise.all([
+  const [businessHours, originZones, soaxConfig, geoGridSchedule, geoGridRuns, subscription, organizations] = await Promise.all([
     loadBusinessHours(business.id),
     loadOriginZones(business.id),
     loadSoaxConfig(business.id),
     loadGeoGridSchedule(business.id),
     loadGeoGridRunSummaries(business.id),
-    loadSubscription(session.organizationId)
+    loadSubscription(session.organizationId),
+    loadAllOrganizationDirectories()
   ]);
+
+  const currentOrganization = organizations.find(
+    (org) => String(org.organizationId) === String(session.organizationId)
+  );
+
+  const trial = currentOrganization ? currentOrganization.trial : null;
 
   const initialValues = {
     ...business,
@@ -284,15 +292,13 @@ export default async function BusinessSettingsPage({ params }) {
             ) : ( null )
             }
 
-            <SubscriptionSettings subscription={subscription} />
+            <SubscriptionSettings subscription={subscription} trial={trial} />
 
             <section className="section">
-              <div className="section-header">
-                <h2 className="section-title">User settings</h2>
-                <p className="section-caption">Manage your sign-in details, synced with Firebase authentication.</p>
-              </div>
-
               <div className="surface-card surface-card--muted">
+                <div className="section-header">
+                  <h2 className="section-title">User settings</h2>
+                </div>
                 <UserAccountSettings initialEmail={session.email} />
               </div>
             </section>
