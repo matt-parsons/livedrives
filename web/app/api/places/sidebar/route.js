@@ -27,7 +27,7 @@ export async function POST(req) {
 
     if (provider === 'dataforseo') {
       const { fetchPlaceSidebarDataForSeo } = await import('@lib/google/placesSidebarDataForSeo.js');
-      const data = await fetchPlaceSidebarDataForSeo(placeId, options);
+      const data = await fetchPlaceSidebarDataForSeo(placeId, { ...options, signal: req.signal });
       return NextResponse.json(data);
     }
 
