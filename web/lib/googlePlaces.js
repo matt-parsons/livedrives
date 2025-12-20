@@ -3,7 +3,7 @@ const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
 const SIDEBAR_PROVIDER = (process.env.SIDEBAR_PROVIDER || 'dataforseo').toLowerCase();
 const DATAFORSEO_LOCATION_CODE = process.env.DATAFORSEO_LOCATION_CODE;
 const DATAFORSEO_LANGUAGE_CODE = process.env.DATAFORSEO_LANGUAGE_CODE;
-const SIDEBAR_TIMEOUT_MS = 5000;
+const SIDEBAR_TIMEOUT_MS = 10000;
 
 const fs = require("fs");
 const path = require("path");

@@ -12,7 +12,7 @@ export default function KeywordSelectionModal({ hasSelectedKeyword, business, pr
             <section>
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div className="space-y-1">
-                  <p className="text-xs uppercase tracking-wide text-muted-foreground">STEP 1</p>
+                  <p className="text-xs uppercase tracking-wide text-muted-foreground">STEP 2</p>
                   <p className="text-lg font-semibold text-foreground">Select your best keyword</p>
                   <p className="text-sm text-muted-foreground">
                     This should be the main search term you believe customers use to find your business. <br />It&apos;s almost always a variation of <strong>[your primary service] + [your main location]</strong>.

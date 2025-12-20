@@ -12,23 +12,6 @@ function getStripeClient() {
   return new Stripe(secretKey, { apiVersion: '2024-06-20' });
 }
 
-function buildSuccessUrl(requestUrl) {
-  const url = new URL(requestUrl);
-  url.search = '';
-  url.hash = '';
-  url.pathname = '/dashboard/upgrade';
-  // url.searchParams.set('session_id', '{CHECKOUT_SESSION_ID}');
-  const baseUrl = `${url.origin}${url.pathname}`;
-  return `${baseUrl}?session_id={CHECKOUT_SESSION_ID}`;}
-
-function buildCancelUrl(requestUrl) {
-  const url = new URL(requestUrl);
-  url.search = '';
-  url.hash = '';
-  url.pathname = '/dashboard/upgrade';
-  return url.toString();
-}
-
 export async function POST(request) {
   try {
     const session = await requireAuth();
@@ -40,8 +23,8 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Missing Stripe price configuration' }, { status: 400 });
     }
 
-    const successUrl = buildSuccessUrl(request.url);
-    const cancelUrl = buildCancelUrl(request.url);
+    const successUrl = `${process.env.APP_PRODUCTION_URL}/dashboard/upgrade?session_id={CHECKOUT_SESSION_ID}`;
+    const cancelUrl = `${process.env.APP_PRODUCTION_URL}/dashboard/upgrade`;
 
     const checkoutSession = await stripe.checkout.sessions.create({
       mode: 'subscription',
