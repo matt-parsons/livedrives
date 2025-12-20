@@ -105,11 +105,6 @@ export async function POST(request) {
             dbValues.mid = null;
             continue;
           }
-
-          if (message.includes('g_place_id')) {
-            dbValues.g_place_id = null;
-            continue;
-          }
         }
 
         throw error;

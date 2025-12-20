@@ -742,6 +742,10 @@ export function normalizeBusinessPayload(input, { partial = false } = {}) {
     values.gPlaceId = toNullableString(input.gPlaceId);
   }
 
+  if (!partial && !toRequiredString(input.gPlaceId)) {
+    errors.push('gPlaceId is required and cannot be empty.');
+  }
+
   return { errors, values };
 }
 
