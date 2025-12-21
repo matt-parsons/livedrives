@@ -11,6 +11,7 @@
     - `pm2 start npm --name geogrid-scheduler -- run scheduler:geogrid`
 - CTR sessions
   - `pm2 start scheduler-db.js --name drives-db`
+  - CTR automation runs the `runCTR` flow with Playwright (Chromium).
 
 ### CTR pause control
 
