@@ -120,11 +120,11 @@ export default async function UpgradePage({ searchParams }) {
 
                     <ul className="mt-8 space-y-4">
                       {[
-                        'Local Rank Tracker',
-                        'Google Business Profile (GBP) AI Checklist',
-                        'Reputation Monitoring',
-                        'Competitor Tracking',
+                        'Territory Expansion Tracker',
+                        'Smart Growth Engine',
+                        'Reputation Command Center',
                         '1 Business Location',
+                        'Competitor Watch',
                         'VIP Support',
                         '1 HR Private Onboarding',
                         '7 day free trial'
@@ -170,11 +170,11 @@ export default async function UpgradePage({ searchParams }) {
 
                     <ul className="mt-8 space-y-4 px-8">
                       {[
-                        'Local Rank Tracker',
-                        'Google Business Profile (GBP) AI Checklist',
-                        'Reputation Monitoring',
-                        'Competitor Tracking',
+                        'Territory Expansion Tracker',
+                        'Smart Growth Engine',
+                        'Reputation Command Center',
                         '1 Business Location',
+                        'Competitor Watch',
                         'VIP Support',
                         '1 HR Private Onboarding',
                         '7 day free trial'

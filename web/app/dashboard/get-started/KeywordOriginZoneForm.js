@@ -271,7 +271,7 @@ export default function KeywordOriginZoneForm({
       }
 
       setKeyword('');
-      setStatus('Origin zone created successfully.');
+      setStatus('Launching your keyword tracking zone. This may take a few minutes to appear in your dashboard.');
       router.refresh();
     } catch (err) {
       setError(err.message || 'Failed to create origin zone.');
