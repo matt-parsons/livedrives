@@ -450,8 +450,8 @@ if (!isMainThread) {
         }
         
         const soaxConfig = {
-          username: soax_user,
-          password: workerConfig.soaxPassword,
+          res_username: soax_user,
+          res_password: workerConfig.soaxPassword,
           endpoint: soax_endpoint,
         };
 
