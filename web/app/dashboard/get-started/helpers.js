@@ -40,14 +40,15 @@ export async function loadTrialStatus(organizationId) {
   const endsAt = toDate(row.trialEndsAt);
   const createdAt = toDate(row.createdAt);
   const status = row.status || 'active';
-  const now = new Date();
-
   const endsTime = endsAt ? endsAt.getTime() : null;
+  const now = new Date();
   const msRemaining = endsTime === null ? null : Math.max(0, endsTime - now.getTime());
-  const daysRemaining = msRemaining === null ? null : Math.ceil(msRemaining / (24 * 60 * 60 * 1000));
+  const daysRemaining = status === 'active' && msRemaining !== null
+    ? Math.ceil(msRemaining / (24 * 60 * 60 * 1000))
+    : 0;
 
-  const isExpired = status === 'expired' || (endsTime !== null && now.getTime() > endsTime);
-  const isActive = status === 'active' && !isExpired;
+  const isExpired = status === 'expired';
+  const isActive = status === 'active';
 
   return {
     organizationId: row.organizationId,

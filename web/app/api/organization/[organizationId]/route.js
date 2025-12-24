@@ -1,6 +1,21 @@
 import { NextResponse } from 'next/server';
+import pool from '@lib/db/db.js';
 import { requireAuth } from '@/lib/authServer';
 import { loadAllOrganizationDirectories } from '@/app/dashboard/operations/users/helpers';
+import { isHighLevelConfigured, upsertHighLevelContact } from '@/lib/highLevel.server';
+
+async function expireTrialIfNeeded(organizationId) {
+  const [result] = await pool.query(
+    `UPDATE organization_trials
+        SET status = 'expired'
+      WHERE organization_id = ?
+        AND status = 'active'
+        AND trial_ends_at < NOW()`,
+    [organizationId]
+  );
+
+  return result?.affectedRows > 0;
+}
 
 export async function GET(request, { params }) {
   try {
@@ -26,9 +41,38 @@ export async function GET(request, { params }) {
       return NextResponse.json({ error: 'Unauthorized access to organization' }, { status: 403 });
     }
 
+    if (currentOrganization.trial?.status === 'active') {
+      const didExpire = await expireTrialIfNeeded(currentOrganization.organizationId);
+
+      if (didExpire && isHighLevelConfigured() && session.email) {
+        const contactName = session.name || session.email?.split('@')[0] || session.email;
+        try {
+          await upsertHighLevelContact({
+            email: session.email,
+            name: contactName,
+            tags: ['trial_expired']
+          });
+        } catch (error) {
+          console.error('Failed to sync HighLevel contact for trial expiration', error?.response?.data || error);
+        }
+      } else if (didExpire && !isHighLevelConfigured()) {
+        console.warn('HighLevel API not configured; skipping trial expiration tag sync.');
+      }
+
+      if (didExpire && currentOrganization.trial) {
+        currentOrganization.trial = {
+          ...currentOrganization.trial,
+          status: 'expired',
+          isActive: false,
+          isExpired: true,
+          daysRemaining: 0
+        };
+      }
+    }
+
     return NextResponse.json({
       subscription: currentOrganization.subscription,
-      trial: currentOrganization.trial,
+      trial: currentOrganization.trial
     });
   } catch (error) {
     if (error.name === 'AuthError') {

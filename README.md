@@ -41,6 +41,9 @@ variable so the suggestions API can call OpenAI:
 - `HIGH_LEVEL_CLIENT_SECRET` – Client secret for the HighLevel API client.
 - `HIGH_LEVEL_LOCATION_ID` – The HighLevel location identifier to store new trial contacts.
 - Registrations attempt to create/update a contact tagged `account_trial` using the email/name collected during signup.
+- Successful Stripe subscription syncs add a `subscription_<plan>` tag based on the Stripe product name (or price ID when name is unavailable).
+- Subscription cancellations add a `subscription_canceled` tag.
+- Trial expirations add a `trial_expired` tag the first time the expiration is detected.
 - Business create/update requests also upsert the same contact with company/address/phone/website details when available.
 
 ## DataForSEO Google Posts (GBP updates)

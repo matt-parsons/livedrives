@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import pool from '@lib/db/db.js';
 import { AuthError, requireAuth } from '@/lib/authServer';
+import { isHighLevelConfigured, upsertHighLevelContact } from '@/lib/highLevel.server';
 
 function getStripeClient() {
   const secretKey = process.env.STRIPE_SECRET_KEY;
@@ -50,6 +51,33 @@ function resolvePlanName(subscription) {
   return subscription?.items?.data?.[0]?.price?.product?.name ?? null;
 }
 
+function normalizeTagValue(value) {
+  if (value == null) {
+    return null;
+  }
+
+  const normalized = String(value).trim().toLowerCase().replace(/[^a-z0-9]+/g, '_');
+  return normalized.replace(/^_+|_+$/g, '') || null;
+}
+
+function buildSubscriptionTag(planName, planId) {
+  const base = normalizeTagValue(planName || planId);
+  return base ? `subscription_${base}` : null;
+}
+
+async function loadOrganizationBusinessDetails(organizationId) {
+  const [rows] = await pool.query(
+    `SELECT business_name AS businessName, destination_address AS address1
+       FROM businesses
+      WHERE organization_id = ?
+      ORDER BY created_at ASC
+      LIMIT 1`,
+    [organizationId]
+  );
+
+  return rows[0] || null;
+}
+
 export async function PATCH(request) {
   try {
     const session = await requireAuth();
@@ -87,6 +115,28 @@ export async function PATCH(request) {
 
     await updateOrganizationSubscription(session.organizationId, subscriptionStatus, planId,  planName, renewsAt, stripeSubscriptionId);
     await removeOrganizationTrial(session.organizationId);
+
+    if (isHighLevelConfigured()) {
+      const subscriptionTag = buildSubscriptionTag(planName, planId);
+      const contactName = session.name || session.email?.split('@')[0] || session.email;
+      const businessDetails = await loadOrganizationBusinessDetails(session.organizationId);
+
+      if (session.email && subscriptionTag) {
+        try {
+          await upsertHighLevelContact({
+            email: session.email,
+            name: contactName,
+            tags: [subscriptionTag],
+            companyName: businessDetails?.businessName,
+            address1: businessDetails?.address1
+          });
+        } catch (error) {
+          console.error('Failed to sync HighLevel contact for subscription purchase', error?.response?.data || error);
+        }
+      }
+    } else {
+      console.warn('HighLevel API not configured; skipping subscription tag sync.');
+    }
 
     return NextResponse.json({
       subscriptionStatus,
@@ -152,6 +202,27 @@ export async function DELETE(request) {
         WHERE id = ?`,
       [organizationId]
     );
+
+    if (isHighLevelConfigured()) {
+      const contactName = session.name || session.email?.split('@')[0] || session.email;
+      const businessDetails = await loadOrganizationBusinessDetails(organizationId);
+
+      if (session.email) {
+        try {
+          await upsertHighLevelContact({
+            email: session.email,
+            name: contactName,
+            tags: ['subscription_canceled'],
+            companyName: businessDetails?.businessName,
+            address1: businessDetails?.address1
+          });
+        } catch (error) {
+          console.error('Failed to sync HighLevel contact for subscription cancellation', error?.response?.data || error);
+        }
+      }
+    } else {
+      console.warn('HighLevel API not configured; skipping subscription cancellation tag sync.');
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {
