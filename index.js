@@ -131,6 +131,8 @@ const normalizeIdentifier = (value) =>
     let run2Captcha = false;
     // 3) Run CTR
     while (attempts < 4) {
+      if(attempts === 1) { run2Captcha = true;}
+
       ctrResult = await runCTR({ runId, config, origin, keyword, sessionId, run2Captcha });
       console.log('');
 
@@ -141,7 +143,6 @@ const normalizeIdentifier = (value) =>
       } else {
         break; // either success or failed captcha
       }
-      if(attempts === 1) { run2Captcha = true;}
     }
 
     if (ctrResult.reason !== 'success') {

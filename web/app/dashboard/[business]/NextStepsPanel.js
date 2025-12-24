@@ -472,9 +472,9 @@ export default function NextStepsPanel({ steps = [], optimizationHref = null, lo
       <div className="surface-card surface-card--muted surface-card--compact">
         <div className="section-header">
           <div>
-            <h2 className="section-title">Next steps to improve your profile</h2>
+            <h2 className="section-title">Start Here</h2>
             <p className="section-caption">
-              Focus on these tasks to strengthen your local visibility.
+              Focus on these tasks to strengthen your local visibility. <strong>Click on the tasks to see how to</strong>
             </p>
           </div>
         </div>
@@ -492,7 +492,7 @@ export default function NextStepsPanel({ steps = [], optimizationHref = null, lo
           </p>
         ) : (
           <ul className="next-steps-panel__list">
-            {visibleSteps.map((task) => {
+            {visibleSteps.map((task, index) => {
               const manualStatusLabel = describeManualCompletion(task.manualCompletion);
               return (
                 <li key={task.id}>
@@ -502,7 +502,7 @@ export default function NextStepsPanel({ steps = [], optimizationHref = null, lo
                     onClick={() => handleTaskClick(task)}
                   >
                     <div className="next-steps-panel__item-header">
-                      <strong>{task.label}</strong>
+                      <span><strong>{index + 1}. {task.label}</strong></span>
                       <div className="next-steps-panel__status-group">
                         {manualStatusLabel ? (
                           <span className="status-pill status-pill--muted next-steps-panel__manual-pill">
@@ -516,6 +516,7 @@ export default function NextStepsPanel({ steps = [], optimizationHref = null, lo
                       </div>
                     </div>
                     <p>{task.detail}</p>
+                    <span class="text-primary">Click to create to get started.</span>
                   </button>
                 </li>
               );

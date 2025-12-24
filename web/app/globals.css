@@ -1054,6 +1054,14 @@ textarea {
   gap: 0.35rem;
   text-align: left;
   color: inherit;
+  transition: all 0.25s;
+}
+
+.next-steps-panel__item:hover {
+  box-shadow: var(--shadow-md);
+  margin-top: -5px;
+  margin-bottom: 5px;
+  background-color: #f8fafc;
 }
 
 .next-steps-panel__item-header {
@@ -1068,6 +1076,10 @@ textarea {
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: 0.35rem;
+}
+
+.next-steps-panel__item  .text-primary {
+  font-size: 0.85rem;
 }
 
 .next-steps-panel__manual-select {
@@ -1123,7 +1135,7 @@ textarea {
   border-radius: 16px;
   padding: 1.25rem 1.5rem;
   width: min(720px, 95%);
-  max-height: min(92vh, 640px);
+  max-height: 90vh;
   overflow: auto;
   box-shadow: 0 20px 45px rgba(15, 23, 42, 0.22);
   pointer-events: all;
