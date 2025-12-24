@@ -50,13 +50,13 @@ export default async function BusinessLayout({ children, params }) {
   const organizationBusinesses = await loadOrganizationBusinesses(session);
   const businessOptions = organizationBusinesses.map((entry) => ({
     id: entry.id,
-    value: entry.businessSlug ?? String(entry.id),
+    value: String(entry.id),
     label: entry.businessName || `Business #${entry.id}`,
     isActive: entry.isActive
   }));
 
   const businessIdentifier = business.businessSlug ?? String(business.id);
-  const currentBusinessOptionValue = businessIdentifier;
+  const currentBusinessOptionValue = String(business.id);
   const showBusinessSwitcher = businessOptions.length > 1;
   const canManageSettings = session.role === 'admin';
   const businessName = business.businessName || 'Business';

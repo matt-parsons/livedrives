@@ -1,21 +1,58 @@
 'use client';
 
 import { useTransition } from 'react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-function buildHref(identifier) {
-  const safeIdentifier = encodeURIComponent(identifier);
-  return `/dashboard/${safeIdentifier}`;
+const DASHBOARD_SEGMENTS = new Set([
+  'optimization-steps',
+  'keywords',
+  'reviews',
+  'settings',
+  'runs',
+  'ctr',
+  'get-started',
+  'operations',
+  'upgrade',
+  'businesses',
+  'geo-grid-launcher'
+]);
+
+function resolveDashboardPathname(pathname) {
+  if (!pathname) {
+    return '/dashboard';
+  }
+
+  const segments = pathname.split('/').filter(Boolean);
+
+  if (segments.length === 0 || segments[0] !== 'dashboard') {
+    return '/dashboard';
+  }
+
+  if (segments.length === 1) {
+    return '/dashboard';
+  }
+
+  const secondSegment = segments[1];
+
+  if (DASHBOARD_SEGMENTS.has(secondSegment)) {
+    return `/${segments.join('/')}`;
+  }
+
+  const remaining = segments.slice(2);
+
+  return remaining.length ? `/dashboard/${remaining.join('/')}` : '/dashboard';
 }
 
 export default function BusinessSwitcher({ businesses, currentValue }) {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
 
   const hasMultipleOptions = Array.isArray(businesses) && businesses.length > 1;
-  const effectiveCurrentValue = currentValue ?? '';
+  const effectiveCurrentValue = currentValue ? String(currentValue) : '';
 
   function handleChange(nextValue) {
     const value = nextValue;
@@ -25,7 +62,11 @@ export default function BusinessSwitcher({ businesses, currentValue }) {
     }
 
     startTransition(() => {
-      router.push(buildHref(value));
+      const nextPath = resolveDashboardPathname(pathname);
+      const params = new URLSearchParams(searchParams?.toString());
+      params.set('bId', value);
+      const nextHref = params.toString() ? `${nextPath}?${params.toString()}` : nextPath;
+      router.push(nextHref);
     });
   }
 

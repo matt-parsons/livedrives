@@ -35,12 +35,16 @@ async function loadAuthorizedBusiness(session, businessId) {
   return rows[0] ?? null;
 }
 
-function buildReviewRedirect(request, businessSlug, status) {
+function buildReviewRedirect(request, businessId, status) {
   const url = new URL(request.url);
-  url.pathname = businessSlug ? `/dashboard/${businessSlug}/reviews` : '/dashboard';
+  url.pathname = businessId ? '/dashboard/reviews' : '/dashboard';
   url.searchParams.delete('code');
   url.searchParams.delete('state');
   url.searchParams.delete('error');
+
+  if (businessId) {
+    url.searchParams.set('bId', String(businessId));
+  }
 
   if (status) {
     url.searchParams.set('gbpAuth', status);
@@ -71,12 +75,12 @@ export async function GET(request) {
     }
 
     if (!code) {
-      return buildReviewRedirect(request, business.businessSlug, 'error');
+      return buildReviewRedirect(request, business.id, 'error');
     }
 
     await exchangeGbpAuthorizationCode(businessId, code);
 
-    return buildReviewRedirect(request, business.businessSlug, 'success');
+    return buildReviewRedirect(request, business.id, 'success');
   } catch (error) {
     console.error('Failed to handle GBP OAuth callback', error);
     return buildReviewRedirect(request, null, 'error');

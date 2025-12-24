@@ -8,26 +8,27 @@ import {
   DASHBOARD_NAV_TOGGLE_EVENT
 } from '@/app/dashboard/navEvents';
 
-function encodeIdentifier(value) {
-  if (!value) {
-    return '';
-  }
-
-  return encodeURIComponent(value);
-}
-
 const NAV_ITEMS = [
-  { id: 'dashboard', label: 'Dashboard', buildHref: (base) => base },
-  { id: 'optimization-steps', label: 'What to Fix Next', buildHref: (base) => `${base}/optimization-steps` },
-  { id: 'keywords', label: 'Rank Visibility', buildHref: (base) => `${base}/keywords` },
-  { id: 'reviews', label: 'Reviews & Trust', buildHref: (base) => `${base}/reviews` },
-  { id: 'settings', label: 'Settings', buildHref: (base) => `${base}/settings` },
-  { id: 'logout', label: 'Log out', buildHref: () => '/logout', prefetch: false }
+  { id: 'dashboard', label: 'Dashboard', path: '' },
+  { id: 'optimization-steps', label: 'What to Fix Next', path: 'optimization-steps' },
+  { id: 'keywords', label: 'Rank Visibility', path: 'keywords' },
+  { id: 'reviews', label: 'Reviews & Trust', path: 'reviews' },
+  { id: 'settings', label: 'Settings', path: 'settings' },
+  { id: 'logout', label: 'Log out', path: 'logout', prefetch: false }
 ];
 
-export default function BusinessNavigation({ businessIdentifier, active = 'dashboard' }) {
-  const safeIdentifier = businessIdentifier ? String(businessIdentifier) : '';
-  const baseHref = `/dashboard/${encodeIdentifier(safeIdentifier)}`;
+function buildDashboardHref(path = '', businessId = null) {
+  const basePath = path ? `/dashboard/${path}` : '/dashboard';
+
+  if (!businessId || path === 'logout') {
+    return path === 'logout' ? '/logout' : basePath;
+  }
+
+  const params = new URLSearchParams({ bId: String(businessId) });
+  return `${basePath}?${params.toString()}`;
+}
+
+export default function BusinessNavigation({ businessId = null, active = 'dashboard' }) {
   const [isOpen, setIsOpen] = useState(false);
 
   const toggleMenu = () => {
@@ -118,7 +119,9 @@ export default function BusinessNavigation({ businessIdentifier, active = 'dashb
       <nav id={DASHBOARD_NAV_ID} className="page-subnav" aria-label="Business sections">
         <ul className="page-subnav__list">
           {NAV_ITEMS.map((item) => {
-            const href = item.buildHref(baseHref);
+            const href = item.id === 'logout'
+              ? buildDashboardHref('logout')
+              : buildDashboardHref(item.path, businessId);
             const isActive = item.id === active;
             const prefetch =
               typeof item.prefetch === 'boolean' ? item.prefetch : undefined;

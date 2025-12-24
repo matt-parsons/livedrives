@@ -36,7 +36,7 @@ export default async function EditBusinessPage({ params }) {
 
   const businessLabel = business.businessName || 'Business';
   const businessIdentifier = business.businessSlug ?? String(business.id);
-  const backHref = `/dashboard/${encodeURIComponent(businessIdentifier)}`;
+  const backHref = `/dashboard?bId=${encodeURIComponent(business.id)}`;
   const destination = business.destinationAddress
     ? `${business.destinationAddress}${business.destinationZip ? `, ${business.destinationZip}` : ''}`
     : null;
@@ -47,7 +47,7 @@ export default async function EditBusinessPage({ params }) {
         <aside className="dashboard-layout__sidebar" aria-label="Workspace navigation">
           <SidebarBrand />
           <div className="dashboard-sidebar__menu">
-            <BusinessNavigation businessIdentifier={businessIdentifier} active="dashboard" />
+            <BusinessNavigation businessId={business.id} active="dashboard" />
           </div>
         </aside>
 

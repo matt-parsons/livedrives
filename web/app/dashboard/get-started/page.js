@@ -112,10 +112,14 @@ export default async function MemberJourneyPage() {
 
   const { primaryBusiness, originZones } = businessContext;
   const defaultIdentifier = primaryBusiness
-    ? encodeURIComponent(primaryBusiness.businessSlug ?? String(primaryBusiness.id))
+    ? primaryBusiness.businessSlug ?? String(primaryBusiness.id)
     : null;
-  const businessHref = defaultIdentifier ? `/dashboard/${defaultIdentifier}` : null;
-  const editHref = defaultIdentifier ? `${businessHref}/edit` : null;
+  const businessHref = primaryBusiness
+    ? `/dashboard?bId=${encodeURIComponent(primaryBusiness.id)}`
+    : null;
+  const editHref = defaultIdentifier
+    ? `/dashboard/${encodeURIComponent(defaultIdentifier)}/edit`
+    : null;
 
   const shouldRedirectToDashboard =
     Boolean(primaryBusiness) && originZones.length > 0 && Boolean(businessHref);

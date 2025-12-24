@@ -64,7 +64,7 @@ export default async function UpgradePage({ searchParams }) {
 
   const businessOptions = businesses.map((entry) => ({
     id: entry.id,
-    value: entry.businessSlug ?? String(entry.id),
+    value: String(entry.id),
     label: entry.businessName || `Business #${entry.id}`,
     isActive: entry.isActive
   }));
@@ -80,7 +80,7 @@ export default async function UpgradePage({ searchParams }) {
     showBusinessSwitcher: businessOptions.length > 1,
     businessIdentifier,
     businessOptions,
-    currentBusinessOptionValue: businessIdentifier
+    currentBusinessOptionValue: String(business.id)
   };
 
   const checkoutSessionId = searchParams?.session_id ?? null;
@@ -92,7 +92,7 @@ export default async function UpgradePage({ searchParams }) {
           <aside className="dashboard-layout__sidebar" aria-label="Workspace navigation">
             <SidebarBrand />
             <div className="dashboard-sidebar__menu">
-              <BusinessNavigation businessIdentifier={businessIdentifier} active="dashboard" />
+              <BusinessNavigation businessId={business.id} active="dashboard" />
             </div>
           </aside>
 

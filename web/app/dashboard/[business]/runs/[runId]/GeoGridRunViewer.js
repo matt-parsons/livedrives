@@ -349,8 +349,9 @@ export default function GeoGridRunViewer({
       setErrorMessage(null);
 
       if (typeof window !== 'undefined') {
-        const identifier = businessIdentifier ?? String(businessId);
-        const nextUrl = `/dashboard/${encodeURIComponent(identifier)}/runs/${nextRun.id}`;
+        const params = new URLSearchParams(window.location.search);
+        params.set('bId', String(businessId));
+        const nextUrl = `/dashboard/runs/${nextRun.id}?${params.toString()}`;
         window.history.replaceState({}, '', nextUrl);
       }
     } catch (error) {

@@ -19,6 +19,12 @@
 - The paused state is stored on-disk at `CTR_PAUSE_PATH`/`CTR_PAUSE_FILE` (defaults to `ctr-pause-state.json` in the repo
   root) so the scheduler and dashboard share the same source of truth.
 
+## Dashboard routes
+
+- `GET /dashboard`, `/dashboard/optimization-steps`, `/dashboard/keywords`, `/dashboard/reviews`,
+  `/dashboard/settings`, `/dashboard/runs/:runId`, and `/dashboard/ctr` resolve the active business from the session
+  and accept `?bId=<businessId>` to view a specific business (useful for admins).
+
 ## Keyword suggestion service
 
 Onboarding now asks ChatGPT for the top three trackable keywords for a new business. Set the following environment

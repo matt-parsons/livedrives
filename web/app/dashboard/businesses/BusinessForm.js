@@ -353,7 +353,10 @@ export default function BusinessForm({
       }
 
       const targetIdentifier = business.businessSlug ?? business.id;
-      const destination = redirectPath || `/dashboard/${encodeURIComponent(targetIdentifier)}`;
+      const businessId = business.id ?? null;
+      const destination = redirectPath || (businessId
+        ? `/dashboard?bId=${encodeURIComponent(businessId)}`
+        : `/dashboard/${encodeURIComponent(targetIdentifier)}`);
 
       if (redirectPath) {
         setSubmitting(false);

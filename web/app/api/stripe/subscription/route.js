@@ -126,7 +126,7 @@ export async function PATCH(request) {
           await upsertHighLevelContact({
             email: session.email,
             name: contactName,
-            tags: [subscriptionTag],
+            tags: ['paid_customer', subscriptionTag],
             companyName: businessDetails?.businessName,
             address1: businessDetails?.address1
           });
