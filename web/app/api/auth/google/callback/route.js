@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { adminAuth } from '@/lib/firebaseAdmin';
 import { bootstrapUser } from '@/lib/bootstrapUser';
 import { applySessionCookie, SESSION_MAX_AGE_MS } from '@/lib/authServer';
+import { trackUserLogin } from '@/lib/loginTracking';
 
 const GOOGLE_LOGIN_ID_KEYS = [
   'GOOGLE_LOGIN_OAUTH_CLIENT_ID',
@@ -198,6 +199,12 @@ export async function GET(request) {
     const sessionCookie = await adminAuth.createSessionCookie(firebaseIdToken, {
       expiresIn: SESSION_MAX_AGE_MS
     });
+
+    try {
+      await trackUserLogin({ firebaseUid: decoded.uid });
+    } catch (error) {
+      console.error('Failed to track login activity', error);
+    }
 
     return applySessionCookie(NextResponse.redirect(redirectUrl.toString()), sessionCookie, {
       hostname: request?.nextUrl?.hostname ?? new URL(request.url).hostname,

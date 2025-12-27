@@ -24,6 +24,8 @@
 - `GET /dashboard`, `/dashboard/optimization-steps`, `/dashboard/keywords`, `/dashboard/reviews`,
   `/dashboard/settings`, `/dashboard/runs/:runId`, and `/dashboard/ctr` resolve the active business from the session
   and accept `?bId=<businessId>` to view a specific business (useful for admins).
+- `GET /dashboard/upgrade` shows pricing and checkout; Stripe redirects to `/dashboard/upgrade/success?session_id=...`
+  to finalize the subscription sync.
 
 ## Keyword suggestion service
 
@@ -49,6 +51,7 @@ variable so the suggestions API can call OpenAI:
 - Registrations attempt to create/update a contact tagged `account_trial` using the email/name collected during signup.
 - Successful Stripe subscription syncs add a `subscription_<plan>` tag based on the Stripe product name (or price ID when name is unavailable).
 - Subscription cancellations add a `subscription_canceled` tag.
+- Trial logins that return 12+ hours after the trial starts upsert a `trial_engaged` tag.
 - Trial expirations add a `trial_expired` tag the first time the expiration is detected.
 - Business create/update requests also upsert the same contact with company/address/phone/website details when available.
 

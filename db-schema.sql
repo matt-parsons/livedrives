@@ -374,6 +374,7 @@ CREATE TABLE `users` (
   `business_id` bigint(20) UNSIGNED DEFAULT NULL,
   `role` enum('owner','admin','member') DEFAULT 'owner',
   `name` varchar(255) DEFAULT NULL,
+  `last_login_at` timestamp NULL DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 

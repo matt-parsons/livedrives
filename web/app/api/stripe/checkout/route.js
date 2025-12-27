@@ -23,7 +23,7 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Missing Stripe price configuration' }, { status: 400 });
     }
 
-    const successUrl = `${process.env.APP_PRODUCTION_URL}/dashboard/upgrade?session_id={CHECKOUT_SESSION_ID}`;
+    const successUrl = `${process.env.APP_PRODUCTION_URL}/dashboard/upgrade/success?session_id={CHECKOUT_SESSION_ID}`;
     const cancelUrl = `${process.env.APP_PRODUCTION_URL}/dashboard/upgrade`;
 
     const checkoutSession = await stripe.checkout.sessions.create({

@@ -10,6 +10,7 @@ import {
   upsertHighLevelContact,
   isHighLevelConfigured
 } from '@/lib/highLevel.server';
+import { trackUserLogin } from '@/lib/loginTracking';
 
 export const runtime = 'nodejs';
 
@@ -158,6 +159,12 @@ export async function POST(request) {
       const sessionCookie = await adminAuth.createSessionCookie(idToken, {
         expiresIn: SESSION_MAX_AGE_MS
       });
+
+      try {
+        await trackUserLogin({ firebaseUid: userRecord.uid });
+      } catch (error) {
+        console.error('Failed to track login activity', error);
+      }
 
       if (isHighLevelConfigured()) {
         console.log('[HIGHLEVEL] Syncing contact for new registration:');
