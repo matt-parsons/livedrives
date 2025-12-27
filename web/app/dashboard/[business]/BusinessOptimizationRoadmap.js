@@ -4,6 +4,8 @@ import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image'
 
+import { resolveProfileHealthSummary, resolveSectionHealthLabel } from './optimization';
+
 function formatImpact(weight) {
   if (weight === null || weight === undefined) {
     return null;
@@ -246,6 +248,7 @@ export default function BusinessOptimizationRoadmap({ roadmap, error, placeId, e
 
   const sections = Array.isArray(roadmap.sections) ? roadmap.sections : [];
   const hasSections = sections.length > 0;
+  const profileHealth = resolveProfileHealthSummary(roadmap.progressPercent);
 
   return (
     <div className="surface-card surface-card--muted">
@@ -256,22 +259,28 @@ export default function BusinessOptimizationRoadmap({ roadmap, error, placeId, e
       >
         <div className="business-optimization-roadmap__overview-main">
           <div className="business-optimization-roadmap__summary-header">
-            <strong className="business-optimization-roadmap__summary-heading">Optimization progress</strong>
-            <strong className="business-optimization-roadmap__summary-progress">{roadmap.progressPercent}%</strong>
+            <strong className="business-optimization-roadmap__summary-heading">Profile Health</strong>
+            <strong className="business-optimization-roadmap__summary-progress">{profileHealth.statusLabel}</strong>
           </div>
-          <div aria-hidden="true" className="business-optimization-roadmap__progress-track">
-            <div
-              className="business-optimization-roadmap__progress-fill"
-              style={{ width: `${Math.min(100, Math.max(0, roadmap.progressPercent))}%` }}
-            />
-          </div>
+          {profileHealth.showProgressBar ? (
+            <div aria-hidden="true" className="business-optimization-roadmap__progress-track">
+              <div
+                className="business-optimization-roadmap__progress-fill"
+                style={{ width: `${Math.min(100, Math.max(0, profileHealth.progressFill ?? 0))}%` }}
+              />
+            </div>
+          ) : null}
+          <p className="business-optimization-roadmap__section-description">{profileHealth.headline}</p>
+          <p className="business-optimization-roadmap__section-description">{profileHealth.reinforcement}</p>
+          <p className="business-optimization-roadmap__section-description">
+            <strong>Next focus:</strong> {profileHealth.nextFocus}
+          </p>
 
           {hasSections ? (
             <div className="business-optimization-roadmap__section-list-wrapper">
               {sections.map((section) => {
                 const isExpanded = expandedSectionIds.includes(section.id);
-                const completionLabel =
-                  section.completion === null ? 'No score yet' : `${section.completion}%`;
+                const completionLabel = resolveSectionHealthLabel(section.id, section.completion);
 
                 return (
                   <section key={section.id} className="business-optimization-roadmap__section-item">
