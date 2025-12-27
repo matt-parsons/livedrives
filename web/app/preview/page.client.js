@@ -9,6 +9,7 @@ import { useRouter } from 'next/navigation';
 import SidebarBrand from '../dashboard/[business]/SidebarBrand';
 import Image from 'next/image'
 import Link from 'next/link';
+import { resolveProfileHealthSummary, resolveSectionHealthLabel } from '../dashboard/[business]/optimization';
 
 const LOADING_STEPS = [
   {
@@ -732,6 +733,7 @@ export default function LandingPage() {
       : null;
     const sections = Array.isArray(roadmap?.sections) ? roadmap.sections : [];
     const previewTimestampLabel = formatTimestamp(leadPreviewCompletedAt || leadPreviewStartedAt);
+    const profileHealth = resolveProfileHealthSummary(progressPercent);
 
     return (
       <div className="dashboard-layout__body">
@@ -763,32 +765,39 @@ export default function LandingPage() {
               </p>
             </div>
           ) : null}
-          <div className="dashboard-layout__content">
-          <h2 className="mt-4 text-2xl font-semibold text-foreground">Your audit is complete, next step is to fix these issues and increase your rankings.</h2>
+            <div className="dashboard-layout__content">
+            <h2 className="mt-4 text-2xl font-semibold text-foreground">Your audit is complete, next step is to fix these issues and increase your rankings.</h2>
 
-          <section className="business-dashboard__hero">
-              <div className="business-dashboard__optimization-row">
-                <div className="surface-card surface-card--muted dashboard-optimization-card">
-                  <div className="section-header">
-                    <div>
-                      <h2 className="section-title">GBP Score Optimization</h2>
-                      <p className="section-caption">Here&apos;s what we found in our initial data pull</p>
-                    </div>
-                    <div className="dashboard-optimization-card__scores">
+            <section className="business-dashboard__hero">
+                <div className="business-dashboard__optimization-row">
+                  <div className="surface-card surface-card--muted dashboard-optimization-card">
+                    <div className="section-header">
                       <div>
-                        {progressPercent === null ? 'No score yet' : `${progressPercent}%`}
+                        <h2 className="section-title">Profile Health</h2>
+                        <p className="section-caption">{profileHealth.headline}</p>
+                      </div>
+                      <div className="dashboard-optimization-card__scores">
+                        <div>
+                          <strong>{profileHealth.statusLabel}</strong>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <div className="dashboard-optimization-card__content">
-                    <div className="dashboard-optimization-card__progress">
-                      <div
-                        style={{
-                          width: `${Math.min(100, Math.max(0, roadmap.progressPercent))}%`
-                        }}
-                      />
+                    <div className="dashboard-optimization-card__content">
+                      {profileHealth.showProgressBar ? (
+                        <div className="dashboard-optimization-card__progress" aria-label="Profile health momentum">
+                          <div
+                            style={{
+                              width: `${Math.min(100, Math.max(0, profileHealth.progressFill ?? 0))}%`
+                            }}
+                          />
+                        </div>
+                      ) : null}
+                      <p className="dashboard-optimization-card__message">{profileHealth.headline}</p>
+                      <p className="dashboard-optimization-card__notice">{profileHealth.reinforcement}</p>
+                      <p className="dashboard-optimization-card__notice">
+                        <strong>Next focus:</strong> {profileHealth.nextFocus}
+                      </p>
                     </div>
-                  </div>
           {previewTimestampLabel ? (
             <div
               className={classNames(
@@ -811,14 +820,14 @@ export default function LandingPage() {
                   </div>
                   {sections.length ? (
                     <div className="business-optimization-roadmap__section-item">
-                      {sections.map((section) => (
-                        <div key={section.id} className="business-optimization-roadmap__section-header">
-                          <span className="business-optimization-roadmap__section-summary-card-title">{section.title}</span>
-                          <strong className="business-optimization-roadmap__section-summary-card-completion">
-                            {section.completion === null ? 'No score yet' : `${section.completion}%`}
-                          </strong>
-                        </div>
-                      ))}
+                        {sections.map((section) => (
+                          <div key={section.id} className="business-optimization-roadmap__section-header">
+                            <span className="business-optimization-roadmap__section-summary-card-title">{section.title}</span>
+                            <strong className="business-optimization-roadmap__section-summary-card-completion">
+                              {resolveSectionHealthLabel(section.id, section.completion)}
+                            </strong>
+                          </div>
+                        ))}
                     </div>
                   ) : null}   
                 </div>             

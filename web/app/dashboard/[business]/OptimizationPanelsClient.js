@@ -6,7 +6,7 @@ import Link from 'next/link';
 import LatestGeoGridSnapshot from './LatestGeoGridSnapshot';
 import NextStepsPanel from './NextStepsPanel';
 import SummaryMetricCard from './SummaryMetricCard';
-import { resolveLetterGrade, selectNextOptimizationSteps } from './optimization';
+import { resolveProfileHealthSummary, selectNextOptimizationSteps } from './optimization';
 import { buildRunTrendIndicator } from './trendIndicators';
 import BusinessAiOverviewCard from './BusinessAiOverviewCard';
 
@@ -341,7 +341,7 @@ export default function OptimizationPanelsClient({
               <div>
                 <h2 className="section-title">Overall Progress</h2>
                 <p className="section-caption">
-                  Let&apos;s get you to 100% and improve your rankings!
+                  Let&apos;s strengthen your profile health and improve your rankings.
                 </p>
               </div>
               <Link className="cta-link" href={optimizationHref}>
@@ -365,8 +365,8 @@ export default function OptimizationPanelsClient({
     );
   }
 
-  const optimizationGrade = roadmap ? resolveLetterGrade(roadmap.progressPercent) : null;
   const optimizationSteps = selectNextOptimizationSteps(roadmap);
+  const profileHealth = resolveProfileHealthSummary(roadmap?.progressPercent);
 
   const summaryLink = optimizationHref ?? '#';
   const automationLink = ctrHref ?? '#';
@@ -380,71 +380,77 @@ export default function OptimizationPanelsClient({
             <div className="surface-card surface-card--muted dashboard-optimization-card">
               <div className="section-header">
                 <div>
-                  <h2 className="section-title">GBP Score Optimization</h2>
-                  <p className="section-caption">Complete all tasks to maximize your ranking potential</p>
+                  <h2 className="section-title">Profile Health</h2>
+                  <p className="section-caption">{profileHealth.headline}</p>
                 </div>
                 <div className="dashboard-optimization-card__scores">
                   <div>
-                    {loading ? (
-                      <strong>0%</strong>
-                    ) : error ? (
-                      <strong>0%</strong>
-                    ) : roadmap ? (
-                      <strong>{roadmap.progressPercent}%</strong>
-                    ) : (
-                      <strong>0%</strong>
-                    )}
+                    <strong>
+                      {loading
+                        ? 'Checking…'
+                        : error
+                          ? 'Needs attention'
+                          : profileHealth.statusLabel}
+                    </strong>
                   </div>
                 </div>
               </div>
 
-              {loading ? (
-                <p className="dashboard-optimization-card__message">Gathering data… check back in a moment.</p>
-              ) : error ? (
-                <div className="inline-error" role="status" style={{ marginTop: '0.75rem' }}>
-                  <strong>We&apos;re having trouble gathering your data</strong>
-                  <span>{error}</span>
-                </div>
-              ) : roadmap ? (
-                <div className="dashboard-optimization-card__content">
-                  <div className="dashboard-optimization-card__progress">
-                    <div
-                      style={{
-                        width: `${Math.min(100, Math.max(0, roadmap.progressPercent))}%`
-                      }}
-                    />
+                {loading ? (
+                  <p className="dashboard-optimization-card__message">Gathering data… check back in a moment.</p>
+                ) : error ? (
+                  <div className="inline-error" role="status" style={{ marginTop: '0.75rem' }}>
+                    <strong>We&apos;re having trouble gathering your data</strong>
+                    <span>{error}</span>
                   </div>
-                  <div className="dashboard-optimization-card__meta">
-                    {/* <p>{manualRefreshHelper}</p> */}
-                    <p>Progress Last checked: {lastRefreshedLabel}.                  {placeId && isAdmin ? (
-                    <button
-                      type="button"
-                      onClick={handleRefreshClick}
-                      disabled={refreshDisabled}
-                      className="dashboard-optimization-card__refresh"
-                    >
-                      {refreshing ? 'Refreshing…' : 'Refresh data'}
-                    </button>
-                  ) : null}
-                      </p>
-                    {refreshNotice ? (
-                      <p className={`dashboard-optimization-card__notice dashboard-optimization-card__notice--${refreshNotice.tone}`}>
-                        {refreshNotice.text}
-                      </p>
+                ) : roadmap ? (
+                  <div className="dashboard-optimization-card__content">
+                    {profileHealth.showProgressBar ? (
+                      <div className="dashboard-optimization-card__progress" aria-label="Profile health momentum">
+                        <div
+                          style={{
+                            width: `${Math.min(100, Math.max(0, profileHealth.progressFill ?? 0))}%`
+                          }}
+                        />
+                      </div>
                     ) : null}
-                    {meta?.warning ? (
-                      <p className="dashboard-optimization-card__notice dashboard-optimization-card__notice--warning">
-                        {meta.warning}
+                    <div className="dashboard-optimization-card__meta">
+                      <p className="dashboard-optimization-card__message">{profileHealth.headline}</p>
+                      <p className="dashboard-optimization-card__notice">{profileHealth.reinforcement}</p>
+                      <p className="dashboard-optimization-card__notice">
+                        <strong>Next focus:</strong> {profileHealth.nextFocus}
                       </p>
-                    ) : null}
+                      <p className="dashboard-optimization-card__notice">
+                        <span>Last checked: {lastRefreshedLabel}.</span>
+                        {placeId && isAdmin ? (
+                          <button
+                            type="button"
+                            onClick={handleRefreshClick}
+                            disabled={refreshDisabled}
+                            className="dashboard-optimization-card__refresh"
+                          >
+                            {refreshing ? 'Refreshing…' : 'Refresh data'}
+                          </button>
+                        ) : null}
+                      </p>
+                      {refreshNotice ? (
+                        <p className={`dashboard-optimization-card__notice dashboard-optimization-card__notice--${refreshNotice.tone}`}>
+                          {refreshNotice.text}
+                        </p>
+                      ) : null}
+                      {meta?.warning ? (
+                        <p className="dashboard-optimization-card__notice dashboard-optimization-card__notice--warning">
+                          {meta.warning}
+                        </p>
+                      ) : null}
 
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <p className="dashboard-optimization-card__message">
-                  We could not compute optimization insights for this profile yet.
-                </p>
-              )}
+                ) : (
+                  <p className="dashboard-optimization-card__message">
+                    We could not compute optimization insights for this profile yet.
+                  </p>
+                )}
 
               {isEnsuringLatestData ? (
                 <div className="dashboard-optimization-card__status-indicator" role="status" aria-live="polite">

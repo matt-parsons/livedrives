@@ -543,6 +543,119 @@ export function resolveLetterGrade(percent) {
   return 'F';
 }
 
+function clampPercent(value) {
+  if (!Number.isFinite(Number(value))) {
+    return null;
+  }
+
+  return Math.max(0, Math.min(100, Number(value)));
+}
+
+export function resolveProfileHealthSummary(progressPercent) {
+  const percent = clampPercent(progressPercent);
+
+  if (percent === null) {
+    return {
+      statusLabel: 'Checking',
+      headline: 'We are still evaluating your profile health.',
+      reinforcement: 'Stay active while we gather the latest signals.',
+      showProgressBar: false,
+      progressFill: 0,
+      nextFocus: 'Monitor rankings and defend visibility across nearby neighborhoods'
+    };
+  }
+
+  const tiers = [
+    {
+      min: 85,
+      statusLabel: 'Strong',
+      headline: 'Your Google Business Profile foundation is in good shape.',
+      reinforcement: 'Ongoing rankings depend on staying active and competitive.',
+      showProgressBar: false
+    },
+    {
+      min: 65,
+      statusLabel: 'Healthy',
+      headline: 'Your profile fundamentals look healthy.',
+      reinforcement: 'Keep publishing updates and earning reviews to defend visibility.',
+      showProgressBar: true
+    },
+    {
+      min: 45,
+      statusLabel: 'Competitive',
+      headline: 'Core details are set. There is still room to strengthen visibility.',
+      reinforcement: 'Add recent photos, posts, and keywords to build momentum.',
+      showProgressBar: true
+    },
+    {
+      min: 0,
+      statusLabel: 'Building',
+      headline: 'Key profile basics still need attention.',
+      reinforcement: 'Finish the essentials to improve health and readiness.',
+      showProgressBar: true
+    }
+  ];
+
+  const tier = tiers.find((entry) => percent >= entry.min) ?? tiers[tiers.length - 1];
+
+  return {
+    ...tier,
+    progressFill: percent,
+    nextFocus: 'Monitor rankings and defend visibility across nearby neighborhoods'
+  };
+}
+
+export function resolveSectionHealthLabel(sectionId, completion) {
+  const percent = clampPercent(completion);
+
+  const tierKey = percent === null
+    ? 'unknown'
+    : percent >= 85
+      ? 'strong'
+      : percent >= 65
+        ? 'healthy'
+        : percent >= 45
+          ? 'building'
+          : 'at_risk';
+
+  const defaults = {
+    strong: 'Strong',
+    healthy: 'Healthy',
+    building: 'Building',
+    at_risk: 'Needs attention',
+    unknown: 'Needs review'
+  };
+
+  const sectionLabels = {
+    'profile-completeness': {
+      strong: 'Complete',
+      healthy: 'Nearly complete',
+      building: 'Stabilizing',
+      at_risk: 'Needs setup'
+    },
+    'visual-presence': {
+      strong: 'Up to date',
+      healthy: 'Fresh',
+      building: 'Add new photos',
+      at_risk: 'Missing photos'
+    },
+    'customer-engagement': {
+      strong: 'Active',
+      healthy: 'Responsive',
+      building: 'Rebuilding trust',
+      at_risk: 'Needs engagement'
+    },
+    'local-seo-optimization': {
+      strong: 'Strong',
+      healthy: 'Competitive',
+      building: 'Building coverage',
+      at_risk: 'Needs focus'
+    }
+  };
+
+  return sectionLabels[sectionId]?.[tierKey] ?? defaults[tierKey] ?? defaults.unknown;
+}
+
 function buildManualCompletionMap(records) {
   if (!Array.isArray(records) || !records.length) {
     return new Map();
