@@ -1,4 +1,3 @@
-import { DateTime } from 'luxon';
 import { BusinessLayoutProvider } from './[business]/BusinessLayoutContext';
 import BusinessNavigation from './[business]/BusinessNavigation';
 import SidebarBrand from './[business]/SidebarBrand';
@@ -64,59 +63,6 @@ function formatRankingReportDate(value, timezone) {
   } catch (error) {
     return new Date(value).toLocaleString();
   }
-}
-
-function parseLocalTime(value) {
-  if (!value || typeof value !== 'string') {
-    return null;
-  }
-
-  const match = value.trim().match(/^(\d{1,2}):(\d{2})(?::\d{2})?$/);
-  if (!match) {
-    return null;
-  }
-
-  const hour = Number(match[1]);
-  const minute = Number(match[2]);
-
-  if (!Number.isFinite(hour) || !Number.isFinite(minute)) {
-    return null;
-  }
-
-  return {
-    hour,
-    minute
-  };
-}
-
-function computeNextScheduledRunDate(dayOfWeek, timeOfDay, timezone) {
-  if (!dayOfWeek || !timeOfDay) {
-    return null;
-  }
-
-  const parsed = parseLocalTime(timeOfDay);
-
-  if (!parsed) {
-    return null;
-  }
-
-  const zone = timezone || 'UTC';
-  const now = DateTime.now().setZone(zone);
-  const targetWeekday = Number(dayOfWeek);
-
-  if (!Number.isFinite(targetWeekday)) {
-    return null;
-  }
-
-  let candidate = now
-    .set({ hour: parsed.hour, minute: parsed.minute, second: 0, millisecond: 0 })
-    .plus({ days: (targetWeekday + 7 - now.weekday) % 7 });
-
-  if (candidate <= now) {
-    candidate = candidate.plus({ days: 7 });
-  }
-
-  return candidate.toJSDate();
 }
 
 function mapRunRecord(run) {
@@ -267,14 +213,10 @@ export default async function DashboardPage({ searchParams }) {
     business,
     gbpAccessToken
   );
-  const nextRunSource =
-    geoGridSchedule?.nextRunAt ??
-    computeNextScheduledRunDate(
-      geoGridSchedule?.dayOfWeek,
-      geoGridSchedule?.startTimeLocal,
-      business.timezone
-    );
-  const nextRankingReportLabel = formatRankingReportDate(nextRunSource, business.timezone);
+  const nextRankingReportLabel = formatRankingReportDate(
+    geoGridSchedule?.nextRunAt,
+    business.timezone
+  );
   const lastRankingReportLabel = formatRankingReportDate(
     latestRunSummary?.runDateValue ?? geoGridSchedule?.lastRunAt,
     business.timezone
@@ -301,6 +243,25 @@ export default async function DashboardPage({ searchParams }) {
                 business={business}
                 primaryOriginZone={primaryOriginZone}
               />
+
+              <div className="section">
+                <div className="surface-card">
+                  <div className="section-header">
+                    <div>
+                      <h2 className="section-title">Next ranking report</h2>
+                      <p className="section-caption">
+                        {nextRankingReportLabel ? (
+                          <>
+                            Scheduled for <strong>{nextRankingReportLabel}</strong>.
+                          </>
+                        ) : (
+                          'No upcoming ranking report scheduled yet.'
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
 
               {hasSelectedKeyword && (
                 <div className="section-header latest-geogrid-card__header">
@@ -373,14 +334,6 @@ export default async function DashboardPage({ searchParams }) {
                 </div>
               )}
 
-              {hasSelectedKeyword && (
-                <RankingAiOverviewCard
-                  businessId={business.id}
-                  lastRankingReportLabel={lastRankingReportLabel}
-                  nextRankingReportLabel={nextRankingReportLabel}
-                  aiOverviewReady={aiOverviewReady}
-                />
-              )}
             </div>
           </main>
         </div>
