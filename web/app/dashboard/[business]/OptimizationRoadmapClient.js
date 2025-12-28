@@ -78,7 +78,13 @@ export default function OptimizationRoadmapClient({ placeId, businessId = null, 
     };
   }, [fetchData]);
 
-  const postsPollingRef = useRef({ lastTaskId: null, startedAt: 0, resetCount: 0 });
+  const postsPollingRef = useRef({
+    lastTaskId: null,
+    startedAt: 0,
+    resetCount: 0,
+    initialResetDone: false
+  });
+  const postsResettingRef = useRef(false);
 
   useEffect(() => {
   console.log('poll posts useEffect - meta:', meta);
@@ -86,7 +92,7 @@ export default function OptimizationRoadmapClient({ placeId, businessId = null, 
   console.log('postsTaskId:', meta?.postsTaskId);
 
     if (!meta?.sidebarPending || !meta?.postsTaskId) {
-      postsPollingRef.current = { lastTaskId: null, startedAt: 0, resetCount: 0 };
+      postsPollingRef.current = { lastTaskId: null, startedAt: 0, resetCount: 0, initialResetDone: false };
       return;
     }
 
@@ -94,10 +100,21 @@ export default function OptimizationRoadmapClient({ placeId, businessId = null, 
     let inFlight = false;
 
     const poll = async () => {
-      if (inFlight || controller.signal.aborted) return;
+      if (inFlight || controller.signal.aborted || postsResettingRef.current) return;
       inFlight = true;
       try {
         const now = Date.now();
+        if (!postsPollingRef.current.initialResetDone) {
+          postsPollingRef.current.initialResetDone = true;
+          postsPollingRef.current.startedAt = now;
+          postsResettingRef.current = true;
+          try {
+            await fetchData(new AbortController(), { forceRefresh: true, resetPostsTask: true });
+          } finally {
+            postsResettingRef.current = false;
+          }
+          return;
+        }
         if (postsPollingRef.current.lastTaskId !== meta.postsTaskId) {
           postsPollingRef.current.lastTaskId = meta.postsTaskId;
           postsPollingRef.current.startedAt = now;
@@ -109,7 +126,12 @@ export default function OptimizationRoadmapClient({ placeId, businessId = null, 
           if (postsPollingRef.current.resetCount < MAX_POSTS_TASK_RESETS) {
             postsPollingRef.current.resetCount += 1;
             postsPollingRef.current.startedAt = now;
-            fetchData(new AbortController(), { forceRefresh: true, resetPostsTask: true });
+            postsResettingRef.current = true;
+            try {
+              await fetchData(new AbortController(), { forceRefresh: true, resetPostsTask: true });
+            } finally {
+              postsResettingRef.current = false;
+            }
           }
           return;
         }

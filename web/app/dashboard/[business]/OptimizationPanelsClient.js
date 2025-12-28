@@ -62,7 +62,12 @@ export default function OptimizationPanelsClient({
   const [refreshing, setRefreshing] = useState(false);
   const [refreshNotice, setRefreshNotice] = useState(null);
   const [postsPollingStopped, setPostsPollingStopped] = useState(false);
-  const postsPollingRef = useRef({ lastTaskId: null, startedAt: 0, resetCount: 0 });
+  const postsPollingRef = useRef({
+    lastTaskId: null,
+    startedAt: 0,
+    resetCount: 0,
+    initialResetDone: false
+  });
   const postsResettingRef = useRef(false);
 
   useEffect(() => {
@@ -127,7 +132,7 @@ export default function OptimizationPanelsClient({
 
   useEffect(() => {
     if (!placeId || !meta?.sidebarPending) {
-      postsPollingRef.current = { lastTaskId: null, startedAt: 0, resetCount: 0 };
+      postsPollingRef.current = { lastTaskId: null, startedAt: 0, resetCount: 0, initialResetDone: false };
       if (postsPollingStopped) {
         setPostsPollingStopped(false);
       }
@@ -173,8 +178,13 @@ export default function OptimizationPanelsClient({
             text: 'Sync is taking longer than expected. We started a fresh DataForSEO request.'
           });
           setPostsPollingStopped(false);
-          const { resetCount } = postsPollingRef.current;
-          postsPollingRef.current = { lastTaskId: null, startedAt: 0, resetCount };
+          const { resetCount, initialResetDone } = postsPollingRef.current;
+          postsPollingRef.current = {
+            lastTaskId: null,
+            startedAt: 0,
+            resetCount,
+            initialResetDone
+          };
         }
       } catch (err) {
         if (!controller.signal.aborted && isMounted) {
@@ -191,11 +201,18 @@ export default function OptimizationPanelsClient({
     };
 
     const pollPostsCompletion = async () => {
-      if (!isMounted || !meta?.postsTaskId || postsPollingStopped) {
+      if (!isMounted || !meta?.postsTaskId || postsPollingStopped || postsResettingRef.current) {
         return;
       }
 
       const now = Date.now();
+      if (!postsPollingRef.current.initialResetDone) {
+        postsPollingRef.current.initialResetDone = true;
+        postsPollingRef.current.startedAt = now;
+        resetPostsTask();
+        return;
+      }
+
       if (postsPollingRef.current.lastTaskId !== meta.postsTaskId) {
         postsPollingRef.current.lastTaskId = meta.postsTaskId;
         postsPollingRef.current.startedAt = now;
@@ -457,26 +474,63 @@ export default function OptimizationPanelsClient({
   const summaryLink = optimizationHref ?? '#';
   const automationLink = ctrHref ?? '#';
   const isEnsuringLatestData = Boolean(refreshing || (meta?.sidebarPending && !postsPollingStopped));
+  const statusLabel = loading
+    ? '…'
+    : error
+      ? 'Needs attention'
+      : profileHealth.statusLabel;
+  const statusColor = loading
+    ? '#64748b'
+    : error
+      ? '#dc2626'
+      : profileHealth.statusLabel === 'Strong'
+        ? '#16a34a'
+        : profileHealth.statusLabel === 'Healthy'
+          ? '#0f766e'
+          : profileHealth.statusLabel === 'Competitive'
+            ? '#2563eb'
+            : '#f97316';
+  const healthChecklist = [
+    {
+      id: 'headline',
+      text: profileHealth.headline,
+      tone: 'success'
+    },
+    {
+      id: 'reinforcement',
+      text: profileHealth.reinforcement,
+      tone: 'success'
+    },
+    {
+      id: 'next-focus',
+      text: profileHealth.nextFocus,
+      tone: 'focus'
+    }
+  ];
 
   return (
     <>
       <section className="section business-dashboard__hero">
         <div className="business-dashboard__top-row">
           <div className="business-dashboard__optimization-row">
-            <div className="surface-card surface-card--muted dashboard-optimization-card">
+            <div
+              className="surface-card surface-card--muted dashboard-optimization-card">
               <div className="section-header">
                 <div>
-                  <h2 className="section-title">Profile Health</h2>
-                  <p className="section-caption">{profileHealth.headline}</p>
+                  <h2 className="section-title" style={{ fontSize: '1.45rem', fontWeight: 700 }}>
+                    Profile Health
+                  </h2>
+                  <p
+                    className="section-caption"
+                    style={{ fontSize: '0.95rem', marginTop: '0.35rem', color: '#64748b' }}
+                  >
+                    {profileHealth.headline}
+                  </p>
                 </div>
                 <div className="dashboard-optimization-card__scores">
                   <div>
-                    <strong>
-                      {loading
-                        ? 'Checking…'
-                        : error
-                          ? 'Needs attention'
-                          : profileHealth.statusLabel}
+                    <strong style={{ fontSize: '1.7rem', fontWeight: 700, color: statusColor }}>
+                      {statusLabel}
                     </strong>
                   </div>
                 </div>
@@ -491,22 +545,66 @@ export default function OptimizationPanelsClient({
                   </div>
                 ) : roadmap ? (
                   <div className="dashboard-optimization-card__content">
-                    {profileHealth.showProgressBar ? (
-                      <div className="dashboard-optimization-card__progress" aria-label="Profile health momentum">
-                        <div
-                          style={{
-                            width: `${Math.min(100, Math.max(0, profileHealth.progressFill ?? 0))}%`
-                          }}
-                        />
-                      </div>
-                    ) : null}
-                    <div className="dashboard-optimization-card__meta">
-                      <p className="dashboard-optimization-card__message">{profileHealth.headline}</p>
-                      <p className="dashboard-optimization-card__notice">{profileHealth.reinforcement}</p>
-                      <p className="dashboard-optimization-card__notice">
-                        <strong>Next focus:</strong> {profileHealth.nextFocus}
-                      </p>
-                      <p className="dashboard-optimization-card__notice">
+                    <div className="dashboard-optimization-card__meta" style={{ gap: '0.9rem', fontSize: '0.92rem' }}>
+                      <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gap: '0.85rem' }}>
+                        {healthChecklist.map((item) => {
+                          const isFocus = item.tone === 'focus';
+                          const iconStyle = {
+                            width: '1.35rem',
+                            height: '1.35rem',
+                            borderRadius: '999px',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '0.75rem',
+                            fontWeight: 700,
+                            flexShrink: 0,
+                            color: isFocus ? '#0284c7' : '#ffffff',
+                            background: isFocus ? '#ffffff' : '#22c55e',
+                            border: isFocus ? '2px solid #38bdf8' : '1px solid #22c55e'
+                          };
+
+                          return (
+                            <li key={item.id} style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
+                              <span style={iconStyle} aria-hidden="true">
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  width="14"
+                                  height="14"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="3"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                >
+                                  <polyline points="20 6 9 17 4 12" />
+                                </svg>
+                              </span>
+                              <span style={{ color: '#0f172a', lineHeight: 1.5 }}>
+                                {isFocus ? (
+                                  <>
+                                    <strong style={{ color: '#0f172a' }}>Next focus:</strong>{' '}
+                                    <span style={{ color: '#64748b' }}>{item.text}</span>
+                                  </>
+                                ) : (
+                                  item.text
+                                )}
+                              </span>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '1rem',
+                          flexWrap: 'wrap',
+                          color: '#64748b',
+                          fontSize: '0.85rem'
+                        }}
+                      >
                         <span>Last checked: {lastRefreshedLabel}.</span>
                         {placeId && isAdmin ? (
                           <button
@@ -514,13 +612,44 @@ export default function OptimizationPanelsClient({
                             onClick={handleRefreshClick}
                             disabled={refreshDisabled}
                             className="dashboard-optimization-card__refresh"
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '0.4rem',
+                              background: 'transparent',
+                              border: 'none',
+                              padding: 0,
+                              fontSize: '0.9rem',
+                              fontWeight: 600,
+                              color: refreshDisabled ? '#94a3b8' : '#1d4ed8'
+                            }}
                           >
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              width="18"
+                              height="18"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              aria-hidden="true"
+                            >
+                              <path d="M3 12a9 9 0 0 1 15.7-5.7L21 9" />
+                              <path d="M21 3v6h-6" />
+                              <path d="M21 12a9 9 0 0 1-15.7 5.7L3 15" />
+                              <path d="M3 21v-6h6" />
+                            </svg>
                             {refreshing ? 'Refreshing…' : 'Refresh data'}
                           </button>
                         ) : null}
-                      </p>
+                      </div>
                       {refreshNotice ? (
-                        <p className={`dashboard-optimization-card__notice dashboard-optimization-card__notice--${refreshNotice.tone}`}>
+                        <p
+                          className={`dashboard-optimization-card__notice dashboard-optimization-card__notice--${refreshNotice.tone}`}
+                          style={{ fontWeight: 500 }}
+                        >
                           {refreshNotice.text}
                         </p>
                       ) : null}
@@ -529,7 +658,6 @@ export default function OptimizationPanelsClient({
                           {meta.warning}
                         </p>
                       ) : null}
-
                     </div>
                   </div>
                 ) : (
@@ -539,7 +667,22 @@ export default function OptimizationPanelsClient({
                 )}
 
               {isEnsuringLatestData ? (
-                <div className="dashboard-optimization-card__status-indicator" role="status" aria-live="polite">
+                <div
+                  className="dashboard-optimization-card__status-indicator"
+                  role="status"
+                  aria-live="polite"
+                  style={{
+                    position: 'static',
+                    marginTop: '1.25rem',
+                    width: '100%',
+                    justifyContent: 'flex-start',
+                    background: '#f8fafc',
+                    border: '1px solid rgba(148, 163, 184, 0.3)',
+                    color: '#64748b',
+                    fontSize: '0.85rem',
+                    padding: '0.65rem 0.95rem'
+                  }}
+                >
                   <span className="dashboard-optimization-card__spinner" aria-hidden="true" />
                   <span>Making sure we have the latest data…</span>
                 </div>
@@ -548,14 +691,45 @@ export default function OptimizationPanelsClient({
 
 
 
-            <div className="surface-card surface-card--muted dashboard-optimization-card">
+            <div
+              className="surface-card surface-card--muted dashboard-optimization-card">
               <div>
-                <h2 className="section-title">Ready to improve your ranking?</h2>
-                <span>We&apos;ve analyzed your profile and created a personalized roadmap to help you rank higher in local search.</span>
+                <h2 className="section-title" style={{ fontSize: '1.35rem', fontWeight: 700 }}>
+                  Ready to improve your ranking?
+                </h2>
+                <p style={{ marginTop: '0.65rem', color: '#64748b', lineHeight: 1.6, fontSize: '0.95rem' }}>
+                  We&apos;ve analyzed your profile and created a personalized roadmap to help you rank higher in local
+                  search.
+                </p>
               </div>
-              <div className="dashboard-optimization-card__cta">
-                <Link className="cta-link" href={summaryLink}>
-                  Fix Ranking Issues ↗
+              <div className="dashboard-optimization-card__cta" style={{ justifyContent: 'flex-start', marginTop: '1.5rem' }}>
+                <Link
+                  className="cta-link"
+                  href={summaryLink}
+                  style={{
+                    background: '#f97316',
+                    color: '#ffffff',
+                    boxShadow: '0 10px 20px rgba(249, 115, 22, 0.25)',
+                    padding: '0.85rem 1.75rem',
+                    borderRadius: '18px'
+                  }}
+                >
+                  Fix Ranking Issues
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                    <polyline points="12 5 19 12 12 19" />
+                  </svg>
                 </Link>
               </div>   
             </div>

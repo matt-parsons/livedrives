@@ -48,6 +48,29 @@ function extractReviewCountFromPlacesRaw(placesRaw) {
   return Number.isFinite(numeric) ? numeric : null;
 }
 
+function extractProfileRating(cachedProfile) {
+  if (!cachedProfile || typeof cachedProfile !== 'object') {
+    return null;
+  }
+
+  const candidates = [
+    cachedProfile?.place?.rating,
+    cachedProfile?.sidebar?.rating?.value,
+    cachedProfile?.placesRaw?.rating,
+    cachedProfile?.placesRaw?.rating_value,
+    cachedProfile?.placesRaw?.ratingValue,
+  ];
+
+  for (const value of candidates) {
+    const numeric = Number(value);
+    if (Number.isFinite(numeric) && numeric > 0) {
+      return numeric;
+    }
+  }
+
+  return null;
+}
+
 function normalizeThemes(themes = []) {
   const normalized = new Set();
 
@@ -228,7 +251,7 @@ function mergeSentiment(baseSentiment, aiSentiment) {
   };
 }
 
-function sanitizeSnapshot(snapshot, { totalReviewCount = null } = {}) {
+function sanitizeSnapshot(snapshot, { totalReviewCount = null, profileRating = null } = {}) {
   if (!snapshot || typeof snapshot !== 'object') {
     return null;
   }
@@ -246,10 +269,23 @@ function sanitizeSnapshot(snapshot, { totalReviewCount = null } = {}) {
     : Number.isFinite(fallbackReviewCount)
       ? fallbackReviewCount
       : null;
+  const derivedProfileRating =
+    snapshot.profileRating !== null && snapshot.profileRating !== undefined
+      ? Number(snapshot.profileRating)
+      : null;
+  const fallbackProfileRating = profileRating !== null && profileRating !== undefined
+    ? Number(profileRating)
+    : null;
+  const normalizedProfileRating = Number.isFinite(derivedProfileRating)
+    ? derivedProfileRating
+    : Number.isFinite(fallbackProfileRating)
+      ? fallbackProfileRating
+      : null;
 
   return {
     ...snapshot,
     totalReviewCount: reviewCount,
+    profileRating: normalizedProfileRating,
     sentiment: {
       positive: clampPercent(sentiment.positive),
       neutral: clampPercent(sentiment.neutral),
@@ -419,9 +455,14 @@ function scheduleBackgroundReviewSync({ businessId, placeId, taskId }) {
       if (status === 'completed' && reviews.length > 0) {
         const cachedProfile = placeId ? await loadCachedProfile(placeId) : null;
         const cachedReviewCount = extractReviewCountFromPlacesRaw(cachedProfile?.placesRaw);
+        const cachedProfileRating = extractProfileRating(cachedProfile);
         const snapshot = sanitizeSnapshot(
-          { ...(await buildSnapshot(reviews)), totalReviewCount: cachedReviewCount ?? reviews.length ?? null },
-          { totalReviewCount: cachedReviewCount }
+          {
+            ...(await buildSnapshot(reviews)),
+            totalReviewCount: cachedReviewCount ?? reviews.length ?? null,
+            profileRating: cachedProfileRating
+          },
+          { totalReviewCount: cachedReviewCount, profileRating: cachedProfileRating }
         );
         await saveReviewSnapshot({ businessId, placeId, snapshot });
         await markReviewFetchTaskCompleted({ businessId, taskId });
@@ -446,8 +487,12 @@ export async function loadReviewSnapshot(
   const placeId = business?.gPlaceId ?? null;
   const cachedProfile = placeId ? await loadCachedProfile(placeId) : null;
   const cachedReviewCount = extractReviewCountFromPlacesRaw(cachedProfile?.placesRaw);
+  const cachedProfileRating = extractProfileRating(cachedProfile);
   const cached = await loadCachedReviewSnapshot(business.id);
-  const sanitizedCachedSnapshot = sanitizeSnapshot(cached?.snapshot, { totalReviewCount: cachedReviewCount });
+  const sanitizedCachedSnapshot = sanitizeSnapshot(cached?.snapshot, {
+    totalReviewCount: cachedReviewCount,
+    profileRating: cachedProfileRating
+  });
 
   const needsAiSentiment =
     OPENAI_API_KEY &&
@@ -519,6 +564,7 @@ export async function loadReviewSnapshot(
     if (status === 'completed' && reviews.length > 0) {
       snapshot = await buildSnapshot(reviews);
       snapshot.totalReviewCount = cachedReviewCount ?? reviews.length ?? null;
+      snapshot.profileRating = cachedProfileRating;
       snapshotSource = 'dataForSeo';
       if (taskId) {
         await markReviewFetchTaskCompleted({ businessId: business.id, taskId });
@@ -556,13 +602,17 @@ export async function loadReviewSnapshot(
 
       snapshot = await buildSnapshot(reviews);
       snapshot.totalReviewCount = cachedReviewCount ?? reviews.length ?? null;
+      snapshot.profileRating = cachedProfileRating;
       snapshotSource = 'gbp';
     } catch (error) {
       console.error('Failed to load GBP reviews', error);
     }
   }
 
-  const sanitizedSnapshot = sanitizeSnapshot(snapshot, { totalReviewCount: cachedReviewCount });
+  const sanitizedSnapshot = sanitizeSnapshot(snapshot, {
+    totalReviewCount: cachedReviewCount,
+    profileRating: cachedProfileRating
+  });
 
   if (sanitizedSnapshot) {
     if (snapshotSource) {

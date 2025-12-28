@@ -262,14 +262,6 @@ export default function BusinessOptimizationRoadmap({ roadmap, error, placeId, e
             <strong className="business-optimization-roadmap__summary-heading">Profile Health</strong>
             <strong className="business-optimization-roadmap__summary-progress">{profileHealth.statusLabel}</strong>
           </div>
-          {profileHealth.showProgressBar ? (
-            <div aria-hidden="true" className="business-optimization-roadmap__progress-track">
-              <div
-                className="business-optimization-roadmap__progress-fill"
-                style={{ width: `${Math.min(100, Math.max(0, profileHealth.progressFill ?? 0))}%` }}
-              />
-            </div>
-          ) : null}
           <p className="business-optimization-roadmap__section-description">{profileHealth.headline}</p>
           <p className="business-optimization-roadmap__section-description">{profileHealth.reinforcement}</p>
           <p className="business-optimization-roadmap__section-description">

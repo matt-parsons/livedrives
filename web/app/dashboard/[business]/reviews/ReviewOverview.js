@@ -123,6 +123,9 @@ export default function ReviewOverview({
   const totalReviewCountLabel = Number.isFinite(snapshot.totalReviewCount)
     ? snapshot.totalReviewCount.toLocaleString()
     : '—';
+  const profileRating = Number(snapshot.profileRating);
+  const profileRatingLabel =
+    Number.isFinite(profileRating) && profileRating > 0 ? `${profileRating.toFixed(1)} ★` : '—';
   const router = useRouter();
   const [refreshing, setRefreshing] = useState(false);
   const [refreshNotice, setRefreshNotice] = useState(null);
@@ -191,10 +194,16 @@ export default function ReviewOverview({
         ) : null}
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
         <SummaryMetricCard
           title="Total reviews"
           valueLabel={totalReviewCountLabel}
+          indicator={null}
+          deltaLabel={null}
+        />
+        <SummaryMetricCard
+          title="Google profile rating"
+          valueLabel={profileRatingLabel}
           indicator={null}
           deltaLabel={null}
         />

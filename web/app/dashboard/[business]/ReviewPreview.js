@@ -98,6 +98,9 @@ export default function ReviewPreview({
     hasSnapshot && Number.isFinite(snapshot?.totalReviewCount)
       ? snapshot.totalReviewCount.toLocaleString()
       : '—';
+  const profileRating = hasSnapshot ? Number(snapshot?.profileRating) : null;
+  const profileRatingLabel =
+    Number.isFinite(profileRating) && profileRating > 0 ? `${profileRating.toFixed(1)} ★` : '—';
   const newReviews = hasSnapshot ? snapshot.newReviewsThisWeek : null;
   const lastWeekReviews = hasSnapshot ? snapshot.lastWeekReviews : null;
   const reviewDelta =
@@ -177,6 +180,12 @@ export default function ReviewPreview({
         <>
           <div className="latest-geogrid-card__stats">
             <SummaryMetricCard title="Total reviews" valueLabel={totalReviewsLabel} indicator={null} deltaLabel={null} />
+            <SummaryMetricCard
+              title="Google profile rating"
+              valueLabel={profileRatingLabel}
+              indicator={null}
+              deltaLabel={null}
+            />
             <SummaryMetricCard
               title="New reviews this week"
               valueLabel={newReviews !== null && newReviews !== undefined ? `${newReviews}` : '—'}
