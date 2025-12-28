@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 
 import LatestGeoGridSnapshot from './LatestGeoGridSnapshot';
@@ -31,6 +31,9 @@ function formatTimestamp(value) {
   }
 }
 
+const MAX_POSTS_POLL_MS = 120_000;
+const MAX_POSTS_TASK_RESETS = 1;
+
 export default function OptimizationPanelsClient({
   placeId,
   businessId,
@@ -58,6 +61,9 @@ export default function OptimizationPanelsClient({
   const [meta, setMeta] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   const [refreshNotice, setRefreshNotice] = useState(null);
+  const [postsPollingStopped, setPostsPollingStopped] = useState(false);
+  const postsPollingRef = useRef({ lastTaskId: null, startedAt: 0, resetCount: 0 });
+  const postsResettingRef = useRef(false);
 
   useEffect(() => {
     if (!placeId) {
@@ -121,14 +127,94 @@ export default function OptimizationPanelsClient({
 
   useEffect(() => {
     if (!placeId || !meta?.sidebarPending) {
+      postsPollingRef.current = { lastTaskId: null, startedAt: 0, resetCount: 0 };
+      if (postsPollingStopped) {
+        setPostsPollingStopped(false);
+      }
       return undefined;
     }
 
     let isMounted = true;
     const controllers = new Set();
 
+    const resetPostsTask = async () => {
+      if (postsResettingRef.current) {
+        return;
+      }
+
+      postsResettingRef.current = true;
+      const controller = new AbortController();
+      controllers.add(controller);
+
+      try {
+        const params = new URLSearchParams({ placeId, forceRefresh: '1', resetPostsTask: '1' });
+        if (businessId) {
+          params.set('businessId', String(businessId));
+        }
+
+        const response = await fetch(`/api/optimization-data?${params.toString()}`, {
+          method: 'GET',
+          signal: controller.signal,
+          cache: 'no-store'
+        });
+
+        const payload = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+          throw new Error(payload?.error || `Request failed with status ${response.status}`);
+        }
+
+        if (isMounted) {
+          setRoadmap(payload?.data?.roadmap ?? null);
+          setMeta(payload?.data?.meta ?? null);
+          setError(null);
+          setRefreshNotice({
+            tone: 'warning',
+            text: 'Sync is taking longer than expected. We started a fresh DataForSEO request.'
+          });
+          setPostsPollingStopped(false);
+          const { resetCount } = postsPollingRef.current;
+          postsPollingRef.current = { lastTaskId: null, startedAt: 0, resetCount };
+        }
+      } catch (err) {
+        if (!controller.signal.aborted && isMounted) {
+          setRefreshNotice({
+            tone: 'warning',
+            text: 'Sync is taking longer than expected. Try refreshing again in a few minutes.'
+          });
+          setPostsPollingStopped(true);
+        }
+      } finally {
+        controllers.delete(controller);
+        postsResettingRef.current = false;
+      }
+    };
+
     const pollPostsCompletion = async () => {
-      if (!isMounted || !meta?.postsTaskId) {
+      if (!isMounted || !meta?.postsTaskId || postsPollingStopped) {
+        return;
+      }
+
+      const now = Date.now();
+      if (postsPollingRef.current.lastTaskId !== meta.postsTaskId) {
+        postsPollingRef.current.lastTaskId = meta.postsTaskId;
+        postsPollingRef.current.startedAt = now;
+      } else if (!postsPollingRef.current.startedAt) {
+        postsPollingRef.current.startedAt = now;
+      }
+
+      if (now - postsPollingRef.current.startedAt > MAX_POSTS_POLL_MS) {
+        if (postsPollingRef.current.resetCount < MAX_POSTS_TASK_RESETS) {
+          postsPollingRef.current.resetCount += 1;
+          postsPollingRef.current.startedAt = now;
+          resetPostsTask();
+        } else {
+          setPostsPollingStopped(true);
+          setRefreshNotice({
+            tone: 'warning',
+            text: 'Sync is taking longer than expected. Try refreshing again later.'
+          });
+        }
         return;
       }
 
@@ -230,7 +316,7 @@ export default function OptimizationPanelsClient({
       clearInterval(intervalId);
       controllers.forEach((controller) => controller.abort());
     };
-  }, [placeId, businessId, meta?.sidebarPending, meta?.postsTaskId]);
+  }, [placeId, businessId, meta?.sidebarPending, meta?.postsTaskId, postsPollingStopped]);
   
   const hasSnapshot = Boolean(snapshot);
   const ratingCurrent = hasSnapshot ? Number(snapshot?.averageRating?.current) : null;
@@ -370,7 +456,7 @@ export default function OptimizationPanelsClient({
 
   const summaryLink = optimizationHref ?? '#';
   const automationLink = ctrHref ?? '#';
-  const isEnsuringLatestData = Boolean(refreshing || meta?.sidebarPending);
+  const isEnsuringLatestData = Boolean(refreshing || (meta?.sidebarPending && !postsPollingStopped));
 
   return (
     <>
@@ -461,21 +547,11 @@ export default function OptimizationPanelsClient({
             </div>
 
 
-            <SummaryMetricCard
-              title="30d Average rating trend"
-              valueLabel={ratingLabel}
-              indicator={ratingIndicator}
-              deltaLabel={
-                Number.isFinite(ratingPrevious)
-                  ? `from ${ratingPrevious.toFixed(1)} prior period`
-                  : null
-              }
-            />
 
-            <div className="surface-card surface-card--muted dashboard-optimization-card__actions">
+            <div className="surface-card surface-card--muted dashboard-optimization-card">
               <div>
-                <h2 className="section-title">GBP Optimization Tasks</h2>
-                <span>You have recommended tasks to improve your Google Business Profile ranking</span>
+                <h2 className="section-title">Ready to improve your ranking?</h2>
+                <span>We&apos;ve analyzed your profile and created a personalized roadmap to help you rank higher in local search.</span>
               </div>
               <div className="dashboard-optimization-card__cta">
                 <Link className="cta-link" href={summaryLink}>

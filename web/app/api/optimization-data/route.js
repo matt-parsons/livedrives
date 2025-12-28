@@ -18,6 +18,7 @@ export async function GET(request) {
   const placeId = searchParams.get('placeId');
   const businessId = parseBusinessId(searchParams.get('businessId'));
   const forceRefresh = searchParams.get('forceRefresh') === '1';
+  const resetPostsTask = searchParams.get('resetPostsTask') === '1';
 
   if (!placeId) {
     return NextResponse.json(
@@ -27,7 +28,7 @@ export async function GET(request) {
   }
 
   try {
-    const data = await loadOptimizationData(placeId, { businessId, forceRefresh });
+    const data = await loadOptimizationData(placeId, { businessId, forceRefresh, resetPostsTask });
     return NextResponse.json({ data });
   } catch (error) {
     const message =

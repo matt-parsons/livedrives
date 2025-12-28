@@ -59,4 +59,5 @@ variable so the suggestions API can call OpenAI:
 
 - `POST /api/places/sidebar` (when `SIDEBAR_PROVIDER=dataforseo`) creates a DataForSEO posts task and returns `postsTaskId`/`postsPending` so pages can render without waiting for results.
 - The dashboard polls `GET /api/places/posts-status/:taskId`; when complete it re-fetches `GET /api/optimization-data?forceRefresh=1` to store the latest post dates.
+- If polling exceeds the timeout window, the dashboard requests a fresh posts task via `GET /api/optimization-data?resetPostsTask=1&forceRefresh=1` and stops polling after repeated timeouts.
 - Optional: `DATAFORSEO_POSTS_TASK_TIMEOUT_MS` (default `2000`) to cap posts task network time per request.

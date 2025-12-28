@@ -244,41 +244,8 @@ export default async function DashboardPage({ searchParams }) {
                 primaryOriginZone={primaryOriginZone}
               />
 
-              <div className="section">
-                <div className="surface-card">
-                  <div className="section-header">
-                    <div>
-                      <h2 className="section-title">Next ranking report</h2>
-                      <p className="section-caption">
-                        {nextRankingReportLabel ? (
-                          <>
-                            Scheduled for <strong>{nextRankingReportLabel}</strong>.
-                          </>
-                        ) : (
-                          'No upcoming ranking report scheduled yet.'
-                        )}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
 
-              {hasSelectedKeyword && (
-                <div className="section-header latest-geogrid-card__header">
-                  <div>
-                    <h2 className="section-title">What would you like to work on today?</h2>
 
-                    <p className="section-caption">
-                      Review your freshest keyword coverage snapshot across the map.
-                    </p>
-
-                    <div className="section-caption">
-                      <span>Last Report Run: </span>
-                      <strong>{latestRunSummary?.runDate ?? 'No runs yet'}</strong>
-                    </div>
-                  </div>
-                </div>
-              )}
               {hasSelectedKeyword && (
                 <OptimizationPanelsClient
                   placeId={business.gPlaceId ?? null}

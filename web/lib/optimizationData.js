@@ -58,7 +58,8 @@ export async function loadOptimizationData(placeId, options = {}) {
     forceRefresh = false,
     manualTrigger = false,
     manualRefreshCooldownBypass = false,
-    businessId = null
+    businessId = null,
+    resetPostsTask = false
   } = options;
 
   if (!placeId) {
@@ -70,6 +71,7 @@ export async function loadOptimizationData(placeId, options = {}) {
   let warning = null;
   let resolvedBusinessId = normalizeBusinessId(businessId) ?? cache?.businessId ?? null;
   const cachedPostsTaskId = cache?.place?.postsTaskId ?? null;
+  const postsTaskIdForRequest = resetPostsTask ? null : cachedPostsTaskId;
 
   const shouldRefresh =
     forceRefresh ||
@@ -97,7 +99,7 @@ export async function loadOptimizationData(placeId, options = {}) {
     try {
       const { place, sidebar, sidebarPending: sidebarWasPending } = await fetchPlaceDetails(placeId, {
         signal,
-        postsTaskId: cachedPostsTaskId
+        postsTaskId: postsTaskIdForRequest
       });
       place.sidebar = place.sidebar ?? sidebar ?? null;
       sidebarPending = Boolean(sidebarWasPending);

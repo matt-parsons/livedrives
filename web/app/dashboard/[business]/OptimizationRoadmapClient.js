@@ -1,11 +1,13 @@
 'use client';
 
-import { useEffect, useMemo, useState, useCallback } from 'react';
+import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import BusinessOptimizationRoadmap from './BusinessOptimizationRoadmap';
 import NextStepsPanel from './NextStepsPanel';
 import { selectNextOptimizationSteps } from './optimization';
 
 const POLLING_INTERVAL = 5000; // 5 seconds
+const MAX_POSTS_POLL_MS = 120_000;
+const MAX_POSTS_TASK_RESETS = 1;
 
 export default function OptimizationRoadmapClient({ placeId, businessId = null, editHref, optimizationHref }) {
   const [loading, setLoading] = useState(Boolean(placeId));
@@ -13,7 +15,7 @@ export default function OptimizationRoadmapClient({ placeId, businessId = null, 
   const [roadmap, setRoadmap] = useState(null);
   const [meta, setMeta] = useState(null);
 
-  const fetchData = useCallback(async (controller, { forceRefresh = false } = {}) => {
+  const fetchData = useCallback(async (controller, { forceRefresh = false, resetPostsTask = false } = {}) => {
     if (!placeId) {
       setLoading(false);
       setError(null);
@@ -32,6 +34,9 @@ export default function OptimizationRoadmapClient({ placeId, businessId = null, 
       }
       if (forceRefresh) {
         params.set('forceRefresh', '1');
+      }
+      if (resetPostsTask) {
+        params.set('resetPostsTask', '1');
       }
 
       const response = await fetch(`/api/optimization-data?${params.toString()}`, {
@@ -73,12 +78,15 @@ export default function OptimizationRoadmapClient({ placeId, businessId = null, 
     };
   }, [fetchData]);
 
+  const postsPollingRef = useRef({ lastTaskId: null, startedAt: 0, resetCount: 0 });
+
   useEffect(() => {
   console.log('poll posts useEffect - meta:', meta);
   console.log('sidebarPending:', meta?.sidebarPending);
   console.log('postsTaskId:', meta?.postsTaskId);
 
     if (!meta?.sidebarPending || !meta?.postsTaskId) {
+      postsPollingRef.current = { lastTaskId: null, startedAt: 0, resetCount: 0 };
       return;
     }
 
@@ -89,6 +97,23 @@ export default function OptimizationRoadmapClient({ placeId, businessId = null, 
       if (inFlight || controller.signal.aborted) return;
       inFlight = true;
       try {
+        const now = Date.now();
+        if (postsPollingRef.current.lastTaskId !== meta.postsTaskId) {
+          postsPollingRef.current.lastTaskId = meta.postsTaskId;
+          postsPollingRef.current.startedAt = now;
+        } else if (!postsPollingRef.current.startedAt) {
+          postsPollingRef.current.startedAt = now;
+        }
+
+        if (now - postsPollingRef.current.startedAt > MAX_POSTS_POLL_MS) {
+          if (postsPollingRef.current.resetCount < MAX_POSTS_TASK_RESETS) {
+            postsPollingRef.current.resetCount += 1;
+            postsPollingRef.current.startedAt = now;
+            fetchData(new AbortController(), { forceRefresh: true, resetPostsTask: true });
+          }
+          return;
+        }
+
         const response = await fetch(`/api/places/posts-status/${meta.postsTaskId}`, {
           signal: controller.signal
         });
